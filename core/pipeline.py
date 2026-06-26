@@ -62,6 +62,30 @@ def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None
     )
 
 
+def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | None = None) -> str:
+    """Identity-preserving рендер: фото клиентки + промпт образа → она в этом образе.
+
+    Gemini 3 Pro image-to-image: держит лицо/волосы/фигуру, меняет только одежду.
+    (GPT image отпал — OpenAI отказывается воссоздавать реальные лица.)
+    look_prompt — это look-generator.looks[].image_generation_prompt. Возвращает data-URL.
+    """
+    instruction = (
+        "Keep the EXACT same face, hair and body proportions of the woman in the reference photo. "
+        "Change ONLY her clothing. Outfit: " + look_prompt
+        + " Full-body head to toe, photorealistic, vertical 3:4 ratio."
+    )
+    model = config.MODELS["image"]["dressing"]
+    return provider.generate_image(instruction, model=model, ref_images=[ref_image or client_photo])[0]
+
+
+def render_capsule_on_client(client_photo: str, look_prompts: list[str]) -> list[str]:
+    """Все образы капсулы на клиентке (один человек во всех образах). Список data-URL.
+
+    Каждый образ берёт исходное фото как референс личности — так лицо/фигура держатся.
+    """
+    return [render_look_on_client(client_photo, p) for p in look_prompts]
+
+
 def _diagnosis_to_formula_result(d: dict) -> dict:
     """Стыковка выхода formula-diagnostic со входом look-generator (style_formula_result)."""
     return {

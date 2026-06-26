@@ -49,8 +49,10 @@ def text_block(text: str) -> dict:
     return {"type": "text", "text": text}
 
 
-def image_block(path: str | Path) -> dict:
-    return {"type": "image_url", "image_url": {"url": encode_image(path)}}
+def image_block(src: str | Path) -> dict:
+    """src — путь к файлу ИЛИ готовый data-URL (напр. выход предыдущей генерации)."""
+    url = src if isinstance(src, str) and src.startswith("data:") else encode_image(src)
+    return {"type": "image_url", "image_url": {"url": url}}
 
 
 def chat(model: str, system: str, content, max_tokens: int = 2048,
@@ -111,8 +113,10 @@ def generate_image(prompt: str, model: str | None = None, ref_images=None) -> li
     images = msg.get("images") or []
     urls = [img["image_url"]["url"] for img in images if img.get("image_url", {}).get("url")]
     if not urls:
+        refusal = msg.get("refusal")
+        extra = f" Отказ модели: {refusal}" if refusal else ""
         raise RuntimeError(
-            f"Модель {model} не вернула изображений (ключи message: {list(msg.keys())})"
+            f"Модель {model} не вернула изображений (ключи message: {list(msg.keys())}).{extra}"
         )
     return urls
 

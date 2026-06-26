@@ -33,9 +33,13 @@ MODELS = {
         "final": "anthropic/claude-sonnet-4.6",
     },
     "image": {
-        # Seedream на OpenRouter недоступна → основная Nano Banana; A/B качества с gemini-3-pro
-        "primary": "google/gemini-2.5-flash-image",   # Nano Banana (дёшево)
+        # Seedream на OpenRouter недоступна → работаем на Gemini/GPT image
+        "primary": "google/gemini-2.5-flash-image",   # Nano Banana — дешёвый превью/дев
         "alt": "google/gemini-3-pro-image",           # для A/B качества
+        # identity-preserving рендер (фото клиентки → она в образе).
+        # GPT image отпал: OpenAI отказывается воссоздавать реальные лица (refusal).
+        # Gemini 3 Pro делает это одной ступенью и держит лицо/волосы/фигуру.
+        "dressing": "google/gemini-3-pro-image",
     },
 }
 
