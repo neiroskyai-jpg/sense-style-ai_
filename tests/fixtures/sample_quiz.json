@@ -1,0 +1,19 @@
+{
+  "context": {
+    "age": 38,
+    "profession": "руководитель отдела",
+    "environment": "корпоративная среда, много встреч и презентаций",
+    "dress_code": "бизнес-кэжуал",
+    "transition_context": "хочу, чтобы меня считывали как лидера, а не как исполнителя"
+  },
+  "now_traits": ["сдержанная", "простая", "незаметная", "удобная"],
+  "want_traits": ["властная", "элегантная", "уверенная", "статусная", "сильная", "дорогая"],
+  "want_traits_top3": ["властная", "элегантная", "статусная"],
+  "physical": {
+    "height": 168,
+    "size": 46,
+    "figure_type_self_assessed": "rectangle"
+  },
+  "trend_orientation": ["Toteme", "Massimo Dutti"],
+  "price_segment": "middle"
+}
