@@ -9,7 +9,7 @@ import json
 import sys
 from pathlib import Path
 
-from core.pipeline import analyze_photos, diagnose
+from core.pipeline import analyze_photos, diagnose, generate_capsule
 
 DEFAULT_QUIZ = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "sample_quiz.json"
 
@@ -23,6 +23,7 @@ def main() -> None:
     ap.add_argument("--quiz", default=str(DEFAULT_QUIZ), help="JSON с ответами квиза")
     ap.add_argument("--height", type=int, default=None, help="рост в см")
     ap.add_argument("--mode", default=None, choices=["dev", "final"])
+    ap.add_argument("--capsule", action="store_true", help="добавить Шаг 3: капсулу образов")
     args = ap.parse_args()
 
     quiz = json.loads(Path(args.quiz).read_text(encoding="utf-8"))
@@ -37,9 +38,33 @@ def main() -> None:
     print("== Шаг 2. Диагностика Формулы стиля ==", flush=True)
     diag = diagnose(quiz, vision, mode=args.mode)
     print(f"   Identity Gap: {diag.get('gap_percentage')}%")
+    print(f"   Формула стиля: {diag.get('style_formula')}")
     print(f"   распределение полей: {diag.get('semantic_field_distribution')}")
-    print("\n--- полный JSON диагностики (первые 1800 символов) ---")
-    print(json.dumps(diag, ensure_ascii=False, indent=2)[:1800])
+
+    if not args.capsule:
+        print("\n(капсула пропущена — добавь --capsule для Шага 3)")
+        return
+
+    print("== Шаг 3. Капсула образов ==", flush=True)
+    gen_req = {
+        "mode": "capsule",
+        "capsule_type": "auto",
+        "season": "FW 2026-2027",
+        "scenarios": ["работа", "деловые встречи", "повседневное", "выход"],
+        "n_looks": 6,
+        "price_segment": quiz.get("price_segment", "middle"),
+        "taboos": quiz.get("taboos", []),
+    }
+    capsule = generate_capsule(diag, gen_req, mode=args.mode)
+    cap = capsule.get("capsule") or {}
+    items = cap.get("items") or []
+    looks = capsule.get("looks") or []
+    print(f"   вещей в капсуле: {len(items)} | комбинаций: {cap.get('combination_count')}")
+    print(f"   образов: {len(looks)}")
+    if looks:
+        first = looks[0]
+        print(f"\n   образ 1 — {first.get('scenario')}: {first.get('description')}")
+        print(f"   image_generation_prompt:\n   {first.get('image_generation_prompt')}")
 
 
 if __name__ == "__main__":

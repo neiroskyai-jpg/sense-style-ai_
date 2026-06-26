@@ -52,3 +52,13 @@ def load_system_prompt(name: str) -> str:
             f"В {path.name} промпт извлечён некорректно (len={len(prompt)}) — проверь структуру файла"
         )
     return prompt
+
+
+@lru_cache(maxsize=None)
+def load_knowledge(name: str) -> str:
+    """Загрузить knowledge-base файл целиком (напр. 'style-library') для подклейки
+    в системный промпт. У таких файлов нет блока '## SYSTEM PROMPT' — это база знаний."""
+    path = PROMPTS_DIR / f"{name}.md"
+    if not path.exists():
+        raise FileNotFoundError(f"База знаний не найдена: {path}")
+    return path.read_text(encoding="utf-8").strip()

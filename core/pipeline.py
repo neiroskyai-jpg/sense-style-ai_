@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 
 from . import config, provider
-from .prompts import load_system_prompt
+from .prompts import load_knowledge, load_system_prompt
 
 
 def analyze_photos(image_paths, height_cm: int | None = None, mode: str | None = None) -> dict:
@@ -38,4 +38,39 @@ def _vision_to_diagnostic_input(v: dict) -> dict:
         "natural_palette": v.get("natural_palette"),
         "figure_type": figure.get("figure_type"),
         "correction_flags": figure.get("correction_flags"),
+    }
+
+
+def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None = None) -> dict:
+    """Шаг 3. Капсула: Формула стиля + запрос → капсула вещей + образы с промптами для генерации.
+
+    Системный промпт look-generator требует подклеенный целиком style-library (knowledge base).
+    Каждый образ на выходе содержит image_generation_prompt — он пойдёт в Seedream (Фаза 2).
+    """
+    system = (
+        load_system_prompt("look-generator")
+        + "\n\n# БАЗА ЗНАНИЙ (style-library)\n\n"
+        + load_knowledge("style-library")
+    )
+    payload = {
+        "style_formula_result": _diagnosis_to_formula_result(diagnosis),
+        "generation_request": generation_request,
+    }
+    return provider.chat_json(
+        config.model_for("text", mode), system,
+        json.dumps(payload, ensure_ascii=False), max_tokens=8000,
+    )
+
+
+def _diagnosis_to_formula_result(d: dict) -> dict:
+    """Стыковка выхода formula-diagnostic со входом look-generator (style_formula_result)."""
+    return {
+        "style_formula": d.get("style_formula"),
+        "base_style": d.get("base_style"),
+        "primary_substyle": d.get("primary_substyle"),
+        "secondary_substyle": d.get("secondary_substyle"),
+        "accent_note": d.get("accent_note"),
+        "figure_type": d.get("figure_type"),
+        "tonal_characteristics": d.get("tonal_characteristics"),
+        "visual_formula": d.get("visual_formula"),
     }
