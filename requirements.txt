@@ -2,4 +2,5 @@ requests>=2.32
 Pillow>=11.0
 python-dotenv>=1.0
 json-repair>=0.30
+flask>=3.0
 pytest>=8.0
