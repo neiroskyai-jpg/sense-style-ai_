@@ -8,9 +8,11 @@ from __future__ import annotations
 import base64
 import io
 import json
+import re
 from pathlib import Path
 
 import requests
+from json_repair import repair_json
 from PIL import Image
 
 from . import config
@@ -84,16 +86,74 @@ def chat(model: str, system: str, content, max_tokens: int = 2048,
     return content
 
 
-def chat_json(model: str, system: str, content, max_tokens: int = 2048) -> dict:
-    return _parse_json(chat(model, system, content, max_tokens=max_tokens, json_mode=True))
+def generate_image(prompt: str, model: str | None = None, ref_images=None) -> list[str]:
+    """Генерация изображения через OpenRouter (Seedream / Nano Banana).
+
+    ref_images — опциональные референсы (мульти-референс Seedream): фото вещи,
+    палитра и т.п. Возвращает список data-URL сгенерированных картинок.
+    """
+    model = model or config.MODELS["image"]["primary"]
+    content = [text_block(prompt)]
+    if ref_images:
+        content += [image_block(p) for p in ref_images]
+    body = {
+        "model": model,
+        "modalities": ["image", "text"],
+        "messages": [{"role": "user", "content": content}],
+    }
+    r = requests.post(
+        f"{config.OPENROUTER_BASE_URL}/chat/completions",
+        headers=_headers(), json=body, timeout=_TIMEOUT,
+    )
+    if r.status_code >= 400:
+        raise RuntimeError(f"OpenRouter {r.status_code}: {r.text[:500]}")
+    msg = r.json()["choices"][0]["message"]
+    images = msg.get("images") or []
+    urls = [img["image_url"]["url"] for img in images if img.get("image_url", {}).get("url")]
+    if not urls:
+        raise RuntimeError(
+            f"Модель {model} не вернула изображений (ключи message: {list(msg.keys())})"
+        )
+    return urls
 
 
-def _parse_json(raw: str) -> dict:
+def save_data_url(data_url: str, path: str | Path) -> Path:
+    """Сохранить data-URL (base64) картинку в файл."""
+    head, _, b64 = data_url.partition(",")
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(base64.standard_b64decode(b64))
+    return path
+
+
+def chat_json(model: str, system: str, content, max_tokens: int = 2048,
+              retries: int = 2) -> dict:
+    """Запрос с гарантированным JSON. LLM изредка отдаёт битый JSON — поэтому
+    ретраим вызов, а на последней попытке чиним через json_repair."""
+    last_err: Exception | None = None
+    for attempt in range(retries + 1):
+        raw = chat(model, system, content, max_tokens=max_tokens, json_mode=True)
+        try:
+            return _parse_json(raw, repair=(attempt == retries))
+        except (json.JSONDecodeError, ValueError) as e:
+            last_err = e
+    raise RuntimeError(f"Не удалось получить валидный JSON от {model}: {last_err}")
+
+
+def _parse_json(raw: str, repair: bool = False) -> dict:
+    raw = raw.strip()
+    if raw.startswith("```"):  # снять markdown-обёртку ```json ... ```
+        raw = re.sub(r"^```[a-zA-Z]*\n?|\n?```$", "", raw).strip()
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
-        # модель обернула JSON в текст/markdown — вытащить первый {...} блок
-        start, end = raw.find("{"), raw.rfind("}")
-        if start != -1 and end != -1:
-            return json.loads(raw[start:end + 1])
+        pass
+    # вытащить первый {...} блок (модель могла добавить текст вокруг)
+    start, end = raw.find("{"), raw.rfind("}")
+    candidate = raw[start:end + 1] if start != -1 and end != -1 else raw
+    try:
+        return json.loads(candidate)
+    except json.JSONDecodeError:
+        if repair:  # последняя попытка — починить битый JSON
+            return json.loads(repair_json(candidate))
         raise

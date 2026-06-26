@@ -49,6 +49,7 @@ Dockerfile, .dockerignore, .github/workflows/ci.yml, README.md, .env.example
 
 ### Фаза 1. Каркас + ядро пайплайна [~] (Неделя 1: 25 июня–1 июля)
 - [x] Каркас репо: `core/`, env-конфиг, Docker, GitHub Actions CI, README, тесты (зелёные).
+- [x] Приватный GitHub-репозиторий создан и запушен: github.com/neiroskyai-jpg/sense-style-ai_ (секреты и перс. данные исключены, проверено).
 - [x] Безопасная настройка ключа: Windows env var `OPENROUTER_API_KEY`, в файлах открытым текстом нет.
 - [x] `core`: загрузчик промптов (2 формата), клиент OpenRouter, сжатие фото.
 - [x] Пайплайн: функции `analyze_photos` (vision-analyzer) и `diagnose` (formula-diagnostic) написаны и стыкуются.

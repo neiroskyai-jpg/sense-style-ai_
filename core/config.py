@@ -33,9 +33,9 @@ MODELS = {
         "final": "anthropic/claude-sonnet-4.6",
     },
     "image": {
-        # генерация образов и капсул — основная Seedream, альт Nano Banana (см. план MVP)
-        "primary": "bytedance/seedream-4",
-        "alt": "google/gemini-2.5-flash-image",
+        # Seedream на OpenRouter недоступна → основная Nano Banana; A/B качества с gemini-3-pro
+        "primary": "google/gemini-2.5-flash-image",   # Nano Banana (дёшево)
+        "alt": "google/gemini-3-pro-image",           # для A/B качества
     },
 }
 
