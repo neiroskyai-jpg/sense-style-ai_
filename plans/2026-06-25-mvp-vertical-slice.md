@@ -63,7 +63,8 @@ Dockerfile, .dockerignore, .github/workflows/ci.yml, README.md, .env.example
 - [x] `generate_image`: генерация образа через OpenRouter. **Seedream на OpenRouter недоступна** (в каталоге только текстовые `bytedance-seed/*`) → основная Nano Banana (`google/gemini-2.5-flash-image`), A/B с `gemini-3-pro-image`.
 - [x] Устойчивый JSON-парсинг (ретраи + json-repair) — LLM изредка отдаёт битый JSON.
 - [x] **Сквозной прогон end-to-end вживую:** фото «01-do» → Gap 75% → капсула (9 вещей/24 комбинации/6 образов) → сгенерированный образ, визуально точно по диагностике (пеплум для прямоугольника, палитра графит/молочный/рубин).
-- [ ] Ветка `feat/look-generator` → PR → `/security-review` по диффу.
+- [x] Ветка `feat/look-generator` запушена; `/security-review` по диффу — 0 находок (код чистый). PR: github.com/neiroskyai-jpg/sense-style-ai_/pull/new/feat/look-generator
+- [x] Identity-preserving рендер (Gemini 3 Pro i2i): клиентка в образах под сценарии, лицо/фигура держатся (GPT отпал — refusal на реальные лица).
 - [ ] Квиз (HTML Identity Scan) → Gap-профиль → пайплайн → экран результата (фронт).
 
 ### Фаза 3. Eval, метрики, отзывы [ ] (Неделя 3: 9–15 июля)
