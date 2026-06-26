@@ -1,0 +1,1264 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sense Style — AI-стилист с научной методологией</title>
+<meta name="description" content="AI-стилист, который понимает не одежду, а тебя. Авторская методология психологии моды, Vision-анализ, образы под твою фигуру и сценарии жизни." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --ink: #1C1714;
+    --cream: #F2EDE3;
+    --cream-warm: #EDE4D2;
+    --gold: #C8A86A;
+    --gold-light: #E2C99A;
+    --gold-pale: #FBF5E8;
+    --bronze: #8B7355;
+    --neva: #2C3E35;
+    --granite: #6B6862;
+    --dust-rose: #D4B5A0;
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --container: 1240px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    font-weight: 300;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.7;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection { background: var(--gold); color: var(--ink); }
+
+  /* ───── Layout ───── */
+
+  .container {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  section { padding: 120px 0; }
+
+  @media (max-width: 768px) {
+    section { padding: 72px 0; }
+    .container { padding: 0 24px; }
+  }
+
+  /* ───── Typography ───── */
+
+  h1, h2, h3 {
+    font-family: var(--serif);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+
+  .h-display {
+    font-size: clamp(44px, 7vw, 84px);
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .h-display em, .h-italic {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--bronze);
+  }
+
+  h2.section-title {
+    font-size: clamp(32px, 4.5vw, 52px);
+    font-weight: 300;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    max-width: 18ch;
+  }
+
+  h3 {
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1.3;
+  }
+
+  .eyebrow {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--bronze);
+    opacity: 0.85;
+    margin-bottom: 20px;
+    display: inline-block;
+  }
+
+  .lead {
+    font-size: clamp(16px, 1.4vw, 19px);
+    line-height: 1.7;
+    color: var(--ink);
+    max-width: 56ch;
+    font-weight: 300;
+  }
+
+  .caption {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--granite);
+  }
+
+  .gold-rule {
+    display: block;
+    width: 48px;
+    height: 1px;
+    background: var(--gold);
+    margin: 28px 0;
+    border: 0;
+  }
+
+  /* ───── Header ───── */
+
+  header.site {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(242, 237, 227, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(28, 23, 20, 0.06);
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 0;
+  }
+
+  .logo {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .logo em { font-style: italic; color: var(--bronze); }
+
+  .nav-links {
+    display: flex;
+    gap: 38px;
+    list-style: none;
+    align-items: center;
+  }
+
+  .nav-links a {
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+    transition: transform 600ms var(--ease), color 300ms var(--ease);
+  }
+
+  .nav-links a:hover { transform: translateX(3px); color: var(--bronze); }
+
+  .nav-cta {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 20px;
+    background: var(--ink);
+    color: var(--cream);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: transform 600ms var(--ease), background 300ms var(--ease);
+  }
+
+  .nav-cta:hover { transform: translateY(-1px); background: var(--neva); }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+  }
+
+  /* ───── Buttons ───── */
+
+  .btn {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+    padding: 18px 32px;
+    background: var(--ink);
+    color: var(--cream);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: 0.01em;
+    transition: transform 600ms var(--ease), background 400ms var(--ease);
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn:hover { transform: translateY(-2px); background: var(--neva); }
+
+  .btn-arrow {
+    transition: transform 600ms var(--ease);
+  }
+
+  .btn:hover .btn-arrow { transform: translateX(4px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--bronze);
+    padding: 17px 31px;
+  }
+
+  .btn-ghost:hover {
+    background: var(--ink);
+    color: var(--cream);
+    border-color: var(--ink);
+  }
+
+  /* ───── Hero ───── */
+
+  .hero {
+    padding: 120px 0 160px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 80px;
+    align-items: end;
+  }
+
+  @media (max-width: 960px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+    .hero { padding: 60px 0 100px; }
+  }
+
+  .hero-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding-bottom: 12px;
+  }
+
+  .hero-cta-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .hero-foot {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--granite);
+    margin-top: 14px;
+  }
+
+  /* ───── Identity Gap section ───── */
+
+  .gap-section {
+    background: var(--cream-warm);
+    position: relative;
+  }
+
+  .gap-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 100px;
+    align-items: center;
+  }
+
+  @media (max-width: 960px) {
+    .gap-grid { grid-template-columns: 1fr; gap: 56px; }
+  }
+
+  .gap-number {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(140px, 22vw, 280px);
+    line-height: 0.85;
+    color: var(--bronze);
+    letter-spacing: -0.04em;
+    position: relative;
+    display: inline-block;
+  }
+
+  .gap-number sup {
+    font-size: 0.35em;
+    color: var(--gold);
+    font-style: normal;
+    margin-left: 6px;
+    vertical-align: top;
+    top: 0.4em;
+    position: relative;
+  }
+
+  .gap-number-caption {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--granite);
+    letter-spacing: 0.04em;
+    margin-top: 24px;
+    max-width: 32ch;
+    line-height: 1.6;
+  }
+
+  .gap-text p { margin-bottom: 20px; }
+
+  /* ───── Method (4 steps) ───── */
+
+  .method-head {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    margin-bottom: 80px;
+    align-items: end;
+  }
+
+  @media (max-width: 768px) {
+    .method-head { grid-template-columns: 1fr; gap: 32px; margin-bottom: 56px; }
+  }
+
+  .method-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: rgba(28, 23, 20, 0.08);
+    border-top: 1px solid rgba(28, 23, 20, 0.08);
+    border-bottom: 1px solid rgba(28, 23, 20, 0.08);
+  }
+
+  @media (max-width: 960px) {
+    .method-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 540px) {
+    .method-grid { grid-template-columns: 1fr; }
+  }
+
+  .method-card {
+    background: var(--cream);
+    padding: 48px 36px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: background 600ms var(--ease);
+    cursor: default;
+  }
+
+  .method-card:hover { background: var(--gold-pale); }
+
+  .method-num {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 36px;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 24px;
+  }
+
+  .method-card h3 { color: var(--ink); }
+
+  .method-card p {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--granite);
+    flex: 1;
+  }
+
+  /* ───── Tiers ───── */
+
+  .tiers-section { background: var(--ink); color: var(--cream); }
+
+  .tiers-section .eyebrow { color: var(--gold); opacity: 1; }
+
+  .tiers-section h2.section-title { color: var(--cream); }
+
+  .tiers-section .lead { color: rgba(242, 237, 227, 0.78); }
+
+  .tiers-head {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    margin-bottom: 80px;
+    align-items: end;
+  }
+
+  @media (max-width: 768px) {
+    .tiers-head { grid-template-columns: 1fr; gap: 32px; margin-bottom: 56px; }
+  }
+
+  .tiers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  @media (max-width: 960px) {
+    .tiers-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 640px) {
+    .tiers-grid { grid-template-columns: 1fr; }
+  }
+
+  .tier {
+    border: 1px solid rgba(242, 237, 227, 0.14);
+    padding: 36px 32px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: rgba(242, 237, 227, 0.02);
+    transition: background 600ms var(--ease), border-color 600ms var(--ease);
+  }
+
+  .tier:hover {
+    background: rgba(200, 168, 106, 0.06);
+    border-color: var(--gold);
+  }
+
+  .tier.tier-flag {
+    border-color: var(--gold);
+    background: rgba(200, 168, 106, 0.08);
+  }
+
+  .tier-flag-label {
+    position: absolute;
+    top: -10px;
+    left: 32px;
+    background: var(--gold);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+  }
+
+  .tier { position: relative; }
+
+  .tier-name {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 26px;
+    color: var(--cream);
+    line-height: 1.2;
+  }
+
+  .tier-price {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 32px;
+    color: var(--gold);
+    font-weight: 300;
+    line-height: 1;
+    margin-top: 4px;
+  }
+
+  .tier-price-sub {
+    font-family: var(--sans);
+    font-size: 12px;
+    color: rgba(242, 237, 227, 0.6);
+    letter-spacing: 0.04em;
+    margin-top: 6px;
+  }
+
+  .tier-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+    flex: 1;
+  }
+
+  .tier-list li {
+    font-size: 14px;
+    color: rgba(242, 237, 227, 0.84);
+    line-height: 1.55;
+    padding-left: 18px;
+    position: relative;
+  }
+
+  .tier-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 8px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .tier-cta {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--gold);
+    text-decoration: none;
+    margin-top: 12px;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    transition: transform 600ms var(--ease);
+  }
+
+  .tier-cta:hover { transform: translateX(4px); }
+
+  .tier.subscription { grid-column: span 2; }
+  @media (max-width: 960px) { .tier.subscription { grid-column: auto; } }
+  @media (max-width: 640px) { .tier.subscription { grid-column: auto; } }
+
+  /* ───── Case ───── */
+
+  .case-section { background: var(--neva); color: var(--cream); }
+  .case-section .eyebrow { color: var(--gold-light); opacity: 1; }
+
+  .case-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 100px;
+    align-items: start;
+  }
+
+  @media (max-width: 960px) {
+    .case-grid { grid-template-columns: 1fr; gap: 48px; }
+  }
+
+  .case-quote {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(24px, 2.6vw, 34px);
+    line-height: 1.35;
+    color: var(--cream);
+    letter-spacing: -0.005em;
+  }
+
+  .case-quote::before {
+    content: '«';
+    font-size: 1.4em;
+    color: var(--gold);
+    line-height: 0;
+    vertical-align: -0.3em;
+    margin-right: 0.05em;
+  }
+
+  .case-quote::after {
+    content: '»';
+    font-size: 1.4em;
+    color: var(--gold);
+    line-height: 0;
+    vertical-align: -0.3em;
+    margin-left: 0.05em;
+  }
+
+  .case-meta {
+    margin-top: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .case-meta .name {
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--cream);
+  }
+
+  .case-meta .role {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: rgba(242, 237, 227, 0.62);
+    letter-spacing: 0.02em;
+  }
+
+  .case-numbers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+
+  .case-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 24px 0;
+    border-top: 1px solid rgba(200, 168, 106, 0.3);
+  }
+
+  .case-stat-value {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 56px;
+    color: var(--gold);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .case-stat-label {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: rgba(242, 237, 227, 0.7);
+    line-height: 1.5;
+  }
+
+  /* ───── FAQ ───── */
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 100px;
+    align-items: start;
+  }
+
+  @media (max-width: 960px) {
+    .faq-grid { grid-template-columns: 1fr; gap: 48px; }
+  }
+
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .faq-item {
+    border-top: 1px solid rgba(28, 23, 20, 0.12);
+    padding: 28px 0;
+    cursor: pointer;
+  }
+
+  .faq-item:last-child { border-bottom: 1px solid rgba(28, 23, 20, 0.12); }
+
+  .faq-q {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+
+  .faq-toggle {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 24px;
+    color: var(--gold);
+    flex-shrink: 0;
+    transition: transform 600ms var(--ease);
+  }
+
+  .faq-item.open .faq-toggle { transform: rotate(45deg); }
+
+  .faq-a {
+    max-height: 0;
+    overflow: hidden;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--granite);
+    transition: max-height 600ms var(--ease), padding-top 600ms var(--ease);
+    max-width: 64ch;
+  }
+
+  .faq-item.open .faq-a {
+    max-height: 400px;
+    padding-top: 18px;
+  }
+
+  /* ───── CTA banner ───── */
+
+  .cta-banner {
+    padding: 100px 0;
+    background: var(--cream-warm);
+    text-align: center;
+  }
+
+  .cta-banner h2 {
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 300;
+    max-width: 22ch;
+    margin: 0 auto 32px;
+    line-height: 1.15;
+  }
+
+  .cta-banner h2 em { color: var(--bronze); }
+
+  /* ───── Footer ───── */
+
+  footer.site {
+    background: var(--ink);
+    color: rgba(242, 237, 227, 0.7);
+    padding: 64px 0 32px;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 48px;
+    margin-bottom: 48px;
+  }
+
+  @media (max-width: 768px) {
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+  }
+
+  .footer-brand {
+    font-family: var(--serif);
+    font-size: 24px;
+    color: var(--cream);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .footer-brand em { color: var(--gold); }
+
+  .footer-tag {
+    font-size: 13px;
+    color: rgba(242, 237, 227, 0.55);
+    line-height: 1.6;
+    max-width: 32ch;
+  }
+
+  .footer-col h4 {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+  .footer-col a {
+    color: rgba(242, 237, 227, 0.7);
+    text-decoration: none;
+    font-size: 13px;
+    transition: color 400ms var(--ease);
+  }
+
+  .footer-col a:hover { color: var(--gold); }
+
+  .footer-bottom {
+    border-top: 1px solid rgba(242, 237, 227, 0.1);
+    padding-top: 24px;
+    font-size: 12px;
+    color: rgba(242, 237, 227, 0.5);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* ───── Reveal animation ───── */
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 800ms var(--ease), transform 800ms var(--ease);
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal.delay-1 { transition-delay: 80ms; }
+  .reveal.delay-2 { transition-delay: 160ms; }
+  .reveal.delay-3 { transition-delay: 240ms; }
+  .reveal.delay-4 { transition-delay: 320ms; }
+
+  /* Decorative roman numeral as hero accent */
+
+  .hero-numeral {
+    position: absolute;
+    right: -40px;
+    top: 80px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 320px;
+    line-height: 1;
+    color: var(--gold);
+    opacity: 0.06;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  @media (max-width: 768px) { .hero-numeral { display: none; } }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="container nav">
+    <a href="#" class="logo">Sense <em>Style</em></a>
+    <ul class="nav-links">
+      <li><a href="#method">Метод</a></li>
+      <li><a href="#tiers">Тарифы</a></li>
+      <li><a href="#case">Кейс</a></li>
+      <li><a href="#faq">Вопросы</a></li>
+      <li><a href="#hero" class="nav-cta">Identity Scan</a></li>
+    </ul>
+  </div>
+</header>
+
+<!-- ───── Hero ───── -->
+<section class="hero" id="hero">
+  <div class="hero-numeral" aria-hidden="true">I</div>
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow reveal">AI-стилист с научной методологией</span>
+        <h1 class="h-display reveal delay-1">
+          Твой образ —<br/>
+          это ты <em>или не&nbsp;совсем?</em>
+        </h1>
+        <hr class="gold-rule reveal delay-2" />
+      </div>
+
+      <div class="hero-meta">
+        <p class="lead reveal delay-2">
+          AI-стилист, который понимает не одежду — а тебя.<br/>
+          Авторская методология психологии моды, Vision-анализ фото,
+          образы под твою фигуру и сценарии жизни.
+        </p>
+
+        <div class="hero-cta-row reveal delay-3">
+          <a href="#" class="btn">
+            Пройти Identity Scan
+            <span class="btn-arrow">→</span>
+          </a>
+          <a href="#method" class="btn btn-ghost">Как это работает</a>
+        </div>
+
+        <div class="hero-foot reveal delay-4">
+          12 вопросов · 3 минуты · бесплатно навсегда
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── Identity Gap ───── -->
+<section class="gap-section" id="gap">
+  <div class="container">
+    <div class="gap-grid">
+      <div class="reveal">
+        <div class="gap-number">47<sup>%</sup></div>
+        <div class="gap-number-caption">
+          средний разрыв идентичности у клиенток<br/>
+          до работы с методологией Sense Style
+        </div>
+      </div>
+
+      <div class="gap-text reveal delay-2">
+        <span class="eyebrow">Identity Gap</span>
+        <h2 class="section-title">Разрыв между тем, как тебя считывают —<br/><em class="h-italic">и кем ты стала</em></h2>
+        <hr class="gold-rule" />
+        <p>
+          Ты выросла. Сменила роль, город, отношения, доход. А шкаф остался от прежней тебя.
+          Каждое утро открываешь его и не находишь того, кто ты сейчас.
+        </p>
+        <p>
+          В психологии моды это называется <em class="h-italic">разрыв идентичности</em> — расхождение
+          между тем, как тебя видят окружающие, и тем, как ты хочешь, чтобы тебя видели.
+          Концепция опирается на Self-Discrepancy Theory (Higgins, 1987) и Enclothed Cognition
+          (Adam &amp; Galinsky, 2012).
+        </p>
+        <p>
+          Пока разрыв есть — ни одна вещь из шкафа не работает.
+          Sense Style замеряет его в процентах и помогает закрыть через систему,
+          а не через очередную импульсивную покупку.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── Method ───── -->
+<section id="method">
+  <div class="container">
+    <div class="method-head">
+      <div class="reveal">
+        <span class="eyebrow">Метод</span>
+        <h2 class="section-title">Четыре шага<br/><em class="h-italic">от диагностики до образа</em></h2>
+      </div>
+      <p class="lead reveal delay-1">
+        В основе — авторская методология Ксении Колупаевой:
+        школа «Алгоритмы имиджа» и современная психология моды
+        (Carolyn Mair, London College of Fashion). AI здесь — инструмент,
+        не замена стилисту.
+      </p>
+    </div>
+
+    <div class="method-grid">
+      <div class="method-card reveal">
+        <div class="method-num">i</div>
+        <h3>Identity Scan</h3>
+        <p>
+          12 вопросов, 3 минуты. Считаем разрыв идентичности в процентах
+          и определяем тип боли: поиск идентичности, хаос без системы,
+          вкус без формулы или страх неуместности.
+        </p>
+      </div>
+
+      <div class="method-card reveal delay-1">
+        <div class="method-num">ii</div>
+        <h3>Формула стиля</h3>
+        <p>
+          Не архетип «ты — Драматик», а гибкая комбинация из 4 базовых стилей
+          и 25 подстилей. Например: Минимализм × Power Woman × Drama-акцент.
+          Подстраивается под роли и сценарии твоей жизни.
+        </p>
+      </div>
+
+      <div class="method-card reveal delay-2">
+        <div class="method-num">iii</div>
+        <h3>Vision-анализ</h3>
+        <p>
+          Загружаешь фото в полный рост. Claude Vision определяет тональные
+          характеристики, тип фигуры, особенности пропорций.
+          Дальше AI работает с твоей внешностью — не с абстрактной моделью.
+        </p>
+      </div>
+
+      <div class="method-card reveal delay-3">
+        <div class="method-num">iv</div>
+        <h3>Образы под жизнь</h3>
+        <p>
+          Шесть фотореалистичных образов с твоим лицом и фигурой —
+          под деловую встречу, презентацию, свидание, выходные, корпоратив,
+          путешествие. Каждый объяснён через твою Формулу стиля.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── Tiers ───── -->
+<section class="tiers-section" id="tiers">
+  <div class="container">
+    <div class="tiers-head">
+      <div class="reveal">
+        <span class="eyebrow">Тарифы</span>
+        <h2 class="section-title">Где ты<br/><em class="h-italic">сейчас</em></h2>
+      </div>
+      <p class="lead reveal delay-1">
+        Начни с бесплатной диагностики. Полные образы, капсулы по ролям
+        и работа с автором метода — на следующих уровнях, когда поймёшь,
+        что метод тебе подходит.
+      </p>
+    </div>
+
+    <div class="tiers-grid">
+      <div class="tier reveal">
+        <div>
+          <div class="tier-name">Диагностика идентичности</div>
+          <div class="tier-price">0 ₽</div>
+          <div class="tier-price-sub">бесплатно навсегда · вход в продукт</div>
+        </div>
+        <ul class="tier-list">
+          <li>Квиз-диагностика, 12 вопросов</li>
+          <li>Расчёт разрыва идентичности в %</li>
+          <li>Формула стиля — комбинация из 2–3 направлений</li>
+          <li>Один образ-превью</li>
+        </ul>
+        <a href="#" class="tier-cta">Пройти диагностику <span>→</span></a>
+      </div>
+
+      <div class="tier tier-flag reveal delay-1">
+        <span class="tier-flag-label">Чаще всего выбирают</span>
+        <div>
+          <div class="tier-name">Стилевая карта</div>
+          <div class="tier-price">2 900 ₽</div>
+          <div class="tier-price-sub">разовый платёж · готовность за 30 минут</div>
+        </div>
+        <ul class="tier-list">
+          <li>Полная Формула стиля с описанием</li>
+          <li>6 фотореалистичных образов с твоим лицом</li>
+          <li>Сценарии: встреча, презентация, свидание, выходные, корпоратив, путешествие</li>
+          <li>Список покупок с конкретными брендами</li>
+        </ul>
+        <a href="#" class="tier-cta">Получить карту <span>→</span></a>
+      </div>
+
+      <div class="tier reveal delay-2">
+        <div>
+          <div class="tier-name">Книга стиля</div>
+          <div class="tier-price">14 900 ₽</div>
+          <div class="tier-price-sub">разовый платёж · 2–3 дня работы</div>
+        </div>
+        <ul class="tier-list">
+          <li>Четыре капсулы под роли</li>
+          <li>Анализ имеющегося гардероба</li>
+          <li>Палитра под тональные характеристики</li>
+          <li>Мудборды на сезон, рекомендации по макияжу и причёске</li>
+        </ul>
+        <a href="#" class="tier-cta">Заказать книгу <span>→</span></a>
+      </div>
+
+      <div class="tier reveal delay-3">
+        <div>
+          <div class="tier-name">Перерождение образа</div>
+          <div class="tier-price">59 000 ₽</div>
+          <div class="tier-price-sub">премиум · мест ограничено</div>
+        </div>
+        <ul class="tier-list">
+          <li>Глубокий разбор стилевого разрыва</li>
+          <li>12 сценарных образов</li>
+          <li>План перехода на 2 недели</li>
+          <li>Видеоразбор 45 минут с автором метода</li>
+        </ul>
+        <a href="#" class="tier-cta">Записаться <span>→</span></a>
+      </div>
+
+      <div class="tier subscription reveal delay-4">
+        <div>
+          <div class="tier-name">Sense Style каждый день</div>
+          <div class="tier-price">3 900 ₽<span style="font-size: 0.5em; color: rgba(242,237,227,0.6); font-style: normal; margin-left: 6px;">в месяц</span></div>
+          <div class="tier-price-sub">подписка · скоро</div>
+        </div>
+        <ul class="tier-list">
+          <li>Образ дня под погоду и контекст</li>
+          <li>Капсулы по ролям с обновлением</li>
+          <li>Трекер разрыва идентичности — повторный замер каждые 2 недели</li>
+          <li>Сезонные обновления гардероба</li>
+        </ul>
+        <a href="#" class="tier-cta">Узнать первой <span>→</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── Case ───── -->
+<section class="case-section" id="case">
+  <div class="container">
+    <div class="case-grid">
+      <div class="reveal">
+        <span class="eyebrow">Из практики</span>
+        <h2 class="section-title" style="color: var(--cream);">
+          Когда метод срабатывает —<br/>
+          <em class="h-italic" style="color: var(--gold-light);">это видно в цифрах</em>
+        </h2>
+        <hr class="gold-rule" style="background: var(--gold);" />
+      </div>
+
+      <div class="reveal delay-1">
+        <p class="case-quote">
+          У меня было ощущение, что я хорошая, но какая-то невидимая.
+          После работы с методом я перестала прятаться в одежде —
+          и впервые за десять лет почувствовала, что выгляжу как человек,
+          которым я стала, а не как та, кем была в 28.
+        </p>
+
+        <div class="case-meta">
+          <span class="name">Анастасия М.</span>
+          <span class="role">руководитель продукта · 41 год</span>
+        </div>
+
+        <div class="case-numbers" style="margin-top: 56px;">
+          <div class="case-stat">
+            <div class="case-stat-value">62<span style="font-size: 0.5em;">%</span></div>
+            <div class="case-stat-label">Identity Gap до работы с методом</div>
+          </div>
+          <div class="case-stat">
+            <div class="case-stat-value">14<span style="font-size: 0.5em;">%</span></div>
+            <div class="case-stat-label">после Стилевой карты и двух недель адаптации</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── FAQ ───── -->
+<section id="faq">
+  <div class="container">
+    <div class="faq-grid">
+      <div class="reveal">
+        <span class="eyebrow">Вопросы</span>
+        <h2 class="section-title">Что важно<br/><em class="h-italic">понимать заранее</em></h2>
+      </div>
+
+      <div class="faq-list reveal delay-1">
+        <div class="faq-item">
+          <div class="faq-q">
+            Чем это отличается от других AI-стилистов
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-a">
+            Конкуренты работают с цветотипом или собирают случайные комбинации из готовых вещей.
+            Без методологии, без психологии. Sense Style строится на разрыве идентичности —
+            расхождении между тем, как тебя считывают, и тем, какой ты хочешь быть.
+            Это не про моду, это про то, чтобы шкаф стал отражением твоей сегодняшней роли.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">
+            AI заменяет живого стилиста
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-a">
+            Нет. AI — инструмент: считает разрыв, анализирует фото, генерирует образы быстрее,
+            чем стилист в одиночку. Методология остаётся авторской,
+            а на тарифах «Книга стиля» и «Перерождение образа» финальную проверку делает Ксения вручную.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">
+            Что нужно от меня для старта
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-a">
+            Только пройти Identity Scan — 12 вопросов, 3 минуты. На бесплатном уровне получишь
+            свою Формулу стиля и один образ. Дальше, если решишь продолжить, нужно будет
+            фото в полный рост при дневном свете — без ретуши и фильтров.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">
+            Сколько ждать готовые образы
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-a">
+            Стилевая карта — до 30 минут с момента оплаты. Книга стиля — 2–3 дня
+            (из-за ручной проверки стилиста). Перерождение образа — до недели,
+            включая видеоразбор.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">
+            Что с конфиденциальностью фото
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-a">
+            Фото хранятся в Supabase Storage, доступ — только у тебя через личный кабинет.
+            В обучении публичных моделей не используются. Можно удалить аккаунт и все данные
+            одним действием.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── CTA banner ───── -->
+<section class="cta-banner">
+  <div class="container">
+    <h2 class="reveal">Узнать свою <em>Формулу стиля</em><br/>и увидеть, кем ты стала</h2>
+    <a href="#" class="btn reveal delay-1">
+      Пройти Identity Scan
+      <span class="btn-arrow">→</span>
+    </a>
+    <div class="hero-foot reveal delay-2" style="margin-top: 18px;">
+      Бесплатно. 3 минуты. Без обязательств.
+    </div>
+  </div>
+</section>
+
+<!-- ───── Footer ───── -->
+<footer class="site">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="#" class="footer-brand">Sense <em>Style</em></a>
+        <p class="footer-tag">
+          AI-стилист на основе психологии моды.<br/>
+          Авторская методология Ксении Колупаевой.
+        </p>
+      </div>
+      <div class="footer-col">
+        <h4>Продукт</h4>
+        <ul>
+          <li><a href="#hero">Identity Scan</a></li>
+          <li><a href="#method">Метод</a></li>
+          <li><a href="#tiers">Тарифы</a></li>
+          <li><a href="#case">Кейсы</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>О нас</h4>
+        <ul>
+          <li><a href="#">Об авторе</a></li>
+          <li><a href="#">Методология</a></li>
+          <li><a href="#">Контакты</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Документы</h4>
+        <ul>
+          <li><a href="#">Оферта</a></li>
+          <li><a href="#">Политика конфиденциальности</a></li>
+          <li><a href="#">Cookie</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2026 Sense Style. Все права защищены.</span>
+      <span>Сделано в Санкт-Петербурге</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Reveal on scroll — slow purposeful, stagger via CSS delay classes
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // FAQ accordion
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  });
+</script>
+
+</body>
+</html>

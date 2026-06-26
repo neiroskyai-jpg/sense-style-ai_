@@ -1,0 +1,28 @@
+.business/
+.env
+user-photos/
+ab-output/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# служебное (инструментарий Claude Code — не часть проекта)
+.agents/
+.claude/
+skills-lock.json
+.mcp.json
+.playwright-mcp/
+node_modules/
+
+# приватное: реальные имена клиенток (перс. данные) — не коммитим даже в приватный репо
+architecture/cases/
+# временные/служебные
+.tmp-docs/
+.tmp-render.py
+*.jpeg
+*.png
+*.pdf

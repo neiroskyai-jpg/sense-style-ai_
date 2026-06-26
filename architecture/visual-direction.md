@@ -1,0 +1,335 @@
+# Визуальное направление — Petrogradka Editorial
+
+**Утверждено:** 2026-04-28.
+**Источник правды по визуалу.** Все противоречия с другими файлами решаются в пользу этого документа.
+**Связано:** `.business/assets/brand-guidelines.md` (расширяется), `architecture/2026-04-27-mvp-spec.md`.
+
+---
+
+## 1. Концепция
+
+**Petrogradka Editorial** — современное прочтение питерского северного модерна и интеллигентского ретро Петроградского района. Зрелая роскошь, прожитая, не показная. Не «новый блеск Невского», а «утренний туман на Каменноостровском».
+
+### Почему именно это направление работает на бренд
+
+- **Зрелость, не молодость.** Петроградка не для 22-летних. Здесь живут женщины, которые знают, кто они. Твой главный сегмент 30–45.
+- **Прожитая роскошь, не показная.** Лепнина, потёртая медь, скрипящий паркет — соответствует «без давления, без культа потребления».
+- **Интеллектуальная глубина.** Северный модерн начала XX века — архитектура для интеллигенции (профессура, врачи, инженеры). Психология первична, как у нас.
+- **Тихая атмосфера.** Не «Эрмитаж в час пик» — Каменноостровский в утреннем тумане. Quiet Luxury в чистом виде.
+
+### Что это направление НЕ
+- Не Emily в Париже (розовый + Louboutin + цветочки) — энергию берём, картинку нет.
+- Не туристический Питер (Невский, Дворцовая, разводные мосты в открытках).
+- Не AI-slop минимализм конкурентов (белый фон + Inter + iPhone-mockup).
+- Не русский фольк (матрёшки, хохлома, шапки-ушанки).
+- **Не историческая реконструкция / костюмированный 1900-й.** Это критично — Petrogradka работает на нас как **архитектура, атмосфера, окна, лепнина, фасады**. Но **не как одежда эпохи**. Внутри современная женщина 35–45, в современном Quiet Luxury (Toteme / The Row / Khaite), а НЕ в льняной рубахе крестьянки или с пером и чернилами. Питерская атмосфера — снаружи и в интерьере. Внутри — сегодняшний день.
+
+### Правило «снаружи Петроградка XX века, внутри — сегодня»
+
+Применять при генерации фото и съёмке:
+- **Architecture, exteriors, windows, walls, parquet, brass details** — могут быть art-nouveau (1900–1920), потёртые, аутентичные, исторические
+- **Clothing, fabrics, objects in foreground, hands, faces, props** — должны быть **современные** (2020-е): Moleskine блокнот, не ветхий рукописный дневник; iPhone лежит рядом с эспрессо; кашемировый свитер, не льняная рубаха XIX века; современный oversized blazer, не сюртук
+- **Никаких бронзовых табличек с датой «1897», никаких чернильных перьев, никаких ветхих рукописных страниц.** Бренд использует AI и Vision API — это сегодняшний день, не музей этнографии
+- **Аудитория** — современная зрелая женщина, не реконструктор. Узнаваемо «такие как я / моя коллега / моя сестра», не «дама из музея».
+
+---
+
+## 2. Расширенная палитра
+
+Базовая палитра из `brand-guidelines.md` сохраняется. Добавляются 3 акцентных цвета, привязанных к Петроградке.
+
+### Базовые (из brand-guidelines.md)
+
+| Имя | Код | Назначение |
+|---|---|---|
+| `ink` (тёплый чёрный) | `#1C1714` | Основной текст, тёмные секции, фон CTA |
+| `cream` (кремовый) | `#F2EDE3` | Базовый светлый фон, body text на тёмном |
+| `gold` (золото) | `#C8A86A` | Акцент, ссылки, разделители, числа Identity Gap |
+| `gold-l` (светлое золото) | `#E2C99A` | Hover-состояния, mid-tone акценты |
+
+### Новые акценты (Петроградка-specific)
+
+| Имя | Код | Где взять | Назначение |
+|---|---|---|---|
+| `bronze` (окисленная медь) | `#8B7355` | Латунные таблички домов, флюгера | Глубокий акцент, иконки, рамки рамок |
+| `neva` (тёмно-зелёный Невы) | `#2C3E35` | Каменноостровский в тумане, тёмная вода, листва | Альтернативный тёмный фон вместо чёрного для секций «глубины» |
+| `granite` (серый гранит) | `#6B6862` | Набережные, цоколь Дома с башнями | Нейтральный mid-tone, разделители, второстепенный текст |
+| `dust-rose` (книжная пыль) | `#D4B5A0` | Старые корешки книг, выгоревший шёлк | Тёплый акцент для женственных секций (личные истории, кейсы) |
+
+### Старые акценты из прототипа квиза (ОСТАВЛЯЕМ для типов боли)
+Из `.business/assets/identity-scan-quiz.html`:
+
+| Имя | Код | Использование |
+|---|---|---|
+| `mauve` | `#8B6E96` | Тип боли «Identity» (поиск идентичности) |
+| `rose` | `#B8697A` | Тип боли «Chaos» (хаос без системы) |
+| `sage` | `#6B9070` | Тип боли «System» (есть вкус, нет системы) |
+
+«Fear» (страх неуместности) использует `gold`.
+
+### Правила использования палитры
+- **80% страницы — `cream` + `ink`.** Это база.
+- **15% — акценты `gold` / `bronze` / `neva`.** Только в местах, где нужно «остановить взгляд».
+- **5% — типы боли (mauve / rose / sage).** Только на странице результата квиза + соответствующих маркетинговых блоках.
+- **НЕ смешивать** все 6+ цветов на одном экране. Один герой-цвет + один акцент.
+
+### CSS-variables (для копи-пасты в Tailwind config)
+
+```ts
+colors: {
+  ink: '#1C1714',
+  cream: '#F2EDE3',
+  'cream-warm': '#EDE4D2',
+  gold: '#C8A86A',
+  'gold-light': '#E2C99A',
+  'gold-pale': '#FBF5E8',
+  bronze: '#8B7355',
+  neva: '#2C3E35',
+  granite: '#6B6862',
+  'dust-rose': '#D4B5A0',
+  // pain types (только для квиза + маркетинговых блоков)
+  mauve: '#8B6E96',
+  rose: '#B8697A',
+  sage: '#6B9070',
+}
+```
+
+---
+
+## 3. Типографика
+
+Не меняется. Из `brand-guidelines.md`:
+
+- **Cormorant Garamond** (300, 400, 500, italic 300/400) — заголовки, цитаты, числа Gap
+- **DM Sans** (300, 400, 500) — body, кнопки, навигация
+
+### Новые правила типографической иерархии
+
+```
+H1 / Hero (Cormorant Garamond 300, italic для акцентов)
+  → 48–72px desktop / 32–44px mobile
+  → line-height 1.1
+  → letter-spacing -0.01em (плотнее)
+
+H2 / Section title (Cormorant Garamond 400)
+  → 32–44px desktop / 24–28px mobile
+  → line-height 1.2
+
+H3 / Card title (Cormorant Garamond 400)
+  → 20–24px
+
+Body (DM Sans 300 для длинного текста, 400 для основного)
+  → 15–17px desktop / 14–15px mobile
+  → line-height 1.7 (воздух между строк = ключ к premium)
+
+Eyebrow / Label (DM Sans 500 uppercase, letter-spacing 0.18em)
+  → 10–11px
+  → 80% непрозрачности
+
+Caption / hint (DM Sans 300 italic)
+  → 12–13px
+  → granite цвет
+```
+
+**Главное правило:** курсив Cormorant Garamond — это «голос бренда», используй его для эмоционально нагруженных слов («это **ты** или не совсем?»).
+
+---
+
+## 4. Фото-стратегия — гибрид
+
+Три параллельных слоя визуала. Каждый со своим назначением и правилами.
+
+### Слой A · Типографика-герой (60% всех экранов)
+
+**Где:** Hero-блок лендинга, секции методологии, цитаты, страницы FAQ.
+
+**Правила:**
+- Большие заголовки Cormorant Garamond + большие пустые поля.
+- Никаких изображений на фоне героя — типографика сама несёт настроение.
+- Тонкие декоративные линии (1px) `gold` или `bronze` для разделения.
+- Иногда — одна крупная буквица или римская цифра как декор.
+- Asymmetric композиция (заголовок не по центру, а смещён).
+
+**Пример hero:**
+```
+┌────────────────────────────────────────┐
+│                                        │
+│    Твой образ —                        │
+│    это ты или                          │
+│    не совсем?                          │  ← Cormorant Garamond 300
+│                                        │     (italic «или не совсем»)
+│    ─────                                │  ← gold линия 36px × 1px
+│                                        │
+│    AI-стилист, который понимает        │
+│    не одежду — а тебя.                 │  ← DM Sans 400
+│                                        │
+│    [Пройти Identity Scan →]            │  ← gold кнопка
+│                                        │
+└────────────────────────────────────────┘
+```
+
+### Слой B · Атмосферные стоковые фото (4–5 ключевых на сайт)
+
+**Где:** разделы «о методологии», «как это работает», между блоками для воздуха.
+
+**Правила отбора:**
+- Только Петроградский вайб (атмосферно, не туристически).
+- Цветовая обработка под палитру: тёплые тона, чуть пониженная насыщенность, тёплая тонировка.
+- НЕТ людей в кадре крупно. Только в profil view, со спины, в дымке, размыто.
+- Фокус на текстурах, а не на сюжете.
+
+**Что искать на Unsplash / Pexels:**
+
+| Тема | Search-запросы (англ. — лучше) |
+|---|---|
+| Архитектура Петроградки | `saint petersburg art nouveau`, `russian art nouveau facade`, `petrogradskaya architecture`, `winter petersburg morning`, `kamennoostrovsky avenue` |
+| Атмосфера улиц | `quiet european street morning`, `foggy european street`, `vintage cobblestone street`, `tree-lined boulevard autumn` |
+| Интерьеры с настроением | `vintage european apartment`, `parquet floor sunlight`, `art nouveau interior`, `library old books warm light`, `cafe morning atmosphere european` |
+| Текстуры / детали | `oxidized brass plate`, `vintage door handle`, `aged paper texture`, `silk fabric warm light`, `linen texture cream`, `marble warm tone` |
+| Природа / стихии | `nordic light autumn`, `golden hour foggy`, `rain stained stone`, `birch forest moody` |
+
+**Готовые подборки на Unsplash, которые я нашла как стартовые:**
+- Поисковая страница [Saint Petersburg architecture](https://unsplash.com/s/photos/saint-petersburg-architecture)
+- [Art nouveau](https://unsplash.com/s/photos/art-nouveau)
+- [Vintage interior](https://unsplash.com/s/photos/vintage-interior)
+- [European street morning](https://unsplash.com/s/photos/european-street-morning)
+
+**Правило обработки:**
+- Tone curve чуть тёплее (R+5, B-3 в highlights)
+- Saturation -10
+- Vignette 5–10% по краям
+- В Tailwind:  `filter: sepia(8%) saturate(85%) brightness(102%);` или препроцессим в Photoshop
+
+### Слой C · AI-визуалы для образов «до/после» (генерируем по нужде)
+
+**Где:** результат Vision-анализа, страница капсулы, кейс «было/стало», личный кабинет клиентки.
+
+**Правила:**
+- Midjourney / Sora / DALL-E — но строго по промптам в **палитре бренда**.
+- НЕТ «AI-slop» (стерильный белый фон + plastik-skin модель).
+- Реалистичные женщины 30–45, не модели подростки.
+- Локация — питерский интерьер или тёплый кадр без специфики места.
+- Всё, что AI генерирует, проходит через **тот же тонировочный фильтр**, что стоки.
+
+**Шаблон промпта для AI-генерации (Midjourney / Nano Banana):**
+
+```
+[краткое описание сцены], CONTEMPORARY 2020s setting,
+woman 35-45 years old in modern Quiet Luxury clothing
+(Toteme / The Row / Khaite aesthetic — cashmere, silk,
+oversized blazer, NOT 19th century costume),
+soft natural light, warm muted tones,
+cream and gold color palette, oxidized brass architectural details,
+Saint Petersburg art nouveau APARTMENT BACKGROUND
+(building exterior or interior moldings can be 1900s,
+but objects, clothes, props on screen are MODERN today),
+shot on Hasselblad medium format, editorial fashion photography,
+not stock, not Pinterest, no plastic skin,
+NOT historical reconstruction, NOT period costume,
+NOT vintage 1900s clothing, NO ink pens or aged manuscripts,
+NO brass tags with old dates, NO peasant linen,
+quiet luxury, Phoebe Philo aesthetic, The Row mood,
+--ar 4:5 --style raw --stylize 250
+```
+
+**Что точно НЕ генерируем:**
+- Ярко-розовый, ярко-красный, ярко-жёлтый
+- Глянцевые fashion-модели на белом фоне
+- Сезонные тренды (типа Y2K, leopard print, неоновый)
+- Логотипы брендов в кадре
+- Селфи / casual вертикальные форматы
+
+---
+
+## 5. Композиция и движение
+
+### Композиция (статика)
+- **Asymmetric grid** — никаких идеально центрированных layouts.
+- **Большие пустые поля** (white space) — premium-эффект через воздух.
+- **Diagonal flow** — взгляд скользит по странице волной, не строго сверху-вниз.
+- **Ровные сетки только в data-heavy секциях** (pricing, FAQ, dashboard).
+
+### Движение (анимации)
+- **Slow and purposeful.** 600–800ms easings, не 200ms.
+- **Easing:** `cubic-bezier(0.4, 0, 0.2, 1)` (уже в прототипе квиза).
+- **Stagger** — элементы появляются с задержкой 80–120ms между ними, не одновременно.
+- **Никаких «прыгающих» эффектов** (bounce, spring, overshoot).
+- **Одна-две точки эффектности на экран** — не везде. «Один well-orchestrated page load с staggered reveals создаёт больше delight, чем разбросанные micro-interactions» (это правило skill `frontend-design` зашифровано).
+- Hover на интерактивных — `transform: translateX(3px)` или `translateY(-1px)`, не resize / glow.
+
+---
+
+## 6. Что мы делаем И что мы не делаем
+
+### Делаем
+- Cormorant Garamond + DM Sans
+- Тёплая кремовая база + графит + золото + 3 петроградских акцента
+- Атмосферные стоковые фото с тёплой тонировкой
+- AI-визуалы, прошедшие наш фильтр
+- Asymmetric композиции, много воздуха
+- Slow purposeful анимации
+- Italic Cormorant для эмоциональных акцентов
+
+### Не делаем
+- ❌ Inter, Roboto, Arial, system fonts
+- ❌ Yellow-pink-purple gradients на белом
+- ❌ Stock-photo с моделями на белом фоне
+- ❌ AI-визуалы с plastic-skin или fashion-маникенами
+- ❌ Розовый Emily-в-Париже, цветочные принты
+- ❌ Логотипы брендов в кадре
+- ❌ Эмодзи в маркетинге (внутри UI приложения — допустимо, например иконки типов боли в квизе)
+- ❌ Сезонные тренды и модные циклы
+- ❌ Материалы из конкурентов (Cladwell B&W tech, Acloset скриншоты UI)
+- ❌ Быстрые bouncy анимации
+- ❌ Идеально симметричные центрированные сетки
+
+---
+
+## 7. Конкретные референсы для мудборда
+
+Когда будешь собирать Pinterest/Behance moodboard — отбирай по этим источникам.
+
+### Архитектура и место
+- Дом с башнями (Каменноостровский 35) — флагман северного модерна
+- Дом Розенштейна, Дом Бубыря — лепнина и фактура
+- Каменный остров — особняки и парк
+- Большая Зеленина, Каменноостровский, Кронверкский — атмосферные перспективы
+
+### Бренды как visual language
+- [The Row](https://www.therow.com) — графит + тёплое золото, зрелая женственность
+- [Phoebe Philo](https://www.phoebephilo.com) — типографика-герой, asymmetric
+- [Loewe](https://www.loewe.com) — ремесленность + современность
+- [Aesop](https://www.aesop.com) — тёплые кремовые витрины, Cormorant Garamond + sans
+- [Khaite](https://www.khaite.com) — графит, тёплые тона, photography mood
+- [Jacquemus](https://www.jacquemus.com) — atmospheric photography (но без яркой палитры)
+
+### Издания / журналы для tone of voice визуала
+- [The Gentlewoman](https://thegentlewoman.co.uk) — главный референс по подаче женского интеллектуального премиума
+- [Ssense Editorial](https://www.ssense.com/en-us/editorial)
+- [System Magazine](https://system-magazine.com)
+
+### Фотографы (для поиска похожих стоков и обучения AI-промптов)
+- Mikael Jansson — fashion editorial с глубиной
+- Steven Meisel (ранние работы) — атмосферность
+- Sølve Sundsbø — soft moody
+- Российские: Алексей Бронников, Сергей Ермохин
+
+---
+
+## 8. Как это направление связано с другими документами
+
+| Файл | Связь |
+|---|---|
+| `.business/assets/brand-guidelines.md` | Этот документ **расширяет** brand-guidelines, не заменяет. Базовые правила tone-of-voice оттуда. |
+| `architecture/2026-04-27-mvp-spec.md` | Технические страницы (раздел 5) визуально оформляются по этому документу. |
+| `.business/assets/identity-scan-quiz.html` | Прототип квиза уже использует эту палитру (cream + gold + 4 акцента боли). При переносе в Next.js — добавить bronze/neva/granite/dust-rose в Tailwind config. |
+| `CLAUDE.md` | Должен ссылаться на этот файл как источник правды по визуалу. |
+
+---
+
+## 9. Что делать дальше
+
+1. **Ксения собирает Pinterest-доску** «Petrogradka × Sense Style AI» — 30–50 картинок по разделу 7. На вечер задача.
+2. **На следующей итерации** — берём skill `frontend-design`, строим первый hero-блок лендинга в этой эстетике (HTML+CSS, single file, чтобы посмотреть на выходе).
+3. **При запуске Next.js-проекта** — переносим расширенную палитру в `tailwind.config.ts` и `next/font` для Cormorant + DM Sans.
+4. **Перед первой AI-генерацией образов** — собираем 5–10 «золотых эталонов» (картинок, попавших в стиль) и используем как style references в Midjourney.
