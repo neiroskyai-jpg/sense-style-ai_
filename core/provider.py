@@ -19,6 +19,9 @@ from . import config
 
 _TIMEOUT = 120
 
+# защита от decompression bomb: не открываем гигантские изображения (фото от пользователя)
+Image.MAX_IMAGE_PIXELS = 50_000_000  # ~50 Мп
+
 
 def _headers() -> dict:
     return {
