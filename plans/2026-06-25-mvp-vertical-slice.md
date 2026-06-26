@@ -58,10 +58,13 @@ Dockerfile, .dockerignore, .github/workflows/ci.yml, README.md, .env.example
 - [x] **Первый ЖИВОЙ вызов Vision** прошёл (Gemini Flash, dev): ключ/баланс/слаг ок, валидный JSON. На фото «01-do» определил `winter_natural` (high) — совпадает с эталонной разметкой кейса Ксении.
 - [ ] **Параллельно (Ксения): старт разметки ground truth + выход на клиенток за отзывами.**
 
-### Фаза 2. Полный вертикальный срез [ ] (Неделя 2: 2–8 июля)
-- [ ] look-generator: генерация образа (Gemini Nano Banana / Seedream через OpenRouter).
-- [ ] Квиз → Gap-профиль → пайплайн → экран результата.
-- [ ] Сквозной прогон на 1 реальном кейсе end-to-end.
+### Фаза 2. Полный вертикальный срез [~] (Неделя 2: 2–8 июля)
+- [x] `generate_capsule` (look-generator + подклеенный style-library): Формула → капсула вещей + образы с `image_generation_prompt`.
+- [x] `generate_image`: генерация образа через OpenRouter. **Seedream на OpenRouter недоступна** (в каталоге только текстовые `bytedance-seed/*`) → основная Nano Banana (`google/gemini-2.5-flash-image`), A/B с `gemini-3-pro-image`.
+- [x] Устойчивый JSON-парсинг (ретраи + json-repair) — LLM изредка отдаёт битый JSON.
+- [x] **Сквозной прогон end-to-end вживую:** фото «01-do» → Gap 75% → капсула (9 вещей/24 комбинации/6 образов) → сгенерированный образ, визуально точно по диагностике (пеплум для прямоугольника, палитра графит/молочный/рубин).
+- [ ] Ветка `feat/look-generator` → PR → `/security-review` по диффу.
+- [ ] Квиз (HTML Identity Scan) → Gap-профиль → пайплайн → экран результата (фронт).
 
 ### Фаза 3. Eval, метрики, отзывы [ ] (Неделя 3: 9–15 июля)
 - [ ] Eval-харнесс: accuracy Vision vs экспертная разметка, табу-цвета, A/B генераторов → отчёт.
