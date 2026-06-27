@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 import json
+from urllib.parse import quote_plus
 
 from . import config, provider
 from .prompts import load_knowledge, load_reference, load_system_prompt
@@ -85,10 +86,24 @@ def generate_shopping_list(diagnosis: dict, capsule: dict, price_segment: str = 
         "figure_type": diagnosis.get("figure_type"),
         "mode": mode,
     }
-    return provider.chat_json(
+    result = provider.chat_json(
         config.model_for("text", text_mode), system,
         json.dumps(payload, ensure_ascii=False), max_tokens=3072,
     )
+    # обогащаем deep-link в поиск маркетплейсов (без сбора данных — просто search-URL)
+    for item in result.get("shopping_items") or []:
+        item["links"] = marketplace_links(item.get("search_query", ""))
+    return result
+
+
+def marketplace_links(query: str) -> dict:
+    """Готовые ссылки на поиск по запросу (без скрапинга/API — только search-URL)."""
+    q = quote_plus(query or "")
+    return {
+        "wildberries": f"https://www.wildberries.ru/catalog/0/search.aspx?search={q}",
+        "lamoda": f"https://www.lamoda.ru/catalogsearch/result/?q={q}",
+        "ozon": f"https://www.ozon.ru/search/?text={q}",
+    }
 
 
 def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | None = None) -> str:

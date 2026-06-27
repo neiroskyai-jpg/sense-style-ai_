@@ -75,6 +75,7 @@ def main() -> None:
     for it in (shop.get("shopping_items") or [])[:3]:
         brands = ", ".join(b.get("brand", "") for b in (it.get("brands") or []))
         print(f"   • {it.get('item_name')}: «{it.get('search_query')}» → {brands}")
+        print(f"     WB: {(it.get('links') or {}).get('wildberries')}")
 
 
 if __name__ == "__main__":
