@@ -60,7 +60,7 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <select name=figure><option>rectangle</option><option>hourglass</option><option>pear</option><option>inverted_triangle</option><option>apple</option></select>
  <label>Сегмент</label><select name=price><option>middle</option><option>low</option><option>high</option><option>luxury</option></select>
  <label>Табу — что точно не наденешь (через запятую)</label><input name=taboos value="">
- <label style="font-weight:normal;font-size:13px;margin-top:16px;display:flex;gap:8px"><input type=checkbox name=consent_processing required style="width:auto"> Согласна на обработку персональных данных согласно <a href="#privacy">Политике</a>.</label>
+ <label style="font-weight:normal;font-size:13px;margin-top:16px;display:flex;gap:8px"><input type=checkbox name=consent_processing required style="width:auto"> Согласна на обработку персональных данных согласно <a href="https://sense-style-site.vercel.app/privacy-policy.html" target="_blank" rel="noopener">Политике</a>.</label>
  <label style="font-weight:normal;font-size:13px;display:flex;gap:8px"><input type=checkbox name=consent_transfer required style="width:auto"> Согласна на трансграничную передачу фото в AI-сервисы (Google, США) для генерации образов.</label>
  <button>Построить образы</button>
  <p class=hint>Обработка занимает ~1–2 минуты: анализ фото, диагностика, генерация образов.</p>
