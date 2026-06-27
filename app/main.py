@@ -16,7 +16,8 @@ from werkzeug.utils import secure_filename
 
 from core.pipeline import (analyze_photos, diagnose, generate_capsule,
                            render_look_on_client)
-from core.tracking import count_today, progress, record_call, record_session
+from core.tracking import (count_today, progress, record_call, record_consent,
+                           record_session)
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
 ALLOWED = {"image/jpeg", "image/png", "image/webp"}
@@ -159,6 +160,8 @@ def analyze():
         return render_template_string(FORM, error="Демо-лимит на сегодня исчерпан — загляни завтра."), 429
     if not _consent_ok(request.form):
         return render_template_string(FORM, error="Нужно согласие на обработку данных и трансграничную передачу."), 400
+    record_consent((request.form.get("client") or "").strip() or "anonymous",
+                   request.remote_addr or "", True, True)
     try:
         photo_path = _validate_and_save(request.files.get("photo"))
     except ValueError as e:
@@ -193,6 +196,8 @@ def api_analyze():
         return jsonify({"error": "daily_limit"}), 429
     if not _consent_ok(request.form):
         return jsonify({"error": "consent_required"}), 400
+    record_consent((request.form.get("client") or "").strip() or "anonymous",
+                   request.remote_addr or "", True, True)
     try:
         photo_path = _validate_and_save(request.files.get("photo"))
     except ValueError as e:

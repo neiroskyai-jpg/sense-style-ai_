@@ -11,6 +11,16 @@ def test_call_quota_counter(tmp_path):
     assert count_today(db_path=db) == 2
 
 
+def test_record_consent(tmp_path):
+    from core.tracking import _conn, record_consent
+    db = tmp_path / "t.db"
+    record_consent("anna@example.com", "1.2.3.4", True, True,
+                   ts="2026-06-27T10:00:00", db_path=db)
+    with _conn(db) as c:
+        row = c.execute("SELECT client, ip, consent_processing, consent_transfer FROM consents").fetchone()
+    assert row == ("anna@example.com", "1.2.3.4", 1, 1)
+
+
 def test_progress_tracks_gap_over_time(tmp_path):
     db = tmp_path / "t.db"
     record_session("anna@example.com", {"gap_percentage": 75, "style_formula": "A"},
