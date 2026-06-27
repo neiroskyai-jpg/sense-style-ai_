@@ -19,7 +19,7 @@ from PIL import Image, UnidentifiedImageError
 from werkzeug.utils import secure_filename
 
 from core.pipeline import (analyze_photos, diagnose, generate_capsule,
-                           render_look_on_client)
+                           generate_directions, render_look_on_client)
 from core.tracking import (count_today, progress, record_call, record_consent,
                            record_session)
 
@@ -333,38 +333,80 @@ def analyze():
 _JOBS: dict = {}  # job_id -> {status: processing|done|error, result|error}
 
 
+_FIELD_RU = {"natural": "естественность", "romance": "женственность",
+             "drama": "выразительность", "classic": "структура"}
+_CONTRAST_RU = {"low": "мягкий", "medium": "средний", "high": "высокий"}
+
+
+def _explainability(diag: dict, quiz: dict) -> dict:
+    """Блоки «что AI увидел по фото» и «почему AI так решил» — из полей диагностики,
+    без дополнительных LLM-вызовов. Объяснимость (Explainable AI) для жюри."""
+    dist = diag.get("semantic_field_distribution") or {}
+    top = [k for k, _ in sorted(dist.items(), key=lambda kv: kv[1], reverse=True)
+           if dist.get(k, 0) > 0][:2]
+    tonal = diag.get("tonal_characteristics") or {}
+    vf = diag.get("visual_formula") or {}
+    want = quiz.get("want_traits_top3") or []
+    now = quiz.get("now_traits") or []
+
+    signals = []
+    if want:
+        signals.append("Ты хочешь, чтобы тебя считывали как " + ", ".join(want[:3]) + ".")
+    if top:
+        signals.append("В ответах сильнее всего звучат " + " и ".join(
+            _FIELD_RU.get(t, t) for t in top) + ".")
+    if now:
+        signals.append("Сейчас считывают как " + ", ".join(now[:3])
+                       + " — это и есть разрыв, который закрываем.")
+
+    contrast = _CONTRAST_RU.get(tonal.get("contrast") or "", tonal.get("contrast") or "")
+    sil = (vf.get("silhouettes") or [None])[0]
+    risk = ("Текущий образ может считываться спокойнее и проще, чем желаемый"
+            if now and want else None)
+    photo = {
+        "contrast": contrast,
+        "silhouette": sil,
+        "colortype": diag.get("colortype"),
+        "figure": diag.get("figure_type"),
+        "risk": risk,
+    }
+    return {
+        "signals": signals,
+        "photo": photo,
+        "dna": diag.get("dna_explanation", ""),
+        "stop_list": (vf.get("stop_list") or [])[:4],
+    }
+
+
 def _run_fast(photo_path: Path, quiz: dict):
-    """Быстрый путь для квиза: vision → диагностика → образы прямо из visual_formula
-    (без тяжёлого шага капсулы), рендер параллельно. Возвращает (diag, looks)."""
+    """Быстрый путь для квиза: vision → диагностика → 2 именованных направления →
+    рендер параллельно. Возвращает (diag, directions, explain).
+
+    directions[i] = {name, fits_if, items[], img}. explain — блоки объяснимости.
+    """
     vision = analyze_photos([str(photo_path)], height_cm=quiz["physical"]["height"], mode="dev")
     if quiz.get("colortype_known"):
         vision["colortype"] = quiz["colortype_known"]
     diag = diagnose(quiz, vision, mode="dev")
-    vf = diag.get("visual_formula") or {}
-    sils = vf.get("silhouettes") or []
-    pal = ", ".join([p.get("name", "") for p in (vf.get("palette") or [])
-                     if p.get("role") in ("base", "accent")][:4]) or "нейтральная палитра"
-    figure = diag.get("figure_type") or (vision.get("figure") or {}).get("figure_type") or ""
-    formula = diag.get("style_formula") or ""
-    look_prompts = [
-        f"Деловой образ: {sils[0] if sils else 'структурный костюм'}. Палитра: {pal}. "
-        f"Стиль: {formula}. Силуэт под фигуру {figure}. Офисный фон.",
-        f"Smart-casual образ: {sils[1] if len(sils) > 1 else 'мягкий комплект'}. Палитра: {pal}. "
-        f"Стиль: {formula}. Силуэт под фигуру {figure}. Городской фон.",
-    ][:N_RENDER]
+    directions = generate_directions(diag, quiz, mode="dev")[:N_RENDER]
 
-    def _render(p):
-        return {"img": render_look_on_client(str(photo_path), p), "desc": ""}
+    def _render(d):
+        return {
+            "name": d.get("name", ""),
+            "fits_if": d.get("fits_if", ""),
+            "items": d.get("items") or [],
+            "img": render_look_on_client(str(photo_path), d.get("image_generation_prompt", "")),
+        }
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(look_prompts))) as ex:
-        looks = list(ex.map(_render, look_prompts))
-    return diag, looks
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(directions))) as ex:
+        rendered = list(ex.map(_render, directions))
+    return diag, rendered, _explainability(diag, quiz)
 
 
 def _job_worker(job_id: str, photo_path: Path, quiz: dict, client: str) -> None:
     """Фоновая генерация — чтобы HTTP-запрос не висел (таймауты/блокировка)."""
     try:
-        diag, looks = _run_fast(photo_path, quiz)
+        diag, directions, explain = _run_fast(photo_path, quiz)
         if client:
             try:
                 record_session(client, diag)
@@ -375,7 +417,10 @@ def _job_worker(job_id: str, photo_path: Path, quiz: dict, client: str) -> None:
             "style_formula": diag.get("style_formula"),
             "colortype": diag.get("colortype"),
             "figure_type": diag.get("figure_type"),
-            "looks": looks,
+            "directions": directions,
+            "explain": explain,
+            # совместимость со старым фронтом: образы из направлений
+            "looks": [{"img": d["img"], "desc": d.get("name", "")} for d in directions],
         }}
     except Exception as e:  # noqa: BLE001
         _JOBS[job_id] = {"status": "error", "error": str(e)}

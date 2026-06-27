@@ -38,8 +38,8 @@ MODELS = {
         "alt": "google/gemini-3-pro-image",           # для A/B качества
         # identity-preserving рендер (фото клиентки → она в образе).
         # GPT image отпал: OpenAI отказывается воссоздавать реальные лица (refusal).
-        # Скорость: flash ~в 2-3x быстрее pro. 3-pro точнее по лицу, но медленный (~40-50с/образ).
-        "dressing": "google/gemini-3.1-flash-image",   # быстрый; для макс. качества лица — gemini-3-pro-image
+        # 3-pro точнее держит лицо (~40-50с/образ). flash быстрее, но лицо «уезжает» — поэтому вернули pro.
+        "dressing": "google/gemini-3-pro-image",        # точное лицо (identity-preserving)
         "dressing_hq": "google/gemini-3-pro-image",
     },
 }

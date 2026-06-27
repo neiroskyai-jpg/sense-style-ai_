@@ -1141,7 +1141,7 @@ body {
   background: #FFFFFF;
   border: 1px solid rgba(26, 26, 26, 0.10);
   border-radius: 18px;
-  padding: 22px;
+  padding: 14px;
   box-shadow: 0 6px 20px rgba(31, 22, 20, 0.05);
 }
 .your-photo-label {
@@ -1151,11 +1151,11 @@ body {
 }
 .your-photo-grid {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 .your-photo-cell {
   position: relative;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
   border-radius: 14px;
   overflow: hidden;
   background: rgba(245, 239, 227, 0.5);
@@ -1163,27 +1163,7 @@ body {
 .your-photo-cell img {
   width: 100%; height: 100%; object-fit: cover;
 }
-.your-photo-cell.is-ai::after {
-  content: 'AI-визуализация — Карта стиля';
-  position: absolute;
-  bottom: 10px; left: 10px; right: 10px;
-  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: #FFFFFF; font-weight: 500;
-  background: rgba(26, 26, 26, 0.66);
-  padding: 6px 10px;
-  border-radius: 999px;
-  text-align: center;
-  backdrop-filter: blur(4px);
-}
-.your-photo-cell.is-ai::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(122, 28, 46, 0.10) 0%, rgba(26, 26, 26, 0.18) 100%);
-  z-index: 1;
-}
-.your-photo-cell.is-ai img {
-  filter: saturate(0.55) brightness(0.92);
-}
+/* AI-образ показываем чисто: без оверлеев, надписей и затемнения — фото видно полностью */
 </style>
 </head>
 <body>
@@ -1375,6 +1355,36 @@ body {
       </div>
     </div>
   </div>
+
+  <!-- AI-результат по фото: 2 направления + объяснимость (заполняется из /api/analyze) -->
+  <div id="r-ai-extra" style="display:none"></div>
+  <style>
+    #r-ai-extra{margin:8px 0 4px}
+    .ai-block-title{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#9a8f80;margin:26px 0 12px;font-weight:600}
+    .ai-why{background:#fbf8f3;border:1px solid #ece4d7;border-radius:14px;padding:18px 20px}
+    .ai-why .ai-signal{display:flex;gap:10px;margin:8px 0;font-size:15px;line-height:1.5;color:#3a342c}
+    .ai-why .ai-signal b{color:#8a5a3c}
+    .ai-seen{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .ai-chip{background:#fff;border:1px solid #e6ddcd;border-radius:999px;padding:6px 13px;font-size:13px;color:#5a5246}
+    .ai-chip span{color:#9a8f80}
+    .ai-risk{margin-top:12px;font-size:14px;color:#7a4c3c;font-style:italic}
+    .ai-dna{margin-top:14px;font-size:15px;line-height:1.6;color:#3a342c}
+    .ai-dirs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media(max-width:560px){.ai-dirs{grid-template-columns:1fr}}
+    .ai-dir{background:#fff;border:1px solid #ece4d7;border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+    .ai-dir img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#f0ece4}
+    .ai-dir-body{padding:14px 16px 18px}
+    .ai-dir-eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#b08968;font-weight:600}
+    .ai-dir-name{font-size:19px;font-weight:600;color:#2a2620;margin:3px 0 6px}
+    .ai-dir-fits{font-size:14px;line-height:1.5;color:#5a5246;margin-bottom:10px}
+    .ai-dir-items{list-style:none;padding:0;margin:0}
+    .ai-dir-items li{font-size:13.5px;color:#4a443c;padding:3px 0 3px 16px;position:relative}
+    .ai-dir-items li:before{content:'·';position:absolute;left:4px;color:#b08968}
+    .ai-stop{background:#fbf3f1;border:1px solid #ecd9d4;border-radius:14px;padding:16px 20px}
+    .ai-stop li{font-size:14px;color:#7a4c3c;padding:4px 0 4px 18px;position:relative;list-style:none}
+    .ai-stop li:before{content:'✕';position:absolute;left:0;font-size:11px;color:#c07a6a}
+    .ai-stop ul{padding:0;margin:0}
+  </style>
 
   <div class="locked-section">
     <div class="locked-section-title">Что ещё ждёт тебя в «Карте стиля»</div>
@@ -2101,11 +2111,15 @@ function buildResult() {
   // Рендерим 2 фото в формуле — либо AI-преображение клиентки (если загрузила фото), либо референс-фото
   const refsWrap = document.getElementById('r-ref-wrap');
   refsWrap.innerHTML = '';
-  if (userPhotoDataUrl) {
+  const hasDirs = !!(aiResult && aiResult.directions && aiResult.directions.length);
+  const hasLooks = !!(aiLooks && aiLooks.length);
+  // оригинал показываем только если есть настоящий data-URL фото (после перезагрузки его нет — он не хранится)
+  const realPhoto = typeof userPhotoDataUrl === 'string' && userPhotoDataUrl.startsWith('data:');
+  if ((hasLooks || realPhoto) && !hasDirs) {
     const block = document.createElement('div');
     block.className = 'your-photo-block';
     let cells;
-    if (aiLooks && aiLooks.length) {
+    if (hasLooks) {
       // реальные сгенерированные образы клиентки (из /api/analyze)
       cells = aiLooks.slice(0, 2).map(lk =>
         `<div class="your-photo-cell is-ai"><img src="${lk.img}" alt="Ты в образе по Формуле стиля"></div>`
@@ -2120,7 +2134,7 @@ function buildResult() {
       `<div class="your-photo-label">Твоя формула «${profileName}» — на тебе</div>
        <div class="your-photo-grid">${cells}</div>`;
     refsWrap.appendChild(block);
-  } else {
+  } else if (!userPhotoDataUrl && !hasLooks) {
     (profile.references || []).forEach(ref => {
       const wrap = document.createElement('div');
       wrap.className = 'ref-photo-wrap';
@@ -2162,6 +2176,72 @@ function buildResult() {
     low: `Это не проблема вкуса. Это знак, что осталась тонкая корректировка нюансов. «Карта стиля» покажет, какие точные акценты, цвета и фасоны окончательно совпадут с твоей формулой «${profileName}».`,
   };
   document.getElementById('r-cta-desc').textContent = ctaDescByLevel[level];
+
+  renderAIResult();
+
+  // Сохраняем готовый результат — перезагрузка вернёт сюда, а не на старт квиза
+  persistJob({ status: 'done', answers, result: aiResult || null });
+}
+
+// AI-результат по фото: объяснимость + 2 направления (из /api/analyze)
+function renderAIResult() {
+  const box = document.getElementById('r-ai-extra');
+  if (!box) return;
+  if (!aiResult || !(aiResult.directions && aiResult.directions.length)) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+  const esc = s => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const ex = aiResult.explain || {};
+  const photo = ex.photo || {};
+  let html = '';
+
+  // ── Почему ИИ так решил (объяснимость) ──
+  if ((ex.signals && ex.signals.length) || ex.dna) {
+    html += `<div class="ai-block-title">Почему ИИ выбрал это</div><div class="ai-why">`;
+    (ex.signals || []).forEach(s => {
+      html += `<div class="ai-signal"><b>→</b><span>${esc(s)}</span></div>`;
+    });
+    if (ex.dna) html += `<div class="ai-dna">${esc(ex.dna)}</div>`;
+    html += `</div>`;
+  }
+
+  // ── Что ИИ увидел по фото ──
+  const chips = [];
+  if (photo.contrast)  chips.push(`<span class="ai-chip"><span>контраст:</span> ${esc(photo.contrast)}</span>`);
+  if (photo.colortype) chips.push(`<span class="ai-chip"><span>цветотип:</span> ${esc(photo.colortype)}</span>`);
+  if (photo.figure)    chips.push(`<span class="ai-chip"><span>фигура:</span> ${esc(photo.figure)}</span>`);
+  if (photo.silhouette)chips.push(`<span class="ai-chip"><span>силуэт:</span> ${esc(photo.silhouette)}</span>`);
+  if (chips.length) {
+    html += `<div class="ai-block-title">Что ИИ увидел по фото</div><div class="ai-seen">${chips.join('')}</div>`;
+    if (photo.risk) html += `<div class="ai-risk">${esc(photo.risk)}.</div>`;
+  }
+
+  // ── 2 направления образа ──
+  html += `<div class="ai-block-title">Два направления твоего образа</div><div class="ai-dirs">`;
+  aiResult.directions.forEach((d, i) => {
+    const items = (d.items || []).map(it => `<li>${esc(it)}</li>`).join('');
+    const img = d.img ? `<img src="${d.img}" alt="${esc(d.name)}">` : '';
+    html += `<div class="ai-dir">${img}<div class="ai-dir-body">
+      <div class="ai-dir-eyebrow">Направление ${i + 1}</div>
+      <div class="ai-dir-name">${esc(d.name)}</div>
+      <div class="ai-dir-fits">${esc(d.fits_if)}</div>
+      <ul class="ai-dir-items">${items}</ul>
+    </div></div>`;
+  });
+  html += `</div>`;
+
+  // ── Стоп-лист ──
+  if (ex.stop_list && ex.stop_list.length) {
+    const stops = ex.stop_list.map(s => `<li>${esc(s)}</li>`).join('');
+    html += `<div class="ai-block-title">Что тебе не стоит покупать</div>
+      <div class="ai-stop"><ul>${stops}</ul></div>`;
+  }
+
+  box.innerHTML = html;
+  box.style.display = 'block';
 }
 
 // ============================================================
@@ -2199,15 +2279,37 @@ function handleQuizUpload(file) {
 
 // Реальная генерация: фото -> /api/analyze -> образы клиентки в её Формуле
 let aiLooks = null;
+let aiResult = null;   // полный ответ сервера: directions[] + explain{} + looks[]
+
+// ── Состояние генерации в sessionStorage: перезагрузка не сбрасывает на старт квиза ──
+const SS_JOB_KEY = 'ssQuizJob';
+function persistJob(obj) {
+  try { sessionStorage.setItem(SS_JOB_KEY, JSON.stringify(obj)); return; }
+  catch (e) { /* картинки не влезли — сохраним без них, восстановим по job_id повторным опросом */ }
+  try {
+    const slim = Object.assign({}, obj);
+    if (slim.result) { slim.result = Object.assign({}, slim.result); delete slim.result.looks; }
+    sessionStorage.setItem(SS_JOB_KEY, JSON.stringify(slim));
+  } catch (e2) { /* sessionStorage недоступен — просто не сохраняем */ }
+}
+function readJob() {
+  try { return JSON.parse(sessionStorage.getItem(SS_JOB_KEY) || 'null'); } catch (e) { return null; }
+}
+function clearJob() { try { sessionStorage.removeItem(SS_JOB_KEY); } catch (e) {} }
+
 function generateLooks(file) {
   aiLooks = null;
+  aiResult = null;
   const fd = new FormData();
   fd.append('photo', file);
   fd.append('consent_processing', 'on');
   fd.append('consent_transfer', 'on');
   fetch('/api/analyze', { method: 'POST', body: fd })
     .then(r => r.json())
-    .then(d => { if (d && d.job_id) pollResult(d.job_id, 0); else buildResult(); })
+    .then(d => {
+      if (d && d.job_id) { persistJob({ status: 'pending', jobId: d.job_id, answers }); pollResult(d.job_id, 0); }
+      else buildResult();
+    })
     .catch(() => buildResult());
 }
 // Асинхронный опрос результата (генерация идёт в фоне на сервере)
@@ -2216,7 +2318,7 @@ function pollResult(jobId, tries) {
   fetch('/api/result/' + jobId)
     .then(r => r.json())
     .then(d => {
-      if (d.status === 'done') { if (d.result && d.result.looks) aiLooks = d.result.looks; buildResult(); }
+      if (d.status === 'done') { if (d.result) { aiResult = d.result; aiLooks = d.result.looks; } buildResult(); }
       else if (d.status === 'error' || d.status === 'unknown') { buildResult(); }
       else { setTimeout(() => pollResult(jobId, tries + 1), 5000); }
     })
@@ -2227,6 +2329,23 @@ function skipUpload() {
   userPhotoDataUrl = null;
   buildResult();
 }
+
+// Восстановление после перезагрузки: если генерация шла или результат уже готов —
+// возвращаемся на нужный экран, а не на старт квиза
+document.addEventListener('DOMContentLoaded', function() {
+  const saved = readJob();
+  if (!saved || !saved.answers) return;
+  answers = saved.answers;
+  if (saved.status === 'pending' && saved.jobId) {
+    // генерация ещё шла — снова ждём её, а не сбрасываем всё
+    show('s-processing');
+    pollResult(saved.jobId, 0);
+  } else if (saved.status === 'done') {
+    aiResult = saved.result || null;
+    aiLooks = (aiResult && aiResult.looks) ? aiResult.looks : null;
+    buildResult();   // показывает экран результата
+  }
+});
 
 // Drag & drop + click на dropzone — навешиваем после загрузки DOM
 document.addEventListener('DOMContentLoaded', function() {
@@ -2255,9 +2374,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function restart() {
+  clearJob();
   answers = {}; current = 0;
   userPhotoDataUrl = null;
   aiLooks = null;
+  aiResult = null;
   const quizFileInput = document.getElementById('quiz-file-input');
   if (quizFileInput) quizFileInput.value = '';
   document.getElementById('r-now-words').innerHTML = '';

@@ -42,6 +42,59 @@ def _vision_to_diagnostic_input(v: dict) -> dict:
     }
 
 
+_DIRECTIONS_SYSTEM = """Ты — AI-стилист Sense Style, работаешь по психологии моды (Self-Discrepancy \
+Theory, enclothed cognition). На вход — Формула стиля клиентки (результат диагностики). \
+Верни РОВНО два направления образа, оба служат её Формуле и желаемому впечатлению \
+(want_traits), но различаются по интенсивности: первое — мягче и безопаснее, второе — \
+собраннее и сильнее по характеру. Это не разные стили, а два прочтения одной Формулы.
+
+Тон: тёплый, на «ты», без восклицательных знаков, без эмодзи, без пустых усилителей \
+(«потрясающе», «вау», «магия»). Объясняй через психологию впечатления, не через тренд. \
+Палитра — из visual_formula, без табу-цветов из stop_list. Силуэты — под figure_type.
+
+Верни ТОЛЬКО валидный JSON:
+{
+  "directions": [
+    {
+      "name": "<короткое название направления на русском, 1-3 слова>",
+      "fits_if": "<«подходит, если хочется …» — 1 предложение через впечатление>",
+      "items": ["<вещь1>", "<вещь2>", "<вещь3>", "<вещь4>", "<вещь5>"],
+      "image_generation_prompt": "<английский промпт ОДЕЖДЫ и СЦЕНЫ образа: \
+конкретные вещи, палитра, силуэт под фигуру, фотостиль/свет под характер направления. \
+БЕЗ описания лица/личности — оно берётся с фото отдельно. ~60 слов>"
+    },
+    { … второе направление … }
+  ]
+}"""
+
+
+def generate_directions(diagnosis: dict, quiz: dict | None = None, mode: str | None = None) -> list[dict]:
+    """2 именованных направления образа из Формулы стиля (для экрана результата квиза).
+
+    Один дешёвый текстовый вызов, grounded в диагностике и tone of voice. Каждое
+    направление: name, fits_if, items[], image_generation_prompt (под рендер на клиентке).
+    """
+    vf = diagnosis.get("visual_formula") or {}
+    payload = {
+        "style_formula": diagnosis.get("style_formula"),
+        "base_style": diagnosis.get("base_style"),
+        "primary_substyle": diagnosis.get("primary_substyle"),
+        "secondary_substyle": diagnosis.get("secondary_substyle"),
+        "accent_note": diagnosis.get("accent_note"),
+        "figure_type": diagnosis.get("figure_type"),
+        "colortype": diagnosis.get("colortype"),
+        "palette": vf.get("palette"),
+        "silhouettes": vf.get("silhouettes"),
+        "stop_list": vf.get("stop_list"),
+        "want_traits_top3": (quiz or {}).get("want_traits_top3"),
+    }
+    result = provider.chat_json(
+        config.model_for("text", mode), _DIRECTIONS_SYSTEM,
+        json.dumps(payload, ensure_ascii=False), max_tokens=2048,
+    )
+    return (result.get("directions") or [])[:2]
+
+
 def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None = None) -> dict:
     """Шаг 3. Капсула: Формула стиля + запрос → капсула вещей + образы с промптами для генерации.
 
@@ -133,9 +186,12 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
     look_prompt — это look-generator.looks[].image_generation_prompt. Возвращает data-URL.
     """
     instruction = (
-        "Keep the EXACT same face, hair and body proportions of the woman in the reference photo. "
-        "Change ONLY her clothing. Outfit: " + look_prompt
-        + " Full-body head to toe, photorealistic, vertical 3:4 ratio."
+        "Keep the EXACT same face, hair and body proportions of the woman in the reference photo — "
+        "it must be clearly the same recognizable person. "
+        "Change her clothing AND place her in a NEW location that fits the outfit's setting — "
+        "do not reuse the background of the reference photo. "
+        "Outfit and scene: " + look_prompt
+        + " Full-body head to toe, photorealistic, natural light, vertical 3:4 ratio."
     )
     model = config.MODELS["image"]["dressing"]
     return provider.generate_image(instruction, model=model, ref_images=[ref_image or client_photo])[0]
