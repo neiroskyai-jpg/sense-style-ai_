@@ -1,5 +1,14 @@
 """Тесты трекинга имиджа (SQLite, без обращения к API)."""
-from core.tracking import get_history, progress, record_session
+from core.tracking import (count_today, get_history, progress, record_call,
+                           record_session)
+
+
+def test_call_quota_counter(tmp_path):
+    db = tmp_path / "t.db"
+    assert count_today(db_path=db) == 0
+    record_call(db_path=db)
+    record_call(db_path=db)
+    assert count_today(db_path=db) == 2
 
 
 def test_progress_tracks_gap_over_time(tmp_path):

@@ -25,7 +25,21 @@ def _conn(db_path: Path) -> sqlite3.Connection:
             figure_type TEXT
         )"""
     )
+    c.execute("CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL)")
     return c
+
+
+def record_call(db_path: Path = DB_PATH) -> None:
+    """Зафиксировать платный вызов (для дневной квоты публичного демо)."""
+    with _conn(db_path) as c:
+        c.execute("INSERT INTO calls (ts) VALUES (?)", (datetime.now().isoformat(),))
+
+
+def count_today(db_path: Path = DB_PATH) -> int:
+    """Сколько платных вызовов было сегодня (защита от слива ключа на публичном демо)."""
+    today = datetime.now().date().isoformat()
+    with _conn(db_path) as c:
+        return c.execute("SELECT COUNT(*) FROM calls WHERE ts LIKE ?", (today + "%",)).fetchone()[0]
 
 
 def record_session(client: str, diagnosis: dict, ts: str | None = None,

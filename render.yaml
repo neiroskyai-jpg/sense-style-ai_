@@ -1,0 +1,17 @@
+# Render Blueprint — деплой веб-демо одним «New → Blueprint».
+# Ключ OPENROUTER_API_KEY задаётся в дашборде (sync:false — не хранится в репо).
+services:
+  - type: web
+    name: sense-style-mvp
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app.main:app --timeout 300 --workers 1 --bind 0.0.0.0:$PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: SENSE_MODE
+        value: dev
+      - key: DEMO_DAILY_LIMIT
+        value: "40"
