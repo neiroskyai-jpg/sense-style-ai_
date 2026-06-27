@@ -58,6 +58,22 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label>Как хочешь, чтобы считывали — топ-3</label><input name=want_traits value="властная, элегантная, статусная">
  <label>Тип фигуры (самооценка)</label>
  <select name=figure><option>rectangle</option><option>hourglass</option><option>pear</option><option>inverted_triangle</option><option>apple</option></select>
+ <label>Цветотип (если знаешь — выбери; иначе определит ИИ по фото)</label>
+ <select name=colortype_known>
+  <option value="">Определить по фото (ИИ)</option>
+  <option value="spring_light">Весна светлая</option>
+  <option value="spring_natural">Весна натуральная</option>
+  <option value="spring_contrast">Весна контрастная</option>
+  <option value="summer_light">Лето светлое</option>
+  <option value="summer_natural">Лето натуральное</option>
+  <option value="summer_contrast">Лето контрастное</option>
+  <option value="autumn_light">Осень мягкая</option>
+  <option value="autumn_natural">Осень натуральная</option>
+  <option value="autumn_contrast">Осень контрастная</option>
+  <option value="winter_light">Зима светлая</option>
+  <option value="winter_natural">Зима натуральная</option>
+  <option value="winter_contrast">Зима контрастная</option>
+ </select>
  <label>Сегмент</label><select name=price><option>middle</option><option>low</option><option>high</option><option>luxury</option></select>
  <label>Табу — что точно не наденешь (через запятую)</label><input name=taboos value="">
  <label style="font-weight:normal;font-size:13px;margin-top:16px;display:flex;gap:8px"><input type=checkbox name=consent_processing required style="width:auto"> Согласна на обработку персональных данных согласно <a href="https://sense-style-site.vercel.app/privacy-policy.html" target="_blank" rel="noopener">Политике</a>.</label>
@@ -127,12 +143,15 @@ def _build_quiz(form) -> dict:
                      "figure_type_self_assessed": form.get("figure")},
         "price_segment": form.get("price", "middle"),
         "taboos": _split(form.get("taboos")),
+        "colortype_known": form.get("colortype_known") or None,
     }
 
 
 def _run_analysis(photo_path: Path, quiz: dict) -> tuple[dict, dict, list]:
     """Сквозной анализ: vision → диагностика → капсула → рендер N образов на клиентке."""
     vision = analyze_photos([str(photo_path)], height_cm=quiz["physical"]["height"], mode="dev")
+    if quiz.get("colortype_known"):  # клиентка знает свой цветотип → перебивает ИИ (шаг колориста)
+        vision["colortype"] = quiz["colortype_known"]
     diag = diagnose(quiz, vision, mode="dev")
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
                "scenarios": ["работа", "повседневное", "выход"], "n_looks": 6,
