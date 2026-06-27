@@ -106,6 +106,25 @@ def marketplace_links(query: str) -> dict:
     }
 
 
+def evaluate_garment(garment_photo: str, diagnosis: dict, mode: str | None = None) -> dict:
+    """«Брать / не брать»: фото вещи + Формула стиля → вердикт по методологии.
+
+    Verdict: take | replace | skip + объяснение и чем заменить. Для кабинета/гардероба.
+    """
+    system = load_system_prompt("garment-check")
+    content = [
+        provider.text_block("Фото вещи для оценки:"),
+        provider.image_block(garment_photo),
+        provider.text_block("Формула стиля клиентки:\n" + json.dumps(_garment_input(diagnosis), ensure_ascii=False)),
+    ]
+    return provider.chat_json(config.model_for("vision", mode), system, content, max_tokens=700)
+
+
+def _garment_input(d: dict) -> dict:
+    keys = ["style_formula", "base_style", "figure_type", "colortype", "visual_formula"]
+    return {k: d.get(k) for k in keys if d.get(k) is not None}
+
+
 def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | None = None) -> str:
     """Identity-preserving рендер: фото клиентки + промпт образа → она в этом образе.
 
