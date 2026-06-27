@@ -15,6 +15,7 @@ from werkzeug.utils import secure_filename
 
 from core.pipeline import (analyze_photos, diagnose, generate_capsule,
                            render_look_on_client)
+from core.tracking import progress, record_session
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
 ALLOWED = {"image/jpeg", "image/png", "image/webp"}
@@ -37,6 +38,7 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <p class=hint>Загрузи фото в полный рост и ответь на несколько вопросов — определим Формулу стиля и покажем тебя в новых образах.</p>
 {% if error %}<p class=err>{{ error }}</p>{% endif %}
 <form method=post action="/analyze" enctype="multipart/form-data">
+ <label>Имя или email (чтобы отслеживать динамику)</label><input name=client value="" placeholder="anna@example.com">
  <label>Фото (портрет/в полный рост)</label><input type=file name=photo accept="image/*" required>
  <label>Рост, см</label><input type=number name=height value=168>
  <label>Возраст</label><input type=number name=age value=38>
@@ -64,6 +66,9 @@ RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <h1>Твоя Формула стиля</h1>
 <p class=formula><b>{{ formula }}</b></p>
 <p>Identity Gap: <span class=gap>{{ gap }}%</span> — разрыв между тем, как тебя считывают сейчас, и тем, как ты хочешь.</p>
+{% if prog and prog.sessions > 1 and prog.delta is not none %}
+<p class=meta>Динамика имиджа: было {{ prog.first_gap }}% → стало {{ prog.last_gap }}% ({{ '−' ~ prog.delta if prog.delta >= 0 else '+' ~ (-prog.delta) }} п.п. за {{ prog.sessions }} сессии).</p>
+{% endif %}
 <p>{{ dna }}</p>
 <p class=meta>Цветотип: {{ colortype }} · Фигура: {{ figure }} · В капсуле {{ items }} вещей.</p>
 <h2>Ты в новых образах</h2>
@@ -126,11 +131,18 @@ def analyze():
     except Exception as e:  # noqa: BLE001 — показать понятную ошибку, не падать страницей 500
         return render_template_string(FORM, error=f"Не удалось обработать: {e}"), 500
 
+    client = (request.form.get("client") or "").strip()
+    prog = None
+    if client:  # трекинг динамики Identity Gap во времени
+        record_session(client, diag)
+        prog = progress(client)
+
     cap = capsule.get("capsule") or {}
     return render_template_string(
         RESULT, formula=diag.get("style_formula"), gap=diag.get("gap_percentage"),
         dna=diag.get("dna_explanation", ""), colortype=diag.get("colortype"),
         figure=diag.get("figure_type"), items=len(cap.get("items") or []), looks=looks,
+        prog=prog,
     )
 
 
