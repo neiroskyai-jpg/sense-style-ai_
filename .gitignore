@@ -38,7 +38,11 @@ architecture/cases/
 !web/**/*.webp
 !web/**/*.svg
 !web/**/*.gif
-web/photos/*case*/
+# кейсы клиенток (с согласием) — ФОТО показываем, но документы (PDF/офис) НЕ коммитим
 web/**/*.pdf
+web/**/*.pptx
+web/**/*.docx
+web/**/*.doc
+web/**/*.xlsx
 web/index-collage-backup.html
 web/index-dwp-backup.html
