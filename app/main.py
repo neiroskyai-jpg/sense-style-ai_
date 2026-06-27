@@ -6,6 +6,7 @@
 ВНИМАНИЕ: каждый сабмит реально вызывает OpenRouter (платно). Рендерим 2 образа.
 """
 from __future__ import annotations
+import concurrent.futures
 import io
 import os
 import threading
@@ -270,13 +271,18 @@ def _run_analysis(photo_path: Path, quiz: dict) -> tuple[dict, dict, list]:
         vision["colortype"] = quiz["colortype_known"]
     diag = diagnose(quiz, vision, mode="dev")
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
-               "scenarios": ["работа", "повседневное", "выход"], "n_looks": 6,
+               "scenarios": ["работа", "повседневное", "выход"], "n_looks": 3,
                "price_segment": quiz["price_segment"], "taboos": quiz["taboos"]}
     capsule = generate_capsule(diag, gen_req, mode="dev")
-    looks = []
-    for lk in (capsule.get("looks") or [])[:N_RENDER]:
-        img = render_look_on_client(str(photo_path), lk.get("image_generation_prompt", ""))
-        looks.append({"img": img, "desc": lk.get("description", "")})
+    looks_src = (capsule.get("looks") or [])[:N_RENDER]
+
+    def _render(lk):
+        return {"img": render_look_on_client(str(photo_path), lk.get("image_generation_prompt", "")),
+                "desc": lk.get("description", "")}
+
+    # образы рендерим ПАРАЛЛЕЛЬНО (одновременно) — это вдвое быстрее последовательного
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(looks_src))) as ex:
+        looks = list(ex.map(_render, looks_src))
     return diag, capsule, looks
 
 
