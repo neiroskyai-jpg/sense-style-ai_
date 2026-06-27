@@ -1,12 +1,13 @@
-# Amvera Cloud (РФ) — деплой веб-демо из Dockerfile.
-# Секреты (OPENROUTER_API_KEY) и SENSE_MODE/DEMO_DAILY_LIMIT задаются в ПАНЕЛИ Amvera
-# (переменные окружения), в репозиторий не коммитим.
+# Amvera Cloud (РФ) — Python-режим (совпадает с панелью: python / pip).
+# Секреты (OPENROUTER_API_KEY) и SENSE_MODE/DEMO_DAILY_LIMIT — в «Переменные» панели Amvera.
 meta:
-  environment: docker
+  environment: python
   toolchain:
-    name: docker
+    name: pip
+    version: "3.11"
 build:
-  dockerfile: ./Dockerfile
+  requirementsPath: requirements.txt
 run:
-  containerPort: 80        # приложение слушает 0.0.0.0:80 (gunicorn в Dockerfile)
-  persistenceMount: /data  # постоянный том под SQLite (SENSE_DATA_DIR=/data)
+  command: gunicorn app.main:app --bind 0.0.0.0:80 --timeout 300 --workers 1
+  containerPort: 80
+  persistenceMount: /data
