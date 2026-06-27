@@ -7,22 +7,32 @@
 """
 from __future__ import annotations
 import io
+import os
 from pathlib import Path
 
-from flask import Flask, render_template_string, request
+from flask import Flask, jsonify, render_template_string, request
 from PIL import Image, UnidentifiedImageError
 from werkzeug.utils import secure_filename
 
 from core.pipeline import (analyze_photos, diagnose, generate_capsule,
                            render_look_on_client)
-from core.tracking import progress, record_session
+from core.tracking import count_today, progress, record_call, record_session
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
 ALLOWED = {"image/jpeg", "image/png", "image/webp"}
 N_RENDER = 2  # сколько образов рендерим (контроль стоимости/времени)
+DEMO_DAILY_LIMIT = int(os.getenv("DEMO_DAILY_LIMIT", "40"))  # защита от слива ключа
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # лимит загрузки 15 МБ
+
+
+@app.after_request
+def _cors(resp):  # чтобы статический квиз с Vercel мог звать /api/analyze
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    return resp
 
 FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
@@ -88,47 +98,68 @@ def index():
     return render_template_string(FORM, error=None)
 
 
-@app.post("/analyze")
-def analyze():
-    file = request.files.get("photo")
+def _validate_and_save(file) -> Path:
+    """Проверить и сохранить загруженное фото. ValueError с понятным текстом — если не ок."""
     if not file or not file.filename:
-        return render_template_string(FORM, error="Загрузи фото."), 400
+        raise ValueError("Загрузи фото.")
     if file.mimetype not in ALLOWED:
-        return render_template_string(FORM, error="Формат не поддержан (нужен JPEG/PNG/WebP)."), 400
-
+        raise ValueError("Формат не поддержан (нужен JPEG/PNG/WebP).")
     raw = file.read()
     try:  # валидируем, что это реально изображение (защита от мусора/бомб)
         Image.open(io.BytesIO(raw)).verify()
     except (UnidentifiedImageError, OSError, ValueError):
-        return render_template_string(FORM, error="Файл не похож на изображение."), 400
-
+        raise ValueError("Файл не похож на изображение.")
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    photo_path = UPLOAD_DIR / secure_filename(file.filename or "photo.jpg")
-    photo_path.write_bytes(raw)
+    path = UPLOAD_DIR / secure_filename(file.filename or "photo.jpg")
+    path.write_bytes(raw)
+    return path
 
-    quiz = {
-        "context": {"age": request.form.get("age"), "profession": request.form.get("profession")},
-        "now_traits": _split(request.form.get("now_traits")),
-        "want_traits_top3": _split(request.form.get("want_traits"))[:3],
-        "physical": {"height": request.form.get("height"),
-                     "figure_type_self_assessed": request.form.get("figure")},
-        "price_segment": request.form.get("price", "middle"),
-        "taboos": _split(request.form.get("taboos")),
+
+def _build_quiz(form) -> dict:
+    return {
+        "context": {"age": form.get("age"), "profession": form.get("profession")},
+        "now_traits": _split(form.get("now_traits")),
+        "want_traits_top3": _split(form.get("want_traits"))[:3],
+        "physical": {"height": form.get("height"),
+                     "figure_type_self_assessed": form.get("figure")},
+        "price_segment": form.get("price", "middle"),
+        "taboos": _split(form.get("taboos")),
     }
 
+
+def _run_analysis(photo_path: Path, quiz: dict) -> tuple[dict, dict, list]:
+    """Сквозной анализ: vision → диагностика → капсула → рендер N образов на клиентке."""
+    vision = analyze_photos([str(photo_path)], height_cm=quiz["physical"]["height"], mode="dev")
+    diag = diagnose(quiz, vision, mode="dev")
+    gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
+               "scenarios": ["работа", "повседневное", "выход"], "n_looks": 6,
+               "price_segment": quiz["price_segment"], "taboos": quiz["taboos"]}
+    capsule = generate_capsule(diag, gen_req, mode="dev")
+    looks = []
+    for lk in (capsule.get("looks") or [])[:N_RENDER]:
+        img = render_look_on_client(str(photo_path), lk.get("image_generation_prompt", ""))
+        looks.append({"img": img, "desc": lk.get("description", "")})
+    return diag, capsule, looks
+
+
+def _quota_left() -> bool:
+    return count_today() < DEMO_DAILY_LIMIT
+
+
+@app.post("/analyze")
+def analyze():
+    if not _quota_left():
+        return render_template_string(FORM, error="Демо-лимит на сегодня исчерпан — загляни завтра."), 429
     try:
-        vision = analyze_photos([str(photo_path)], height_cm=quiz["physical"]["height"], mode="dev")
-        diag = diagnose(quiz, vision, mode="dev")
-        gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
-                   "scenarios": ["работа", "повседневное", "выход"], "n_looks": 6,
-                   "price_segment": quiz["price_segment"], "taboos": quiz["taboos"]}
-        capsule = generate_capsule(diag, gen_req, mode="dev")
-        looks_src = (capsule.get("looks") or [])[:N_RENDER]
-        looks = []
-        for lk in looks_src:
-            img = render_look_on_client(str(photo_path), lk.get("image_generation_prompt", ""))
-            looks.append({"img": img, "desc": lk.get("description", "")})
-    except Exception as e:  # noqa: BLE001 — показать понятную ошибку, не падать страницей 500
+        photo_path = _validate_and_save(request.files.get("photo"))
+    except ValueError as e:
+        return render_template_string(FORM, error=str(e)), 400
+
+    quiz = _build_quiz(request.form)
+    record_call()  # фиксируем платный вызов для квоты
+    try:
+        diag, capsule, looks = _run_analysis(photo_path, quiz)
+    except Exception as e:  # noqa: BLE001 — понятная ошибка, не страница 500
         return render_template_string(FORM, error=f"Не удалось обработать: {e}"), 500
 
     client = (request.form.get("client") or "").strip()
@@ -146,5 +177,43 @@ def analyze():
     )
 
 
+@app.post("/api/analyze")
+def api_analyze():
+    """JSON-API для интеграции внешнего квиза (Vercel). Возвращает диагностику + образы."""
+    if not _quota_left():
+        return jsonify({"error": "daily_limit"}), 429
+    try:
+        photo_path = _validate_and_save(request.files.get("photo"))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    quiz = _build_quiz(request.form)
+    record_call()
+    try:
+        diag, capsule, looks = _run_analysis(photo_path, quiz)
+    except Exception as e:  # noqa: BLE001
+        return jsonify({"error": str(e)}), 500
+
+    client = (request.form.get("client") or "").strip()
+    if client:
+        record_session(client, diag)
+
+    cap = capsule.get("capsule") or {}
+    return jsonify({
+        "gap_percentage": diag.get("gap_percentage"),
+        "style_formula": diag.get("style_formula"),
+        "dna_explanation": diag.get("dna_explanation"),
+        "colortype": diag.get("colortype"),
+        "figure_type": diag.get("figure_type"),
+        "items_count": len(cap.get("items") or []),
+        "looks": looks,  # [{img: data-url, desc}]
+    })
+
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok", "calls_today": count_today(), "limit": DEMO_DAILY_LIMIT}
+
+
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=False)
