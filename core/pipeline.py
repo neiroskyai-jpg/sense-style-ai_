@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 
 from . import config, provider
-from .prompts import load_knowledge, load_system_prompt
+from .prompts import load_knowledge, load_reference, load_system_prompt
 
 
 def analyze_photos(image_paths, height_cm: int | None = None, mode: str | None = None) -> dict:
@@ -59,6 +59,35 @@ def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None
     return provider.chat_json(
         config.model_for("text", mode), system,
         json.dumps(payload, ensure_ascii=False), max_tokens=8000,
+    )
+
+
+def generate_shopping_list(diagnosis: dict, capsule: dict, price_segment: str = "middle",
+                           mode: str = "teaser", text_mode: str | None = None) -> dict:
+    """Шаг 4. Шоп-лист + бюджет: по капсуле подбирает бренды/запросы под бюджет и фигуру.
+
+    Системный промпт shopping-list требует подклеенную brand-matrix. На выходе —
+    shopping_items (с брендами и поисковыми запросами) и budget_estimate {min, max}.
+    """
+    system = (
+        load_system_prompt("shopping-list")
+        + "\n\n# БАЗА ЗНАНИЙ (brand-matrix)\n\n"
+        + load_reference("reference/shopping/brand-matrix.md")
+    )
+    cap = capsule.get("capsule") or {}
+    dist = diagnosis.get("semantic_field_distribution") or {}
+    style_fields = [k for k, v in sorted(dist.items(), key=lambda kv: kv[1], reverse=True) if v > 0][:2]
+    payload = {
+        "capsule": cap.get("items") or [],
+        "price_segment": price_segment,
+        "style_fields": style_fields or [diagnosis.get("base_style")],
+        "palette": (diagnosis.get("visual_formula") or {}).get("palette"),
+        "figure_type": diagnosis.get("figure_type"),
+        "mode": mode,
+    }
+    return provider.chat_json(
+        config.model_for("text", text_mode), system,
+        json.dumps(payload, ensure_ascii=False), max_tokens=3072,
     )
 
 
