@@ -29,7 +29,25 @@ def _conn(db_path: Path) -> sqlite3.Connection:
         )"""
     )
     c.execute("CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL)")
+    c.execute(
+        """CREATE TABLE IF NOT EXISTS consents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            client TEXT, ip TEXT, ts TEXT NOT NULL,
+            consent_processing INTEGER, consent_transfer INTEGER
+        )"""
+    )
     return c
+
+
+def record_consent(client: str, ip: str, processing: bool, transfer: bool,
+                   ts: str | None = None, db_path: Path = DB_PATH) -> None:
+    """152-ФЗ: журналируем факт получения согласия (кто, IP, время, какие согласия)."""
+    ts = ts or datetime.now().isoformat()
+    with _conn(db_path) as c:
+        c.execute(
+            "INSERT INTO consents (client, ip, ts, consent_processing, consent_transfer) VALUES (?,?,?,?,?)",
+            (client, ip, ts, int(bool(processing)), int(bool(transfer))),
+        )
 
 
 def record_call(db_path: Path = DB_PATH) -> None:
