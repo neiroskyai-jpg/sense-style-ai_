@@ -9,7 +9,8 @@ import json
 import sys
 from pathlib import Path
 
-from core.pipeline import analyze_photos, diagnose, generate_capsule
+from core.pipeline import (analyze_photos, diagnose, generate_capsule,
+                           generate_shopping_list)
 
 DEFAULT_QUIZ = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "sample_quiz.json"
 
@@ -65,6 +66,15 @@ def main() -> None:
         first = looks[0]
         print(f"\n   образ 1 — {first.get('scenario')}: {first.get('description')}")
         print(f"   image_generation_prompt:\n   {first.get('image_generation_prompt')}")
+
+    print("== Шаг 4. Шоп-лист + бюджет ==", flush=True)
+    shop = generate_shopping_list(diag, capsule, price_segment=quiz.get("price_segment", "middle"),
+                                  mode="teaser", text_mode=args.mode)
+    be = shop.get("budget_estimate") or {}
+    print(f"   вещей к покупке: {shop.get('items_count')} | бюджет: {be.get('min')}–{be.get('max')} ₽")
+    for it in (shop.get("shopping_items") or [])[:3]:
+        brands = ", ".join(b.get("brand", "") for b in (it.get("brands") or []))
+        print(f"   • {it.get('item_name')}: «{it.get('search_query')}» → {brands}")
 
 
 if __name__ == "__main__":

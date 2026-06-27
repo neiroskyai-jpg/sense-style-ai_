@@ -62,3 +62,16 @@ def load_knowledge(name: str) -> str:
     if not path.exists():
         raise FileNotFoundError(f"База знаний не найдена: {path}")
     return path.read_text(encoding="utf-8").strip()
+
+
+_ARCH_DIR = PROMPTS_DIR.parent  # architecture/
+
+
+@lru_cache(maxsize=None)
+def load_reference(relpath: str) -> str:
+    """Загрузить любой документ из architecture/ по относительному пути,
+    напр. 'reference/shopping/brand-matrix.md' (knowledge base для подклейки)."""
+    path = _ARCH_DIR / relpath
+    if not path.exists():
+        raise FileNotFoundError(f"Документ не найден: {path}")
+    return path.read_text(encoding="utf-8").strip()
