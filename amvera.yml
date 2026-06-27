@@ -1,0 +1,12 @@
+# Amvera Cloud (РФ) — деплой веб-демо из Dockerfile.
+# ВНИМАНИЕ: сверить ключи со схемой в докум. Amvera (формат может отличаться по версии).
+# Ключ OPENROUTER_API_KEY и SENSE_MODE/DEMO_DAILY_LIMIT задаются в переменных окружения
+# в панели Amvera (секреты в репозиторий не коммитим).
+meta:
+  environment: docker
+build:
+  type: docker
+  dockerfile: ./Dockerfile
+run:
+  persistenceMount: /data   # постоянный том под SQLite (SENSE_DATA_DIR=/data)
+  containerPort: 80

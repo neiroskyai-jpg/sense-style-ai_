@@ -59,6 +59,8 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <select name=figure><option>rectangle</option><option>hourglass</option><option>pear</option><option>inverted_triangle</option><option>apple</option></select>
  <label>Сегмент</label><select name=price><option>middle</option><option>low</option><option>high</option><option>luxury</option></select>
  <label>Табу — что точно не наденешь (через запятую)</label><input name=taboos value="">
+ <label style="font-weight:normal;font-size:13px;margin-top:16px;display:flex;gap:8px"><input type=checkbox name=consent_processing required style="width:auto"> Согласна на обработку персональных данных согласно <a href="#privacy">Политике</a>.</label>
+ <label style="font-weight:normal;font-size:13px;display:flex;gap:8px"><input type=checkbox name=consent_transfer required style="width:auto"> Согласна на трансграничную передачу фото в AI-сервисы (Google, США) для генерации образов.</label>
  <button>Построить образы</button>
  <p class=hint>Обработка занимает ~1–2 минуты: анализ фото, диагностика, генерация образов.</p>
 </form></body></html>"""
@@ -146,10 +148,17 @@ def _quota_left() -> bool:
     return count_today() < DEMO_DAILY_LIMIT
 
 
+def _consent_ok(form) -> bool:
+    """152-ФЗ: нужно согласие на обработку ПД и на трансграничную передачу фото в AI."""
+    return bool(form.get("consent_processing")) and bool(form.get("consent_transfer"))
+
+
 @app.post("/analyze")
 def analyze():
     if not _quota_left():
         return render_template_string(FORM, error="Демо-лимит на сегодня исчерпан — загляни завтра."), 429
+    if not _consent_ok(request.form):
+        return render_template_string(FORM, error="Нужно согласие на обработку данных и трансграничную передачу."), 400
     try:
         photo_path = _validate_and_save(request.files.get("photo"))
     except ValueError as e:
@@ -182,6 +191,8 @@ def api_analyze():
     """JSON-API для интеграции внешнего квиза (Vercel). Возвращает диагностику + образы."""
     if not _quota_left():
         return jsonify({"error": "daily_limit"}), 429
+    if not _consent_ok(request.form):
+        return jsonify({"error": "consent_required"}), 400
     try:
         photo_path = _validate_and_save(request.files.get("photo"))
     except ValueError as e:
