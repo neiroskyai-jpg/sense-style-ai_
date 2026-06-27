@@ -2102,22 +2102,23 @@ function buildResult() {
   const refsWrap = document.getElementById('r-ref-wrap');
   refsWrap.innerHTML = '';
   if (userPhotoDataUrl) {
-    // UI-демо: первое фото — оригинал клиентки, второе — то же фото с overlay «AI-визуализация будет здесь»
-    // В проде: оба фото — результаты image-gen API (Nano Banana) с лицом клиентки в её формуле
-    const refs = profile.references || [];
     const block = document.createElement('div');
     block.className = 'your-photo-block';
-    block.innerHTML = `
-      <div class="your-photo-label">Твоя формула «${profileName}» — на тебе</div>
-      <div class="your-photo-grid">
-        <div class="your-photo-cell">
-          <img src="${userPhotoDataUrl}" alt="Твоё фото — оригинал">
-        </div>
-        <div class="your-photo-cell is-ai">
-          <img src="${userPhotoDataUrl}" alt="AI-визуализация в формуле">
-        </div>
-      </div>
-    `;
+    let cells;
+    if (aiLooks && aiLooks.length) {
+      // реальные сгенерированные образы клиентки (из /api/analyze)
+      cells = aiLooks.slice(0, 2).map(lk =>
+        `<div class="your-photo-cell is-ai"><img src="${lk.img}" alt="Ты в образе по Формуле стиля"></div>`
+      ).join('');
+    } else {
+      // фоллбэк (генерация не удалась) — показываем оригинал
+      cells =
+        `<div class="your-photo-cell"><img src="${userPhotoDataUrl}" alt="Твоё фото — оригинал"></div>
+         <div class="your-photo-cell is-ai"><img src="${userPhotoDataUrl}" alt="Твоё фото"></div>`;
+    }
+    block.innerHTML =
+      `<div class="your-photo-label">Твоя формула «${profileName}» — на тебе</div>
+       <div class="your-photo-grid">${cells}</div>`;
     refsWrap.appendChild(block);
   } else {
     (profile.references || []).forEach(ref => {
@@ -2190,12 +2191,24 @@ function handleQuizUpload(file) {
   const reader = new FileReader();
   reader.onload = function(e) {
     userPhotoDataUrl = e.target.result;
-    // Переходим к экрану обработки
     show('s-processing');
-    // UI-демо: имитация AI-генерации 2.5 секунды (в проде — реальный fetch к /api/generate-styling)
-    setTimeout(() => { buildResult(); }, 2500);
+    generateLooks(file);   // реальная генерация образов через бэкенд
   };
   reader.readAsDataURL(file);
+}
+
+// Реальная генерация: фото -> /api/analyze -> образы клиентки в её Формуле
+let aiLooks = null;
+function generateLooks(file) {
+  aiLooks = null;
+  const fd = new FormData();
+  fd.append('photo', file);
+  fd.append('consent_processing', 'on');
+  fd.append('consent_transfer', 'on');
+  fetch('/api/analyze', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => { if (d && d.looks && d.looks.length) aiLooks = d.looks; buildResult(); })
+    .catch(() => { buildResult(); });   // при ошибке — показать результат без AI-образов
 }
 
 function skipUpload() {
@@ -2232,6 +2245,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function restart() {
   answers = {}; current = 0;
   userPhotoDataUrl = null;
+  aiLooks = null;
   const quizFileInput = document.getElementById('quiz-file-input');
   if (quizFileInput) quizFileInput.value = '';
   document.getElementById('r-now-words').innerHTML = '';
