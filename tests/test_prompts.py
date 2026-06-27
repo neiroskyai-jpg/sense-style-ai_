@@ -10,6 +10,7 @@ SYSTEM_PROMPTS = [
     "look-generator",
     "shopping-list",
     "style-book",
+    "garment-check",
 ]
 
 
