@@ -57,7 +57,13 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label>Как тебя считывают сейчас (через запятую)</label><input name=now_traits value="сдержанная, простая, незаметная">
  <label>Как хочешь, чтобы считывали — топ-3</label><input name=want_traits value="властная, элегантная, статусная">
  <label>Тип фигуры (самооценка)</label>
- <select name=figure><option>rectangle</option><option>hourglass</option><option>pear</option><option>inverted_triangle</option><option>apple</option></select>
+ <select name=figure>
+  <option value="rectangle">Прямоугольник</option>
+  <option value="hourglass">Песочные часы</option>
+  <option value="pear">Груша</option>
+  <option value="inverted_triangle">Перевёрнутый треугольник</option>
+  <option value="apple">Яблоко</option>
+ </select>
  <label>Цветотип (если знаешь — выбери; иначе определит ИИ по фото)</label>
  <select name=colortype_known>
   <option value="">Определить по фото (ИИ)</option>
@@ -74,7 +80,13 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <option value="winter_natural">Зима натуральная</option>
   <option value="winter_contrast">Зима контрастная</option>
  </select>
- <label>Сегмент</label><select name=price><option>middle</option><option>low</option><option>high</option><option>luxury</option></select>
+ <label>Сегмент бюджета</label>
+ <select name=price>
+  <option value="middle">Средний</option>
+  <option value="low">Масс-маркет</option>
+  <option value="high">Премиум</option>
+  <option value="luxury">Люкс</option>
+ </select>
  <label>Табу — что точно не наденешь (через запятую)</label><input name=taboos value="">
  <label style="font-weight:normal;font-size:13px;margin-top:16px;display:flex;gap:8px"><input type=checkbox name=consent_processing required style="width:auto"> Согласна на обработку персональных данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
  <label style="font-weight:normal;font-size:13px;display:flex;gap:8px"><input type=checkbox name=consent_transfer required style="width:auto"> Согласна на трансграничную передачу фото в AI-сервисы (Google, США) для генерации образов.</label>
