@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Преображение — Чувство стиля</title>
+<meta name="description" content="Глубокая работа с автором методологии «Чувство стиля». От анкеты до полного стайл-бука за 10–14 рабочих дней. Стартовая цена 35 000 ₽ для первых 7 клиенток.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400;1,6..96,500&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:         #7A1C2E;
+  --red-deep:    #5A1422;
+  --red-glow:    #9C2538;
+  --cream:       #FFFFFF;
+  --cream-bg:    #F5EFE3;
+  --paper:       #FFFFFF;
+  --ink:         #1A1A1A;
+  --ink-muted:   rgba(26, 26, 26, 0.65);
+  --ink-dim:     rgba(26, 26, 26, 0.42);
+  --rose-soft:   rgba(122, 28, 46, 0.08);
+  --line:        rgba(26, 26, 26, 0.12);
+  --footer-bg:   #1A1A1A;
+  --side-pad:    clamp(24px, 8vw, 120px);
+  --serif: 'Bodoni Moda', Georgia, serif;
+  --sans:  'Onest', -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--cream-bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+h1, h2, h3, h4 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.01em; color: var(--ink); }
+em { color: var(--red); font-style: italic; font-weight: 500; }
+
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+section { scroll-margin-top: 100px; padding: 110px 0; }
+.container { max-width: 1320px; margin: 0 auto; padding: 0 var(--side-pad); }
+.narrow { max-width: 820px; margin: 0 auto; padding: 0 var(--side-pad); }
+
+/* === NAV === */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(26, 26, 26, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 0;
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: 1320px; margin: 0 auto; padding: 0 var(--side-pad);
+}
+.logo {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+  color: #FFFFFF;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+.logo em { color: var(--red-glow); font-weight: 500; }
+.nav-links { display: flex; gap: 30px; font-size: 13px; color: rgba(255, 255, 255, 0.65); }
+.nav-links a {
+  color: inherit; text-decoration: none; transition: color 0.3s;
+}
+.nav-links a:hover { color: var(--red-glow); }
+
+/* Бургер + мобильное меню (включаются на ≤900px) */
+.nav-burger {
+  display: none;
+  width: 44px; height: 44px;
+  margin: -10px -8px -10px 0;
+  background: none; border: none; cursor: pointer;
+  padding: 12px 10px;
+  flex-direction: column; justify-content: center; gap: 5px;
+  flex-shrink: 0;
+}
+.nav-burger span {
+  display: block; height: 2px; width: 22px;
+  background: #FFFFFF; border-radius: 2px;
+  transition: transform 0.3s, opacity 0.3s;
+}
+.nav.open .nav-burger span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav.open .nav-burger span:nth-child(2) { opacity: 0; }
+.nav.open .nav-burger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.nav-mobile {
+  display: none;
+  flex-direction: column;
+  padding: 8px var(--side-pad) 20px;
+  border-top: 1px solid var(--line);
+  background: rgba(26, 26, 26, 0.98);
+}
+.nav-mobile a {
+  color: rgba(255, 255, 255, 0.85); text-decoration: none;
+  font-size: 15px; font-weight: 500;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.nav-mobile a:last-child { border-bottom: none; }
+.nav.open { background: rgba(26, 26, 26, 0.98); }
+.nav.open .nav-mobile { display: flex; }
+
+/* === BREADCRUMB === */
+.breadcrumb {
+  background: var(--cream-bg);
+  padding: 28px 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.breadcrumb a {
+  color: var(--ink-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.breadcrumb a:hover { color: var(--red); }
+.breadcrumb .sep {
+  margin: 0 14px;
+  color: var(--ink-dim);
+}
+
+/* === HERO PREMIUM === */
+.hero-premium {
+  position: relative;
+  background: var(--cream-bg);
+  padding: 80px 0 100px;
+  text-align: center;
+  overflow: hidden;
+}
+.hero-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(156, 37, 56, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 70%, rgba(156, 37, 56, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+.hero-premium > * { position: relative; z-index: 2; }
+.hero-premium .edition {
+  display: inline-flex; align-items: center; gap: 14px;
+  font-family: var(--serif); font-style: italic; font-size: 13px;
+  color: var(--ink-dim);
+  letter-spacing: 0.18em;
+  margin-bottom: 30px;
+}
+.hero-premium .edition::before, .hero-premium .edition::after {
+  content: ''; display: block; width: 36px; height: 1px; background: var(--ink-dim);
+}
+.hero-premium .edition .badge {
+  font-style: normal; font-weight: 600; color: var(--red);
+  letter-spacing: 0.24em; text-transform: uppercase;
+}
+.hero-premium h1 {
+  font-size: clamp(44px, 6vw, 84px);
+  line-height: 1.02;
+  margin-bottom: 28px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.hero-premium h1 em {
+  color: var(--red);
+  font-style: italic;
+  font-weight: 500;
+}
+.hero-premium-sub {
+  font-size: 18px;
+  color: var(--ink-muted);
+  max-width: 640px;
+  margin: 0 auto 50px;
+  line-height: 1.6;
+}
+
+.hero-premium-meta {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 0;
+  margin-bottom: 44px;
+  max-width: 720px;
+}
+.hero-premium-meta .cell {
+  padding: 24px 36px;
+  border-right: 1px solid var(--line);
+  text-align: center;
+}
+.hero-premium-meta .cell:last-child { border-right: none; }
+.hero-premium-meta .cell-label {
+  font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 8px; font-weight: 500;
+}
+.hero-premium-meta .cell-value {
+  font-family: var(--serif); font-size: 22px;
+  color: var(--ink); font-weight: 500; line-height: 1.2;
+}
+.hero-premium-meta .cell-value .old {
+  font-size: 16px; color: var(--ink-dim);
+  text-decoration: line-through; margin-right: 8px; font-weight: 400;
+}
+.hero-premium-meta .cell-value em {
+  font-style: italic; color: var(--red);
+}
+.hero-premium-meta .cell-note {
+  font-size: 11px; color: var(--ink-muted);
+  margin-top: 6px; line-height: 1.4;
+}
+
+.btn-cta {
+  display: inline-block; background: var(--red); color: #FFFFFF;
+  padding: 20px 56px; border-radius: 999px;
+  font-family: var(--sans); font-size: 12px; font-weight: 500;
+  letter-spacing: 0.28em; text-transform: uppercase;
+  text-decoration: none; transition: all 0.3s;
+  border: 1px solid var(--red);
+}
+.btn-cta:hover { background: var(--red-deep); border-color: var(--red-deep); }
+.btn-meta {
+  display: block; font-size: 11.5px;
+  color: var(--ink-muted); margin-top: 14px; letter-spacing: 0.04em;
+}
+
+/* === EDITORIAL QUOTE BREAK === */
+.editorial-break {
+  position: relative;
+  padding: clamp(70px, 10vh, 110px) 32px;
+  background: var(--red);
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+}
+.editorial-break-inner {
+  position: relative; z-index: 2;
+  max-width: 820px; color: #FFFFFF;
+}
+.editorial-break-eyebrow {
+  font-size: 11px; letter-spacing: 0.34em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8); margin-bottom: 22px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 14px;
+}
+.editorial-break-eyebrow::before, .editorial-break-eyebrow::after {
+  content: ''; display: block; width: 28px; height: 1px;
+  background: rgba(255, 255, 255, 0.5);
+}
+.editorial-break-quote {
+  font-family: var(--serif); font-style: italic;
+  font-size: clamp(22px, 3vw, 34px); line-height: 1.4;
+  color: #FFFFFF;
+}
+.editorial-break-quote em {
+  color: #FFFFFF; font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 6px;
+  text-decoration-color: rgba(255, 255, 255, 0.45);
+}
+
+/* === SECTION HEADERS === */
+.section-label-wrap { text-align: center; margin-bottom: 18px; }
+.section-label {
+  display: inline-flex; align-items: center; gap: 14px;
+  font-size: 11px; letter-spacing: 0.34em; text-transform: uppercase;
+  color: var(--red); font-weight: 500;
+}
+.section-label::before, .section-label::after {
+  content: ''; display: block; width: 28px; height: 1px;
+  background: var(--red); opacity: 0.55;
+}
+.section-title {
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.1; text-align: center; margin: 0 auto 18px;
+  max-width: 820px; color: var(--ink); font-weight: 500;
+}
+.section-sub {
+  font-size: 16px; color: var(--ink-muted); text-align: center;
+  max-width: 640px; margin: 0 auto 50px; line-height: 1.7;
+}
+
+/* === FIT GRID (для кого / НЕ для кого) === */
+.fit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 26px;
+}
+.fit-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 40px 36px;
+}
+.fit-card.no { border-top: 3px solid var(--ink-dim); }
+.fit-card.yes { border-top: 3px solid var(--red); }
+.fit-card h3 {
+  font-size: 22px; color: var(--ink);
+  margin-bottom: 22px; line-height: 1.3;
+}
+.fit-card.yes h3 em { color: var(--red); }
+.fit-card ul {
+  list-style: none; padding: 0;
+  font-size: 14.5px; color: var(--ink-muted); line-height: 1.65;
+}
+.fit-card ul li {
+  padding: 10px 0 10px 24px; position: relative;
+  border-top: 1px solid var(--line);
+}
+.fit-card ul li:first-child { border-top: none; padding-top: 0; }
+.fit-card ul li:last-child { padding-bottom: 0; }
+.fit-card.yes ul li::before {
+  content: '·'; position: absolute; left: 4px; top: 6px;
+  color: var(--red); font-weight: 700; font-size: 24px; line-height: 1;
+}
+.fit-card.no ul li::before {
+  content: '×'; position: absolute; left: 0; top: 11px;
+  color: var(--ink-dim); font-weight: 400; font-size: 14px;
+}
+.fit-card.no ul li:first-child::before { top: 1px; }
+
+/* === DELIVERABLES GRID === */
+.deliverables-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.deliverable {
+  background: var(--paper);
+  padding: 32px 30px;
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+}
+.deliverable-num {
+  font-family: var(--serif); font-style: italic; font-size: 30px;
+  color: var(--red); line-height: 1; font-weight: 400;
+  min-width: 48px;
+}
+.deliverable-body h4 {
+  font-size: 18px; color: var(--ink);
+  margin-bottom: 8px; line-height: 1.3; font-weight: 500;
+}
+.deliverable-body p {
+  font-size: 13.5px; color: var(--ink-muted);
+  line-height: 1.65;
+}
+
+/* === TIMELINE === */
+.timeline {
+  position: relative;
+  max-width: 820px; margin: 0 auto;
+  padding-left: 36px;
+  border-left: 1px solid var(--line);
+}
+.timeline-item {
+  position: relative;
+  padding: 4px 0 36px 28px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -42px;
+  top: 6px;
+  width: 12px; height: 12px;
+  background: var(--red);
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px var(--cream-bg);
+}
+.timeline-day {
+  font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--red); font-weight: 500; margin-bottom: 6px;
+}
+.timeline-title {
+  font-family: var(--serif); font-size: 20px; color: var(--ink);
+  margin-bottom: 10px; line-height: 1.3; font-weight: 500;
+}
+.timeline-text {
+  font-size: 14px; color: var(--ink-muted); line-height: 1.7;
+}
+.timeline-text strong { color: var(--ink); font-weight: 500; }
+
+.timeline-warn {
+  background: var(--rose-soft);
+  border-left: 2px solid var(--red);
+  padding: 14px 18px;
+  margin: 14px 0 6px;
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.timeline-warn strong { color: var(--red); font-weight: 500; }
+
+/* === FAQ === */
+.faq-list { max-width: 820px; margin: 0 auto; }
+.faq-item {
+  border-bottom: 1px solid var(--line);
+  padding: 22px 0;
+}
+.faq-item summary {
+  cursor: pointer; list-style: none;
+  font-family: var(--serif); font-size: 19px;
+  color: var(--ink); padding-right: 36px; position: relative;
+  transition: color 0.2s; font-weight: 500;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: '+'; position: absolute; right: 0; top: -2px;
+  font-family: var(--sans); font-size: 24px; color: var(--red);
+  font-weight: 300; transition: transform 0.3s;
+}
+.faq-item[open] summary::after { transform: rotate(45deg); }
+.faq-item summary:hover { color: var(--red); }
+.faq-item .answer {
+  padding: 18px 0 4px; font-size: 14.5px;
+  color: var(--ink-muted); line-height: 1.75; max-width: 720px;
+}
+
+/* === FINAL CTA === */
+.final-cta {
+  background: var(--red); color: var(--cream);
+  text-align: center; padding: 100px 0;
+  position: relative; overflow: hidden;
+}
+.final-cta::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(255,255,255,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, var(--red-deep) 0%, transparent 60%);
+  pointer-events: none; z-index: 1;
+}
+.final-cta > * { position: relative; z-index: 2; }
+.final-cta h2 {
+  color: var(--cream); font-size: clamp(32px, 4.4vw, 52px);
+  line-height: 1.1; margin-bottom: 22px;
+  max-width: 740px; margin-left: auto; margin-right: auto;
+}
+.final-cta h2 em {
+  color: var(--cream); font-style: italic;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 6px;
+  text-decoration-color: rgba(255, 255, 255, 0.55);
+}
+.final-cta-sub {
+  font-size: 16px; color: rgba(255, 255, 255, 0.88);
+  max-width: 580px; margin: 0 auto 36px; line-height: 1.7;
+}
+.final-cta .btn-cta {
+  display: inline-block; background: var(--cream); color: var(--ink);
+  padding: 20px 56px; border-radius: 999px;
+  border: 1px solid var(--cream);
+}
+.final-cta .btn-cta:hover { background: transparent; color: var(--cream); }
+.final-cta .btn-meta { color: rgba(255, 255, 255, 0.6); }
+
+/* === FOOTER === */
+footer {
+  background: var(--footer-bg); color: rgba(255, 255, 255, 0.6);
+  padding: 36px 0;
+  font-size: 13px;
+}
+.footer-inner {
+  max-width: 1320px; margin: 0 auto; padding: 0 var(--side-pad);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 20px;
+}
+.footer-links { display: flex; gap: 24px; }
+.footer-links a {
+  color: rgba(255, 255, 255, 0.7); text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--red-glow); }
+
+/* === АДАПТИВ === */
+@media (max-width: 1024px) {
+  .deliverables-grid { grid-template-columns: 1fr; }
+  .fit-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .nav-burger { display: flex; }
+  section { padding: 64px 0; }
+  .hero-premium { padding: 50px 0 70px; }
+  .hero-premium-meta { flex-direction: column; }
+  .hero-premium-meta .cell {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding: 18px 28px;
+  }
+  .hero-premium-meta .cell:last-child { border-bottom: none; }
+  .timeline { padding-left: 28px; }
+  .timeline-item::before { left: -34px; }
+}
+
+@media (max-width: 600px) {
+  .deliverable { flex-direction: column; gap: 10px; }
+  .footer-inner { flex-direction: column; text-align: center; }
+  .footer-links { flex-wrap: wrap; justify-content: center; gap: 14px 20px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">Чувство <em>стиля</em></a>
+    <div class="nav-links">
+      <a href="index.html#method">Метод</a>
+      <a href="index.html#gallery">Образы</a>
+      <a href="index.html#tiers">Тарифы</a>
+      <a href="index.html#case">Кейс</a>
+      <a href="index.html#author">Автор</a>
+      <a href="index.html#faq">Вопросы</a>
+    </div>
+    <button class="nav-burger" id="navBurger" aria-label="Открыть меню" aria-expanded="false" aria-controls="navMobile">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="nav-mobile" id="navMobile">
+    <a href="index.html#method">Метод</a>
+    <a href="index.html#gallery">Образы</a>
+    <a href="index.html#tiers">Тарифы</a>
+    <a href="index.html#case">Кейс</a>
+    <a href="index.html#author">Автор</a>
+    <a href="index.html#faq">Вопросы</a>
+  </div>
+</nav>
+
+<div class="breadcrumb">
+  <div class="container">
+    <a href="index.html">Главная</a>
+    <span class="sep">·</span>
+    <a href="index.html#tiers">Тарифы</a>
+    <span class="sep">·</span>
+    Преображение
+  </div>
+</div>
+
+<header class="hero-premium">
+  <div class="container">
+    <p class="edition"><span class="badge">Премиум · мест ограничено</span></p>
+    <h1><em>Преображение</em></h1>
+    <p class="hero-premium-sub">
+      Глубокая работа с автором методологии «Чувство стиля». От анкеты до полного стайл-бука — за 10–14 рабочих дней.
+    </p>
+
+    <div class="hero-premium-meta">
+      <div class="cell">
+        <div class="cell-label">Стоимость</div>
+        <div class="cell-value"><span class="old">60 000 ₽</span><em>35 000 ₽</em></div>
+        <div class="cell-note">стартовая цена для первых 7 клиенток</div>
+      </div>
+      <div class="cell">
+        <div class="cell-label">Сроки</div>
+        <div class="cell-value">10–14 дней</div>
+        <div class="cell-note">после получения всех материалов</div>
+      </div>
+      <div class="cell">
+        <div class="cell-label">Формат</div>
+        <div class="cell-value">Автор + ИИ</div>
+        <div class="cell-note">видеоразбор + сопровождение</div>
+      </div>
+    </div>
+
+    <a href="#book" class="btn-cta">Забронировать место</a>
+    <span class="btn-meta">осталось 7 мест из 7 · приём заявок открыт</span>
+  </div>
+</header>
+
+<section id="fit">
+  <div class="container">
+    <div class="section-label-wrap">
+      <p class="section-label">Для кого</p>
+    </div>
+    <h2 class="section-title">«Преображение» подходит, <em>если</em></h2>
+    <p class="section-sub">Это не быстрая разовая услуга. Это глубокий разбор и пересборка стиля под новый этап жизни.</p>
+
+    <div class="fit-grid">
+      <div class="fit-card yes">
+        <h3>Тебе сюда, <em>если</em></h3>
+        <ul>
+          <li>Жизнь изменилась — карьерный рост, материнство, переезд, новая роль</li>
+          <li>Старый гардероб не отражает того, кем ты стала</li>
+          <li>Нужен глубокий разбор и пересборка стиля под новый этап</li>
+          <li>Хочешь работать с автором лично, а не только с ИИ</li>
+          <li>Готова потратить 10–14 дней на трансформацию</li>
+        </ul>
+      </div>
+      <div class="fit-card no">
+        <h3>«Преображение» <strong style="color: var(--ink-dim); font-weight: 500;">не подойдёт</strong>, если</h3>
+        <ul>
+          <li>Хочешь быстрый разовый совет — выбери «Карту стиля»</li>
+          <li>Не готова делиться фото гардероба и личными данными</li>
+          <li>Бюджет ограничен — начни с бесплатной диагностики</li>
+          <li>Нужен только ИИ-результат без живого контакта</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="editorial-break">
+  <div class="editorial-break-inner">
+    <p class="editorial-break-eyebrow">Авторская работа</p>
+    <p class="editorial-break-quote">
+      Это не «ещё один разбор гардероба». Это <em>перестройка системы</em>, по которой ты собираешь себя каждое утро.
+    </p>
+  </div>
+</div>
+
+<section id="deliverables">
+  <div class="container">
+    <div class="section-label-wrap">
+      <p class="section-label">Что ты получишь</p>
+    </div>
+    <h2 class="section-title">Полный <em>стайл-бук</em> и сопровождение</h2>
+    <p class="section-sub">Не шаблон, не PDF-«всё для всех». Персональная книга по твоей формуле — с конкретными вещами, сочетаниями и применением.</p>
+
+    <div class="deliverables-grid">
+      <div class="deliverable">
+        <div class="deliverable-num">01</div>
+        <div class="deliverable-body">
+          <h4>Полная формула стиля</h4>
+          <p>Глубокий разбор по методологии — базовый стиль × подстиль × нота. Не шаблон, а твоя персональная формула.</p>
+        </div>
+      </div>
+      <div class="deliverable">
+        <div class="deliverable-num">02</div>
+        <div class="deliverable-body">
+          <h4>Аудит твоего гардероба</h4>
+          <p>30 ключевых вещей с вердиктами: оставить / доработать / убрать / спорные.</p>
+        </div>
+      </div>
+      <div class="deliverable">
+        <div class="deliverable-num">03</div>
+        <div class="deliverable-body">
+          <h4>Капсула из реальных вещей</h4>
+          <p>Не «вот 12 базовых вещей», а капсула из твоего шкафа, дополненная тем, что нужно докупить.</p>
+        </div>
+      </div>
+      <div class="deliverable">
+        <div class="deliverable-num">04</div>
+        <div class="deliverable-body">
+          <h4>Список покупок со ссылками</h4>
+          <p>Конкретные вещи в Cos, Massimo Dutti, 12storeez, Lichi — для среднего сегмента, ЦУМ, Aizel — для премиума. Цены и приоритеты. Если позиция распродана — в рамках сопровождения подберу замену.</p>
+        </div>
+      </div>
+      <div class="deliverable">
+        <div class="deliverable-num">05</div>
+        <div class="deliverable-body">
+          <h4>20+ сочетаний под 4 ролевые капсулы</h4>
+          <p>Работа · события · повседневное · выход. Каждое сочетание — с обоснованием, не «по вкусу».</p>
+        </div>
+      </div>
+      <div class="deliverable">
+        <div class="deliverable-num">06</div>
+        <div class="deliverable-body">
+          <h4>Цветовая палитра</h4>
+          <p>Подтон, глубина, контраст + 10 главных цветов и 5 акцентных. Основная и дополнительная палитры, запрещённые цвета с объяснением.</p>
+        </div>
+      </div>
+      <div class="deliverable">
+        <div class="deliverable-num">07</div>
+        <div class="deliverable-body">
+          <h4>Макияж и причёска</h4>
+          <p>Рекомендации под твою формулу и цветотип. Не отдельный курс — встроено в общую логику.</p>
+        </div>
+      </div>
+      <div class="deliverable">
+        <div class="deliverable-num">08</div>
+        <div class="deliverable-body">
+          <h4>Видеоразбор 60 минут</h4>
+          <p>Live-созвон со мной (Zoom / Google Meet). Запись остаётся у тебя. Ключевая часть пакета — без неё не работаем.</p>
+        </div>
+      </div>
+      <div class="deliverable">
+        <div class="deliverable-num">09</div>
+        <div class="deliverable-body">
+          <h4>Стайл-бук (PDF)</h4>
+          <p>25–40 страниц всего, что мы сделали. Чтобы можно было вернуться через месяц и не забыть «почему именно так».</p>
+        </div>
+      </div>
+      <div class="deliverable">
+        <div class="deliverable-num">10</div>
+        <div class="deliverable-body">
+          <h4>30 дней Telegram-сопровождения</h4>
+          <p>До 15 вопросов. Ответы в рабочие дни в течение 24–48 часов. Чтобы применение пошло, а не «прочитала и забыла».</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="container">
+    <div class="section-label-wrap">
+      <p class="section-label">Как проходит работа</p>
+    </div>
+    <h2 class="section-title">10 дней — <em>от анкеты до стайл-бука</em></h2>
+    <p class="section-sub">Срок начинает считаться после получения всех материалов от тебя. Если задержишь — сдвинется.</p>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-day">День 0 · Оплата и онбординг</div>
+        <div class="timeline-title">Welcome и инструкции</div>
+        <div class="timeline-text">Сообщение в Telegram, ссылка на анкету, видео-инструкция «как фотографировать гардероб».</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-day">Дни 1–3 · Материалы от тебя</div>
+        <div class="timeline-title">Анкета · фото · гардероб</div>
+        <div class="timeline-text">Ты заполняешь анкету (40–50 вопросов), загружаешь 5 фото в полный рост, фотографируешь 30 ключевых вещей.</div>
+        <div class="timeline-warn"><strong>Важно:</strong> срок «Преображения» (10–14 рабочих дней) начинает считаться после получения всех материалов от тебя.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-day">Дни 4–5 · Диагностика</div>
+        <div class="timeline-title">Формула стиля и стилевой разрыв</div>
+        <div class="timeline-text">Разбираю твои данные, определяю формулу стиля, считаю индекс разрыва.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-day">Дни 6–7 · Капсула и закупка</div>
+        <div class="timeline-title">Сборка персональной капсулы</div>
+        <div class="timeline-text">Собираю твою капсулу из реальных вещей, подбираю конкретные ссылки на то, что нужно докупить.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-day">День 8 · Финализация</div>
+        <div class="timeline-title">Вёрстка стайл-бука</div>
+        <div class="timeline-text">Финальная вёрстка PDF Style Book, подготовка к видеоразбору.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-day">День 9 · Live-созвон</div>
+        <div class="timeline-title">Видеоразбор 60 минут</div>
+        <div class="timeline-text">Личная встреча в Zoom / Google Meet. Запись встречи — у тебя.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-day">День 10 · Финал</div>
+        <div class="timeline-title">Стайл-бук и доступ</div>
+        <div class="timeline-text">Получаешь PDF Style Book, запись встречи, доступ в Telegram-сопровождение.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-day">Дни 11–40 · Сопровождение</div>
+        <div class="timeline-title">30 дней на твои вопросы</div>
+        <div class="timeline-text">Применение, спорные ситуации, замены распроданных позиций. До 15 вопросов в рамках сопровождения.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="container">
+    <div class="section-label-wrap">
+      <p class="section-label">Вопросы о «Преображении»</p>
+    </div>
+    <h2 class="section-title">Что важно знать <em>перед стартом</em></h2>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>Сколько по времени занимает работа?</summary>
+        <div class="answer">
+          10–14 рабочих дней <strong>после получения</strong> анкеты, фото и материалов гардероба. Это важно: если ты задержишь материалы, срок сдвинется. Стандартно укладываемся в 10 дней.
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Что если у меня нет 30 вещей в гардеробе?</summary>
+        <div class="answer">
+          Это даже хорошо. Меньше материала — глубже разбор. Я сама определю, какие вещи стоит разобрать в первую очередь.
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Что если ссылка на вещь из списка уже распродана?</summary>
+        <div class="answer">
+          Ссылки актуальны на момент подготовки стайл-бука. Если что-то распродано — пиши в Telegram в рамках 30 дней сопровождения, подберу замену в той же стилистике и цене.
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Можно ли работать без видеоразбора?</summary>
+        <div class="answer">
+          Нет. Видеоразбор — ключевая часть «Преображения». Это час личной работы, где мы вместе проходим формулу, капсулу и применение. Если живой контакт не нужен — выбери «Карту стиля».
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Какие условия возврата?</summary>
+        <div class="answer">
+          До начала персональной работы возможен полный возврат. После начала анализа — частичный возврат с удержанием стоимости уже выполненного этапа. Точные условия зафиксированы в оферте.
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Что насчёт фото и данных?</summary>
+        <div class="answer">
+          Фотографии используются только для работы над твоей формулой. В текущей версии они не сохраняются после обработки и не передаются третьим лицам в их интересах. Перед коммерческим запуском будет опубликована полная политика хранения, удаления и обработки персональных данных. Ты можешь запросить удаление своих данных в любой момент.
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta" id="book">
+  <div class="narrow">
+    <h2>Готова к <em>перерождению</em>?</h2>
+    <p class="final-cta-sub">Стартовая цена 35 000 ₽ действует для первых 7 клиенток. После — 60 000 ₽.</p>
+    <a href="https://t.me/sense_style_ai" class="btn-cta">Забронировать место</a>
+    <p class="btn-meta">приём заявок открыт · ответ в течение 24 часов</p>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>© 2026 «Чувство стиля» · Санкт-Петербург</div>
+    <div class="footer-links">
+      <a href="https://t.me/sense_style_ai">Telegram</a>
+      <a href="https://www.instagram.com/ksenia.strategy.ai">Instagram</a>
+      <a href="index.html">Главная</a>
+      <a href="#">Оферта</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Мобильное бургер-меню
+(function () {
+  var nav = document.querySelector('.nav');
+  var burger = document.getElementById('navBurger');
+  var menu = document.getElementById('navMobile');
+  if (!nav || !burger || !menu) return;
+  burger.addEventListener('click', function () {
+    var open = nav.classList.toggle('open');
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  menu.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      nav.classList.remove('open');
+      burger.setAttribute('aria-expanded', 'false');
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

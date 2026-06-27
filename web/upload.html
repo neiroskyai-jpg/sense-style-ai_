@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Загрузка фото — «Чувство стиля»</title>
+<meta name="description" content="Загрузи фото в полный рост — и получи 6 фотореалистичных образов под свою формулу стиля.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;1,6..96,400;1,6..96,500&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:         #7A1C2E;
+  --red-deep:    #5A1422;
+  --red-glow:    #9C2538;
+  --cream-bg:    #F5EFE3;
+  --paper:       #FFFFFF;
+  --ink:         #1A1A1A;
+  --ink-muted:   rgba(26, 26, 26, 0.65);
+  --ink-dim:     rgba(26, 26, 26, 0.42);
+  --rose-soft:   rgba(122, 28, 46, 0.08);
+  --line:        rgba(26, 26, 26, 0.12);
+  --footer-bg:   #1A1A1A;
+  --serif: 'Bodoni Moda', Georgia, serif;
+  --sans:  'Onest', -apple-system, sans-serif;
+  --r-card:  18px;
+  --r-photo: 14px;
+  --r-pill:  999px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--cream-bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+h1, h2, h3, h4 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.01em; color: var(--ink); }
+em { color: var(--red); font-style: italic; font-weight: 500; }
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+
+/* === NAV === */
+.nav {
+  background: rgba(245, 239, 227, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 16px 0;
+  border-bottom: 1px solid transparent;
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: 1440px; margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 56px);
+  gap: 20px;
+}
+.logo { text-decoration: none; display: inline-flex; flex-direction: column; line-height: 1; }
+.logo-main {
+  font-family: var(--serif); font-size: 19px; font-weight: 600;
+  color: var(--ink); letter-spacing: 0.06em;
+}
+.logo-sub {
+  font-size: 9.5px; font-weight: 500; color: var(--ink-muted);
+  letter-spacing: 0.28em; margin-top: 4px;
+}
+.nav-back {
+  font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--ink-muted); font-weight: 500; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: color 0.2s;
+}
+.nav-back:hover { color: var(--red); }
+
+/* === MAIN === */
+main {
+  flex: 1;
+  padding: clamp(40px, 6vh, 72px) 0 clamp(60px, 9vh, 110px);
+}
+.container {
+  max-width: 880px; margin: 0 auto;
+  padding: 0 clamp(24px, 6vw, 56px);
+}
+
+/* === STEP HEADER === */
+.upload-eyebrow {
+  font-size: 11px; letter-spacing: 0.30em; text-transform: uppercase;
+  color: var(--red); font-weight: 500; margin-bottom: 18px;
+  display: inline-flex; align-items: center; gap: 14px;
+}
+.upload-eyebrow::before, .upload-eyebrow::after {
+  content: ''; display: block; width: 28px; height: 1px;
+  background: var(--red); opacity: 0.55;
+}
+.upload-eyebrow {
+  justify-content: center;
+}
+.upload-header {
+  text-align: center;
+  margin-bottom: clamp(36px, 5vh, 56px);
+}
+.upload-title {
+  font-family: var(--serif);
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.12; letter-spacing: -0.015em;
+  margin-bottom: 18px;
+  color: var(--ink); font-weight: 500;
+}
+.upload-title em { color: var(--red); font-style: italic; font-weight: 500; }
+.upload-sub {
+  font-size: 16px; color: var(--ink-muted);
+  max-width: 580px; margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* === DROPZONE === */
+.dropzone {
+  background: var(--paper);
+  border: 2px dashed rgba(122, 28, 46, 0.32);
+  border-radius: var(--r-card);
+  padding: clamp(40px, 7vh, 72px) clamp(24px, 4vw, 48px);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  box-shadow: 0 6px 20px rgba(31, 22, 20, 0.05);
+}
+.dropzone:hover, .dropzone.is-dragover {
+  border-color: var(--red);
+  background: #FFFEFB;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(31, 22, 20, 0.08);
+}
+.dropzone-icon {
+  width: 64px; height: 64px; margin: 0 auto 22px;
+  border-radius: 50%;
+  background: var(--rose-soft);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--red);
+}
+.dropzone-icon svg { width: 28px; height: 28px; }
+.dropzone-title {
+  font-family: var(--serif); font-size: 22px;
+  color: var(--ink); font-weight: 500;
+  margin-bottom: 8px; line-height: 1.3;
+}
+.dropzone-text {
+  font-size: 14px; color: var(--ink-muted);
+  line-height: 1.6; margin-bottom: 20px;
+  max-width: 420px; margin-left: auto; margin-right: auto;
+}
+.dropzone-text strong { color: var(--red); font-weight: 500; }
+.dropzone-btn {
+  display: inline-block; background: var(--red); color: #FFFFFF;
+  padding: 14px 32px; border-radius: var(--r-pill);
+  font-family: var(--sans); font-size: 11.5px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  border: 1px solid var(--red);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.dropzone-btn:hover { background: var(--red-deep); border-color: var(--red-deep); }
+.dropzone-meta {
+  font-size: 11px; color: var(--ink-dim);
+  letter-spacing: 0.18em; text-transform: uppercase;
+  margin-top: 18px;
+}
+#file-input { display: none; }
+
+/* === PREVIEW === */
+.preview {
+  display: none;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: clamp(24px, 3.5vw, 36px);
+  box-shadow: 0 6px 20px rgba(31, 22, 20, 0.05);
+}
+.preview.is-visible { display: block; }
+.preview-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr;
+  gap: clamp(20px, 3vw, 36px);
+  align-items: start;
+}
+.preview-photo {
+  aspect-ratio: 3 / 4;
+  border-radius: var(--r-photo);
+  overflow: hidden;
+  background: var(--cream-bg);
+  position: relative;
+}
+.preview-photo img { width: 100%; height: 100%; object-fit: cover; }
+.preview-name {
+  font-family: var(--serif); font-size: 17px;
+  color: var(--ink); font-weight: 500;
+  margin-bottom: 6px; line-height: 1.3;
+  word-break: break-all;
+}
+.preview-meta {
+  font-size: 12px; color: var(--ink-dim);
+  letter-spacing: 0.06em;
+  margin-bottom: 22px;
+}
+.preview-actions {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.btn-primary {
+  display: inline-block; background: var(--red); color: #FFFFFF;
+  padding: 16px 36px; border-radius: var(--r-pill);
+  font-family: var(--sans); font-size: 12px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  text-decoration: none; transition: all 0.3s;
+  border: 1px solid var(--red); cursor: pointer;
+}
+.btn-primary:hover { background: var(--red-deep); border-color: var(--red-deep); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-ghost {
+  display: inline-block; background: transparent; color: var(--ink);
+  padding: 16px 28px; border-radius: var(--r-pill);
+  font-family: var(--sans); font-size: 12px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  text-decoration: none; transition: all 0.3s;
+  border: 1px solid var(--ink); cursor: pointer;
+}
+.btn-ghost:hover { background: var(--ink); color: var(--cream-bg); }
+
+/* === TIPS === */
+.tips {
+  margin-top: clamp(36px, 5vh, 56px);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: clamp(24px, 3.5vw, 36px);
+  box-shadow: 0 6px 20px rgba(31, 22, 20, 0.05);
+}
+.tips-title {
+  font-family: var(--serif); font-size: 20px;
+  color: var(--ink); font-weight: 500;
+  margin-bottom: 18px; line-height: 1.3;
+}
+.tips-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px 28px;
+}
+.tip {
+  display: flex; gap: 12px; align-items: flex-start;
+  font-size: 14px; color: var(--ink-muted);
+  line-height: 1.6;
+}
+.tip-dot {
+  flex-shrink: 0;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  margin-top: 8px;
+}
+.tip strong { color: var(--ink); font-weight: 500; }
+@media (max-width: 640px) {
+  .tips-grid { grid-template-columns: 1fr; }
+  .preview-grid { grid-template-columns: 1fr; }
+  .preview-photo { max-width: 240px; }
+}
+
+/* === PROCESSING STATE === */
+.processing {
+  display: none;
+  text-align: center;
+  padding: clamp(40px, 7vh, 72px) 24px;
+}
+.processing.is-visible { display: block; }
+.processing-spinner {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 3px solid var(--rose-soft);
+  border-top-color: var(--red);
+  margin: 0 auto 22px;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.processing-title {
+  font-family: var(--serif); font-size: 22px;
+  color: var(--ink); font-weight: 500;
+  margin-bottom: 8px; line-height: 1.3;
+}
+.processing-text {
+  font-size: 14px; color: var(--ink-muted);
+  line-height: 1.7; max-width: 460px;
+  margin: 0 auto;
+}
+
+/* === FOOTER === */
+footer {
+  background: var(--footer-bg); color: rgba(255, 255, 255, 0.6);
+  padding: 28px 0;
+  font-size: 13px;
+}
+.footer-inner {
+  max-width: 1320px; margin: 0 auto;
+  padding: 0 clamp(24px, 6vw, 56px);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 16px;
+}
+.footer-links { display: flex; gap: 24px; }
+.footer-links a {
+  color: rgba(255, 255, 255, 0.7); text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--red-glow); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo">
+      <span class="logo-main">ЧУВСТВО СТИЛЯ</span>
+      <span class="logo-sub">ИИ · СТИЛИСТ</span>
+    </a>
+    <a href="index.html" class="nav-back">← На главную</a>
+  </div>
+</nav>
+
+<main>
+  <div class="container">
+
+    <div class="upload-header">
+      <p class="upload-eyebrow">Шаг 2 из 4 · Загрузка фото</p>
+      <h1 class="upload-title">Загрузи <em>фото в полный рост</em></h1>
+      <p class="upload-sub">ИИ анализирует фото вместе с твоей формулой стиля, типом фигуры и цветовой палитрой — и создаёт 6 фотореалистичных образов под сценарии твоей жизни.</p>
+    </div>
+
+    <!-- DROPZONE -->
+    <label class="dropzone" id="dropzone" for="file-input">
+      <div class="dropzone-icon">
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 18v6a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-6"/>
+          <path d="M16 4v16"/>
+          <path d="M10 10l6-6 6 6"/>
+        </svg>
+      </div>
+      <div class="dropzone-title">Перетащи фото сюда</div>
+      <p class="dropzone-text">
+        или нажми кнопку, чтобы выбрать с устройства.<br>
+        <strong>Лучше всего</strong> — снимок в полный рост, дневной свет, нейтральный фон.
+      </p>
+      <span class="dropzone-btn">Выбрать фото</span>
+      <p class="dropzone-meta">JPG · PNG · до 10 МБ</p>
+      <input type="file" id="file-input" accept="image/jpeg,image/png">
+    </label>
+
+    <!-- PREVIEW -->
+    <div class="preview" id="preview">
+      <div class="preview-grid">
+        <div class="preview-photo">
+          <img id="preview-img" src="" alt="Твоё фото">
+        </div>
+        <div class="preview-info">
+          <div class="preview-name" id="preview-name"></div>
+          <div class="preview-meta" id="preview-meta"></div>
+          <div class="preview-actions">
+            <button type="button" class="btn-primary" id="btn-analyze">Запустить ИИ-анализ →</button>
+            <button type="button" class="btn-ghost" id="btn-replace">Заменить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROCESSING -->
+    <div class="processing" id="processing">
+      <div class="processing-spinner"></div>
+      <div class="processing-title">Анализирую фото…</div>
+      <p class="processing-text">ИИ читает пропорции, цветотип и сочетает с твоей формулой. Это занимает до 30 минут — мы пришлём письмо на твою почту, как только 6 образов будут готовы.</p>
+    </div>
+
+    <!-- TIPS -->
+    <div class="tips" id="tips">
+      <div class="tips-title">Как сделать хорошее фото</div>
+      <div class="tips-grid">
+        <div class="tip">
+          <span class="tip-dot"></span>
+          <span><strong>В полный рост.</strong> С головы до пят, без обрезанных рук и ног.</span>
+        </div>
+        <div class="tip">
+          <span class="tip-dot"></span>
+          <span><strong>Дневной свет.</strong> У окна или на улице — без вспышки и фильтров.</span>
+        </div>
+        <div class="tip">
+          <span class="tip-dot"></span>
+          <span><strong>Нейтральный фон.</strong> Светлая стена, без пёстрых обоев и людей сзади.</span>
+        </div>
+        <div class="tip">
+          <span class="tip-dot"></span>
+          <span><strong>Облегающая одежда.</strong> Чтобы ИИ увидел пропорции фигуры — лучше топ и узкие брюки.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div>© 2026 «Чувство стиля» · Санкт-Петербург</div>
+    <div class="footer-links">
+      <a href="https://t.me/sense_style_ai" target="_blank" rel="noopener">Telegram</a>
+      <a href="https://www.instagram.com/ksenia.strategy.ai" target="_blank" rel="noopener">Instagram</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+  const preview = document.getElementById('preview');
+  const previewImg = document.getElementById('preview-img');
+  const previewName = document.getElementById('preview-name');
+  const previewMeta = document.getElementById('preview-meta');
+  const btnReplace = document.getElementById('btn-replace');
+  const btnAnalyze = document.getElementById('btn-analyze');
+  const processing = document.getElementById('processing');
+  const tips = document.getElementById('tips');
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' Б';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' КБ';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
+  }
+
+  function showPreview(file) {
+    if (!file.type.startsWith('image/')) {
+      alert('Пожалуйста, выбери фото — JPG или PNG.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Файл больше 10 МБ. Попробуй сжать или взять другое фото.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      previewImg.src = e.target.result;
+      previewName.textContent = file.name;
+      previewMeta.textContent = formatSize(file.size);
+      dropzone.style.display = 'none';
+      preview.classList.add('is-visible');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  fileInput.addEventListener('change', function(e) {
+    if (e.target.files.length > 0) showPreview(e.target.files[0]);
+  });
+
+  ['dragenter', 'dragover'].forEach(evt => {
+    dropzone.addEventListener(evt, function(e) {
+      e.preventDefault();
+      dropzone.classList.add('is-dragover');
+    });
+  });
+  ['dragleave', 'drop'].forEach(evt => {
+    dropzone.addEventListener(evt, function(e) {
+      e.preventDefault();
+      dropzone.classList.remove('is-dragover');
+    });
+  });
+  dropzone.addEventListener('drop', function(e) {
+    if (e.dataTransfer.files.length > 0) showPreview(e.dataTransfer.files[0]);
+  });
+
+  btnReplace.addEventListener('click', function() {
+    preview.classList.remove('is-visible');
+    dropzone.style.display = '';
+    fileInput.value = '';
+  });
+
+  btnAnalyze.addEventListener('click', function() {
+    preview.classList.remove('is-visible');
+    tips.style.display = 'none';
+    processing.classList.add('is-visible');
+    // TODO (MVP): отправить файл на бэкенд → Claude Vision → 6 образов через image-gen API
+  });
+</script>
+
+</body>
+</html>

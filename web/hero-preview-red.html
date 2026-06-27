@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Чувство стиля — hero preview (глубокий красный, magazine collage)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400;1,6..96,500&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red:         #9C1A22;                  /* глубокий лаковый красный — как туфля Manolo */
+    --red-deep:    #6E101A;                  /* тени, виньетка */
+    --red-glow:    #B82532;                  /* блик */
+    --cream:       #F5EFE6;                  /* основной текст на красном */
+    --cream-bg:    #F8F1E0;                  /* фон банеров со светом — слегка винтажный */
+    --paper:       #F9F1D8;                  /* фон полароидов — состаренная бумага */
+    --ink:         #1F1614;                  /* текст на кремовом */
+    --ink-muted:   rgba(31, 22, 20, 0.65);
+    --ink-dim:     rgba(31, 22, 20, 0.40);
+    --rose:        #EBD3CC;                  /* пыльная роза */
+    --rose-soft:   rgba(235, 211, 204, 0.32);
+    --washi:       rgba(232, 215, 190, 0.85);/* скотч */
+    --serif:       'Bodoni Moda', Georgia, serif;
+    --sans:        'Onest', -apple-system, sans-serif;
+  }
+
+  /* === Бумажная зернистая фактура (SVG noise) — наслаивается поверх любых поверхностей === */
+  .paper-grain::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.25 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity: 0.55;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    background: var(--cream-bg);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.65;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.01em; }
+
+  /* === Верхняя кремовая полоса (с грейном) === */
+  .top-strip {
+    position: relative;
+    background: var(--cream-bg);
+    padding: 30px 0 42px;
+    text-align: center;
+  }
+  .top-strip > * { position: relative; z-index: 2; }
+  .top-strip .logo {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+  }
+  .top-strip .logo em {
+    font-style: italic;
+    color: var(--red);
+    font-weight: 500;
+  }
+  .top-strip .tagline {
+    font-size: 11px;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-top: 10px;
+  }
+  .top-strip .edition {
+    position: absolute;
+    top: 30px;
+    right: 36px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-dim);
+    letter-spacing: 0.12em;
+    z-index: 2;
+  }
+  .top-strip .edition .num {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--red);
+  }
+
+  /* === HERO === */
+  .hero {
+    position: relative;
+    background: var(--red);
+    color: var(--cream);
+    padding: 80px 0 100px;
+    overflow: hidden;
+  }
+  /* Виньетка + лаковый блик */
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 12% 18%, rgba(255, 255, 255, 0.10) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 100%, var(--red-deep) 0%, transparent 55%),
+      radial-gradient(ellipse at 100% 0%, rgba(184, 37, 50, 0.4) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .hero-inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 48px;
+    position: relative;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+
+  /* Газетный фрагмент за коллажем — фактура «обложки журнала» */
+  .newsprint {
+    position: absolute;
+    left: -40px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-2deg);
+    width: 620px;
+    height: 480px;
+    background: var(--cream-bg);
+    opacity: 0.09;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    z-index: 2;
+    overflow: hidden;
+    padding: 24px;
+    font-family: var(--serif);
+    font-size: 9px;
+    line-height: 1.4;
+    color: var(--ink);
+    column-count: 4;
+    column-gap: 14px;
+  }
+  .newsprint .masthead {
+    column-span: all;
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-align: center;
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+
+  /* === Полароидный коллаж === */
+  .collage {
+    position: relative;
+    height: 580px;
+    width: 100%;
+    z-index: 3;
+  }
+  .polaroid {
+    position: absolute;
+    background: var(--paper);
+    padding: 14px 14px 46px;
+    box-shadow:
+      0 28px 56px rgba(0, 0, 0, 0.38),
+      0 6px 14px rgba(0, 0, 0, 0.20);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .polaroid::after {
+    /* Тонкая зернистость на бумаге полароида */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.4  0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0.18 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity: 0.55;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+  .polaroid img {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    display: block;
+    background: #ddd;
+    filter: contrast(1.04) saturate(0.92);
+    position: relative;
+    z-index: 1;
+  }
+  .polaroid .caption {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: 12px;
+    text-align: center;
+    letter-spacing: 0.04em;
+    position: relative;
+    z-index: 1;
+  }
+  .washi {
+    position: absolute;
+    background: var(--washi);
+    height: 26px;
+    width: 90px;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-3deg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.10);
+    z-index: 2;
+  }
+
+  /* Расположение полароидов */
+  .polaroid--main {
+    width: 280px;
+    top: 30px;
+    left: 30px;
+    transform: rotate(-5deg);
+    z-index: 4;
+  }
+  .polaroid--top {
+    width: 170px;
+    top: 0;
+    right: 70px;
+    transform: rotate(7deg);
+    z-index: 3;
+  }
+  .polaroid--mid {
+    width: 165px;
+    top: 240px;
+    right: 0;
+    transform: rotate(-3deg);
+    z-index: 5;
+  }
+  .polaroid--bottom {
+    width: 200px;
+    top: 360px;
+    left: 120px;
+    transform: rotate(4deg);
+    z-index: 6;
+  }
+  .polaroid:hover {
+    transform: scale(1.04) rotate(0deg);
+    z-index: 10;
+  }
+
+  /* «Вырванный» хвостик газеты под коллажем */
+  .torn-strip {
+    position: absolute;
+    bottom: -10px;
+    left: 60px;
+    width: 220px;
+    height: 36px;
+    background: var(--cream-bg);
+    transform: rotate(-3deg);
+    z-index: 2;
+    clip-path: polygon(0 0, 100% 0, 96% 100%, 88% 60%, 78% 95%, 68% 70%, 56% 100%, 44% 65%, 32% 95%, 20% 70%, 8% 100%, 0 60%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    font-family: var(--serif);
+    font-size: 9px;
+    color: var(--ink-dim);
+    padding: 4px 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    overflow: hidden;
+  }
+
+  /* === Правая колонка с текстом === */
+  .hero-content { padding-right: 20px; position: relative; z-index: 3; }
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.34em;
+    color: var(--rose);
+    text-transform: uppercase;
+    margin-bottom: 22px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--rose);
+    opacity: 0.7;
+  }
+  .hero h1 {
+    font-size: clamp(38px, 4.6vw, 62px);
+    line-height: 1.04;
+    color: var(--cream);
+    margin-bottom: 28px;
+  }
+  .hero h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--rose);
+  }
+  .hero-intro {
+    font-size: 14.5px;
+    color: rgba(245, 239, 230, 0.85);
+    line-height: 1.65;
+    margin-bottom: 22px;
+    max-width: 460px;
+  }
+  .hero-quote {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--cream);
+    line-height: 1.55;
+    margin-bottom: 36px;
+    max-width: 440px;
+    padding-left: 16px;
+    border-left: 2px solid var(--rose);
+  }
+  .btn-cta {
+    display: inline-block;
+    background: var(--cream);
+    color: var(--ink);
+    padding: 18px 56px;
+    border-radius: 999px;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 1px solid var(--cream);
+    position: relative;
+    z-index: 2;
+  }
+  .btn-cta:hover {
+    background: transparent;
+    color: var(--cream);
+  }
+  .btn-meta {
+    display: block;
+    font-size: 11px;
+    color: rgba(245, 239, 230, 0.6);
+    margin-top: 14px;
+    letter-spacing: 0.04em;
+  }
+
+  /* === Нижняя кремовая полоса === */
+  .bottom-strip {
+    position: relative;
+    background: var(--cream-bg);
+    padding: 40px 0;
+    text-align: center;
+  }
+  .bottom-strip > * { position: relative; z-index: 2; }
+  .bottom-strip .label {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 11px;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 18px;
+  }
+  .bottom-strip .label::before,
+  .bottom-strip .label::after {
+    content: '';
+    display: block;
+    width: 30px;
+    height: 1px;
+    background: var(--ink-dim);
+  }
+  .bottom-strip .quote {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 19px;
+    color: var(--ink);
+    max-width: 760px;
+    margin: 0 auto;
+    line-height: 1.5;
+    font-weight: 400;
+  }
+  .bottom-strip .barcode {
+    position: absolute;
+    bottom: 16px;
+    right: 36px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+  }
+
+  @media (max-width: 900px) {
+    .hero-inner {
+      grid-template-columns: 1fr;
+      gap: 40px;
+      padding: 0 24px;
+    }
+    .newsprint { display: none; }
+    .collage { height: 540px; margin: 0 auto; max-width: 420px; }
+    .polaroid--main { width: 240px; left: 0; }
+    .polaroid--top { width: 150px; right: 0; }
+    .polaroid--mid { width: 140px; }
+    .polaroid--bottom { width: 170px; left: 60px; }
+    .torn-strip { left: 30px; }
+    .hero-content { padding-right: 0; text-align: center; }
+    .hero-intro, .hero-quote { margin-left: auto; margin-right: auto; }
+    .hero-quote { border-left: none; padding-left: 0; }
+    .top-strip .edition { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Верхняя кремовая полоса -->
+<div class="top-strip paper-grain">
+  <div class="edition">VOL. I · <span class="num">N° 01</span></div>
+  <div class="logo">Чувство <em>стиля</em></div>
+  <div class="tagline">Авторская методология стиля × ИИ</div>
+</div>
+
+<!-- HERO в глубоком красном с magazine collage -->
+<header class="hero paper-grain">
+  <div class="hero-inner">
+
+    <!-- Декоративный газетный фрагмент за коллажем -->
+    <div class="newsprint" aria-hidden="true">
+      <div class="masthead">CHUVSTVO</div>
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+    </div>
+
+    <!-- Левая колонка: полароидный коллаж -->
+    <div class="collage">
+      <div class="polaroid polaroid--main">
+        <div class="washi"></div>
+        <img src="photos/kolupaeva-gallery/деловая встреча.png" alt="Деловой образ">
+        <div class="caption">встреча, ясность</div>
+      </div>
+      <div class="polaroid polaroid--top">
+        <div class="washi"></div>
+        <img src="photos/kolupaeva-gallery/презентация.png" alt="Презентация">
+        <div class="caption">сцена</div>
+      </div>
+      <div class="polaroid polaroid--mid">
+        <div class="washi"></div>
+        <img src="photos/kolupaeva-gallery/свидание.png" alt="Свидание">
+        <div class="caption">вечер</div>
+      </div>
+      <div class="polaroid polaroid--bottom">
+        <div class="washi"></div>
+        <img src="photos/kolupaeva-gallery/путешествие.png" alt="Путешествие">
+        <div class="caption">дорога</div>
+      </div>
+
+      <!-- Оторванный кусок газеты внизу коллажа -->
+      <div class="torn-strip" aria-hidden="true">EDITORIAL · STYLE · PSYCHOLOGY</div>
+    </div>
+
+    <!-- Правая колонка: текст -->
+    <div class="hero-content">
+      <p class="hero-eyebrow">Авторская методология · ИИ-платформа</p>
+      <h1>Узнай свою<br><em>формулу стиля</em><br>и посмотри на себя <em>по-новому</em></h1>
+      <p class="hero-intro">
+        Стилист на основе психологии моды. Не «до и после преображения» — до и после ясности. Не делает из тебя другого человека. Находит формулу, которая делает тебя — заметнее.
+      </p>
+      <div class="hero-quote">
+        Стиль — это не про моду. Это про то, чтобы внешний образ перестал расходиться с тем, кем ты стала.
+      </div>
+      <a href="/demo" class="btn-cta">Узнать свой стиль</a>
+      <span class="btn-meta">5 минут · бесплатно · без регистрации</span>
+    </div>
+
+  </div>
+</header>
+
+<!-- Нижняя кремовая полоса -->
+<div class="bottom-strip paper-grain">
+  <div class="label">Авторская методология</div>
+  <div class="quote">
+    «Чувство стиля» — не про моду. Про то, чтобы внешний образ перестал расходиться с тем, кем ты стала.
+  </div>
+  <div class="barcode">|||·||·|||·||·||·|||·|· 2026</div>
+</div>
+
+</body>
+</html>

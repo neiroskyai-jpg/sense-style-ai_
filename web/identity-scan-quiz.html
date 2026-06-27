@@ -1,0 +1,2286 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Чувство стиля — Диагностика</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;1,6..96,400;1,6..96,500&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* === Палитра согласована с hero-preview-red.html (2026-05-17) === */
+  --bg: #FBF4ED;                 /* нежно-розовый blush */
+  --bg2: #F8EDE5;                /* чуть насыщеннее для секций */
+  --surface: #FFFFFF;            /* белые карточки — контраст с розовым */
+  --surface2: #FDF7F2;           /* почти белый с розовым подтоном */
+  --ink: #1F1614;                /* основной текст */
+  --ink2: rgba(31,22,20,0.78);   /* приглушённый текст */
+  --ink3: rgba(31,22,20,0.65);   /* ink-muted из hero */
+  --ink4: rgba(31,22,20,0.40);   /* ink-dim из hero */
+  /* Red editorial — три уровня красного как в hero */
+  --gold: #9C1A22;        /* глубокий лаковый красный — основной акцент */
+  --gold-l: #EBD3CC;      /* пыльная роза — светлая подложка */
+  --gold-ll: #F8E5DF;     /* ещё нежнее — фон выбранной опции */
+  --mauve: #6E101A;       /* red-deep — hover, акцент-в-акценте */
+  --mauve-l: #F5E0E0;
+  --rose: #B82532;        /* red-glow — highlight */
+  --rose-l: #FBE9E2;
+  --sage: #6B9070;        /* зелёный для «успех» — оставлен семантически */
+  --sage-l: #E4EFE5;
+  --border: #E8D7C8;             /* тёплый бежевый — под cream-bg */
+  --border2: #D8C5B5;
+  --shadow: rgba(31,22,20,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Onest', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* LAYOUT */
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px 60px;
+}
+
+.card {
+  width: 100%;
+  max-width: 580px;
+  margin-top: 40px;
+}
+
+.screen { display: none; }
+.screen.active { display: block; animation: rise .45s cubic-bezier(.4,0,.2,1); }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* INTRO */
+.brand {
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 500;
+  margin-bottom: 28px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.brand::before, .brand::after {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 1px;
+  background: var(--gold-l);
+}
+.brand-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: color .2s;
+}
+.brand-link:hover { color: var(--ink); }
+
+.back-home {
+  position: fixed;
+  top: 18px; left: 18px;
+  z-index: 100;
+  font-family: 'Onest', -apple-system, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink3);
+  text-decoration: none;
+  background: rgba(249, 246, 241, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 0.5px solid var(--border);
+  transition: all .2s;
+}
+.back-home:hover {
+  color: var(--gold);
+  border-color: var(--gold);
+  transform: translateX(-2px);
+}
+@media (max-width: 480px) {
+  .back-home { font-size: 11px; padding: 6px 10px; top: 12px; left: 12px; }
+}
+
+.intro-title {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: clamp(32px, 7vw, 48px);
+  font-weight: 300;
+  line-height: 1.15;
+  color: var(--ink);
+  text-align: center;
+  margin-bottom: 6px;
+}
+.intro-title em { font-style: italic; color: var(--gold); }
+
+.intro-rule {
+  width: 36px; height: 1px;
+  background: var(--gold-l);
+  margin: 22px auto;
+}
+
+.intro-lead {
+  font-size: 15px;
+  color: var(--ink2);
+  text-align: center;
+  line-height: 1.8;
+  font-weight: 300;
+  margin-bottom: 24px;
+}
+.intro-lead strong { color: var(--ink); font-weight: 500; }
+
+.science-pill {
+  background: var(--gold-ll);
+  border: 1px solid var(--gold-l);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 12.5px;
+  color: var(--ink3);
+  line-height: 1.7;
+  margin-bottom: 24px;
+  font-weight: 300;
+}
+.science-pill strong { color: var(--ink2); font-weight: 500; }
+
+.meta-row {
+  display: flex;
+  gap: 0;
+  margin-bottom: 28px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.meta-item {
+  flex: 1;
+  text-align: center;
+  padding: 12px 8px;
+  border-right: 1px solid var(--border);
+}
+.meta-item:last-child { border-right: none; }
+.meta-val { font-size: 16px; font-weight: 500; color: var(--ink); }
+.meta-key { font-size: 10px; color: var(--ink4); text-transform: uppercase; letter-spacing: .08em; margin-top: 2px; }
+
+/* BUTTONS */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 17px 28px;
+  border-radius: 10px;
+  font-family: 'Onest', -apple-system, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .22s;
+  border: none;
+  text-align: center;
+  letter-spacing: .01em;
+}
+.btn-gold {
+  background: var(--gold);
+  color: #fff;
+}
+.btn-gold:hover { background: #6E101A; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(156,26,34,.22); }
+.btn-gold:disabled { opacity: .4; pointer-events: none; }
+.btn-outline {
+  background: transparent;
+  color: var(--ink3);
+  border: 1px solid var(--border2);
+  margin-top: 10px;
+}
+.btn-outline:hover { border-color: var(--ink4); color: var(--ink2); }
+
+/* PROGRESS BAR */
+.prog-wrap { margin-bottom: 28px; }
+.prog-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.prog-block-label {
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--mauve);
+  font-weight: 500;
+}
+.prog-count { font-size: 12px; color: var(--ink4); }
+.prog-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.prog-fill {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 3px;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+}
+
+/* BLOCK HEADER */
+.block-header {
+  margin-bottom: 20px;
+}
+.block-num {
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink4);
+  margin-bottom: 6px;
+}
+.block-title {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: 11px;
+  color: var(--ink3);
+  font-style: italic;
+  font-weight: 300;
+}
+
+/* QUESTION */
+.q-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 22px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 16px var(--shadow);
+}
+.q-num-badge {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--gold);
+  font-weight: 500;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+.q-text {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: clamp(18px, 4vw, 24px);
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.q-hint {
+  font-size: 12px;
+  color: var(--ink4);
+  font-style: italic;
+  margin-bottom: 18px;
+  font-weight: 300;
+}
+
+/* MULTI-SELECT CHIPS (q13: выбор 3 характеристик) */
+.chip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+@media (max-width: 380px) { .chip-grid { grid-template-columns: repeat(2, 1fr); } }
+.chip {
+  text-align: center;
+  padding: 12px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  font-size: 13.5px;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: all .18s;
+  user-select: none;
+}
+.chip:hover { border-color: var(--border2); background: var(--surface); }
+.chip.sel {
+  border-color: var(--gold);
+  background: var(--gold-ll);
+  color: var(--ink);
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(184,146,74,.18);
+}
+.chip.disabled {
+  opacity: .35;
+  pointer-events: none;
+}
+.chip-counter {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink4);
+  letter-spacing: .04em;
+}
+.chip-counter strong { color: var(--gold); font-weight: 500; }
+.chip-counter.full strong { color: var(--sage); }
+
+/* OPTIONS */
+.options { display: flex; flex-direction: column; gap: 8px; }
+.opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 13px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .18s;
+  background: var(--surface2);
+}
+.opt:hover { border-color: var(--border2); background: var(--surface); transform: translateX(3px); }
+.opt.sel {
+  border-color: var(--gold);
+  background: var(--gold-ll);
+}
+.opt-dot {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .18s;
+}
+.opt.sel .opt-dot {
+  border-color: var(--gold);
+  background: var(--gold);
+}
+.opt.sel .opt-dot::after {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #fff;
+}
+.opt-body { flex: 1; }
+.opt-text { font-size: 13.5px; color: var(--ink2); line-height: 1.5; }
+.opt.sel .opt-text { color: var(--ink); }
+.opt-sub { font-size: 11.5px; color: var(--ink4); margin-top: 3px; font-style: italic; }
+
+/* NAV */
+.q-nav { display: flex; gap: 10px; margin-top: 16px; }
+.btn-back-sm {
+  padding: 13px 18px;
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink4);
+  font-family: 'Onest', -apple-system, sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .18s;
+  flex-shrink: 0;
+}
+.btn-back-sm:hover { color: var(--ink2); border-color: var(--ink4); }
+.btn-next-sm {
+  flex: 1;
+  padding: 13px 22px;
+  border: none;
+  border-radius: 10px;
+  background: var(--gold);
+  color: #fff;
+  font-family: 'Onest', -apple-system, sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .22s;
+}
+.btn-next-sm:disabled { opacity: .35; pointer-events: none; }
+.btn-next-sm:not(:disabled):hover { background: #6E101A; }
+
+/* TRANSITION CARD */
+.transition-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 16px var(--shadow);
+}
+.tc-icon { font-size: 28px; margin-bottom: 14px; }
+.tc-label { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink4); margin-bottom: 8px; }
+.tc-title {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.tc-desc { font-size: 13px; color: var(--ink3); line-height: 1.7; font-weight: 300; }
+
+/* ===== RESULT ===== */
+.r-eyebrow {
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+/* GAP RING */
+.gap-ring-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.gap-ring {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin-bottom: 12px;
+}
+.gap-ring svg { transform: rotate(-90deg); }
+.gap-ring-track { fill: none; stroke: var(--border); stroke-width: 8; }
+.gap-ring-fill {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 408;
+  stroke-dashoffset: 408;
+  transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1);
+}
+.gap-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.gap-pct {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: 44px;
+  font-weight: 300;
+  color: var(--ink);
+  line-height: 1;
+}
+.gap-pct-sym { font-size: 20px; color: var(--ink3); }
+.gap-pct-label { font-size: 10px; color: var(--ink4); letter-spacing: .1em; margin-top: 2px; }
+
+.gap-headline {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--ink);
+  text-align: center;
+  margin: 18px 0 4px;
+  letter-spacing: -0.01em;
+}
+.gap-subhead {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--ink3);
+  text-align: center;
+  margin-bottom: 14px;
+}
+.gap-explainer {
+  font-size: 13px;
+  color: var(--ink2);
+  text-align: center;
+  line-height: 1.7;
+  max-width: 480px;
+  margin: 0 auto 24px;
+  font-weight: 300;
+}
+
+.gap-scale {
+  max-width: 480px;
+  margin: 0 auto 28px;
+}
+.gap-scale-track {
+  position: relative;
+  height: 3px;
+  background: #ECECEC;
+  border-radius: 2px;
+}
+.gap-scale-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0;
+  background: var(--gold);
+  border-radius: 2px;
+  transition: width 1.4s cubic-bezier(.4,0,.2,1);
+}
+.gap-scale-tick {
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 9px;
+  background: #D0D0D0;
+  transform: translateX(-0.5px);
+}
+.gap-scale-marker {
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 2px solid #fff;
+  transform: translate(-50%, -50%);
+  left: 0;
+  transition: left 1.4s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 1px 4px rgba(28,23,20,0.18);
+}
+.gap-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--ink4);
+  margin-top: 10px;
+  letter-spacing: 0.04em;
+}
+.gap-scale-zone-label {
+  text-align: center;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-top: 16px;
+  font-weight: 500;
+}
+.gap-scale-zone-label strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.gap-tagline {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: 20px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--ink2);
+  text-align: center;
+}
+.gap-description {
+  font-size: 13.5px;
+  color: var(--ink3);
+  text-align: center;
+  line-height: 1.7;
+  max-width: 520px;
+  margin: 14px auto 0;
+  font-weight: 300;
+}
+
+/* PAIN CARD (result branching) */
+.pain-section { margin-bottom: 20px; }
+.pain-title {
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink4);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+.pain-card {
+  background: var(--surface);
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 12px var(--shadow);
+}
+.pain-header {
+  padding: 18px 20px 14px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+}
+.pain-icon-wrap {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.pain-header-text {}
+.pain-label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; font-weight: 500; }
+.pain-name {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+}
+.pain-body { padding: 18px 20px; }
+.pain-desc { font-size: 13px; color: var(--ink3); line-height: 1.75; font-weight: 300; margin-bottom: 16px; }
+.pain-quote {
+  background: var(--bg2);
+  border-left: 2px solid var(--gold-l);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: var(--ink3);
+  font-style: italic;
+  line-height: 1.65;
+  margin-bottom: 16px;
+}
+.pain-steps { display: flex; flex-direction: column; gap: 10px; }
+.pain-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.55;
+}
+.step-num {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* WHAT YOU GET */
+.get-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.get-title { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink4); margin-bottom: 14px; font-weight: 500; }
+.get-items { display: flex; flex-direction: column; gap: 12px; }
+.get-item { display: flex; gap: 12px; align-items: flex-start; }
+.get-item-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.get-item-text {}
+.get-item-name { font-size: 13.5px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
+.get-item-desc { font-size: 12px; color: var(--ink3); font-weight: 300; line-height: 1.5; }
+
+/* IDENTITY GAP WORDS */
+.words-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.words-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.words-label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink4); margin-bottom: 10px; font-weight: 500; }
+.words-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.word-pill {
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+.word-now { border-color: rgba(107,144,112,.4); color: var(--sage); background: var(--sage-l); }
+.word-want { border-color: rgba(184,146,74,.4); color: var(--gold); background: var(--gold-ll); }
+
+/* LOCKED SECTION (тизеры Style Card) */
+.locked-section {
+  margin-bottom: 24px;
+}
+.locked-section-title {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink4);
+  font-weight: 500;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.locked-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.locked-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 18px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.locked-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.locked-icon {
+  font-size: 14px;
+  filter: grayscale(0.3);
+}
+.locked-card-title {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--ink);
+}
+.locked-preview {
+  background: var(--bg2);
+  border-radius: 10px;
+  padding: 16px 16px 14px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.locked-preview-blur {
+  filter: blur(5px);
+  user-select: none;
+  pointer-events: none;
+  opacity: 0.78;
+}
+.locked-preview::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(249, 246, 241, 0.55) 100%);
+  pointer-events: none;
+}
+.locked-preview-name {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: 18px;
+  font-style: italic;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.locked-preview-tags {
+  font-size: 11.5px;
+  color: var(--ink3);
+  font-style: italic;
+  line-height: 1.5;
+}
+.locked-palette {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.palette-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(28,23,20,0.08);
+}
+.palette-dot--accent {
+  width: 22px;
+  height: 22px;
+  margin-top: 3px;
+}
+.locked-preview-list {
+  font-size: 12.5px;
+  color: var(--ink2);
+  line-height: 1.7;
+  margin-bottom: 6px;
+}
+.locked-preview-list > div {
+  padding: 1px 0;
+}
+.locked-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.mini-photo {
+  width: 100%;
+  aspect-ratio: 3/4;
+  background-size: cover;
+  background-position: center;
+  border-radius: 4px;
+}
+.locked-card-desc {
+  font-size: 12.5px;
+  color: var(--ink3);
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+/* EMAIL CAPTURE */
+.email-capture {
+  background: linear-gradient(145deg, var(--gold-ll) 0%, var(--surface) 100%);
+  border: 1px solid var(--gold-l);
+  border-radius: 16px;
+  padding: 24px 22px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.ec-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.ec-title {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.3;
+  margin-bottom: 10px;
+}
+.ec-desc {
+  font-size: 13px;
+  color: var(--ink3);
+  line-height: 1.65;
+  margin-bottom: 18px;
+  font-weight: 300;
+  max-width: 460px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.ec-form {
+  display: flex;
+  gap: 8px;
+  max-width: 440px;
+  margin: 0 auto 12px;
+}
+.ec-input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  background: var(--surface);
+  font-family: 'Onest', -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .2s;
+}
+.ec-input:focus { border-color: var(--gold); }
+.ec-btn {
+  padding: 12px 22px;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Onest', -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .2s;
+  white-space: nowrap;
+}
+.ec-btn:hover { background: var(--gold); }
+.ec-hint {
+  font-size: 11px;
+  color: var(--ink4);
+  font-style: italic;
+  line-height: 1.5;
+  max-width: 380px;
+  margin: 0 auto;
+}
+.ec-success {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--sage);
+  font-weight: 400;
+}
+.ec-success-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--sage-l);
+  color: var(--sage);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+.email-capture.is-submitted .ec-form,
+.email-capture.is-submitted .ec-hint { display: none; }
+.email-capture.is-submitted .ec-success { display: flex; }
+
+@media (max-width: 480px) {
+  .ec-form { flex-direction: column; }
+}
+
+/* CTA */
+.cta-box {
+  background: var(--ink);
+  border-radius: 16px;
+  padding: 28px 24px;
+  color: #fff;
+  text-align: center;
+}
+.cta-eyebrow { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-l); margin-bottom: 12px; }
+.cta-title {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: clamp(20px, 4vw, 26px);
+  font-weight: 300;
+  margin-bottom: 8px;
+  color: #fff;
+  line-height: 1.3;
+}
+.cta-title em { font-style: italic; color: var(--gold-l); }
+.cta-desc { font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.7; margin-bottom: 22px; font-weight: 300; }
+.btn-cta {
+  display: block;
+  width: 100%;
+  padding: 17px 28px;
+  background: var(--gold);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Onest', -apple-system, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .22s;
+  text-align: center;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+.btn-cta:hover { background: #6E101A; }
+.btn-restart {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+  color: rgba(255,255,255,.3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Onest', -apple-system, sans-serif;
+  text-decoration: underline;
+  width: 100%;
+}
+
+/* REFERENCE PHOTOS (2 образа-превью под направление) */
+.ref-photos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+.ref-photo-wrap {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+}
+.ref-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  background: var(--bg2);
+}
+.ref-photo-caption {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ink3);
+  background: var(--surface2);
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+  line-height: 1.4;
+}
+@media (max-width: 380px) {
+  .ref-photos-grid { grid-template-columns: 1fr; }
+}
+
+/* COLORS — направления (Sense Style: 4 поля) */
+.c-classic .pain-icon-wrap { background: var(--gold-ll); color: var(--gold); }
+.c-classic .pain-label { color: var(--gold); }
+.c-classic .gap-ring-fill { stroke: var(--gold); }
+
+.c-drama .pain-icon-wrap { background: var(--mauve-l); color: var(--mauve); }
+.c-drama .pain-label { color: var(--mauve); }
+.c-drama .gap-ring-fill { stroke: var(--mauve); }
+
+.c-romance .pain-icon-wrap { background: var(--rose-l); color: var(--rose); }
+.c-romance .pain-label { color: var(--rose); }
+.c-romance .gap-ring-fill { stroke: var(--rose); }
+
+.c-natural .pain-icon-wrap { background: var(--sage-l); color: var(--sage); }
+.c-natural .pain-label { color: var(--sage); }
+.c-natural .gap-ring-fill { stroke: var(--sage); }
+
+.c-mix3 .pain-icon-wrap { background: linear-gradient(135deg, var(--gold-ll) 0%, var(--mauve-l) 100%); color: var(--ink2); }
+.c-mix3 .pain-label { color: var(--ink2); }
+.c-mix3 .gap-ring-fill { stroke: var(--ink2); }
+
+@media (max-width: 420px) {
+  .words-row { grid-template-columns: 1fr; }
+  .gap-pct { font-size: 36px; }
+  .gap-ring { width: 130px; height: 130px; }
+}
+
+/* === UPLOAD STEP — внутри квиза перед финалом === */
+#s-upload { max-width: 560px; margin: 0 auto; }
+.upload-eyebrow {
+  font-size: 10.5px; letter-spacing: 0.26em; text-transform: uppercase;
+  color: #7A1C2E; font-weight: 500; margin-bottom: 12px;
+  text-align: center;
+}
+.upload-title {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.2; letter-spacing: -0.015em;
+  text-align: center;
+  margin-bottom: 10px;
+  color: #1A1A1A; font-weight: 500;
+}
+.upload-title em { color: #7A1C2E; font-style: italic; font-weight: 500; }
+.upload-sub {
+  font-size: 14px; color: rgba(26, 26, 26, 0.7);
+  max-width: 460px; margin: 0 auto 22px;
+  line-height: 1.55; text-align: center;
+}
+.dropzone {
+  background: #FFFFFF;
+  border: 1px solid rgba(26, 26, 26, 0.10);
+  border-radius: 16px;
+  padding: 24px 20px 22px;
+  text-align: center; cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 16px rgba(31, 22, 20, 0.04);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  max-width: 420px;
+  margin: 0 auto;
+  display: block;
+}
+.dropzone:focus, .dropzone:focus-visible, .dropzone:focus-within { outline: none; }
+.dropzone:hover, .dropzone.is-dragover {
+  border-color: #7A1C2E;
+  box-shadow: 0 10px 28px rgba(31, 22, 20, 0.08);
+}
+.dropzone-icon {
+  width: 40px; height: 40px; margin: 0 auto 12px;
+  border-radius: 50%;
+  background: rgba(122, 28, 46, 0.08);
+  display: flex; align-items: center; justify-content: center;
+  color: #7A1C2E;
+}
+.dropzone-icon svg { width: 18px; height: 18px; }
+.dropzone-title {
+  font-family: 'Bodoni Moda', Georgia, serif; font-size: 16px;
+  color: #1A1A1A; font-weight: 500;
+  margin-bottom: 4px; line-height: 1.3;
+}
+.dropzone-text {
+  font-size: 12.5px; color: rgba(26, 26, 26, 0.65);
+  line-height: 1.5; margin-bottom: 14px;
+  max-width: 340px; margin-left: auto; margin-right: auto;
+}
+.dropzone-text strong { color: #7A1C2E; font-weight: 500; }
+.dropzone-btn-inline {
+  display: inline-block; background: #7A1C2E; color: #FFFFFF;
+  padding: 10px 22px; border-radius: 999px;
+  font-family: inherit; font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  border: 1px solid #7A1C2E;
+}
+.dropzone-meta {
+  font-size: 9.5px; color: rgba(26, 26, 26, 0.42);
+  letter-spacing: 0.16em; text-transform: uppercase;
+  margin-top: 10px;
+}
+#quiz-file-input { display: none; }
+.upload-skip {
+  display: block; margin: 16px auto 0;
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(26, 26, 26, 0.5); font-weight: 500;
+  background: none; border: none; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 4px;
+  text-decoration-color: rgba(26, 26, 26, 0.25);
+}
+.upload-skip:hover { color: #7A1C2E; }
+
+/* Processing — спиннер */
+.processing-wrap {
+  text-align: center;
+  padding: clamp(36px, 7vh, 64px) 24px;
+}
+.processing-spinner {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 3px solid rgba(122, 28, 46, 0.12);
+  border-top-color: #7A1C2E;
+  margin: 0 auto 22px;
+  animation: spinQuiz 0.9s linear infinite;
+}
+@keyframes spinQuiz { to { transform: rotate(360deg); } }
+.processing-title {
+  font-family: 'Bodoni Moda', Georgia, serif;
+  font-size: clamp(22px, 2.8vw, 30px);
+  color: #1A1A1A; font-weight: 500;
+  margin-bottom: 10px; line-height: 1.25;
+}
+.processing-text {
+  font-size: 14px; color: rgba(26, 26, 26, 0.7);
+  line-height: 1.65; max-width: 440px;
+  margin: 0 auto;
+}
+
+/* Превью результата на финале: «Твоё фото в формуле» */
+.your-photo-block {
+  margin-top: 28px;
+  background: #FFFFFF;
+  border: 1px solid rgba(26, 26, 26, 0.10);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 6px 20px rgba(31, 22, 20, 0.05);
+}
+.your-photo-label {
+  font-size: 10.5px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: #7A1C2E; font-weight: 500; margin-bottom: 14px;
+  text-align: center;
+}
+.your-photo-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.your-photo-cell {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(245, 239, 227, 0.5);
+}
+.your-photo-cell img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.your-photo-cell.is-ai::after {
+  content: 'AI-визуализация — Карта стиля';
+  position: absolute;
+  bottom: 10px; left: 10px; right: 10px;
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: #FFFFFF; font-weight: 500;
+  background: rgba(26, 26, 26, 0.66);
+  padding: 6px 10px;
+  border-radius: 999px;
+  text-align: center;
+  backdrop-filter: blur(4px);
+}
+.your-photo-cell.is-ai::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(122, 28, 46, 0.10) 0%, rgba(26, 26, 26, 0.18) 100%);
+  z-index: 1;
+}
+.your-photo-cell.is-ai img {
+  filter: saturate(0.55) brightness(0.92);
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-home" title="На главную">← Чувство стиля</a>
+<div class="shell">
+<div class="card">
+
+<!-- ======= INTRO ======= -->
+<div class="screen active" id="s-intro">
+  <a href="index.html" class="brand brand-link" title="На главную">Чувство стиля</a>
+  <div class="intro-title">Твой образ —<br>это ты <em>или не совсем?</em></div>
+  <div class="intro-rule"></div>
+  <p class="intro-lead">
+    Вещей полный шкаф — а надеть нечего.<br>
+    Знаешь, кем хочешь выглядеть, — но каждое утро надеваешь «привычное».<br><br>
+    Этот квиз определит <strong>точный разрыв</strong> между тем, как тебя видят сейчас, и тем, кем ты хочешь быть — и покажет конкретный путь к твоему образу.
+  </p>
+
+  <div class="science-pill">
+    Квиз построен на <strong>теории самонесоответствия</strong> (Хиггинс, 1987) и <strong>эффекте одежды на мышление</strong> (Адам и Галински, 2012) — психологических теориях о том, как одежда формирует не только впечатление, но и то, как мы сами думаем и действуем.
+  </div>
+
+  <div class="meta-row">
+    <div class="meta-item"><div class="meta-val">14</div><div class="meta-key">вопросов</div></div>
+    <div class="meta-item"><div class="meta-val">4</div><div class="meta-key">блока</div></div>
+    <div class="meta-item"><div class="meta-val">5 мин</div><div class="meta-key">времени</div></div>
+  </div>
+
+  <button class="btn btn-gold" onclick="start()">Начать диагностику →</button>
+</div>
+
+<!-- ======= QUESTION SCREEN ======= -->
+<div class="screen" id="s-q">
+  <div class="prog-wrap">
+    <div class="prog-top">
+      <span class="prog-block-label" id="prog-block">Блок 1 · Восприятие</span>
+      <span class="prog-count" id="prog-count">1 / 14</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="q-wrap">
+    <div class="q-num-badge" id="q-badge">Вопрос 1</div>
+    <div class="q-text" id="q-text"></div>
+    <div class="q-hint" id="q-hint"></div>
+    <div class="options" id="q-options"></div>
+  </div>
+
+  <div class="q-nav">
+    <button class="btn-back-sm" id="btn-back" onclick="prevQ()">←</button>
+    <button class="btn-next-sm" id="btn-next" onclick="nextQ()" disabled>Далее →</button>
+  </div>
+</div>
+
+<!-- ======= BLOCK TRANSITIONS ======= -->
+<div class="screen" id="s-t1">
+  <div class="transition-card">
+    <div class="tc-icon">◈</div>
+    <div class="tc-label">Блок 2 из 4</div>
+    <div class="tc-title">Теперь поговорим о твоём идеале</div>
+    <div class="tc-desc">Кем ты хочешь выглядеть — и что тебе говорят, когда ты пробуешь? Это ключевой блок для понимания твоего разрыва.</div>
+  </div>
+  <button class="btn btn-gold" onclick="continueFromTransition()">Продолжить →</button>
+</div>
+
+<div class="screen" id="s-t2">
+  <div class="transition-card">
+    <div class="tc-icon">◇</div>
+    <div class="tc-label">Блок 3 из 4</div>
+    <div class="tc-title">Что происходит с твоим гардеробом</div>
+    <div class="tc-desc">Не про вкус — про систему. Почему шкаф полон, а надеть нечего. Где именно ломается механизм.</div>
+  </div>
+  <button class="btn btn-gold" onclick="continueFromTransition()">Продолжить →</button>
+</div>
+
+<div class="screen" id="s-t3">
+  <div class="transition-card">
+    <div class="tc-icon">○</div>
+    <div class="tc-label">Блок 4 из 4 · Последний</div>
+    <div class="tc-title">Что тебе нужно прямо сейчас</div>
+    <div class="tc-desc">Три вопроса — и мы определим направление твоей Формулы стиля и точку, с которой начнём разбор.</div>
+  </div>
+  <button class="btn btn-gold" onclick="continueFromTransition()">Продолжить →</button>
+</div>
+
+<!-- ======= UPLOAD PHOTO (WOW-эффект перед финалом) ======= -->
+<div class="screen" id="s-upload">
+  <p class="upload-eyebrow">Последний шаг · персонализация</p>
+  <h2 class="upload-title">Хочешь увидеть <em>себя</em> в своей формуле?</h2>
+  <p class="upload-sub">Загрузи фото в полный рост — и я покажу, как твоя Формула стиля выглядит именно на тебе. Это самая важная часть диагностики.</p>
+
+  <label class="dropzone" id="quiz-dropzone" for="quiz-file-input">
+    <div class="dropzone-icon">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 18v6a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-6"/>
+        <path d="M16 4v16"/>
+        <path d="M10 10l6-6 6 6"/>
+      </svg>
+    </div>
+    <div class="dropzone-title">Перетащи фото сюда</div>
+    <p class="dropzone-text">
+      или нажми кнопку.<br>
+      <strong>Лучше всего</strong> — снимок в полный рост, дневной свет, нейтральный фон.
+    </p>
+    <span class="dropzone-btn-inline">Выбрать фото</span>
+    <p class="dropzone-meta">JPG · PNG · до 10 МБ</p>
+    <input type="file" id="quiz-file-input" accept="image/jpeg,image/png">
+  </label>
+
+  <button type="button" class="upload-skip" onclick="skipUpload()">Пропустить · показать результат без фото</button>
+</div>
+
+<!-- ======= PROCESSING ======= -->
+<div class="screen" id="s-processing">
+  <div class="processing-wrap">
+    <div class="processing-spinner"></div>
+    <div class="processing-title">Анализирую твоё фото…</div>
+    <p class="processing-text">ИИ читает пропорции, цветотип, лицо — и сочетает с твоей формулой. Это займёт пару минут.</p>
+  </div>
+</div>
+
+<!-- ======= RESULT ======= -->
+<div class="screen" id="s-result">
+
+  <div class="r-eyebrow">Твоя диагностика готова</div>
+
+  <div class="gap-ring-wrap">
+    <div class="gap-ring">
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        <circle class="gap-ring-track" cx="80" cy="80" r="65"/>
+        <circle class="gap-ring-fill" id="r-ring" cx="80" cy="80" r="65"/>
+      </svg>
+      <div class="gap-center">
+        <div class="gap-pct"><span id="r-pct">0</span><span class="gap-pct-sym">%</span></div>
+      </div>
+    </div>
+
+    <h2 class="gap-headline">стилевой разрыв</h2>
+    <div class="gap-subhead">разрыв идентичности в образе</div>
+    <p class="gap-explainer">Это разница между тем, как твой образ считывается сейчас, и тем, какой ты хочешь быть на новом этапе.</p>
+
+    <div class="gap-scale">
+      <div class="gap-scale-track">
+        <div class="gap-scale-fill" id="r-scale-fill"></div>
+        <span class="gap-scale-tick" style="left:25%"></span>
+        <span class="gap-scale-tick" style="left:45%"></span>
+        <span class="gap-scale-tick" style="left:65%"></span>
+        <div class="gap-scale-marker" id="r-scale-marker"></div>
+      </div>
+      <div class="gap-scale-labels">
+        <span>0%</span>
+        <span>25%</span>
+        <span>45%</span>
+        <span>65%</span>
+        <span>100%</span>
+      </div>
+      <div class="gap-scale-zone-label" id="r-scale-zone-label"></div>
+    </div>
+
+    <div class="gap-tagline" id="r-tagline"></div>
+    <p class="gap-description" id="r-gap-desc"></p>
+  </div>
+
+  <div class="words-row">
+    <div class="words-card">
+      <div class="words-label">Как тебя видят</div>
+      <div class="words-list" id="r-now-words"></div>
+    </div>
+    <div class="words-card">
+      <div class="words-label">Как хочешь быть</div>
+      <div class="words-list" id="r-want-words"></div>
+    </div>
+  </div>
+
+  <div class="pain-section">
+    <div class="pain-title">Твоё направление</div>
+    <div class="pain-card" id="r-pain-card">
+      <div class="pain-header">
+        <div class="pain-icon-wrap" id="r-pain-icon"></div>
+        <div class="pain-header-text">
+          <div class="pain-label" id="r-pain-label"></div>
+          <div class="pain-name" id="r-pain-name"></div>
+        </div>
+      </div>
+      <div class="pain-body">
+        <div class="pain-desc" id="r-pain-desc"></div>
+        <div class="pain-quote" id="r-pain-quote"></div>
+        <div class="ref-photos-grid" id="r-ref-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="locked-section">
+    <div class="locked-section-title">Что ещё ждёт тебя в «Карте стиля»</div>
+    <div class="locked-grid">
+      <div class="locked-card">
+        <div class="locked-card-header">
+          <span class="locked-icon">🔒</span>
+          <span class="locked-card-title">Твоя цветовая палитра</span>
+        </div>
+        <div class="locked-preview">
+          <div class="locked-preview-blur">
+            <div class="locked-palette">
+              <span class="palette-dot" style="background:#3B4F5C"></span>
+              <span class="palette-dot" style="background:#7A4C5C"></span>
+              <span class="palette-dot" style="background:#A89F8C"></span>
+              <span class="palette-dot" style="background:#D4B27E"></span>
+              <span class="palette-dot" style="background:#E8DCC8"></span>
+              <span class="palette-dot palette-dot--accent" style="background:#B85C5C"></span>
+              <span class="palette-dot palette-dot--accent" style="background:#6B7B5C"></span>
+              <span class="palette-dot palette-dot--accent" style="background:#2A2E34"></span>
+            </div>
+            <div class="locked-preview-tags">5 главных + 3 акцентных + стоп-цвета</div>
+          </div>
+        </div>
+        <div class="locked-card-desc">Точная палитра под твой подтон, глубину и контраст. Какие цвета усиливают тебя, какие — гасят.</div>
+      </div>
+
+      <div class="locked-card">
+        <div class="locked-card-header">
+          <span class="locked-icon">🔒</span>
+          <span class="locked-card-title">Твои силуэты и посадки</span>
+        </div>
+        <div class="locked-preview">
+          <div class="locked-preview-blur">
+            <div class="locked-preview-list">
+              <div>· Структурированный жакет с акцентированной талией</div>
+              <div>· Платье полуприлегающего силуэта длины миди</div>
+              <div>· Прямые брюки до щиколотки</div>
+              <div>· Юбка-трапеция из плотной ткани</div>
+            </div>
+            <div class="locked-preview-tags">+ стоп-силуэты, которые тебя гасят</div>
+          </div>
+        </div>
+        <div class="locked-card-desc">Конкретные силуэты, длины и посадки, которые работают на твою фигуру и формулу — и которые ломают образ.</div>
+      </div>
+
+      <div class="locked-card">
+        <div class="locked-card-header">
+          <span class="locked-icon">🔒</span>
+          <span class="locked-card-title">Топ-5 покупок и стоп-лист</span>
+        </div>
+        <div class="locked-preview">
+          <div class="locked-preview-blur">
+            <div class="locked-preview-list">
+              <div>1. Структурированный жакет цвета хаки</div>
+              <div>2. Прямые брюки до щиколотки (тёмно-синий)</div>
+              <div>3. Шёлковая блуза цвета слоновой кости</div>
+              <div>4. Лоферы из натуральной кожи</div>
+              <div>5. Структурная сумка бордо</div>
+            </div>
+            <div class="locked-preview-tags">+ 7 вещей, которые тебе НЕ покупать</div>
+          </div>
+        </div>
+        <div class="locked-card-desc">Конкретные вещи, которые закроют пробелы в гардеробе под твою формулу — и список того, что только тянет назад.</div>
+      </div>
+
+      <div class="locked-card">
+        <div class="locked-card-header">
+          <span class="locked-icon">🔒</span>
+          <span class="locked-card-title">6 образов под твои ситуации</span>
+        </div>
+        <div class="locked-preview">
+          <div class="locked-preview-blur">
+            <div class="locked-mini-grid">
+              <div class="mini-photo" style="background-image: url('photos/kolupaeva-gallery/деловая%20встреча.png')"></div>
+              <div class="mini-photo" style="background-image: url('photos/kolupaeva-gallery/презентация.png')"></div>
+              <div class="mini-photo" style="background-image: url('photos/kolupaeva-gallery/свидание.png')"></div>
+              <div class="mini-photo" style="background-image: url('photos/kolupaeva-gallery/выходные.png')"></div>
+              <div class="mini-photo" style="background-image: url('photos/kolupaeva-gallery/корпоратив.png')"></div>
+              <div class="mini-photo" style="background-image: url('photos/kolupaeva-gallery/путешествие.png')"></div>
+            </div>
+            <div class="locked-preview-tags">работа · событие · свидание · выходные · корпоратив · поездка</div>
+          </div>
+        </div>
+        <div class="locked-card-desc">Готовые комбинации под 6 ключевых сценариев твоей жизни — конкретные вещи и связки в твоей формуле.</div>
+      </div>
+
+      <div class="locked-card">
+        <div class="locked-card-header">
+          <span class="locked-icon">🔒</span>
+          <span class="locked-card-title">Стилевой ориентир</span>
+        </div>
+        <div class="locked-preview">
+          <div class="locked-preview-blur">
+            <div class="locked-preview-name">Кэролайн Иссо</div>
+            <div class="locked-preview-tags">холодный подтон · средний контраст · песочные часы</div>
+          </div>
+        </div>
+        <div class="locked-card-desc">1 публичная персона, чей стиль точно совпадает с твоей формулой по 2 осям — впечатлению и физическим параметрам.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="email-capture">
+    <div class="ec-eyebrow">★ Визуализация образов · скоро</div>
+    <div class="ec-title">Хочешь увидеть <span id="ec-direction">свою формулу стиля</span> на себе?</div>
+    <div class="ec-desc">Оставь почту — пришлю ссылку на твою диагностику и доступ к <strong>2 образам по твоему фото от ИИ</strong>, как только функция откроется.</div>
+    <form class="ec-form" id="ec-form" onsubmit="submitEmail(event)">
+      <input type="email" id="ec-email" class="ec-input" placeholder="твоя почта" required autocomplete="email">
+      <button type="submit" class="ec-btn">Получить доступ</button>
+    </form>
+    <div class="ec-hint">Почта нужна только для отправки диагностики и анонса визуализации от ИИ. Без обязательной регистрации.</div>
+    <div class="ec-success" id="ec-success">
+      <div class="ec-success-icon">✓</div>
+      <div>Готово. Свяжусь с тобой при запуске визуализации.</div>
+    </div>
+  </div>
+
+  <div class="cta-box">
+    <div class="cta-eyebrow">Следующий шаг</div>
+    <div class="cta-title" id="r-cta-title"></div>
+    <div class="cta-desc" id="r-cta-desc"></div>
+    <a class="btn-cta" id="r-cta-btn" href="index.html#tiers">Получить полную Формулу стиля · 3 900 ₽ →</a>
+    <button class="btn-restart" onclick="restart()">Пройти квиз заново</button>
+  </div>
+
+</div><!-- /result -->
+</div><!-- /card -->
+</div><!-- /shell -->
+
+<script>
+// ============================================================
+//  QUIZ DATA
+// ============================================================
+const blocks = [
+  { id: 0, label: "Старт", title: "С чего начнём", transition: null },
+  { id: 1, label: "Блок 1 · Восприятие", title: "Как тебя видят", transition: null },
+  { id: 2, label: "Блок 2 · Идеал", title: "Кем хочешь быть", transition: "s-t1" },
+  { id: 3, label: "Блок 3 · Гардероб", title: "Система и хаос", transition: "s-t2" },
+  { id: 4, label: "Блок 4 · Дальше", title: "Что нужно сейчас", transition: "s-t3" },
+];
+
+const questions = [
+  // ── БЛОК 0: СТАРТ — развилка по сегменту ────────────────
+  {
+    id: 0, block: 0,
+    text: "Что тебе ближе сейчас?",
+    hint: "Это определит, какой путь подсветить в результате.",
+    opts: [
+      { t: "Я ищу свой стиль — давно недовольна гардеробом", s: "путь Перерождения", segment: "rebirth", gap: 0 },
+      { t: "Стиль в целом есть — хочу скорректировать", s: "путь Раскрытия", segment: "evolution", gap: 0 },
+      { t: "Жизнь изменилась — стиль не успевает за мной", s: "путь Перерождения / Раскрытия", segment: "rebirth-evolution", gap: 0 },
+      { t: "Знаю свой стиль — нужны умные капсулы", s: "путь Системы", segment: "system", gap: 0 },
+    ]
+  },
+
+  // ── БЛОК 1: ВОСПРИЯТИЕ (q1–q3) ──────────────────────────
+  {
+    id: 1, block: 1,
+    text: "Представь: подруга описывает тебя кому-то незнакомому. Какие слова она скорее всего скажет?",
+    hint: "Не идеал — честная картина сегодняшнего дня.",
+    opts: [
+      { t: "Спокойная, надёжная, всегда выглядит аккуратно", s: "«На неё можно положиться»", now: ["спокойная","надёжная"], nowField: "natural", gap: 1 },
+      { t: "Обычная, простая — я особо не запоминаю как она одета", s: "«Незаметная, всегда в фоне»", now: ["незаметная","простая"], nowField: "natural", gap: 3 },
+      { t: "Стильная, всегда что-то интересное — запоминается", s: "«Она точно знает что ей идёт»", now: ["стильная","запоминающаяся"], nowField: "drama", gap: 0 },
+      { t: "Деловая, собранная, одевается под ситуацию", s: "«Профессиональная во всём»", now: ["профессиональная","деловая"], nowField: "classic", gap: 1 },
+    ]
+  },
+  {
+    id: 2, block: 1,
+    text: "Вспомни последнее важное событие. Как ты себя чувствовала в том, что надела?",
+    hint: "Встреча, мероприятие, день рождения — любое важное.",
+    opts: [
+      { t: "Чувствовала себя собой — образ совпал с моментом", s: "Одежда не мешала, а помогала", now: [], gap: 0 },
+      { t: "Почти хорошо — но что-то чуть-чуть не то", s: "Небольшое несоответствие, которое чувствуется", now: [], gap: 1 },
+      { t: "Паниковала до последнего — несколько раз меняла", s: "Стресс перед событием из-за образа", now: [], gap: 3 },
+      { t: "Надела «безопасное» — и весь вечер жалела", s: "Страх выглядеть неуместно победил желание", now: [], gap: 3 },
+    ]
+  },
+  {
+    id: 3, block: 1,
+    text: "Как часто ты думаешь «это не я» — глядя на своё отражение?",
+    hint: "Теория самонесоответствия — разрыв между реальным и идеальным «я».",
+    opts: [
+      { t: "Редко — я в целом узнаю себя в своём образе", s: "", now: [], gap: 0 },
+      { t: "Иногда — особенно в определённых контекстах", s: "На работе или на встречах что-то не то", now: [], gap: 2 },
+      { t: "Часто — я знаю кем хочу быть, но не знаю как", s: "Образ в голове есть, воплотить не получается", now: [], gap: 3 },
+      { t: "Сейчас особенно — я прохожу через перемены", s: "Новая роль, новый этап — и старый гардероб не подходит", now: [], gap: 3 },
+    ]
+  },
+
+  // ── БЛОК 2: ИДЕАЛ (q4–q6) ────────────────────────────────
+  {
+    id: 4, block: 2,
+    text: "Когда ты видишь женщину, одетую «именно так» — что ты чувствуешь первым?",
+    hint: "Первая реакция честнее всего раскрывает твой идеал.",
+    opts: [
+      { t: "«Хочу так же» — лёгкую зависть и вдохновение", s: "Она воплощает то, к чему ты стремишься", want: ["женственная","элегантная"], wantField: "romance", gap: 2 },
+      { t: "«Интересно как она это сочетает» — профессиональный взгляд", s: "Ты замечаешь технику, не только результат", want: ["стильная","с характером"], wantField: "drama", gap: 1 },
+      { t: "«Выглядит уверенно и по-настоящему» — уважение", s: "Для тебя важна сила и подлинность образа", want: ["уверенная","авторитетная"], wantField: "classic", gap: 1 },
+      { t: "«Вот бы мне так — просто и красиво»", s: "Хочешь результат без лишней сложности", want: ["лёгкая","естественная"], wantField: "natural", gap: 2 },
+    ]
+  },
+  {
+    id: 5, block: 2,
+    text: "Какое впечатление ты хочешь производить на людей, которые видят тебя впервые?",
+    hint: "Это твоя точка Б — именно туда мы будем строить путь.",
+    opts: [
+      { t: "Женственная, мягкая — чтобы замечали и притягивались", s: "Хочешь чтобы видели женственность и тепло", want: ["женственная","мягкая"], wantField: "romance", gap: 0 },
+      { t: "Уверенная, компетентная — чтобы слушали и доверяли", s: "Образ должен работать на тебя в карьере", want: ["уверенная","компетентная"], wantField: "classic", gap: 0 },
+      { t: "Живая, интересная — чтобы запоминали, а не просто замечали", s: "Хочешь индивидуальность, а не просто «хорошо одета»", want: ["живая","индивидуальная"], wantField: "drama", gap: 0 },
+      { t: "Элегантная, со вкусом — чтобы чувствовалось качество", s: "Важна утончённость в каждой детали", want: ["элегантная","утончённая"], wantField: "classic", gap: 0 },
+    ]
+  },
+  {
+    id: 6, block: 2,
+    text: "Когда ты говоришь «хочу выглядеть женственно» — что именно ты имеешь в виду?",
+    hint: "Большинство женщин называют женственность главным желанием — но имеют в виду очень разное.",
+    opts: [
+      { t: "Платья, юбки, мягкие силуэты — видимая женственность", s: "Форма одежды должна говорить сама за себя", want: ["женственная"], wantField: "romance", gap: 1 },
+      { t: "Ощущение внутри — чтобы чувствовать себя собой", s: "Не про конкретные вещи, а про состояние", want: ["аутентичная"], wantField: "natural", gap: 2 },
+      { t: "Чтобы другие видели во мне женщину, а не девочку или коллегу", s: "Образ должен транслировать зрелость и силу", want: ["зрелая","уважаемая"], wantField: "classic", gap: 2 },
+      { t: "Комфортная женственность — без каблуков и дискомфорта", s: "Хочешь сочетание красоты и удобства", want: ["женственная","комфортная"], wantField: "natural", gap: 1 },
+    ]
+  },
+
+  // ── БЛОК 3: ГАРДЕРОБ (q7–q10) ────────────────────────────
+  {
+    id: 7, block: 3,
+    text: "Ты стоишь перед открытым шкафом. Что происходит чаще всего?",
+    hint: "Самый честный момент дня.",
+    opts: [
+      { t: "Быстро нахожу что надеть — есть понимание что к чему", s: "Система работает, но хочется лучше", gap: 0 },
+      { t: "Вещей много, но нечего надеть — всё «не то»", s: "Классический парадокс переполненного шкафа", gap: 3 },
+      { t: "Долго выбираю, несколько раз меняю — иногда опаздываю", s: "Каждое утро — маленький стресс", gap: 3 },
+      { t: "Беру первое подходящее — думаю о другом", s: "Одежда не в приоритете, но хотелось бы иначе", gap: 2 },
+    ]
+  },
+  {
+    id: 8, block: 3,
+    text: "Когда ты покупаешь новую вещь — как это обычно происходит?",
+    hint: "Про паттерн, а не про конкретную покупку.",
+    opts: [
+      { t: "Понравилось — взяла. Потом выяснилось что не к чему", s: "Импульс без системы — хаос копится", gap: 3 },
+      { t: "Долго сомневаюсь — и часто ухожу без покупки", s: "Неуверенность блокирует даже правильный выбор", gap: 2 },
+      { t: "Беру базовое — боюсь ошибиться с чем-то ярким", s: "Безопасность вместо желаемого", gap: 2 },
+      { t: "Знаю что нужно — ищу конкретную вещь под конкретную задачу", s: "Есть система, но нужна большая точность", gap: 0 },
+    ]
+  },
+  {
+    id: 9, block: 3,
+    text: "Что тебя раздражает в твоём гардеробе больше всего?",
+    hint: "Можно выбрать то что резонирует сильнее всего.",
+    opts: [
+      { t: "Сложно сочетать вещи между собой — купила и не знаю к чему", s: "Главная боль большинства женщин в опросах", gap: 3 },
+      { t: "Много хаоса — нет системы, всё в куче", s: "Визуальный беспорядок создаёт внутренний стресс", gap: 3 },
+      { t: "Импульсивные покупки которые потом не ношу", s: "Деньги потрачены — а шкаф всё равно «пустой»", gap: 2 },
+      { t: "Вещи больше не отражают меня — устарели или не те", s: "Гардероб застрял в прошлом образе", gap: 2 },
+    ]
+  },
+  {
+    id: 10, block: 3,
+    text: "В каком контексте разрыв «как выгляжу / как хочу» ощущается сильнее всего?",
+    hint: "Одежда всегда про роль — нам важно знать в какой ты теряешь себя.",
+    opts: [
+      { t: "На работе — выгляжу слишком обычно для той роли, которую играю", s: "Образ не считывается как профессиональный", gap: 2 },
+      { t: "На личных встречах — не чувствую себя женщиной, а коллегой", s: "В личной жизни образ не отражает тебя", gap: 3 },
+      { t: "На важных событиях — каждый раз паника «что надеть»", s: "Праздник превращается в стресс из-за образа", gap: 2 },
+      { t: "Каждый день — хожу в чём попало и злюсь на себя по вечерам", s: "Ежедневный тихий дискомфорт", gap: 3 },
+    ]
+  },
+
+  // ── БЛОК 4: ДАЛЬШЕ (q11–q12) ─────────────────────────────
+  {
+    id: 11, block: 4,
+    text: "Что для тебя сейчас важнее всего — с чего начать?",
+    hint: "Это определит, с чего начнём твой разбор.",
+    opts: [
+      { t: "Разобрать то что уже есть — создать систему из имеющегося", s: "Сначала порядок, потом новое", gap: 0 },
+      { t: "Понять какой образ именно мой — найти свою Формулу стиля", s: "Найти себя, не тренд", gap: 0 },
+      { t: "Научиться одеваться под разные роли и события", s: "Практический результат здесь и сейчас", gap: 0 },
+      { t: "Получить список что купить — конкретно и без лишнего", s: "Результат важнее процесса", gap: 0 },
+    ]
+  },
+  {
+    id: 12, block: 4,
+    text: "Что ты хочешь почувствовать, когда наденешь свой образ?",
+    hint: "Не внешний результат — внутреннее состояние.",
+    opts: [
+      { t: "«Это я» — узнавание себя в зеркале", s: "Аутентичность как главный результат", want: ["аутентичная","собой"], wantField: "natural", gap: 0 },
+      { t: "«Я готова» — уверенность перед любой ситуацией", s: "Одежда как внутренняя подготовка", want: ["готовая","уверенная"], wantField: "classic", gap: 0 },
+      { t: "«Меня видят такой, какой я хочу быть» — контроль впечатления", s: "Образ работает на тебя", want: ["видимая","желаемая"], wantField: "drama", gap: 0 },
+      { t: "«Это просто — и при этом красиво» — лёгкость каждый день", s: "Красота без усилий", want: ["лёгкая","свободная"], wantField: "natural", gap: 0 },
+    ]
+  },
+
+  // ── БЛОК 4 (продолжение) — q13: ВЫБОР 3 ХАРАКТЕРИСТИК ────
+  // Главный сигнал направления: 12 слов из 4 семантических полей метода (по 3 на поле).
+  // Прямая реализация имидж-диагностики метода (этап 2 / шаг 1 алгоритма Формулы стиля).
+  {
+    id: 13, block: 4,
+    kind: "multi",
+    selectExactly: 3,
+    text: "Выбери 3 главные характеристики, которыми хочешь восприниматься",
+    hint: "Это твоя точка Б — три слова, описывающие желаемое впечатление. Выбери ровно три.",
+    opts: [
+      // 12 слов = 4 поля × 3 уникальных вектора, баланс 3/3/3/3.
+      // Замены 2026-06-11: Уверенная→Дорогая (статус), Особенная→Умная (интеллект),
+      // Простая→Независимая (самостоятельность). Все — из лексикона анкеты, поле то же.
+      // Порядок перемешан по полям; «Дорогая» намеренно не рядом с «Властной» и «Эффектной».
+      { t: "Властная",     wantField: "classic" },
+      { t: "Открытая",     wantField: "natural" },
+      { t: "Женственная",  wantField: "romance" },
+      { t: "Незаурядная",  wantField: "drama" },
+      { t: "Элегантная",   wantField: "classic" },
+      { t: "Беззаботная",  wantField: "natural" },
+      { t: "Эффектная",    wantField: "romance" },
+      { t: "Умная",        wantField: "drama" },
+      { t: "Дорогая",      wantField: "classic" },
+      { t: "Независимая",  wantField: "natural" },
+      { t: "Желанная",     wantField: "romance" },
+      { t: "Смелая",       wantField: "drama" },
+    ],
+    gap: 0,
+  },
+];
+
+// ============================================================
+//  FIELD PROFILES (4 семантических поля метода Sense Style)
+// ============================================================
+const profiles = {
+  classic: {
+    color: "c-classic",
+    icon: "◈",
+    label: "Направление",
+    name: "Классика",
+    short: "структуру и авторитет",
+    desc: "Ты тяготеешь к структуре, авторитету и сдержанной силе. Твой образ читается через чёткие линии, качественные ткани и умеренность во всём — без декора и громких акцентов. Это профиль зрелой женщины, которой важно, чтобы её слышали.",
+    quote: "«Хочу, чтобы меня слышали и доверяли с первого взгляда — а не оценивали внешний эффект.»",
+    references: [
+      { src: "photos/kolupaeva-gallery/презентация.png", caption: "Сильная женщина — структура и авторитет" },
+      { src: "photos/kolupaeva-gallery/корпоратив.png", caption: "Статусный выход — структура без громкости" }
+    ]
+  },
+  drama: {
+    color: "c-drama",
+    icon: "✦",
+    label: "Направление",
+    name: "Драма",
+    short: "характер и индивидуальность",
+    desc: "Ты тяготеешь к контрасту, графичности и заявлению через образ. Твоя сила — в индивидуальности, а не в подражании. Образ работает через сильную деталь, акцент или цвет, который запоминается.",
+    quote: "«Хочу, чтобы меня запоминали — а не просто видели «хорошо одетой».»",
+    references: [
+      { src: "photos/kolupaeva-gallery/корпоратив.png", caption: "Драма — акцент и характер" },
+      { src: "photos/kolupaeva-gallery/свидание.png", caption: "Драма — статусная feminine" }
+    ]
+  },
+  romance: {
+    color: "c-romance",
+    icon: "◇",
+    label: "Направление",
+    name: "Романтика",
+    short: "женственность и мягкость",
+    desc: "Ты тяготеешь к мягкости, изящному силуэту и эстетике музы. Твоя сила — в утончённости и феминной природе, а не в строгой структуре. Образ работает через текстуру, длину и деликатные линии.",
+    quote: "«Хочу выглядеть как женщина — мягкая, замеченная, желанная.»",
+    references: [
+      { src: "photos/kolupaeva-gallery/свидание.png", caption: "Романтика — мягкая женственность" },
+      { src: "photos/kolupaeva-gallery/выходные.png", caption: "Романтика — повседневная feminine" }
+    ]
+  },
+  natural: {
+    color: "c-natural",
+    icon: "○",
+    label: "Направление",
+    name: "Натуральный",
+    short: "простоту и комфорт",
+    desc: "Ты тяготеешь к свободе, удобству и эстетике без усилий. Твоя сила — в естественности и природной гармонии, а не в строгой форме. Образ работает через ткани, посадку и баланс комфорта со стилем.",
+    quote: "«Хочу выглядеть просто и красиво — без мучений, каблуков и спектакля.»",
+    references: [
+      { src: "photos/kolupaeva-gallery/путешествие.png", caption: "Натуральный — лёгкость и баланс" },
+      { src: "photos/kolupaeva-gallery/выходные.png", caption: "Натуральный — комфорт + стиль" }
+    ]
+  },
+  // Спец-профиль: 3 направления тянут одинаково (паттерн зрелой женщины с амбициями)
+  mix3: {
+    color: "c-mix3",
+    icon: "⬡",
+    label: "Направление",
+    name: "Микс трёх направлений",
+    short: "сложную многослойность",
+    desc: "Ты тяготеешь сразу к нескольким направлениям одновременно. По авторскому методу это паттерн зрелой женщины с амбициями — Сильная женщина или Тихая роскошь. Тебе нужна не одна формула, а гибкая комбинация: главное направление + 1-2 поддерживающие ноты.",
+    quote: "«Хочу выглядеть властной, эффектной и незаурядной — всё сразу. Это не противоречие — это уровень.»",
+    references: [
+      { src: "photos/kolupaeva-gallery/презентация.png", caption: "Сильная женщина — три ноты в одной формуле" },
+      { src: "photos/kolupaeva-gallery/корпоратив.png", caption: "Тихая роскошь — статусная многослойность" }
+    ]
+  }
+};
+
+
+// ============================================================
+//  STATE
+// ============================================================
+let current = 0;
+let answers = {};
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function start() {
+  show('s-q');
+  renderQ();
+}
+
+function continueFromTransition() {
+  show('s-q');
+  renderQ();
+}
+
+function isAnswered(q) {
+  const a = answers[q.id];
+  if (q.kind === 'multi') {
+    return Array.isArray(a) && a.length === (q.selectExactly || 3);
+  }
+  return a !== undefined;
+}
+
+function renderQ() {
+  const q = questions[current];
+  const total = questions.length;
+  const pct = Math.round((current / total) * 100);
+
+  document.getElementById('prog-block').textContent = blocks[q.block].label;
+  document.getElementById('prog-count').textContent = `${current + 1} / ${total}`;
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('q-badge').textContent = `Вопрос ${current + 1}`;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('q-hint').textContent = q.hint;
+  document.getElementById('btn-back').style.visibility = current === 0 ? 'hidden' : 'visible';
+
+  const wrap = document.getElementById('q-options');
+  wrap.innerHTML = '';
+
+  if (q.kind === 'multi') {
+    if (!Array.isArray(answers[q.id])) answers[q.id] = [];
+    const grid = document.createElement('div');
+    grid.className = 'chip-grid';
+    q.opts.forEach((opt, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (answers[q.id].includes(i) ? ' sel' : '');
+      chip.textContent = opt.t;
+      chip.onclick = () => toggleChip(i);
+      grid.appendChild(chip);
+    });
+    wrap.appendChild(grid);
+
+    const counter = document.createElement('div');
+    counter.className = 'chip-counter';
+    counter.id = 'chip-counter';
+    wrap.appendChild(counter);
+    updateChipUI();
+  } else {
+    q.opts.forEach((opt, i) => {
+      const div = document.createElement('div');
+      div.className = 'opt' + (answers[q.id] === i ? ' sel' : '');
+      div.innerHTML = `<div class="opt-dot"></div><div class="opt-body"><div class="opt-text">${opt.t}</div>${opt.s ? `<div class="opt-sub">${opt.s}</div>` : ''}</div>`;
+      div.onclick = () => pick(i);
+      wrap.appendChild(div);
+    });
+  }
+
+  syncNextBtn();
+}
+
+function pick(idx) {
+  const q = questions[current];
+  answers[q.id] = idx;
+  document.querySelectorAll('.opt').forEach((el, i) => el.classList.toggle('sel', i === idx));
+  syncNextBtn();
+  setTimeout(() => advance(), 380);
+}
+
+function toggleChip(idx) {
+  const q = questions[current];
+  const arr = answers[q.id];
+  const max = q.selectExactly || 3;
+  const pos = arr.indexOf(idx);
+  if (pos >= 0) {
+    arr.splice(pos, 1);
+  } else if (arr.length < max) {
+    arr.push(idx);
+  } else {
+    return;
+  }
+  updateChipUI();
+  syncNextBtn();
+}
+
+function updateChipUI() {
+  const q = questions[current];
+  const arr = answers[q.id] || [];
+  const max = q.selectExactly || 3;
+  document.querySelectorAll('.chip').forEach((el, i) => {
+    const isSel = arr.includes(i);
+    el.classList.toggle('sel', isSel);
+    el.classList.toggle('disabled', !isSel && arr.length >= max);
+  });
+  const counter = document.getElementById('chip-counter');
+  if (counter) {
+    counter.innerHTML = `Выбрано <strong>${arr.length}</strong> из ${max}`;
+    counter.classList.toggle('full', arr.length === max);
+  }
+}
+
+function syncNextBtn() {
+  const q = questions[current];
+  document.getElementById('btn-next').disabled = !isAnswered(q);
+  document.getElementById('btn-next').textContent =
+    current === questions.length - 1 ? 'Посмотреть результат →' : 'Далее →';
+}
+
+function nextQ() {
+  if (!isAnswered(questions[current])) return;
+  advance();
+}
+function prevQ() {
+  if (current > 0) { current--; renderQ(); }
+}
+
+function advance() {
+  const q = questions[current];
+  if (!isAnswered(q)) return;
+
+  const next = current + 1;
+  if (next >= questions.length) { show('s-upload'); return; }
+
+  // block transition?
+  const nextBlock = questions[next].block;
+  const curBlock = q.block;
+  if (nextBlock !== curBlock) {
+    current = next;
+    // После Блока 0 (Старт) сразу идём в Блок 1 без переходного экрана
+    if (curBlock === 0) {
+      renderQ();
+    } else {
+      show('s-t' + (nextBlock - 1));
+    }
+  } else {
+    current = next;
+    renderQ();
+  }
+}
+
+// ============================================================
+//  RESULT
+// ============================================================
+function buildResult() {
+  // ── 1. Identity Gap % (накопленный субъективный разрыв) ──────────
+  // Multi-вопросы (q13) исключены — они дают сигнал направления, не разрыва.
+  let gapSum = 0, gapMax = 0;
+  questions.forEach(q => {
+    const a = answers[q.id];
+    if (a === undefined || q.kind === 'multi') return;
+    gapSum += q.opts[a].gap;
+    gapMax += 3;
+  });
+  const gapPct = Math.round((gapSum / gapMax) * 100);
+
+  // ── 2. Направление по 3 трейтам из q13 (главный сигнал) ──────────
+  // Это прямая реализация шага 1 алгоритма Формулы стиля метода:
+  // «3 главные характеристики желаемого впечатления».
+  const traitVotes = { classic: 0, drama: 0, romance: 0, natural: 0 };
+  const q13 = questions.find(q => q.id === 13);
+  const q13ans = answers[13];
+  if (Array.isArray(q13ans)) {
+    q13ans.forEach(idx => {
+      const opt = q13.opts[idx];
+      if (opt.wantField) traitVotes[opt.wantField]++;
+    });
+  }
+
+  // ── 3. Логика направления (включая mix-of-three) ─────────────────
+  const sorted = Object.entries(traitVotes).sort((a, b) => b[1] - a[1]);
+  const top1count = sorted[0][1];
+  const fieldsTied = sorted.filter(([, v]) => v === top1count).length;
+
+  let profileKey = 'classic';
+  let profileSecKey = null;
+
+  if (top1count === 0) {
+    // Edge case: q13 не отвечен (защита) — берём fallback
+    profileKey = 'classic';
+  } else if (fieldsTied >= 3) {
+    // 3 или 4 поля поровну → Сильная женщина / Тихая роскошь territory
+    // Метод (раздел 7.3): «если три поля примерно равны — ищем нюанс,
+    // объединяющий их (часто Тихая роскошь или Сильная женщина)»
+    profileKey = 'mix3';
+  } else {
+    profileKey = sorted[0][0];
+    if (sorted[1] && sorted[1][1] > 0 && sorted[1][1] >= top1count * 0.5) {
+      profileSecKey = sorted[1][0];
+    }
+  }
+
+  const profile = profiles[profileKey];
+  const profileSec = profileSecKey ? profiles[profileSecKey] : null;
+  const dominant = profileKey === 'mix3' ? sorted[0][0] : profileKey; // для цвета кольца
+
+  // ── 4. Слова now/want для пилюль (визуальное доказательство) ─────
+  // Прямые трейты из q13 идут первыми — это её explicit picks.
+  const nowWords = [], wantExplicit = [], wantImplicit = [];
+  questions.forEach(q => {
+    const a = answers[q.id];
+    if (a === undefined) return;
+    if (q.kind === 'multi') {
+      a.forEach(idx => wantExplicit.push(q.opts[idx].t.toLowerCase()));
+    } else {
+      const opt = q.opts[a];
+      if (opt.now) nowWords.push(...opt.now);
+      if (opt.want) wantImplicit.push(...opt.want);
+    }
+  });
+  const uniqNow = [...new Set(nowWords)].slice(0, 4);
+  const uniqWant = [...new Set([...wantExplicit, ...wantImplicit])].slice(0, 4);
+
+  // ── 5. Tagline + описание уровня разрыва (4 уровня) ──────────────
+  const level = gapPct >= 66 ? 'extreme' : gapPct >= 46 ? 'high' : gapPct >= 26 ? 'mid' : 'low';
+  const taglines = {
+    extreme: ['Большой разрыв — большой потенциал', 'Нужна пересборка визуального кода — но именно это даёт настоящую трансформацию.'],
+    high: ['Образ отстаёт от твоего нового этапа', 'Перенастройка ключевых блоков — и образ начнёт работать на тебя.'],
+    mid: ['Разрыв есть — и он закрывается быстро', 'Точная настройка деталей — и образ совпадёт с тем, кем ты ощущаешь себя.'],
+    low: ['Ты близка к своей формуле', 'Тонкая корректировка нюансов — и образ окончательно совпадёт с тобой.'],
+  };
+  const tagline = taglines[level][Math.random() < .5 ? 0 : 1];
+  const gapDescriptions = {
+    extreme: `Большой разрыв = большой потенциал. Нужна пересборка визуального кода: формула, силуэты, цвета, акценты. На этом уровне трансформация заметная — и именно она даёт самый сильный результат. Это карта пересборки, а не катастрофа.`,
+    high: `Образ отстаёт от твоего нового этапа жизни. Нужна перенастройка ключевых блоков формулы — основные силуэты, цветовая логика, типаж. После этого ты будешь считываться так, как ощущаешь себя внутри.`,
+    mid: `Основа есть, но образ пока не работает на тебя в полную силу. Нужна точная настройка деталей — силуэты, цвета, акценты. На этом уровне трансформация быстрая и без революций.`,
+    low: `Ты близка к своей формуле — образ уже считывается похоже на то, как ты ощущаешь себя внутри. Осталась тонкая корректировка нюансов: цветовые акценты, фасоны, посадка.`,
+  };
+  const zoneLabels = {
+    extreme: '<strong>нужна пересборка визуального кода</strong>',
+    high: '<strong>образ отстаёт от нового этапа</strong>',
+    mid: '<strong>разрыв закрывается быстро</strong>',
+    low: '<strong>образ почти совпадает с тобой</strong>',
+  };
+  const gapDesc = gapDescriptions[level];
+  const zoneLabel = zoneLabels[level];
+
+  // ── 6. Описание профиля (одиночный / лидер+нота / mix3) ──────────
+  let profileName, profileDesc;
+  if (profileKey === 'mix3') {
+    // Для mix3 показываем названия 3+ доминирующих полей
+    const topFieldKeys = sorted.filter(([, v]) => v === top1count).map(([k]) => k);
+    const topFieldNames = topFieldKeys.map(k => profiles[k].name);
+    profileName = topFieldNames.join(' × ');
+    profileDesc = `По методу Sense Style это паттерн «${profile.name}» — паттерн зрелой женщины с амбициями (Сильная женщина или Тихая роскошь). Ты тяготеешь сразу к нескольким направлениям одновременно — тебе нужна не одна формула, а гибкая комбинация: главное направление + 1–2 поддерживающие ноты.`;
+  } else if (profileSec) {
+    profileName = `${profile.name} × ${profileSec.name}`;
+    profileDesc = `Ты ценишь ${profile.short}, но хочешь добавить ${profileSec.short}. В твоей Формуле стиля сочетаются два направления — главное «${profile.name}» и нота «${profileSec.name}». Полная Формула покажет, как именно их соединить в гардеробе: какие силуэты, ткани и цвета работают на оба направления одновременно.`;
+  } else {
+    profileName = profile.name;
+    profileDesc = profile.desc;
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  show('s-result');
+
+  // Кольцо разрыва — анимация
+  const circumference = 408;
+  const offset = circumference - (gapPct / 100) * circumference;
+  const ring = document.getElementById('r-ring');
+  const colorMap = { classic: '#1F1614', drama: '#9C1A22', romance: '#B8232C', natural: '#6E101A', mix3: '#1F1614' };
+  ring.style.stroke = colorMap[profileKey] || colorMap[dominant];
+  setTimeout(() => { ring.style.strokeDashoffset = offset; }, 200);
+
+  // Анимация числа Identity Gap
+  const numEl = document.getElementById('r-pct');
+  let n = 0;
+  const iv = setInterval(() => {
+    n = Math.min(n + Math.ceil(gapPct / 25), gapPct);
+    numEl.textContent = n;
+    if (n >= gapPct) clearInterval(iv);
+  }, 50);
+
+  document.getElementById('r-tagline').textContent = tagline;
+  document.getElementById('r-gap-desc').textContent = gapDesc;
+
+  // Динамическое имя формулы в email-блоке (с кавычками)
+  const ecDirection = document.getElementById('ec-direction');
+  if (ecDirection) ecDirection.textContent = `«${profileName}»`;
+
+  // Анимация маркера и заливки на шкале (позиция / ширина = gapPct%)
+  const scaleMarker = document.getElementById('r-scale-marker');
+  const scaleFill = document.getElementById('r-scale-fill');
+  if (scaleMarker) {
+    setTimeout(() => { scaleMarker.style.left = gapPct + '%'; }, 400);
+  }
+  if (scaleFill) {
+    setTimeout(() => { scaleFill.style.width = gapPct + '%'; }, 400);
+  }
+  const scaleZoneLabel = document.getElementById('r-scale-zone-label');
+  if (scaleZoneLabel) scaleZoneLabel.innerHTML = zoneLabel;
+
+  // Слова — пилюли
+  const nowWrap = document.getElementById('r-now-words');
+  const wantWrap = document.getElementById('r-want-words');
+  nowWrap.innerHTML = '';
+  wantWrap.innerHTML = '';
+  (uniqNow.length ? uniqNow : ['спокойная','надёжная']).forEach(w => {
+    const s = document.createElement('span');
+    s.className = 'word-pill word-now';
+    s.textContent = w;
+    nowWrap.appendChild(s);
+  });
+  (uniqWant.length ? uniqWant : ['уверенная','своя']).forEach(w => {
+    const s = document.createElement('span');
+    s.className = 'word-pill word-want';
+    s.textContent = w;
+    wantWrap.appendChild(s);
+  });
+
+  // Карточка направления
+  const pc = document.getElementById('r-pain-card');
+  pc.classList.add(profile.color);
+  document.getElementById('r-pain-icon').textContent = profile.icon;
+  document.getElementById('r-pain-label').textContent = profile.label;
+  document.getElementById('r-pain-name').textContent = profileName;
+  document.getElementById('r-pain-desc').textContent = profileDesc;
+  document.getElementById('r-pain-quote').textContent = profile.quote;
+  // Рендерим 2 фото в формуле — либо AI-преображение клиентки (если загрузила фото), либо референс-фото
+  const refsWrap = document.getElementById('r-ref-wrap');
+  refsWrap.innerHTML = '';
+  if (userPhotoDataUrl) {
+    // UI-демо: первое фото — оригинал клиентки, второе — то же фото с overlay «AI-визуализация будет здесь»
+    // В проде: оба фото — результаты image-gen API (Nano Banana) с лицом клиентки в её формуле
+    const refs = profile.references || [];
+    const block = document.createElement('div');
+    block.className = 'your-photo-block';
+    block.innerHTML = `
+      <div class="your-photo-label">Твоя формула «${profileName}» — на тебе</div>
+      <div class="your-photo-grid">
+        <div class="your-photo-cell">
+          <img src="${userPhotoDataUrl}" alt="Твоё фото — оригинал">
+        </div>
+        <div class="your-photo-cell is-ai">
+          <img src="${userPhotoDataUrl}" alt="AI-визуализация в формуле">
+        </div>
+      </div>
+    `;
+    refsWrap.appendChild(block);
+  } else {
+    (profile.references || []).forEach(ref => {
+      const wrap = document.createElement('div');
+      wrap.className = 'ref-photo-wrap';
+      wrap.innerHTML = `
+        <img class="ref-photo" loading="lazy" src="${ref.src}" alt="Референс — ${profile.name}">
+        <div class="ref-photo-caption">${ref.caption}</div>
+      `;
+      refsWrap.appendChild(wrap);
+    });
+  }
+
+  // Locked Style Card teasers + email capture — статичный HTML, не требует рендера
+
+  // ── 7. Сегмент клиентки (из q0) — влияет на CTA ──────────────────
+  const segmentAns = answers[0];
+  const segment = (segmentAns !== undefined) ? questions[0].opts[segmentAns].segment : 'evolution';
+  const segmentNames = {
+    'rebirth': 'Перерождение',
+    'evolution': 'Раскрытие',
+    'rebirth-evolution': 'Перерождение / Раскрытие',
+    'system': 'Система'
+  };
+  const segmentName = segmentNames[segment];
+
+  // CTA: персонализированный заголовок по уровню разрыва + сегменту
+  const ctaTitles = {
+    extreme: `Твой разрыв <em>${gapPct}%</em> — это карта пересборки.`,
+    high: `Твой разрыв <em>${gapPct}%</em> — образ отстаёт от тебя.`,
+    mid: `Твой разрыв <em>${gapPct}%</em> — образ почти догнал тебя.`,
+    low: `Твой разрыв <em>${gapPct}%</em> — ты близко к своей формуле.`,
+  };
+  document.getElementById('r-cta-title').innerHTML = ctaTitles[level];
+
+  // Расширенное описание CTA: персонализация + конкретика под Style Card
+  const ctaDescByLevel = {
+    extreme: `Это не проблема вкуса. Это знак, что внутренне ты уже изменилась, а образ остался от прошлой версии тебя. «Карта стиля» покажет, какие силуэты, цвета, ткани и покупки соберут визуальный код именно твоей формулы «${profileName}».`,
+    high: `Это не проблема вкуса. Это знак, что образ отстаёт от твоего нового этапа. «Карта стиля» покажет, какие ключевые блоки нужно перенастроить — силуэты, цвета, типаж — чтобы тебя считывали так, как ты ощущаешь себя в формуле «${profileName}».`,
+    mid: `Это не проблема вкуса. Это знак, что образ почти догнал тебя, но ему не хватает точной настройки. «Карта стиля» покажет, какие силуэты, цвета и покупки закроют разрыв именно в твоей формуле «${profileName}».`,
+    low: `Это не проблема вкуса. Это знак, что осталась тонкая корректировка нюансов. «Карта стиля» покажет, какие точные акценты, цвета и фасоны окончательно совпадут с твоей формулой «${profileName}».`,
+  };
+  document.getElementById('r-cta-desc').textContent = ctaDescByLevel[level];
+}
+
+// ============================================================
+//  UTILS
+// ============================================================
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ============================================================
+//  UPLOAD STEP — фото клиентки перед финалом (UI-демо без бэкенда)
+// ============================================================
+let userPhotoDataUrl = null;
+
+function handleQuizUpload(file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    alert('Пожалуйста, выбери фото — JPG или PNG.');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    alert('Файл больше 10 МБ. Попробуй сжать или взять другое фото.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    userPhotoDataUrl = e.target.result;
+    // Переходим к экрану обработки
+    show('s-processing');
+    // UI-демо: имитация AI-генерации 2.5 секунды (в проде — реальный fetch к /api/generate-styling)
+    setTimeout(() => { buildResult(); }, 2500);
+  };
+  reader.readAsDataURL(file);
+}
+
+function skipUpload() {
+  userPhotoDataUrl = null;
+  buildResult();
+}
+
+// Drag & drop + click на dropzone — навешиваем после загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+  const dz = document.getElementById('quiz-dropzone');
+  const input = document.getElementById('quiz-file-input');
+  if (!dz || !input) return;
+
+  input.addEventListener('change', function(e) {
+    if (e.target.files.length > 0) handleQuizUpload(e.target.files[0]);
+  });
+  ['dragenter', 'dragover'].forEach(evt => {
+    dz.addEventListener(evt, function(e) {
+      e.preventDefault();
+      dz.classList.add('is-dragover');
+    });
+  });
+  ['dragleave', 'drop'].forEach(evt => {
+    dz.addEventListener(evt, function(e) {
+      e.preventDefault();
+      dz.classList.remove('is-dragover');
+    });
+  });
+  dz.addEventListener('drop', function(e) {
+    if (e.dataTransfer.files.length > 0) handleQuizUpload(e.dataTransfer.files[0]);
+  });
+});
+
+function restart() {
+  answers = {}; current = 0;
+  userPhotoDataUrl = null;
+  const quizFileInput = document.getElementById('quiz-file-input');
+  if (quizFileInput) quizFileInput.value = '';
+  document.getElementById('r-now-words').innerHTML = '';
+  document.getElementById('r-want-words').innerHTML = '';
+  document.getElementById('r-pain-card').className = 'pain-card';
+  document.getElementById('r-ring').style.strokeDashoffset = '408';
+  // Сбросить email-форму
+  const ec = document.querySelector('.email-capture');
+  if (ec) {
+    ec.classList.remove('is-submitted');
+    const input = document.getElementById('ec-email');
+    if (input) input.value = '';
+  }
+  show('s-intro');
+}
+
+// ============================================================
+//  EMAIL CAPTURE (Lite — сохраняем в localStorage, бэкенд позже)
+// ============================================================
+function submitEmail(e) {
+  e.preventDefault();
+  const input = document.getElementById('ec-email');
+  const email = input.value.trim();
+  if (!email) return;
+
+  try {
+    // Собираем снапшот результата клиентки
+    const snapshot = {
+      email,
+      timestamp: new Date().toISOString(),
+      answers,
+      url: window.location.href,
+    };
+    const list = JSON.parse(localStorage.getItem('senseStyleSignalLeads') || '[]');
+    list.push(snapshot);
+    localStorage.setItem('senseStyleSignalLeads', JSON.stringify(list));
+  } catch (err) {
+    // localStorage недоступен — игнорируем, всё равно показываем success
+  }
+
+  document.querySelector('.email-capture').classList.add('is-submitted');
+}
+</script>
+</body>
+</html>

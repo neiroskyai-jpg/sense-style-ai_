@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Чувство стиля — hero preview (editorial single-shot)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;1,6..96,400;1,6..96,500;1,6..96,600&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* === Petrogradka Editorial: один кадр, текст-разворот справа === */
+  :root {
+    --cream:       #F2EBDD;
+    --cream-bg:    #F5F0E7;
+    --ink:         #1C1714;
+    --ink-muted:   rgba(28, 23, 20, 0.62);
+    --ink-dim:     rgba(28, 23, 20, 0.40);
+    --text-on-dark:        rgba(242, 235, 221, 0.96);
+    --text-on-dark-muted:  rgba(242, 235, 221, 0.78);
+    --text-on-dark-dim:    rgba(242, 235, 221, 0.55);
+    --red:         #B8232C;
+    --red-deep:    #8C1820;
+    --line-on-dark: rgba(242, 235, 221, 0.35);
+    --serif: 'Bodoni Moda', Georgia, serif;
+    --sans:  'Onest', -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    background: var(--cream-bg);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.01em; }
+
+  /* === Верхняя минимальная полоса === */
+  .top-bar {
+    padding: 22px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--cream-bg);
+    border-bottom: 1px solid rgba(28, 23, 20, 0.08);
+  }
+  .top-bar .brand {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+  }
+  .top-bar .brand em {
+    font-style: italic;
+    color: var(--red);
+    font-weight: 500;
+  }
+  .top-bar .edition {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-dim);
+    letter-spacing: 0.18em;
+  }
+  .top-bar .edition .num { font-style: normal; font-weight: 600; color: var(--red); }
+
+  /* === HERO === */
+  .hero {
+    position: relative;
+    height: clamp(640px, 92vh, 880px);
+    overflow: hidden;
+    background: #1C1714;
+  }
+  .hero-image {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(180deg, rgba(28, 23, 20, 0.30) 0%, rgba(28, 23, 20, 0.10) 40%, rgba(28, 23, 20, 0.55) 100%),
+      url("photos/hero/03-editorial.jpg");
+    background-size: cover;
+    background-position: center 30%;
+    background-repeat: no-repeat;
+    z-index: 1;
+  }
+  /* Затемнение справа — чтобы текст-разворот читался */
+  .hero-image::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(28, 23, 20, 0.05) 0%,
+      rgba(28, 23, 20, 0.05) 38%,
+      rgba(28, 23, 20, 0.55) 60%,
+      rgba(28, 23, 20, 0.75) 100%
+    );
+    pointer-events: none;
+    z-index: 2;
+  }
+  /* Плейсхолдер пока нет фото 03-editorial.jpg */
+  .hero-image.is-placeholder {
+    background-image:
+      linear-gradient(180deg, rgba(28, 23, 20, 0.30) 0%, rgba(28, 23, 20, 0.10) 40%, rgba(28, 23, 20, 0.55) 100%),
+      linear-gradient(135deg, #2C2520 0%, #1C1714 60%, #14110E 100%);
+  }
+  .hero-image.is-placeholder .ph-note {
+    position: absolute;
+    left: 40px;
+    bottom: 40px;
+    z-index: 3;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13px;
+    color: rgba(242, 235, 221, 0.55);
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+    max-width: 360px;
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 3;
+    height: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 56px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+  }
+  .hero-text {
+    grid-column: 2;
+    color: var(--text-on-dark);
+    max-width: 600px;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.36em;
+    text-transform: uppercase;
+    color: var(--text-on-dark-muted);
+    margin-bottom: 28px;
+    font-weight: 500;
+  }
+  .hero-eyebrow .dot {
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--red);
+    margin: 0 12px 3px;
+    vertical-align: middle;
+  }
+
+  .hero h1 {
+    font-size: clamp(40px, 5.2vw, 72px);
+    line-height: 1.04;
+    color: var(--text-on-dark);
+    margin: 0 0 28px;
+    font-weight: 500;
+  }
+  .hero h1 em {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--red);
+  }
+
+  .hero-sub {
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-on-dark-muted);
+    max-width: 520px;
+    margin: 0 0 32px;
+  }
+
+  .hero-epigraph {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line-on-dark);
+    max-width: 540px;
+    margin-bottom: 36px;
+  }
+  .hero-epigraph .bar {
+    flex: 0 0 1px;
+    width: 1px;
+    align-self: stretch;
+    background: var(--red);
+    opacity: 0.85;
+    margin-top: 4px;
+    min-height: 30px;
+  }
+  .hero-epigraph .text {
+    font-family: var(--sans);
+    font-size: 11px;
+    line-height: 1.6;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-on-dark-dim);
+  }
+
+  .hero-cta-row {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+  .btn-cta {
+    display: inline-block;
+    background: var(--red);
+    color: var(--cream);
+    padding: 18px 42px;
+    border-radius: 999px;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid var(--red);
+  }
+  .btn-cta:hover {
+    background: transparent;
+    color: var(--cream);
+    border-color: var(--cream);
+  }
+  .btn-meta {
+    font-size: 12px;
+    color: var(--text-on-dark-dim);
+    letter-spacing: 0.04em;
+  }
+
+  /* === Адаптив === */
+  @media (max-width: 900px) {
+    .hero {
+      height: auto;
+      min-height: 0;
+    }
+    .hero-image {
+      position: relative;
+      height: 60vh;
+      min-height: 420px;
+    }
+    .hero-image::after {
+      background: linear-gradient(
+        180deg,
+        rgba(28, 23, 20, 0.10) 0%,
+        rgba(28, 23, 20, 0.10) 50%,
+        rgba(28, 23, 20, 0.70) 100%
+      );
+    }
+    .hero-inner {
+      display: block;
+      padding: 36px 24px 48px;
+      background: var(--ink);
+    }
+    .hero-text {
+      grid-column: auto;
+      max-width: none;
+    }
+    .hero h1 { font-size: clamp(32px, 8vw, 48px); }
+    .hero-eyebrow { font-size: 9px; letter-spacing: 0.28em; margin-bottom: 20px; }
+    .top-bar { padding: 18px 24px; }
+    .top-bar .edition { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Верхняя минимальная полоса -->
+<div class="top-bar">
+  <div class="brand">Чувство <em>стиля</em></div>
+  <div class="edition">VOL. I · <span class="num">N° 01</span> · 2026</div>
+</div>
+
+<!-- HERO: одно фото на всю площадь + текст-разворот справа -->
+<header class="hero">
+  <div class="hero-image is-placeholder">
+    <div class="ph-note">
+      Сюда придёт фото героини в кремовом total-look на петроградской улице.<br>
+      Путь: <code>photos/hero/03-editorial.jpg</code>.<br>
+      Соотношение: горизонтальное (16:9 или шире), фокус в левой трети, правая половина — улица в перспективе.<br>
+      Когда положишь файл — удалить класс <code>is-placeholder</code> на блоке <code>.hero-image</code>.
+    </div>
+  </div>
+
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-eyebrow">
+        Авторская методология<span class="dot"></span>ИИ-платформа
+      </div>
+
+      <h1>
+        Узнай свою <em>формулу стиля</em><br>
+        и посмотри на себя <em>по-новому</em>
+      </h1>
+
+      <p class="hero-sub">
+        Стилист на основе психологии моды. Не «до и после преображения» — до и после ясности.
+        Не делает из тебя другого человека. Находит формулу, которая делает тебя — заметнее.
+      </p>
+
+      <div class="hero-epigraph">
+        <span class="bar"></span>
+        <span class="text">Стиль — это не про моду. Это про твой внутренний образ.</span>
+      </div>
+
+      <div class="hero-cta-row">
+        <a href="/demo" class="btn-cta">Пройти диагностику</a>
+        <span class="btn-meta">5 минут · бесплатно · без регистрации</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Чувство стиля — hero preview (burgundy + cream, MEET your COACH-style)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;1,6..96,400;1,6..96,500;1,6..96,600&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --burgundy:        #5A2027;   /* основной фон hero — глубокий бордовый */
+    --burgundy-deep:   #401519;   /* тени */
+    --burgundy-glow:   #6E2932;
+    --cream:           #F5F0E5;   /* кремовая полоса сверху/снизу */
+    --cream-soft:      #EFE7D6;
+    --paper:           #ECE3D2;   /* полароидная бумага — бежевая */
+    --washi:           #C4AC8E;   /* скотч */
+    --button:          #B8A088;   /* бежевая кнопка */
+    --button-text:     #2C1B14;
+    --ink-cream:       #2C1B14;   /* текст на кремовом */
+    --ink-cream-muted: rgba(44, 27, 20, 0.65);
+    --text:            #FFFFFF;
+    --text-muted:      rgba(255, 255, 255, 0.78);
+    --text-dim:        rgba(255, 255, 255, 0.45);
+    --serif: 'Bodoni Moda', Georgia, serif;
+    --sans:  'Onest', -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    background: var(--burgundy);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.005em; }
+
+  /* === Верхняя кремовая полоса === */
+  .top-strip {
+    background: var(--cream);
+    padding: 28px 0 32px;
+    text-align: center;
+    position: relative;
+  }
+  .top-strip .logo {
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--ink-cream);
+    letter-spacing: 0.01em;
+  }
+  .top-strip .logo em {
+    font-style: italic;
+    color: var(--burgundy);
+    font-weight: 500;
+  }
+  .top-strip .edition {
+    position: absolute;
+    top: 32px;
+    right: 40px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-cream-muted);
+    letter-spacing: 0.12em;
+  }
+  .top-strip .edition .num {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--burgundy);
+  }
+
+  /* === HERO бордовый === */
+  .hero {
+    background: var(--burgundy);
+    padding: 100px 0 110px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 10% 20%, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 90%, var(--burgundy-deep) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .hero-inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 56px;
+    position: relative;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  /* === Полароидный коллаж слева === */
+  .collage {
+    position: relative;
+    height: 560px;
+  }
+  .polaroid {
+    position: absolute;
+    background: var(--paper);
+    padding: 14px 14px 44px;
+    box-shadow:
+      0 28px 56px rgba(0, 0, 0, 0.42),
+      0 6px 14px rgba(0, 0, 0, 0.22);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .polaroid img {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    display: block;
+    background: #888;
+    filter: contrast(1.04) saturate(0.94);
+  }
+  .polaroid .caption {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-cream-muted);
+    margin-top: 10px;
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+  .washi {
+    position: absolute;
+    background: var(--washi);
+    height: 24px;
+    width: 90px;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-3deg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+    z-index: 2;
+    opacity: 0.92;
+  }
+  .polaroid--main   { width: 290px; top: 20px;  left: 20px;   transform: rotate(-4deg); z-index: 4; }
+  .polaroid--top    { width: 165px; top: 0;     right: 40px;  transform: rotate(6deg);  z-index: 3; }
+  .polaroid--mid    { width: 160px; top: 230px; right: 0;     transform: rotate(-2deg); z-index: 5; }
+  .polaroid--bottom { width: 200px; top: 340px; left: 110px;  transform: rotate(5deg);  z-index: 6; }
+  .polaroid:hover { transform: scale(1.03) rotate(0deg); z-index: 10; }
+
+  /* === Правая колонка: текст === */
+  .hero-content { position: relative; z-index: 3; max-width: 480px; }
+  .hero h1 {
+    font-family: var(--serif);
+    font-size: clamp(40px, 4.8vw, 58px);
+    line-height: 1.05;
+    color: var(--text);
+    margin-bottom: 28px;
+    font-weight: 500;
+  }
+  .hero h1 em {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    color: var(--text);
+  }
+  .hero-intro {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 22px;
+  }
+  .hero-intro strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .btn-pill {
+    display: inline-block;
+    background: var(--button);
+    color: var(--button-text);
+    padding: 16px 40px;
+    border-radius: 999px;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 1px solid var(--button);
+    margin-top: 16px;
+  }
+  .btn-pill:hover {
+    background: transparent;
+    color: var(--button);
+  }
+
+  /* Тонкая вертикальная линия-разделитель справа от текста — как в референсе */
+  .hero-content::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    bottom: 20px;
+    right: -40px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.20);
+  }
+
+  /* === Нижняя кремовая полоса с цитатой === */
+  .bottom-strip {
+    background: var(--cream);
+    padding: 36px 0;
+    text-align: center;
+  }
+  .bottom-strip .featured-label {
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--ink-cream-muted);
+    display: inline-block;
+    margin-right: 28px;
+    vertical-align: middle;
+  }
+  .bottom-strip .featured-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 36px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .bottom-strip .featured-item {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink-cream);
+    letter-spacing: -0.01em;
+  }
+  .bottom-strip .featured-item em {
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  @media (max-width: 900px) {
+    .hero-inner { grid-template-columns: 1fr; gap: 40px; padding: 0 24px; }
+    .collage { height: 480px; max-width: 380px; margin: 0 auto; }
+    .polaroid--main   { width: 240px; left: 0; }
+    .polaroid--top    { width: 140px; right: 0; }
+    .polaroid--mid    { width: 130px; top: 200px; }
+    .polaroid--bottom { width: 170px; left: 60px; top: 300px; }
+    .hero-content { max-width: none; text-align: center; }
+    .hero-content::after { display: none; }
+    .top-strip .edition { display: none; }
+    .bottom-strip .featured-row { gap: 18px; }
+    .bottom-strip .featured-item { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Верхняя кремовая полоса -->
+<div class="top-strip">
+  <div class="edition">VOL. I · <span class="num">N° 01</span> · 2026</div>
+  <div class="logo">Чувство <em>стиля</em></div>
+</div>
+
+<!-- HERO бордовый -->
+<header class="hero">
+  <div class="hero-inner">
+
+    <!-- Полароидный коллаж -->
+    <div class="collage">
+      <div class="polaroid polaroid--main">
+        <div class="washi"></div>
+        <img src="photos/kolupaeva-gallery/деловая встреча.png" alt="Деловой образ">
+        <div class="caption">встреча, ясность</div>
+      </div>
+      <div class="polaroid polaroid--top">
+        <div class="washi"></div>
+        <img src="photos/kolupaeva-gallery/презентация.png" alt="Презентация">
+        <div class="caption">сцена</div>
+      </div>
+      <div class="polaroid polaroid--mid">
+        <div class="washi"></div>
+        <img src="photos/kolupaeva-gallery/свидание.png" alt="Свидание">
+        <div class="caption">вечер</div>
+      </div>
+      <div class="polaroid polaroid--bottom">
+        <div class="washi"></div>
+        <img src="photos/kolupaeva-gallery/путешествие.png" alt="Путешествие">
+        <div class="caption">дорога</div>
+      </div>
+    </div>
+
+    <!-- Текст справа -->
+    <div class="hero-content">
+      <h1>Узнай свою<br><em>формулу</em> стиля</h1>
+      <p class="hero-intro">
+        Авторская методология стиля × ИИ. Помогаю женщине в точке перехода — карьера, материнство, эмиграция — увидеть, как тебя считывают сейчас, и собрать формулу, которая делает тебя заметнее.
+      </p>
+      <p class="hero-intro">
+        <strong>Не «до и после преображения» — до и после ясности.</strong>
+        Не делает из тебя другого человека. Находит формулу, которая работает на тебя.
+      </p>
+      <a href="/demo" class="btn-pill">Пройти диагностику</a>
+    </div>
+
+  </div>
+</header>
+
+<!-- Нижняя кремовая полоса — как «Featured in» в MEET your COACH -->
+<div class="bottom-strip">
+  <div class="featured-row">
+    <span class="featured-label">Методология опирается на</span>
+    <span class="featured-item">Школу <em>«Алгоритмы имиджа»</em></span>
+    <span class="featured-item">Carolyn Mair</span>
+    <span class="featured-item"><em>Higgins, 1987</em></span>
+    <span class="featured-item">Adam &amp; Galinsky, 2012</span>
+  </div>
+</div>
+
+</body>
+</html>

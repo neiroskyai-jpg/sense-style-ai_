@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Чувство стиля — hero preview (split, точно по макету)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400;1,6..96,500&family=Caveat:wght@400;500;600&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red:         #B22030;                  /* красный со стороны постера */
+    --red-deep:    #7E141E;
+    --red-soft:    rgba(178, 32, 48, 0.10);
+    --cream:       #FAF6EE;                  /* белая сторона — лёгкий warm white */
+    --cream-bg:    #F5F0E7;
+    --ink:         #1F1614;
+    --ink-muted:   rgba(31, 22, 20, 0.60);
+    --ink-dim:     rgba(31, 22, 20, 0.40);
+    --serif:       'Bodoni Moda', Georgia, serif;
+    --sans:        'Onest', -apple-system, sans-serif;
+    --script:      'Caveat', cursive;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    background: var(--cream);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.65;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.01em; }
+
+  /* === Минимальная верхняя полоса === */
+  .top-bar {
+    padding: 22px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--cream);
+    border-bottom: 1px solid rgba(31, 22, 20, 0.08);
+  }
+  .top-bar .brand {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .top-bar .brand em {
+    font-style: italic;
+    color: var(--red);
+    font-weight: 500;
+  }
+  .top-bar .tagline-right {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* === HERO с вертикальным сплитом === */
+  .hero {
+    position: relative;
+    height: 760px;
+    overflow: hidden;
+  }
+  .hero-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100%;
+    position: relative;
+  }
+
+  .split-side {
+    position: relative;
+    overflow: hidden;
+  }
+  .split-side--red { background: var(--red); }
+  .split-side--cream { background: var(--cream-bg); }
+
+  /* === Фигура внутри стороны === */
+  /* Режим 1: PNG-вырезка без фона (figure-wrap--cutout) — DWP-постер */
+  /* Режим 2: JPG с фоном (figure-wrap--bg) — фото на всю половину с цветовым покрытием */
+  .figure-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+  .figure-wrap img {
+    display: block;
+  }
+  /* Режим вырезки */
+  .figure-wrap.is-cutout {
+    bottom: 0;
+    top: auto;
+    inset: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 88%;
+    width: auto;
+    max-width: 92%;
+  }
+  .figure-wrap.is-cutout img {
+    height: 100%;
+    width: auto;
+    object-fit: contain;
+    object-position: bottom center;
+  }
+  /* Режим с фоном — фото на всю половину */
+  .figure-wrap.is-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+  }
+  /* На красной стороне в режиме с фоном — мульти-наложение красного */
+  .split-side--red .figure-wrap.is-bg img {
+    mix-blend-mode: multiply;
+    filter: saturate(0.85) brightness(0.92) contrast(1.04);
+  }
+  /* На кремовой стороне в режиме с фоном — лёгкое теплое усиление */
+  .split-side--cream .figure-wrap.is-bg img {
+    filter: saturate(1.05) brightness(1.02);
+  }
+  /* Виньетка/градиент для читаемости подписей в режиме с фоном */
+  .figure-wrap.is-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .split-side--red .figure-wrap.is-bg::after {
+    background: linear-gradient(180deg, rgba(178, 32, 48, 0.55) 0%, transparent 35%, transparent 65%, rgba(126, 20, 30, 0.6) 100%);
+  }
+  .split-side--cream .figure-wrap.is-bg::after {
+    background: linear-gradient(180deg, rgba(250, 246, 238, 0.45) 0%, transparent 35%, transparent 65%, rgba(31, 22, 20, 0.25) 100%);
+  }
+
+  /* === Центральный лейбл (точно как в макете) === */
+  .center-label {
+    position: absolute;
+    top: 56px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--cream);
+    padding: 26px 56px 28px;
+    z-index: 10;
+    text-align: center;
+    box-shadow:
+      0 14px 36px rgba(31, 22, 20, 0.18),
+      0 2px 6px rgba(31, 22, 20, 0.08);
+    border: 1.5px solid var(--red);
+    min-width: 320px;
+  }
+  .center-label::before {
+    /* Тонкая внутренняя красная рамка */
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid var(--red);
+    pointer-events: none;
+  }
+  .center-label .title {
+    font-family: var(--serif);
+    font-size: 34px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .center-label .title-line {
+    display: block;
+  }
+  .center-label .eyebrow {
+    font-family: var(--sans);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.36em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 12px;
+  }
+
+  /* === Подписи «до» / «после» со стрелками === */
+  .annotation {
+    position: absolute;
+    z-index: 8;
+    text-align: center;
+  }
+  .annotation .script {
+    font-family: var(--script);
+    font-size: 38px;
+    line-height: 1;
+    color: var(--red);
+    font-weight: 500;
+    display: block;
+  }
+  .annotation .micro {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink);
+    margin-top: 4px;
+    display: block;
+    letter-spacing: 0.02em;
+  }
+  .split-side--red .annotation .micro { color: var(--cream); opacity: 0.92; }
+
+  .annotation--left {
+    top: 200px;
+    left: 60px;
+  }
+  .annotation--right {
+    top: 200px;
+    right: 60px;
+  }
+
+  .annotation .arrow {
+    display: block;
+    margin: 6px auto 0;
+    width: 60px;
+    height: 80px;
+  }
+
+  @media (max-width: 900px) {
+    .hero { height: auto; }
+    .hero-split {
+      grid-template-columns: 1fr 1fr;
+      height: 580px;
+    }
+    .center-label {
+      top: 32px;
+      padding: 18px 32px 20px;
+      min-width: 220px;
+    }
+    .center-label .title { font-size: 22px; }
+    .center-label .eyebrow { font-size: 8px; margin-bottom: 8px; letter-spacing: 0.28em; }
+    .annotation--left { top: 130px; left: 12px; }
+    .annotation--right { top: 130px; right: 12px; }
+    .annotation .script { font-size: 26px; }
+    .annotation .micro { font-size: 11px; }
+    .annotation .arrow { width: 36px; height: 50px; }
+    .figure-wrap { height: 78%; }
+    .top-bar .tagline-right { display: none; }
+  }
+
+  /* === Заголовок + CTA под hero === */
+  .hero-meta {
+    padding: 80px 24px 96px;
+    text-align: center;
+    background: var(--cream);
+  }
+  .hero-meta h1 {
+    font-size: clamp(34px, 4.4vw, 56px);
+    line-height: 1.06;
+    max-width: 860px;
+    margin: 0 auto 28px;
+    color: var(--ink);
+  }
+  .hero-meta h1 em {
+    font-style: italic;
+    color: var(--red);
+    font-weight: 400;
+  }
+  .hero-meta .tagline {
+    font-family: var(--script);
+    font-size: 28px;
+    color: var(--red);
+    margin-bottom: 24px;
+  }
+  .hero-meta .sub {
+    font-size: 17px;
+    color: var(--ink-muted);
+    max-width: 680px;
+    margin: 0 auto 36px;
+    line-height: 1.7;
+  }
+  .btn-cta {
+    display: inline-block;
+    background: var(--red);
+    color: var(--cream);
+    padding: 20px 60px;
+    border-radius: 999px;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 1px solid var(--red);
+    box-shadow: 0 14px 30px rgba(126, 20, 30, 0.25);
+  }
+  .btn-cta:hover {
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  .btn-meta {
+    display: block;
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-top: 14px;
+    letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body>
+
+<!-- Минимальная верхняя полоса с брендом -->
+<div class="top-bar">
+  <div class="brand">Чувство <em>стиля</em></div>
+  <div class="tagline-right">стилист на основе психологии моды</div>
+</div>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-split">
+
+    <!-- ЛЕВАЯ красная сторона: «до» -->
+    <div class="split-side split-side--red">
+
+      <!-- Аннотация «до» со стрелкой -->
+      <div class="annotation annotation--left">
+        <span class="script">до</span>
+        <span class="micro">не про меня</span>
+        <svg class="arrow" viewBox="0 0 60 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 10 8 C 18 30, 40 40, 38 70" stroke="#FAF6EE" stroke-width="1.6" stroke-linecap="round" fill="none" />
+          <path d="M 32 64 L 38 72 L 44 62" stroke="#FAF6EE" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+        </svg>
+      </div>
+
+      <!-- Фигура: пробуем PNG-вырезку, иначе JPG на всю половину -->
+      <div class="figure-wrap is-cutout" id="figure-do">
+        <img src="photos/hero/01-do-cutout.png" alt="«До»: розовая кофта, джинсы"
+             onerror="this.onerror=null; this.src='photos/hero/01-do.jpg'; this.parentElement.classList.remove('is-cutout'); this.parentElement.classList.add('is-bg');">
+      </div>
+    </div>
+
+    <!-- ПРАВАЯ кремовая сторона: «после» -->
+    <div class="split-side split-side--cream">
+
+      <!-- Аннотация «после» со стрелкой -->
+      <div class="annotation annotation--right">
+        <span class="script">после</span>
+        <span class="micro">это про меня</span>
+        <svg class="arrow" viewBox="0 0 60 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 50 8 C 42 30, 20 40, 22 70" stroke="#B22030" stroke-width="1.6" stroke-linecap="round" fill="none" />
+          <path d="M 16 64 L 22 72 L 28 62" stroke="#B22030" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+        </svg>
+      </div>
+
+      <!-- Фигура: пробуем PNG-вырезку, иначе JPG на всю половину -->
+      <div class="figure-wrap is-cutout" id="figure-posle">
+        <img src="photos/hero/02-posle-cutout.png" alt="«После»: зелёное платье, винные туфли"
+             onerror="this.onerror=null; this.src='photos/hero/02-posle.jpg'; this.parentElement.classList.remove('is-cutout'); this.parentElement.classList.add('is-bg');">
+      </div>
+    </div>
+
+    <!-- Центральный лейбл «ФОРМУЛА СТИЛЯ» -->
+    <div class="center-label">
+      <div class="eyebrow">авторская методология</div>
+      <div class="title">
+        <span class="title-line">Формула</span>
+        <span class="title-line">стиля</span>
+      </div>
+    </div>
+
+  </div>
+</header>
+
+<!-- Заголовок + CTA под hero -->
+<section class="hero-meta">
+  <p class="tagline">до и после ясности</p>
+  <h1>Узнай свою <em>формулу стиля</em><br>и посмотри на себя <em>по-новому</em></h1>
+  <p class="sub">
+    «Чувство стиля» не делает из тебя другого человека. Находит формулу, которая делает тебя — заметнее: цвета, силуэты, визуальные коды и решения для твоей реальной жизни.
+  </p>
+  <a href="/demo" class="btn-cta">Узнать свой стиль</a>
+  <span class="btn-meta">5 минут · бесплатно · без регистрации</span>
+</section>
+
+</body>
+</html>

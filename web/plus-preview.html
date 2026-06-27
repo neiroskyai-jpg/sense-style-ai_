@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Кабинет «Чувство стиля» — превью личного кабинета</title>
+<meta name="description" content="Так будет выглядеть личный кабинет «Чувство стиля»: трекер стилевого разрыва, Buy / Not Buy, сезонная палитра и история твоего стиля.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;1,6..96,400;1,6..96,500&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:         #7A1C2E;
+  --red-deep:    #5A1422;
+  --red-glow:    #9C2538;
+  --cream-bg:    #F5EFE3;
+  --paper:       #FFFFFF;
+  --ink:         #1A1A1A;
+  --ink-muted:   rgba(26, 26, 26, 0.65);
+  --ink-dim:     rgba(26, 26, 26, 0.42);
+  --rose-soft:   rgba(122, 28, 46, 0.08);
+  --line:        rgba(26, 26, 26, 0.12);
+  --footer-bg:   #1A1A1A;
+  --serif: 'Bodoni Moda', Georgia, serif;
+  --sans:  'Onest', -apple-system, sans-serif;
+  --r-card:  18px;
+  --r-photo: 14px;
+  --r-pill:  999px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--cream-bg);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+h1, h2, h3, h4 { font-family: var(--serif); font-weight: 500; letter-spacing: -0.01em; color: var(--ink); }
+em { color: var(--red); font-style: italic; font-weight: 500; }
+a { color: inherit; }
+
+.shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px clamp(20px, 5vw, 56px) 80px;
+}
+
+/* === BACK LINK === */
+.back-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-muted); font-weight: 500; text-decoration: none;
+  margin-bottom: 28px;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--red); }
+
+/* === HEADER === */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px; flex-wrap: wrap;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 32px;
+}
+.brand {
+  font-family: var(--serif);
+  font-size: 20px; font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.brand em { font-style: italic; color: var(--red); }
+.nav {
+  display: flex; gap: 26px;
+}
+.nav a {
+  font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-muted); text-decoration: none; font-weight: 500;
+  padding-bottom: 4px;
+  transition: color 0.2s;
+}
+.nav a:hover { color: var(--red); }
+.nav a.active {
+  color: var(--red);
+  border-bottom: 1.5px solid var(--red);
+}
+.user-chip {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--ink); font-weight: 500;
+}
+.avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--rose-soft);
+  border: 1px solid rgba(122, 28, 46, 0.18);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 15px; color: var(--red);
+}
+@media (max-width: 640px) {
+  .nav { display: none; }
+}
+
+/* === BANNER === */
+.banner {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: var(--rose-soft);
+  border: 1px solid rgba(122, 28, 46, 0.16);
+  border-radius: var(--r-card);
+  padding: 16px 22px;
+  margin-bottom: 32px;
+}
+.banner-tag {
+  font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--red); font-weight: 600;
+  white-space: nowrap;
+}
+.banner-text {
+  font-size: 13.5px; color: var(--ink-muted); line-height: 1.55;
+}
+
+/* === PAGE TITLE === */
+.page-title-row {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px; flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.page-eyebrow {
+  font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--red); font-weight: 500; margin-bottom: 10px;
+}
+.page-title {
+  font-family: var(--serif);
+  font-size: clamp(32px, 4vw, 46px);
+  line-height: 1.1; letter-spacing: -0.015em;
+  color: var(--ink); font-weight: 500;
+}
+.last-updated {
+  font-size: 12px; color: var(--ink-dim);
+  letter-spacing: 0.04em;
+}
+
+/* === HERO FORMULA === */
+.hero-formula {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: clamp(28px, 4vw, 44px);
+  margin-bottom: 24px;
+  box-shadow: 0 6px 20px rgba(31, 22, 20, 0.05);
+}
+.formula-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 40px; flex-wrap: wrap;
+}
+.formula-label {
+  font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--ink-muted); font-weight: 500; margin-bottom: 14px;
+}
+.formula-value {
+  font-family: var(--serif);
+  font-size: clamp(28px, 3.6vw, 44px);
+  line-height: 1.15; color: var(--ink); font-weight: 500;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.formula-value em { color: var(--red); font-style: italic; }
+.formula-x { color: var(--red); font-size: 0.7em; }
+.formula-substyle {
+  font-family: var(--serif); font-style: italic;
+  font-size: 16px; color: var(--ink-muted);
+  margin-top: 10px;
+}
+.gap-circle {
+  position: relative;
+  width: 168px; height: 168px;
+  flex-shrink: 0;
+}
+.gap-circle svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.gap-track { fill: none; stroke: var(--rose-soft); stroke-width: 12; }
+.gap-fill {
+  fill: none; stroke: var(--red); stroke-width: 12;
+  stroke-linecap: round;
+  stroke-dasharray: 565;
+  stroke-dashoffset: 463; /* 18% */
+}
+.gap-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.gap-num {
+  font-family: var(--serif); font-style: italic;
+  font-size: 44px; color: var(--red); font-weight: 500;
+  line-height: 1;
+}
+.gap-num-sym { font-size: 22px; }
+.gap-label {
+  font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-dim); margin-top: 6px;
+}
+
+/* === GRID + CARDS === */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+@media (max-width: 840px) {
+  .grid { grid-template-columns: 1fr; }
+}
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: clamp(24px, 3vw, 34px);
+  box-shadow: 0 6px 20px rgba(31, 22, 20, 0.05);
+}
+.card-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; margin-bottom: 22px;
+}
+.card-eyebrow {
+  font-size: 10.5px; letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--red); font-weight: 500; margin-bottom: 8px;
+}
+.card-title {
+  font-family: var(--serif); font-size: 23px;
+  line-height: 1.2; color: var(--ink); font-weight: 500;
+}
+.badge {
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-muted); font-weight: 500;
+  background: var(--cream-bg);
+  border: 1px solid var(--line);
+  padding: 5px 12px; border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.badge.live {
+  color: var(--red); background: var(--rose-soft);
+  border-color: rgba(122, 28, 46, 0.18);
+}
+
+/* === TRACKER === */
+.tracker-row {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 14px;
+}
+.tracker-date {
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-dim); width: 72px; flex-shrink: 0;
+}
+.tracker-bar-wrap {
+  display: flex; align-items: center; gap: 12px; flex: 1;
+}
+.tracker-bar {
+  flex: 1; height: 8px;
+  background: var(--cream-bg);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.tracker-bar-fill {
+  height: 100%;
+  background: rgba(122, 28, 46, 0.35);
+  border-radius: var(--r-pill);
+}
+.tracker-bar-fill.now { background: var(--red); }
+.tracker-pct {
+  font-size: 13px; color: var(--ink-muted); font-weight: 500;
+  width: 40px; text-align: right;
+}
+.tracker-pct.now { color: var(--red); }
+.tracker-summary {
+  display: flex; align-items: flex-start; gap: 14px;
+  margin-top: 20px; padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.tracker-arrow {
+  font-size: 22px; color: var(--red); line-height: 1;
+}
+.tracker-summary-text {
+  font-size: 13.5px; color: var(--ink-muted); line-height: 1.6;
+}
+.tracker-summary-text strong { color: var(--red); font-weight: 500; }
+
+/* === BUY / NOT BUY === */
+.bnb-intro {
+  font-size: 13.5px; color: var(--ink-muted);
+  line-height: 1.6; margin-bottom: 20px;
+}
+.highlight { color: var(--red); font-weight: 500; }
+.bnb-item {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.bnb-item:last-child { border-bottom: none; padding-bottom: 0; }
+.bnb-mark {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0; font-weight: 600;
+}
+.bnb-mark.buy { background: var(--rose-soft); color: var(--red); }
+.bnb-mark.skip {
+  background: var(--cream-bg);
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+}
+.bnb-name {
+  font-size: 14px; color: var(--ink); font-weight: 500;
+  margin-bottom: 4px;
+}
+.bnb-name span { color: var(--ink-dim); font-weight: 400; }
+.bnb-comment {
+  font-size: 13px; color: var(--ink-muted); line-height: 1.55;
+}
+
+/* === SEASON === */
+.season-meta {
+  display: flex; gap: 36px; flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.season-meta-label {
+  font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 6px;
+}
+.season-meta-value {
+  font-family: var(--serif); font-size: 17px; color: var(--ink);
+}
+.season-sub {
+  font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 12px;
+}
+.palette {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.palette-swatch {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(26, 26, 26, 0.10);
+  position: relative;
+}
+.palette-swatch.new::after {
+  content: '';
+  position: absolute; top: -3px; right: -3px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--red);
+  border: 1.5px solid var(--paper);
+}
+.season-changes {
+  list-style: none;
+  font-size: 13px; color: var(--ink-muted); line-height: 1.6;
+}
+.season-changes li {
+  padding: 7px 0 7px 22px; position: relative;
+}
+.season-changes li::before {
+  content: '';
+  position: absolute; left: 0; top: 13px;
+  width: 11px; height: 6px;
+  border-left: 1.6px solid var(--red);
+  border-bottom: 1.6px solid var(--red);
+  transform: rotate(-45deg);
+}
+
+/* === HISTORY === */
+.history { position: relative; }
+.history-item {
+  position: relative;
+  padding: 0 0 22px 26px;
+  border-left: 1px solid var(--line);
+}
+.history-item:last-child { padding-bottom: 0; }
+.history-dot {
+  position: absolute; left: -5px; top: 2px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--cream-bg);
+  border: 2px solid var(--ink-dim);
+}
+.history-item.gold .history-dot { border-color: var(--red); }
+.history-item.current .history-dot {
+  background: var(--red); border-color: var(--red);
+}
+.history-date {
+  font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 5px;
+}
+.history-event {
+  font-family: var(--serif); font-size: 16px;
+  color: var(--ink); font-weight: 500; margin-bottom: 3px;
+}
+.history-item.current .history-event { color: var(--red); }
+.history-detail {
+  font-size: 13px; color: var(--ink-muted); line-height: 1.5;
+}
+
+/* === UPSELL === */
+.upsell {
+  background: var(--footer-bg);
+  border-radius: var(--r-card);
+  padding: clamp(36px, 5vw, 56px);
+  text-align: center;
+  margin-top: 8px;
+}
+.upsell-eyebrow {
+  font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55); font-weight: 500; margin-bottom: 16px;
+}
+.upsell-title {
+  font-family: var(--serif);
+  font-size: clamp(26px, 3.4vw, 38px);
+  line-height: 1.15; color: #FFFFFF; font-weight: 500;
+  margin-bottom: 16px;
+}
+.upsell-title em { color: var(--red-glow); font-style: italic; }
+.upsell-desc {
+  font-size: 14.5px; color: rgba(255, 255, 255, 0.7);
+  line-height: 1.7; max-width: 560px; margin: 0 auto 28px;
+}
+.btn-gold {
+  display: inline-block;
+  background: var(--red); color: #FFFFFF;
+  padding: 16px 38px; border-radius: var(--r-pill);
+  font-family: var(--sans); font-size: 12px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  text-decoration: none; transition: all 0.3s;
+  border: 1px solid var(--red);
+}
+.btn-gold:hover { background: var(--red-deep); border-color: var(--red-deep); }
+
+/* === АНИМАЦИЯ === */
+.fade-up {
+  animation: fadeUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.delay-1 { animation-delay: 0.06s; }
+.delay-2 { animation-delay: 0.12s; }
+.delay-3 { animation-delay: 0.18s; }
+.delay-4 { animation-delay: 0.24s; }
+.delay-5 { animation-delay: 0.30s; }
+.delay-6 { animation-delay: 0.36s; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <a href="index.html#tiers" class="back-link">← Назад к тарифам</a>
+
+  <header class="header fade-up">
+    <div class="brand">Чувство <em>стиля</em></div>
+    <nav class="nav">
+      <a href="#" class="active">Кабинет</a>
+      <a href="#">Формула</a>
+      <a href="#">История</a>
+      <a href="#">Поддержка</a>
+    </nav>
+    <div class="user-chip">
+      <span>Анна</span>
+      <div class="avatar">А</div>
+    </div>
+  </header>
+
+  <div class="banner fade-up delay-1">
+    <span class="banner-tag">◇ Скоро · Кабинет</span>
+    <span class="banner-text">Так будет выглядеть личный кабинет с подпиской. Ранний доступ — после тестирования с первыми клиентками.</span>
+  </div>
+
+  <div class="page-title-row fade-up delay-1">
+    <div>
+      <div class="page-eyebrow">Личный кабинет</div>
+      <h1 class="page-title">Твоя <em>стилевая</em> карта</h1>
+    </div>
+    <div class="last-updated">Обновлено 4 мая 2026</div>
+  </div>
+
+  <section class="hero-formula fade-up delay-2">
+    <div class="formula-row">
+      <div class="formula-content">
+        <div class="formula-label">Твоя формула стиля</div>
+        <div class="formula-value">
+          Романтика<span class="formula-x">×</span><em>Классика</em>
+        </div>
+        <div class="formula-substyle">подстиль: Парижский шик</div>
+      </div>
+
+      <div class="gap-circle">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          <circle class="gap-track" cx="100" cy="100" r="90"/>
+          <circle class="gap-fill" cx="100" cy="100" r="90"/>
+        </svg>
+        <div class="gap-center">
+          <div class="gap-num">18<span class="gap-num-sym">%</span></div>
+          <div class="gap-label">Текущий разрыв</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid">
+
+    <section class="card fade-up delay-3">
+      <div class="card-header">
+        <div>
+          <div class="card-eyebrow">Эволюция</div>
+          <h2 class="card-title">Трекер <em>стилевого разрыва</em></h2>
+        </div>
+        <span class="badge live">в норме</span>
+      </div>
+
+      <div class="tracker-row">
+        <div class="tracker-date">Янв 2026</div>
+        <div class="tracker-bar-wrap">
+          <div class="tracker-bar"><div class="tracker-bar-fill" style="width: 64%"></div></div>
+          <div class="tracker-pct">64%</div>
+        </div>
+      </div>
+
+      <div class="tracker-row">
+        <div class="tracker-date">Мар 2026</div>
+        <div class="tracker-bar-wrap">
+          <div class="tracker-bar"><div class="tracker-bar-fill" style="width: 33%"></div></div>
+          <div class="tracker-pct">33%</div>
+        </div>
+      </div>
+
+      <div class="tracker-row">
+        <div class="tracker-date">Май 2026</div>
+        <div class="tracker-bar-wrap">
+          <div class="tracker-bar"><div class="tracker-bar-fill now" style="width: 18%"></div></div>
+          <div class="tracker-pct now">18%</div>
+        </div>
+      </div>
+
+      <div class="tracker-summary">
+        <div class="tracker-arrow">↘</div>
+        <div class="tracker-summary-text">
+          Прогресс: <strong>−46 пунктов за 4 месяца</strong><br>
+          Образ всё точнее отражает то, как ты ощущаешь себя внутри.
+        </div>
+      </div>
+    </section>
+
+    <section class="card fade-up delay-4">
+      <div class="card-header">
+        <div>
+          <div class="card-eyebrow">AI-помощник</div>
+          <h2 class="card-title"><em>Брать</em> / не брать</h2>
+        </div>
+      </div>
+
+      <div class="bnb-intro">
+        Присылай фото вещи в Telegram-бот <span class="highlight">@sense_style</span> — получишь вердикт по твоей формуле в течение часа.
+      </div>
+
+      <div class="bnb-list">
+        <div class="bnb-item">
+          <div class="bnb-mark buy">✓</div>
+          <div class="bnb-content">
+            <div class="bnb-name">Бордовый кардиган <span>· 12storeez</span></div>
+            <div class="bnb-comment">Идеально под Романтика × Классика. Закрывает пробел в осенней капсуле.</div>
+          </div>
+        </div>
+
+        <div class="bnb-item">
+          <div class="bnb-mark skip">✕</div>
+          <div class="bnb-content">
+            <div class="bnb-name">Чёрный байкерский жакет <span>· Lichi</span></div>
+            <div class="bnb-comment">Слишком жёсткая структура для твоей формулы — конфликт с романтической доминантой.</div>
+          </div>
+        </div>
+
+        <div class="bnb-item">
+          <div class="bnb-mark buy">✓</div>
+          <div class="bnb-content">
+            <div class="bnb-name">Шёлковая блуза цвета слоновой кости <span>· Massimo Dutti</span></div>
+            <div class="bnb-comment">Базовая вещь твоей палитры. Работает с 80% твоего гардероба.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="grid">
+
+    <section class="card fade-up delay-5">
+      <div class="card-header">
+        <div>
+          <div class="card-eyebrow">Сезон</div>
+          <h2 class="card-title">Весна-лето <em>2026</em></h2>
+        </div>
+        <span class="badge">обновлено</span>
+      </div>
+
+      <div class="season-meta">
+        <div class="season-meta-item">
+          <div class="season-meta-label">Доминанта сезона</div>
+          <div class="season-meta-value">Тёплая женственность</div>
+        </div>
+        <div class="season-meta-item">
+          <div class="season-meta-label">Следующее</div>
+          <div class="season-meta-value">1 сентября</div>
+        </div>
+      </div>
+
+      <div class="season-sub">Палитра сезона</div>
+      <div class="palette">
+        <div class="palette-swatch" style="background: #B85C5C" title="Тёплый коралл"></div>
+        <div class="palette-swatch new" style="background: #D4A574" title="Песочный"></div>
+        <div class="palette-swatch" style="background: #6B7B5C" title="Шалфей"></div>
+        <div class="palette-swatch new" style="background: #E8DCC8" title="Кремовый"></div>
+        <div class="palette-swatch" style="background: #5C6B7A" title="Мокрый асфальт"></div>
+        <div class="palette-swatch new" style="background: #A89F8C" title="Тёплый серый"></div>
+        <div class="palette-swatch" style="background: #7A4C5C" title="Винный"></div>
+        <div class="palette-swatch" style="background: #2A2E34" title="Графит"></div>
+      </div>
+
+      <ul class="season-changes">
+        <li>Палитра обновлена под тёплый сезон</li>
+        <li>Добавлены 3 акцентных цвета: песочный, кремовый, тёплый серый</li>
+        <li>Скорректированы ткани: шёлк и хлопок вместо плотной шерсти</li>
+      </ul>
+    </section>
+
+    <section class="card fade-up delay-5">
+      <div class="card-header">
+        <div>
+          <div class="card-eyebrow">Стилевая история</div>
+          <h2 class="card-title">Твой <em>путь</em></h2>
+        </div>
+      </div>
+
+      <div class="history">
+        <div class="history-item">
+          <div class="history-dot"></div>
+          <div class="history-date">15 января 2026</div>
+          <div class="history-event">Прошла диагностику «Точка отсчёта»</div>
+          <div class="history-detail">Разрыв 64% · направление Романтика</div>
+        </div>
+
+        <div class="history-item gold">
+          <div class="history-dot"></div>
+          <div class="history-date">2 февраля 2026</div>
+          <div class="history-event">Купила «Карту стиля»</div>
+          <div class="history-detail">Полная формула + цветотип Натуральная зима</div>
+        </div>
+
+        <div class="history-item">
+          <div class="history-dot"></div>
+          <div class="history-date">15 марта 2026</div>
+          <div class="history-event">Сезонное обновление</div>
+          <div class="history-detail">Палитра весна-лето · подстиль уточнён</div>
+        </div>
+
+        <div class="history-item current">
+          <div class="history-dot"></div>
+          <div class="history-date">4 мая 2026 · сегодня</div>
+          <div class="history-event">Прошла диагностику снова</div>
+          <div class="history-detail">Разрыв 18% · −46 пунктов от старта</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <section class="upsell fade-up delay-6">
+    <div class="upsell-eyebrow">Готова к глубокой работе?</div>
+    <h2 class="upsell-title">
+      Премиум «<em>Преображение</em>»
+    </h2>
+    <p class="upsell-desc">
+      Личная работа со мной: аудит реального гардероба, 20+ готовых сочетаний, видеоразбор, 30 дней Telegram-сопровождения. Для тех, кому нужна не подсказка, а полная пересборка.
+    </p>
+    <a href="premium.html" class="btn-gold">Узнать подробнее →</a>
+  </section>
+
+</div>
+
+</body>
+</html>

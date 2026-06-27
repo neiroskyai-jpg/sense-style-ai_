@@ -10,7 +10,8 @@ import io
 import os
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template_string, request
+from flask import (Flask, jsonify, render_template_string, request,
+                   send_from_directory)
 from PIL import Image, UnidentifiedImageError
 from werkzeug.utils import secure_filename
 
@@ -20,11 +21,13 @@ from core.tracking import (count_today, progress, record_call, record_consent,
                            record_session)
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"  # дизайнерский сайт (статика)
 ALLOWED = {"image/jpeg", "image/png", "image/webp"}
 N_RENDER = 2  # сколько образов рендерим (контроль стоимости/времени)
 DEMO_DAILY_LIMIT = int(os.getenv("DEMO_DAILY_LIMIT", "40"))  # защита от слива ключа
 
-app = Flask(__name__)
+# статика сайта раздаётся из web/ в корне; зарегистрированные роуты (/demo, /api…) важнее
+app = Flask(__name__, static_folder=str(WEB_DIR), static_url_path="")
 app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # лимит загрузки 15 МБ
 
 
@@ -208,7 +211,7 @@ def _split(s: str) -> list[str]:
 
 @app.get("/")
 def landing():
-    return render_template_string(LANDING)
+    return send_from_directory(str(WEB_DIR), "index.html")
 
 
 @app.get("/demo")

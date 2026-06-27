@@ -29,3 +29,16 @@ architecture/cases/
 *.jpeg
 *.png
 *.pdf
+
+# сайт web/: картинки нужны для деплоя — возвращаем в трекинг,
+# но PII клиенток (*case*) и любые pdf — НЕ коммитим
+!web/**/*.png
+!web/**/*.jpg
+!web/**/*.jpeg
+!web/**/*.webp
+!web/**/*.svg
+!web/**/*.gif
+web/photos/*case*/
+web/**/*.pdf
+web/index-collage-backup.html
+web/index-dwp-backup.html
