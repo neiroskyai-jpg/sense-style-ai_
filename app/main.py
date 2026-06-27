@@ -333,23 +333,48 @@ def analyze():
 _JOBS: dict = {}  # job_id -> {status: processing|done|error, result|error}
 
 
+def _run_fast(photo_path: Path, quiz: dict):
+    """Быстрый путь для квиза: vision → диагностика → образы прямо из visual_formula
+    (без тяжёлого шага капсулы), рендер параллельно. Возвращает (diag, looks)."""
+    vision = analyze_photos([str(photo_path)], height_cm=quiz["physical"]["height"], mode="dev")
+    if quiz.get("colortype_known"):
+        vision["colortype"] = quiz["colortype_known"]
+    diag = diagnose(quiz, vision, mode="dev")
+    vf = diag.get("visual_formula") or {}
+    sils = vf.get("silhouettes") or []
+    pal = ", ".join([p.get("name", "") for p in (vf.get("palette") or [])
+                     if p.get("role") in ("base", "accent")][:4]) or "нейтральная палитра"
+    figure = diag.get("figure_type") or (vision.get("figure") or {}).get("figure_type") or ""
+    formula = diag.get("style_formula") or ""
+    look_prompts = [
+        f"Деловой образ: {sils[0] if sils else 'структурный костюм'}. Палитра: {pal}. "
+        f"Стиль: {formula}. Силуэт под фигуру {figure}. Офисный фон.",
+        f"Smart-casual образ: {sils[1] if len(sils) > 1 else 'мягкий комплект'}. Палитра: {pal}. "
+        f"Стиль: {formula}. Силуэт под фигуру {figure}. Городской фон.",
+    ][:N_RENDER]
+
+    def _render(p):
+        return {"img": render_look_on_client(str(photo_path), p), "desc": ""}
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(look_prompts))) as ex:
+        looks = list(ex.map(_render, look_prompts))
+    return diag, looks
+
+
 def _job_worker(job_id: str, photo_path: Path, quiz: dict, client: str) -> None:
-    """Фоновая генерация — чтобы HTTP-запрос не висел 1–2 минуты (таймауты/блокировка)."""
+    """Фоновая генерация — чтобы HTTP-запрос не висел (таймауты/блокировка)."""
     try:
-        diag, capsule, looks = _run_analysis(photo_path, quiz)
+        diag, looks = _run_fast(photo_path, quiz)
         if client:
             try:
                 record_session(client, diag)
             except Exception:  # noqa: BLE001
                 pass
-        cap = capsule.get("capsule") or {}
         _JOBS[job_id] = {"status": "done", "result": {
             "gap_percentage": diag.get("gap_percentage"),
             "style_formula": diag.get("style_formula"),
-            "dna_explanation": diag.get("dna_explanation"),
             "colortype": diag.get("colortype"),
             "figure_type": diag.get("figure_type"),
-            "items_count": len(cap.get("items") or []),
             "looks": looks,
         }}
     except Exception as e:  # noqa: BLE001
