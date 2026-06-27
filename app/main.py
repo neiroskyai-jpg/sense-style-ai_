@@ -76,7 +76,7 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  </select>
  <label>Сегмент</label><select name=price><option>middle</option><option>low</option><option>high</option><option>luxury</option></select>
  <label>Табу — что точно не наденешь (через запятую)</label><input name=taboos value="">
- <label style="font-weight:normal;font-size:13px;margin-top:16px;display:flex;gap:8px"><input type=checkbox name=consent_processing required style="width:auto"> Согласна на обработку персональных данных согласно <a href="https://sense-style-site.vercel.app/privacy-policy.html" target="_blank" rel="noopener">Политике</a>.</label>
+ <label style="font-weight:normal;font-size:13px;margin-top:16px;display:flex;gap:8px"><input type=checkbox name=consent_processing required style="width:auto"> Согласна на обработку персональных данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
  <label style="font-weight:normal;font-size:13px;display:flex;gap:8px"><input type=checkbox name=consent_transfer required style="width:auto"> Согласна на трансграничную передачу фото в AI-сервисы (Google, США) для генерации образов.</label>
  <button>Построить образы</button>
  <p class=hint>Обработка занимает ~1–2 минуты: анализ фото, диагностика, генерация образов.</p>
@@ -91,7 +91,7 @@ RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .look{flex:1 1 260px} .look img{width:100%;border-radius:6px} .desc{font-size:14px;color:#444}
  .meta{color:#666;font-size:14px} a{color:#2b2b2b}
 </style></head><body>
-<p><a href="/">← заново</a></p>
+<p><a href="/demo">← заново</a> · <a href="/">на главную</a></p>
 <h1>Твоя Формула стиля</h1>
 <p class=formula><b>{{ formula }}</b></p>
 <p>Identity Gap: <span class=gap>{{ gap }}%</span> — разрыв между тем, как тебя считывают сейчас, и тем, как ты хочешь.</p>
@@ -108,13 +108,105 @@ RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div></body></html>"""
 
 
+LANDING = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Sense Style — стиль, в котором ты настоящая</title>
+<style>
+ :root{--cream:#F5F1EA;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
+ *{box-sizing:border-box} body{margin:0;font-family:Georgia,serif;background:var(--cream);color:var(--ink);line-height:1.6}
+ .wrap{max-width:880px;margin:0 auto;padding:0 22px}
+ header{padding:22px 0;display:flex;justify-content:space-between;align-items:center}
+ .logo{font-size:20px;letter-spacing:.5px}
+ .hero{padding:56px 0 36px;text-align:center}
+ .hero h1{font-weight:normal;font-size:40px;line-height:1.2;margin:0 0 18px}
+ .hero p{font-size:19px;color:var(--muted);max-width:620px;margin:0 auto 30px}
+ .btn{display:inline-block;background:var(--wine);color:#fff;text-decoration:none;padding:15px 34px;border-radius:6px;font-size:17px}
+ .btn.sm{padding:9px 18px;font-size:14px}
+ h2{font-weight:normal;font-size:26px;margin-top:52px}
+ .flow{background:#fff;border-radius:10px;padding:8px 28px;margin-top:18px;font-size:17px}
+ .flow div{padding:11px 0;border-bottom:1px solid #efece6} .flow div:last-child{border:0}
+ .cols{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px}
+ .card{flex:1 1 240px;background:#fff;border-radius:10px;padding:20px 22px}
+ .card h3{font-weight:normal;font-size:18px;margin:0 0 8px}
+ .card p{margin:0;color:var(--muted);font-size:15px}
+ .cta{text-align:center;padding:52px 0}
+ .sci{color:var(--muted);font-size:15px;margin-top:14px}
+ footer{background:#1A1A1A;color:rgba(255,255,255,.6);margin-top:56px;padding:26px 0;font-size:14px}
+ footer a{color:rgba(255,255,255,.85)}
+</style></head><body>
+<div class=wrap>
+ <header><div class=logo>Sense&nbsp;Style</div><a class="btn sm" href="/demo">Пройти диагностику</a></header>
+ <section class=hero>
+  <h1>Стиль, в котором ты&nbsp;— настоящая</h1>
+  <p>ИИ-стилист на основе психологии моды. Загрузи фото и ответь на несколько вопросов — определим твою Формулу стиля, измерим разрыв между тем, как тебя считывают сейчас и как ты хочешь, и покажем тебя в новых образах.</p>
+  <a class=btn href="/demo">Построить свои образы →</a>
+ </section>
+
+ <h2>Как это работает</h2>
+ <div class=flow>
+  <div>1. Фото + короткий квиз</div>
+  <div>2. <b>Identity Gap, %</b> — разрыв между «как считывают» и «как хочешь»</div>
+  <div>3. Твоя <b>Формула стиля</b> по авторской методологии</div>
+  <div>4. Капсула и образы — <b>на тебе</b>, с твоим лицом и фигурой</div>
+  <div>5. Список покупок под бюджет и стоп-лист «не покупать»</div>
+  <div>6. Трекер: как Identity Gap закрывается со временем</div>
+ </div>
+
+ <h2>Что нас отличает</h2>
+ <div class=cols>
+  <div class=card><h3>Психология, не мода</h3><p>Образ работает на закрытие твоего разрыва идентичности, а не на тренд.</p></div>
+  <div class=card><h3>Измеримый результат</h3><p>Identity Gap в % — видно, как меняется впечатление о тебе.</p></div>
+  <div class=card><h3>Это ты, а не модель</h3><p>Образы генерируются на твоём фото — лицо и фигура сохраняются.</p></div>
+ </div>
+ <p class=sci>В основе — исследования о связи одежды, восприятия и самоощущения (теория самонесоответствия Хиггинса, enclothed cognition).</p>
+
+ <section class=cta>
+  <h2 style="margin-top:0">Посмотри на себя в своей Формуле</h2>
+  <a class=btn href="/demo">Пройти диагностику →</a>
+ </section>
+</div>
+<footer><div class=wrap>© 2026 «Чувство стиля» · Санкт-Петербург · <a href="/privacy">Политика конфиденциальности</a></div></footer>
+</body></html>"""
+
+PRIVACY = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Политика конфиденциальности — Sense Style</title>
+<style>body{font-family:Georgia,serif;max-width:820px;margin:0 auto;padding:40px 22px 80px;color:#2b2b2b;line-height:1.6}
+ h1{font-weight:normal;font-size:30px} h2{font-weight:normal;font-size:20px;margin-top:30px} .muted{color:#777;font-size:14px} a{color:#2b2b2b}</style>
+</head><body>
+<p><a href="/">← на главную</a></p>
+<h1>Политика конфиденциальности</h1>
+<p class=muted>Сервис Sense Style. Редакция от 27.06.2026. Перед коммерческим запуском текст проходит юридическую проверку (152-ФЗ).</p>
+<h2>1. Оператор</h2><p>ИП Колупаева Ксения Викторовна (Санкт-Петербург, РФ). Контакт: neiroskyai@gmail.com.</p>
+<h2>2. Какие данные собираем</h2><p>Ответы диагностики (квиз); фотографию для анализа и генерации образов; по желанию — имя/email; технические данные (IP, время) и факт согласия.</p>
+<h2>3. Цели</h2><p>Стилевая диагностика и расчёт Identity Gap, генерация образов, сохранение результата и динамики (при наличии контактов), поддержка.</p>
+<h2>4. Правовые основания</h2><p>Согласие пользователя, исполнение договора, требования законодательства РФ.</p>
+<h2>5. Хранение и обработка</h2><p>Данные граждан РФ хранятся в базах на территории РФ (ст. 18 ч. 5 152-ФЗ). Фотография обрабатывается эфемерно и не сохраняется после обработки; в базе остаются результаты и история Identity Gap. Передача по HTTPS, доступ ограничен, факт согласия журналируется.</p>
+<h2>6. Передача третьим лицам</h2><p>Для генерации образов привлекается AI-обработчик (Google, Gemini); при оплате — платёжный провайдер. Данные не используются для обучения сторонних моделей и не передаются третьим лицам в их интересах.</p>
+<h2>7. Трансграничная передача</h2><p>Фотография передаётся AI-сервису за пределами РФ (США) только при наличии отдельного согласия и после выполнения требований о локализации и уведомлении Роскомнадзора.</p>
+<h2>8. Сроки хранения</h2><p>Фото — не хранится после обработки; результаты и история — до отзыва согласия/запроса на удаление.</p>
+<h2>9. Права пользователя</h2><p>Доступ, уточнение, удаление данных, отзыв согласия — по запросу на neiroskyai@gmail.com, ответ до 10 рабочих дней.</p>
+<h2>10. Cookie и изменения</h2><p>Сервис может использовать технические и аналитические cookie. Оператор вправе изменять Политику; новая редакция действует с момента публикации.</p>
+</body></html>"""
+
+
 def _split(s: str) -> list[str]:
     return [x.strip() for x in (s or "").split(",") if x.strip()]
 
 
 @app.get("/")
-def index():
+def landing():
+    return render_template_string(LANDING)
+
+
+@app.get("/demo")
+def demo():
     return render_template_string(FORM, error=None)
+
+
+@app.get("/privacy")
+def privacy():
+    return render_template_string(PRIVACY)
 
 
 def _validate_and_save(file) -> Path:
