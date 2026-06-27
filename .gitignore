@@ -3,6 +3,9 @@
 user-photos/
 ab-output/
 
+# данные трекинга (SQLite)
+data/
+
 # Python
 __pycache__/
 *.pyc
