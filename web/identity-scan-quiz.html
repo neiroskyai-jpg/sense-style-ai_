@@ -2207,8 +2207,20 @@ function generateLooks(file) {
   fd.append('consent_transfer', 'on');
   fetch('/api/analyze', { method: 'POST', body: fd })
     .then(r => r.json())
-    .then(d => { if (d && d.looks && d.looks.length) aiLooks = d.looks; buildResult(); })
-    .catch(() => { buildResult(); });   // при ошибке — показать результат без AI-образов
+    .then(d => { if (d && d.job_id) pollResult(d.job_id, 0); else buildResult(); })
+    .catch(() => buildResult());
+}
+// Асинхронный опрос результата (генерация идёт в фоне на сервере)
+function pollResult(jobId, tries) {
+  if (tries > 90) { buildResult(); return; }   // ~7.5 минут максимум
+  fetch('/api/result/' + jobId)
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === 'done') { if (d.result && d.result.looks) aiLooks = d.result.looks; buildResult(); }
+      else if (d.status === 'error' || d.status === 'unknown') { buildResult(); }
+      else { setTimeout(() => pollResult(jobId, tries + 1), 5000); }
+    })
+    .catch(() => setTimeout(() => pollResult(jobId, tries + 1), 5000));
 }
 
 function skipUpload() {

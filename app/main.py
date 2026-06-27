@@ -8,6 +8,8 @@
 from __future__ import annotations
 import io
 import os
+import threading
+import uuid
 from pathlib import Path
 
 from flask import (Flask, jsonify, render_template_string, request,
@@ -322,9 +324,35 @@ def analyze():
     )
 
 
+_JOBS: dict = {}  # job_id -> {status: processing|done|error, result|error}
+
+
+def _job_worker(job_id: str, photo_path: Path, quiz: dict, client: str) -> None:
+    """Фоновая генерация — чтобы HTTP-запрос не висел 1–2 минуты (таймауты/блокировка)."""
+    try:
+        diag, capsule, looks = _run_analysis(photo_path, quiz)
+        if client:
+            try:
+                record_session(client, diag)
+            except Exception:  # noqa: BLE001
+                pass
+        cap = capsule.get("capsule") or {}
+        _JOBS[job_id] = {"status": "done", "result": {
+            "gap_percentage": diag.get("gap_percentage"),
+            "style_formula": diag.get("style_formula"),
+            "dna_explanation": diag.get("dna_explanation"),
+            "colortype": diag.get("colortype"),
+            "figure_type": diag.get("figure_type"),
+            "items_count": len(cap.get("items") or []),
+            "looks": looks,
+        }}
+    except Exception as e:  # noqa: BLE001
+        _JOBS[job_id] = {"status": "error", "error": str(e)}
+
+
 @app.post("/api/analyze")
 def api_analyze():
-    """JSON-API для интеграции внешнего квиза (Vercel). Возвращает диагностику + образы."""
+    """Старт асинхронной генерации. Возвращает job_id; результат — через /api/result/<id>."""
     if not _quota_left():
         return jsonify({"error": "daily_limit"}), 429
     if not _consent_ok(request.form):
@@ -338,25 +366,18 @@ def api_analyze():
 
     quiz = _build_quiz(request.form)
     record_call()
-    try:
-        diag, capsule, looks = _run_analysis(photo_path, quiz)
-    except Exception as e:  # noqa: BLE001
-        return jsonify({"error": str(e)}), 500
-
+    job_id = uuid.uuid4().hex
+    _JOBS[job_id] = {"status": "processing"}
     client = (request.form.get("client") or "").strip()
-    if client:
-        record_session(client, diag)
+    threading.Thread(target=_job_worker, args=(job_id, photo_path, quiz, client),
+                     daemon=True).start()
+    return jsonify({"job_id": job_id}), 202
 
-    cap = capsule.get("capsule") or {}
-    return jsonify({
-        "gap_percentage": diag.get("gap_percentage"),
-        "style_formula": diag.get("style_formula"),
-        "dna_explanation": diag.get("dna_explanation"),
-        "colortype": diag.get("colortype"),
-        "figure_type": diag.get("figure_type"),
-        "items_count": len(cap.get("items") or []),
-        "looks": looks,  # [{img: data-url, desc}]
-    })
+
+@app.get("/api/result/<job_id>")
+def api_result(job_id):
+    """Статус/результат фоновой генерации."""
+    return jsonify(_JOBS.get(job_id) or {"status": "unknown"})
 
 
 @app.get("/healthz")

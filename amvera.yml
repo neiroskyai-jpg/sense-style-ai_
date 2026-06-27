@@ -8,6 +8,6 @@ meta:
 build:
   requirementsPath: requirements.txt
 run:
-  command: gunicorn app.main:app --bind 0.0.0.0:80 --timeout 300 --workers 1
+  command: gunicorn app.main:app --bind 0.0.0.0:80 --timeout 300 --workers 1 --threads 8
   containerPort: 80
   persistenceMount: /data
