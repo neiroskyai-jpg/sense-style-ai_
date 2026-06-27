@@ -42,13 +42,19 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Sense Style AI</title>
 <style>
- body{font-family:Georgia,serif;max-width:680px;margin:40px auto;padding:0 20px;color:#2b2b2b;line-height:1.5}
- h1{font-weight:normal;letter-spacing:.5px} label{display:block;margin:14px 0 4px;font-size:14px;color:#555}
- input,select,textarea{width:100%;padding:9px;border:1px solid #cfcfcf;border-radius:4px;font:inherit;box-sizing:border-box}
- button{margin-top:22px;padding:12px 22px;background:#2b2b2b;color:#fff;border:0;border-radius:4px;font:inherit;cursor:pointer}
- .hint{color:#888;font-size:13px} .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:4px}
+ :root{--cream:#F5F1EA;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
+ body{font-family:Georgia,serif;max-width:640px;margin:0 auto;padding:28px 20px 70px;background:var(--cream);color:var(--ink);line-height:1.55}
+ .top{display:flex;justify-content:space-between;align-items:center}
+ .logo{font-size:18px;letter-spacing:.5px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
+ h1{font-weight:normal;font-size:30px;margin:14px 0 4px}
+ label{display:block;margin:16px 0 5px;font-size:14px;color:var(--muted)}
+ input,select,textarea{width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:6px;font:inherit;background:#fff;box-sizing:border-box}
+ button{margin-top:24px;padding:14px 30px;background:var(--wine);color:#fff;border:0;border-radius:6px;font:inherit;font-size:16px;cursor:pointer}
+ button:hover{opacity:.92}
+ .hint{color:var(--muted);font-size:13px} .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:6px}
 </style></head><body>
-<h1>Sense Style AI</h1>
+<div class=top><span class=logo>Чувство стиля</span><a href="/">← на главную</a></div>
+<h1>Диагностика стиля</h1>
 <p class=hint>Загрузи фото в полный рост и ответь на несколько вопросов — определим Формулу стиля и покажем тебя в новых образах.</p>
 {% if error %}<p class=err>{{ error }}</p>{% endif %}
 <form method=post action="/analyze" enctype="multipart/form-data">
@@ -100,11 +106,12 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Твоя Формула стиля</title>
 <style>
- body{font-family:Georgia,serif;max-width:920px;margin:40px auto;padding:0 20px;color:#2b2b2b;line-height:1.55}
- h1,h2{font-weight:normal} .gap{font-size:42px} .formula{font-size:22px;color:#1f1f1f}
+ :root{--cream:#F5F1EA;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
+ body{font-family:Georgia,serif;max-width:920px;margin:0 auto;padding:28px 20px 70px;background:var(--cream);color:var(--ink);line-height:1.55}
+ h1,h2{font-weight:normal} .gap{font-size:42px;color:var(--wine)} .formula{font-size:22px}
  .looks{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px}
- .look{flex:1 1 260px} .look img{width:100%;border-radius:6px} .desc{font-size:14px;color:#444}
- .meta{color:#666;font-size:14px} a{color:#2b2b2b}
+ .look{flex:1 1 260px} .look img{width:100%;border-radius:8px} .desc{font-size:14px;color:#444}
+ .meta{color:var(--muted);font-size:14px} a{color:var(--wine)}
 </style></head><body>
 <p><a href="/demo">← заново</a> · <a href="/">на главную</a></p>
 <h1>Твоя Формула стиля</h1>
