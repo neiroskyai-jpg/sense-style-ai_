@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 from urllib.parse import quote_plus
 
-from . import config, provider
+from . import config, provider, rag
 from .prompts import load_knowledge, load_reference, load_system_prompt
 
 
@@ -21,13 +21,66 @@ def analyze_photos(image_paths, height_cm: int | None = None, mode: str | None =
 
 
 def diagnose(quiz_answers: dict, vision_result: dict, mode: str | None = None) -> dict:
-    """Шаг 2. Диагностика: ответы квиза + выход vision → Формула стиля + Identity Gap."""
+    """Шаг 2. Диагностика: ответы квиза + выход vision → Формула стиля + Identity Gap.
+
+    RAG: до запроса подмешиваем в промпт правила из авторской базы под ранние сигналы
+    (цветотип/фигура/желаемое впечатление), а после — прикрепляем «сработавшие правила»
+    по итоговому профилю (`retrieved_rules`) для блока объяснимости.
+    """
     system = load_system_prompt("formula-diagnostic")
-    payload = {**quiz_answers, **_vision_to_diagnostic_input(vision_result)}
-    return provider.chat_json(
+    vis = _vision_to_diagnostic_input(vision_result)
+    payload = {**quiz_answers, **vis}
+
+    pre_rules = _rag_retrieve(_pre_profile(quiz_answers, vis))
+    if pre_rules:
+        system += (
+            "\n\n# РЕЛЕВАНТНЫЕ ПРАВИЛА БАЗЫ ЗНАНИЙ (RAG)\n"
+            "Опирайся на них при диагностике; при конфликте методология промпта выше.\n\n"
+            + rag.rules_block(pre_rules)
+        )
+
+    result = provider.chat_json(
         config.model_for("text", mode), system,
         json.dumps(payload, ensure_ascii=False), max_tokens=8000,
     )
+
+    final_rules = _rag_retrieve(_diag_to_profile(result)) or pre_rules
+    if final_rules:
+        result["retrieved_rules"] = rag.cited_rules(final_rules)
+    return result
+
+
+def _rag_retrieve(profile: dict, k: int = 6) -> list:
+    """RAG-поиск с мягким фолбэком: если индекс/библиотека недоступны — пусто."""
+    try:
+        return rag.retrieve(profile, k=k)
+    except Exception:  # noqa: BLE001 — RAG не должен ронять диагностику
+        return []
+
+
+def _pre_profile(quiz: dict, vis: dict) -> dict:
+    """Ранние сигналы до диагностики: цветотип (vision/квиз), фигура (самооценка), запрос."""
+    return {
+        "colortype": vis.get("colortype") or quiz.get("colortype_known"),
+        "figure_type": vis.get("figure_type")
+        or (quiz.get("physical") or {}).get("figure_type_self_assessed"),
+        "want_traits_top3": quiz.get("want_traits_top3"),
+        "style_formula": "",
+    }
+
+
+def _diag_to_profile(d: dict) -> dict:
+    """Итоговый профиль диагностики → вход rag.retrieve (для объяснимости)."""
+    return {
+        "colortype": d.get("colortype"),
+        "figure_type": d.get("figure_type"),
+        "base_style": d.get("base_style"),
+        "primary_substyle": d.get("primary_substyle"),
+        "secondary_substyle": d.get("secondary_substyle"),
+        "style_formula": d.get("style_formula"),
+        "want_traits_top3": d.get("want_traits_top3"),
+        "semantic_field_distribution": d.get("semantic_field_distribution"),
+    }
 
 
 def _vision_to_diagnostic_input(v: dict) -> dict:
@@ -186,10 +239,15 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
     look_prompt — это look-generator.looks[].image_generation_prompt. Возвращает data-URL.
     """
     instruction = (
-        "Keep the EXACT same face, hair and body proportions of the woman in the reference photo — "
-        "it must be clearly the same recognizable person. "
-        "Change her clothing AND place her in a NEW location that fits the outfit's setting — "
-        "do not reuse the background of the reference photo. "
+        "Photo editing task: dress the SAME real woman from the reference photo in a new outfit. "
+        "Preserve her identity EXACTLY — she must be instantly recognizable as the same person:\n"
+        "- Face: keep the same face shape, eyes, nose, lips, eyebrows, skin tone and complexion, and age. "
+        "Do NOT beautify, slim the face, or alter any feature.\n"
+        "- Hair: keep the same colour, length and texture.\n"
+        "- Body: keep the same height, build, weight and body proportions (figure type). "
+        "Do NOT slim, lengthen, or idealise her body — keep her real silhouette.\n"
+        "Change ONLY her clothing and the background. "
+        "Place her in a new location that fits the outfit's setting (do not reuse the reference background). "
         "Outfit and scene: " + look_prompt
         + " Full-body head to toe, photorealistic, natural light, vertical 3:4 ratio."
     )
