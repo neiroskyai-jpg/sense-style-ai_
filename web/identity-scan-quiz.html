@@ -1150,12 +1150,12 @@ body {
   text-align: center;
 }
 .your-photo-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  display: grid; grid-template-columns: 1fr;   /* один образ в ряд = фото на всю ширину, максимально крупно */
+  gap: 12px;
 }
 .your-photo-cell {
   position: relative;
-  aspect-ratio: 2 / 3;          /* выше = крупнее, под образ в полный рост */
+  aspect-ratio: 3 / 4;          /* крупный портрет в полный рост во всю ширину блока */
   border-radius: 14px;
   overflow: hidden;
   background: rgba(245, 239, 227, 0.5);

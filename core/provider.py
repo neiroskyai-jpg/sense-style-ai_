@@ -18,6 +18,7 @@ from PIL import Image
 from . import config
 
 _TIMEOUT = 120
+_IMAGE_TIMEOUT = 240  # pro-рендер (Nano Banana Pro) медленнее; 120с не хватало → таймаут и фоллбэк
 
 # защита от decompression bomb: не открываем гигантские изображения (фото от пользователя)
 Image.MAX_IMAGE_PIXELS = 50_000_000  # ~50 Мп
@@ -108,7 +109,7 @@ def generate_image(prompt: str, model: str | None = None, ref_images=None) -> li
     }
     r = requests.post(
         f"{config.OPENROUTER_BASE_URL}/chat/completions",
-        headers=_headers(), json=body, timeout=_TIMEOUT,
+        headers=_headers(), json=body, timeout=_IMAGE_TIMEOUT,
     )
     if r.status_code >= 400:
         raise RuntimeError(f"OpenRouter {r.status_code}: {r.text[:500]}")

@@ -35,12 +35,13 @@ MODELS = {
     "image": {
         # Seedream на OpenRouter недоступна → работаем на Gemini/GPT image
         "primary": "google/gemini-2.5-flash-image",   # Nano Banana — дешёвый превью/дев
-        "alt": "google/gemini-3-pro-image",           # для A/B качества
+        "alt": "google/gemini-3-pro-image-preview",   # для A/B качества (Nano Banana Pro)
         # identity-preserving рендер (фото клиентки → она в образе).
         # GPT image отпал: OpenAI отказывается воссоздавать реальные лица (refusal).
-        # 3-pro точнее держит лицо (~40-50с/образ). flash быстрее, но лицо «уезжает» — поэтому вернули pro.
-        "dressing": "google/gemini-3-pro-image",        # точное лицо (identity-preserving)
-        "dressing_hq": "google/gemini-3-pro-image",
+        # 3-pro (Nano Banana Pro) точнее держит лицо (~40-50с/образ). ВАЖНО: слаг с суффиксом -preview,
+        # без него OpenRouter отдаёт 404 и генерация молча падает в фоллбэк (показ оригинала).
+        "dressing": "google/gemini-3-pro-image-preview",     # точное лицо (identity-preserving)
+        "dressing_hq": "google/gemini-3-pro-image-preview",
     },
 }
 
