@@ -1369,6 +1369,11 @@ body {
     .ai-chip span{color:#9a8f80}
     .ai-risk{margin-top:12px;font-size:14px;color:#7a4c3c;font-style:italic}
     .ai-dna{margin-top:14px;font-size:15px;line-height:1.6;color:#3a342c}
+    .ai-rules{margin-top:14px;border-top:1px dashed #e3d8c6;padding-top:12px}
+    .ai-rules-cap{font-size:12px;letter-spacing:.04em;color:#9a8f80;margin-bottom:8px}
+    .ai-rule{display:flex;gap:9px;align-items:flex-start;margin:7px 0;font-size:13.5px;line-height:1.45;color:#4a443c}
+    .ai-rule-tag{flex:none;background:#efe7d8;color:#8a6a44;border-radius:6px;padding:2px 8px;font-size:11px;white-space:nowrap;margin-top:1px}
+    .ai-rule-txt b{color:#3a342c}
     .ai-dirs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     @media(max-width:560px){.ai-dirs{grid-template-columns:1fr}}
     .ai-dir{background:#fff;border:1px solid #ece4d7;border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
@@ -2183,6 +2188,21 @@ function buildResult() {
   persistJob({ status: 'done', answers, result: aiResult || null });
 }
 
+// Словари: коды модели → русские названия (для блока «Что ИИ увидел по фото»)
+const RU_COLORTYPE = {
+  spring_light: 'Весна светлая', spring_natural: 'Весна натуральная', spring_contrast: 'Весна контрастная',
+  summer_light: 'Лето светлое', summer_natural: 'Лето натуральное', summer_contrast: 'Лето контрастное',
+  autumn_light: 'Осень мягкая', autumn_natural: 'Осень натуральная', autumn_contrast: 'Осень контрастная',
+  winter_light: 'Зима светлая', winter_natural: 'Зима натуральная', winter_contrast: 'Зима контрастная',
+};
+const RU_FIGURE = {
+  rectangle: 'Прямоугольник', hourglass: 'Песочные часы', pear: 'Груша',
+  inverted_triangle: 'Перевёрнутый треугольник', apple: 'Яблоко',
+};
+const ruLabel = (map, code) => map[code] || (code == null ? '' : String(code));
+// Отсеиваем «отписки» модели — фразы про сам метод, а не про клиентку
+const isMetaFiller = s => /квиз|для точного определения|нужны ответы|чтобы определить/i.test(String(s || ''));
+
 // AI-результат по фото: объяснимость + 2 направления (из /api/analyze)
 function renderAIResult() {
   const box = document.getElementById('r-ai-extra');
@@ -2199,20 +2219,32 @@ function renderAIResult() {
   let html = '';
 
   // ── Почему ИИ так решил (объяснимость) ──
-  if ((ex.signals && ex.signals.length) || ex.dna) {
+  // Показываем только реальные сигналы о клиентке; мета-отписки модели про «нужен квиз» прячем
+  const signals = (ex.signals || []).filter(s => s && !isMetaFiller(s));
+  const dna = (ex.dna && !isMetaFiller(ex.dna)) ? ex.dna : '';
+  if (signals.length || dna) {
     html += `<div class="ai-block-title">Почему ИИ выбрал это</div><div class="ai-why">`;
-    (ex.signals || []).forEach(s => {
+    signals.forEach(s => {
       html += `<div class="ai-signal"><b>→</b><span>${esc(s)}</span></div>`;
     });
-    if (ex.dna) html += `<div class="ai-dna">${esc(ex.dna)}</div>`;
+    if (dna) html += `<div class="ai-dna">${esc(dna)}</div>`;
+    // RAG: правила из авторской базы знаний, на которые опёрся ИИ
+    if (ex.rules && ex.rules.length) {
+      html += `<div class="ai-rules"><div class="ai-rules-cap">Из авторской базы знаний сработали правила:</div>`;
+      ex.rules.forEach(r => {
+        html += `<div class="ai-rule"><span class="ai-rule-tag">${esc(r.label)}</span>
+          <span class="ai-rule-txt"><b>${esc(r.section)}</b> — ${esc(r.snippet)}</span></div>`;
+      });
+      html += `</div>`;
+    }
     html += `</div>`;
   }
 
   // ── Что ИИ увидел по фото ──
   const chips = [];
   if (photo.contrast)  chips.push(`<span class="ai-chip"><span>контраст:</span> ${esc(photo.contrast)}</span>`);
-  if (photo.colortype) chips.push(`<span class="ai-chip"><span>цветотип:</span> ${esc(photo.colortype)}</span>`);
-  if (photo.figure)    chips.push(`<span class="ai-chip"><span>фигура:</span> ${esc(photo.figure)}</span>`);
+  if (photo.colortype) chips.push(`<span class="ai-chip"><span>цветотип:</span> ${esc(ruLabel(RU_COLORTYPE, photo.colortype))}</span>`);
+  if (photo.figure)    chips.push(`<span class="ai-chip"><span>фигура:</span> ${esc(ruLabel(RU_FIGURE, photo.figure))}</span>`);
   if (photo.silhouette)chips.push(`<span class="ai-chip"><span>силуэт:</span> ${esc(photo.silhouette)}</span>`);
   if (chips.length) {
     html += `<div class="ai-block-title">Что ИИ увидел по фото</div><div class="ai-seen">${chips.join('')}</div>`;
