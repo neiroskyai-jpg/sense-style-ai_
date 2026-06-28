@@ -7,8 +7,13 @@ from __future__ import annotations
 import json
 from urllib.parse import quote_plus
 
-from . import config, provider, rag
+from . import config, provider
 from .prompts import load_knowledge, load_reference, load_system_prompt
+
+try:
+    from . import rag
+except Exception:  # noqa: BLE001 — RAG-модуль/зависимости могут отсутствовать в проде; деградируем без него
+    rag = None
 
 
 def analyze_photos(image_paths, height_cm: int | None = None, mode: str | None = None) -> dict:
