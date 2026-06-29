@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Превью блока «Купить из твоей формулы»</title>
+<!-- ПРЕВЬЮ ДИЗАЙНА. Мок-данные. Реальные вещи и ссылки подставятся из фида Lamoda (core/catalog.py). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FBF4ED; --surface:#FFFFFF; --ink:#1F1614; --ink2:rgba(31,22,20,.78);
+  --ink3:rgba(31,22,20,.55); --ink4:rgba(31,22,20,.40);
+  --red:#9C1A22; --red-deep:#6E101A; --rose-l:#FBE9E2; --border:#E8D7C8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Onest',-apple-system,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;padding:40px 18px 80px}
+.wrap{max-width:760px;margin:0 auto}
+
+/* Заголовок блока — как ai-block-title в квизе */
+.cat-eyebrow{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--red);font-weight:600;margin-bottom:6px}
+.cat-title{font-family:'Bodoni Moda',Georgia,serif;font-size:clamp(22px,3vw,30px);font-weight:500;color:var(--ink);margin-bottom:8px;line-height:1.2}
+.cat-sub{font-size:14px;color:var(--ink2);max-width:540px;margin-bottom:24px}
+.cat-sub b{color:var(--red);font-weight:500}
+
+/* Сетка карточек */
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:640px){.cat-grid{grid-template-columns:repeat(2,1fr);gap:12px}}
+@media(max-width:380px){.cat-grid{grid-template-columns:1fr}}
+
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+  display:flex;flex-direction:column;transition:box-shadow .25s,transform .25s;text-decoration:none;color:inherit}
+.cat-card:hover{box-shadow:0 12px 28px rgba(31,22,20,.10);transform:translateY(-2px)}
+.cat-photo{position:relative;aspect-ratio:3/4;background:#F1E7DD;overflow:hidden}
+.cat-photo img{width:100%;height:100%;object-fit:cover}
+.cat-badge{position:absolute;top:10px;left:10px;background:var(--red);color:#fff;font-size:10px;font-weight:600;
+  letter-spacing:.04em;padding:4px 9px;border-radius:999px}
+.cat-fit{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(31,22,20,.72));
+  color:#fff;font-size:10.5px;padding:18px 10px 8px;line-height:1.35}
+.cat-body{padding:11px 12px 14px;display:flex;flex-direction:column;gap:3px;flex:1}
+.cat-brand{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink4);font-weight:600}
+.cat-name{font-size:13px;color:var(--ink);line-height:1.3;min-height:34px}
+.cat-price-row{display:flex;align-items:baseline;gap:7px;margin-top:4px}
+.cat-price{font-size:15px;font-weight:600;color:var(--ink)}
+.cat-old{font-size:12px;color:var(--ink4);text-decoration:line-through}
+.cat-btn{margin-top:9px;display:inline-block;text-align:center;background:var(--red);color:#fff;
+  font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:500;padding:9px;border-radius:999px}
+.cat-card:hover .cat-btn{background:var(--red-deep)}
+
+.cat-disclosure{margin-top:18px;font-size:11px;color:var(--ink4);text-align:center}
+.preview-note{max-width:760px;margin:0 auto 26px;background:#FFF;border:1px dashed var(--red);
+  border-radius:12px;padding:12px 16px;font-size:12.5px;color:var(--ink2)}
+.preview-note b{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="preview-note">
+  <b>Превью дизайна.</b> Товары и цены — заглушки для согласования вида. После одобрения партнёрки
+  Lamoda сюда подставятся реальные вещи под профиль (фигура × формула) с твоими партнёрскими ссылками.
+</div>
+
+<div class="wrap">
+  <div class="cat-eyebrow">Готово к покупке</div>
+  <div class="cat-title">Купи свою формулу «Натуральный»</div>
+  <p class="cat-sub">Реальные вещи под твою фигуру <b>прямоугольник</b> и формулу <b>Натуральный</b> — собрано из проверенных магазинов. Каждая работает на твой образ, а не против него.</p>
+
+  <div class="cat-grid" id="cat-grid"></div>
+
+  <p class="cat-disclosure">Ссылки партнёрские: цена для тебя та же, проект получает небольшую комиссию с покупки.</p>
+</div>
+
+<script>
+// МОК-данные (формат совпадает с core.catalog.Product → as_dict). Заменяется выдачей match_products().
+const MOCK = [
+  { brand:"Lamoda", name:"Жакет из мягкой шерсти, бежевый", price:7990, old_price:9990, image:"", fit:"Структура без жёсткости — добавляет фигуре линию", badge:"под фигуру" },
+  { brand:"Lamoda", name:"Брюки прямые льняные, тёплый серый", price:4500, old_price:0, image:"", fit:"Прямой силуэт уравновешивает прямоугольник", badge:"" },
+  { brand:"Lamoda", name:"Джемпер тонкий, молочный", price:3290, old_price:4100, image:"", fit:"Мягкая ткань — нота «натуральный»", badge:"" },
+  { brand:"Lamoda", name:"Юбка миди трикотажная, кофе", price:3990, old_price:0, image:"", fit:"Длина и драпировка дают женственность", badge:"под формулу" },
+  { brand:"Lamoda", name:"Лоферы кожаные, карамель", price:6490, old_price:7990, image:"", fit:"Удобство без потери собранности", badge:"" },
+  { brand:"Lamoda", name:"Тренч классический, песочный", price:11900, old_price:0, image:"", fit:"База капсулы — работает на оба направления", badge:"" },
+];
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const rub = n => n ? n.toLocaleString('ru-RU') + ' ₽' : '';
+document.getElementById('cat-grid').innerHTML = MOCK.map(p => `
+  <a class="cat-card" href="#" rel="nofollow sponsored">
+    <div class="cat-photo">
+      ${p.badge ? `<span class="cat-badge">${esc(p.badge)}</span>` : ''}
+      ${p.image ? `<img src="${p.image}" alt="${esc(p.name)}">` : ''}
+      ${p.fit ? `<div class="cat-fit">${esc(p.fit)}</div>` : ''}
+    </div>
+    <div class="cat-body">
+      <div class="cat-brand">${esc(p.brand)}</div>
+      <div class="cat-name">${esc(p.name)}</div>
+      <div class="cat-price-row">
+        <span class="cat-price">${rub(p.price)}</span>
+        ${p.old_price ? `<span class="cat-old">${rub(p.old_price)}</span>` : ''}
+      </div>
+      <span class="cat-btn">Смотреть →</span>
+    </div>
+  </a>
+`).join('');
+</script>
+</body>
+</html>
