@@ -69,30 +69,7 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label>Чем занимаешься</label><input name=profession value="руководитель отдела">
  <label>Как тебя считывают сейчас (через запятую)</label><input name=now_traits value="сдержанная, простая, незаметная">
  <label>Как хочешь, чтобы считывали — топ-3</label><input name=want_traits value="властная, элегантная, статусная">
- <label>Тип фигуры (самооценка)</label>
- <select name=figure>
-  <option value="rectangle">Прямоугольник</option>
-  <option value="hourglass">Песочные часы</option>
-  <option value="pear">Груша</option>
-  <option value="inverted_triangle">Перевёрнутый треугольник</option>
-  <option value="apple">Яблоко</option>
- </select>
- <label>Цветотип (если знаешь — выбери; иначе определит ИИ по фото)</label>
- <select name=colortype_known>
-  <option value="">Определить по фото (ИИ)</option>
-  <option value="spring_light">Весна светлая</option>
-  <option value="spring_natural">Весна натуральная</option>
-  <option value="spring_contrast">Весна контрастная</option>
-  <option value="summer_light">Лето светлое</option>
-  <option value="summer_natural">Лето натуральное</option>
-  <option value="summer_contrast">Лето контрастное</option>
-  <option value="autumn_light">Осень мягкая</option>
-  <option value="autumn_natural">Осень натуральная</option>
-  <option value="autumn_contrast">Осень контрастная</option>
-  <option value="winter_light">Зима светлая</option>
-  <option value="winter_natural">Зима натуральная</option>
-  <option value="winter_contrast">Зима контрастная</option>
- </select>
+ <p class=hint style="margin:16px 0 0">Цветотип, контраст и силуэт фигуры ИИ определит сам по фото — указывать не нужно.</p>
  <label>Сегмент бюджета</label>
  <select name=price>
   <option value="middle">Средний</option>
@@ -102,7 +79,7 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  </select>
  <label>Табу — что точно не наденешь (через запятую)</label><input name=taboos value="">
  <label style="font-weight:normal;font-size:13px;margin-top:16px;display:flex;gap:8px"><input type=checkbox name=consent_processing required style="width:auto"> Согласна на обработку персональных данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
- <label style="font-weight:normal;font-size:13px;display:flex;gap:8px"><input type=checkbox name=consent_transfer required style="width:auto"> Согласна на трансграничную передачу фото в AI-сервисы (Google, США) для генерации образов.</label>
+ <label style="font-weight:normal;font-size:13px;display:flex;gap:8px"><input type=checkbox name=consent_transfer required style="width:auto"> Согласна на трансграничную передачу фото в ИИ-сервисы (Google, США) для генерации образов.</label>
  <button>Построить образы</button>
  <p class=hint>Обработка занимает ~1–2 минуты: анализ фото, диагностика, генерация образов.</p>
 </form>
@@ -493,8 +470,8 @@ def analyze():
     cap = capsule.get("capsule") or {}
     return render_template_string(
         RESULT, formula=diag.get("style_formula"), gap=diag.get("gap_percentage"),
-        dna=diag.get("dna_explanation", ""), colortype=diag.get("colortype"),
-        figure=diag.get("figure_type"), items=len(cap.get("items") or []), looks=looks,
+        dna=diag.get("dna_explanation", ""), colortype=_colortype_label(diag.get("colortype")),
+        figure=_figure_label(diag.get("figure_type")), items=len(cap.get("items") or []), looks=looks,
         prog=prog,
     )
 
@@ -505,6 +482,32 @@ _JOBS: dict = {}  # job_id -> {status: processing|done|error, result|error}
 _FIELD_RU = {"natural": "естественность", "romance": "женственность",
              "drama": "выразительность", "classic": "структура"}
 _CONTRAST_RU = {"low": "мягкий", "medium": "средний", "high": "высокий"}
+
+# Названия типов фигуры для показа клиентке — геометрия + пропорция (международная
+# практика), без «фруктовых» аналогий. Внутренние коды (rectangle/pear/…) не меняем.
+_FIGURE_LABEL = {
+    "rectangle": "Прямоугольник — сбалансированный силуэт",
+    "hourglass": "Песочные часы — выраженная талия",
+    "inverted_triangle": "Перевёрнутый треугольник — объём сверху",
+    "pear": "Треугольник — объём снизу",
+    "apple": "Круг — объём в центре",
+}
+_COLORTYPE_LABEL = {
+    "spring_light": "Весна светлая", "spring_natural": "Весна натуральная",
+    "spring_contrast": "Весна контрастная", "summer_light": "Лето светлое",
+    "summer_natural": "Лето натуральное", "summer_contrast": "Лето контрастное",
+    "autumn_light": "Осень мягкая", "autumn_natural": "Осень натуральная",
+    "autumn_contrast": "Осень контрастная", "winter_light": "Зима светлая",
+    "winter_natural": "Зима натуральная", "winter_contrast": "Зима контрастная",
+}
+
+
+def _figure_label(code):
+    return _FIGURE_LABEL.get(code, code) if code else code
+
+
+def _colortype_label(code):
+    return _COLORTYPE_LABEL.get(code, code) if code else code
 
 
 def _explainability(diag: dict, quiz: dict) -> dict:
@@ -535,8 +538,8 @@ def _explainability(diag: dict, quiz: dict) -> dict:
     photo = {
         "contrast": contrast,
         "silhouette": sil,
-        "colortype": diag.get("colortype"),
-        "figure": diag.get("figure_type"),
+        "colortype": _colortype_label(diag.get("colortype")),
+        "figure": _figure_label(diag.get("figure_type")),
         "risk": risk,
     }
     return {
