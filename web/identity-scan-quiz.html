@@ -966,6 +966,18 @@ body {
   text-decoration: underline;
   width: 100%;
 }
+/* Кнопка возврата к квизу вверху результата (видна сразу, без прокрутки) */
+.r-restart-top {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: 0 auto 18px; padding: 8px 18px;
+  font-family: 'Onest', -apple-system, sans-serif;
+  font-size: 12px; letter-spacing: 0.04em;
+  color: #7A1C2E; background: #FFFFFF;
+  border: 1px solid rgba(122, 28, 46, 0.25); border-radius: 999px;
+  cursor: pointer; transition: all 0.2s;
+}
+.r-restart-top:hover { background: #7A1C2E; color: #FFFFFF; border-color: #7A1C2E; }
+.r-restart-wrap { text-align: center; }
 
 /* REFERENCE PHOTOS (2 образа-превью под направление) */
 .ref-photos-grid {
@@ -1306,6 +1318,10 @@ body {
 
 <!-- ======= RESULT ======= -->
 <div class="screen" id="s-result">
+
+  <div class="r-restart-wrap">
+    <button type="button" class="r-restart-top" onclick="restart()">↺ Пройти квиз заново</button>
+  </div>
 
   <div class="r-eyebrow">Твоя диагностика готова</div>
 
