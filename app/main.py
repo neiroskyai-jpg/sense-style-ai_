@@ -18,8 +18,9 @@ from flask import (Flask, jsonify, render_template_string, request,
 from PIL import Image, UnidentifiedImageError
 from werkzeug.utils import secure_filename
 
-from core.pipeline import (analyze_photos, diagnose, generate_capsule,
-                           generate_directions, render_look_on_client)
+from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
+                           generate_capsule, generate_directions,
+                           render_look_on_client)
 from core.tracking import (count_today, progress, record_call, record_consent,
                            record_session)
 
@@ -104,7 +105,9 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label style="font-weight:normal;font-size:13px;display:flex;gap:8px"><input type=checkbox name=consent_transfer required style="width:auto"> Согласна на трансграничную передачу фото в AI-сервисы (Google, США) для генерации образов.</label>
  <button>Построить образы</button>
  <p class=hint>Обработка занимает ~1–2 минуты: анализ фото, диагностика, генерация образов.</p>
-</form></body></html>"""
+</form>
+<p class=hint style="margin-top:24px;border-top:1px solid #e3dccf;padding-top:18px">Уже знаешь свою Формулу и стоишь в магазине? <a href="/garment" style="color:#5D2230">Проверь вещь по фото: брать или не брать →</a></p>
+</body></html>"""
 
 RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Твоя Формула стиля</title>
@@ -215,6 +218,78 @@ PRIVACY = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </body></html>"""
 
 
+GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Брать или не брать — Sense Style</title>
+<style>
+ :root{--cream:#F5F1EA;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
+ body{font-family:Georgia,serif;max-width:640px;margin:0 auto;padding:28px 20px 70px;background:var(--cream);color:var(--ink);line-height:1.55}
+ .top{display:flex;justify-content:space-between;align-items:center}
+ .logo{font-size:18px;letter-spacing:.5px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
+ h1{font-weight:normal;font-size:30px;margin:14px 0 4px}
+ label{display:block;margin:16px 0 5px;font-size:14px;color:var(--muted)}
+ input,select{width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:6px;font:inherit;background:#fff;box-sizing:border-box}
+ button{margin-top:24px;padding:14px 30px;background:var(--wine);color:#fff;border:0;border-radius:6px;font:inherit;font-size:16px;cursor:pointer}
+ button:hover{opacity:.92}
+ .hint{color:var(--muted);font-size:13px} .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:6px}
+</style></head><body>
+<div class=top><span class=logo>Чувство стиля</span><a href="/">← на главную</a></div>
+<h1>Брать или не брать</h1>
+<p class=hint>Сфоткала вещь в магазине? Загрузи фото и укажи свою Формулу — ИИ скажет, работает ли она на тебя, и чем заменить, если мимо.</p>
+{% if error %}<p class=err>{{ error }}</p>{% endif %}
+<form method=post action="/garment/check" enctype="multipart/form-data">
+ <label>Фото вещи</label><input type=file name=photo accept="image/*" required>
+ <label>Твоя Формула стиля (если знаешь — впиши)</label><input name=style_formula placeholder="например: Классика × Драма × Натуральный">
+ <label>Цветотип</label>
+ <select name=colortype_known>
+  <option value="">Не знаю</option>
+  <option value="spring_light">Весна светлая</option><option value="spring_natural">Весна натуральная</option><option value="spring_contrast">Весна контрастная</option>
+  <option value="summer_light">Лето светлое</option><option value="summer_natural">Лето натуральное</option><option value="summer_contrast">Лето контрастное</option>
+  <option value="autumn_light">Осень мягкая</option><option value="autumn_natural">Осень натуральная</option><option value="autumn_contrast">Осень контрастная</option>
+  <option value="winter_light">Зима светлая</option><option value="winter_natural">Зима натуральная</option><option value="winter_contrast">Зима контрастная</option>
+ </select>
+ <label>Тип фигуры</label>
+ <select name=figure>
+  <option value="">Не знаю</option>
+  <option value="rectangle">Прямоугольник</option><option value="hourglass">Песочные часы</option>
+  <option value="pear">Груша</option><option value="inverted_triangle">Перевёрнутый треугольник</option><option value="apple">Яблоко</option>
+ </select>
+ <label>Стоп-цвета / табу (через запятую)</label><input name=taboos placeholder="например: чёрный, неон">
+ <label style="font-weight:normal;font-size:13px;margin-top:16px;display:flex;gap:8px"><input type=checkbox name=consent_processing required style="width:auto"> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
+ <label style="font-weight:normal;font-size:13px;display:flex;gap:8px"><input type=checkbox name=consent_transfer required style="width:auto"> Согласна на трансграничную передачу фото в AI-сервис для анализа.</label>
+ <button>Проверить вещь</button>
+ <p class=hint>Анализ занимает несколько секунд.</p>
+</form></body></html>"""
+
+
+GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Вердикт по вещи</title>
+<style>
+ :root{--cream:#F5F1EA;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
+ body{font-family:Georgia,serif;max-width:640px;margin:0 auto;padding:28px 20px 70px;background:var(--cream);color:var(--ink);line-height:1.55}
+ a{color:var(--wine)} h1{font-weight:normal;font-size:28px}
+ .verdict{display:inline-block;font-size:22px;color:#fff;padding:10px 22px;border-radius:8px;margin:6px 0 14px}
+ .item{font-size:16px;margin:0 0 16px}
+ .chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+ .chip{background:#fff;border:1px solid #e6ddcd;border-radius:999px;padding:6px 13px;font-size:13px;color:#5a5246}
+ .chip span{color:#9a8f80}
+ .reason{font-size:16px;line-height:1.6;margin:14px 0}
+ .replace{background:#fbf3ee;border:1px solid #ecd9cd;border-radius:10px;padding:14px 18px;font-size:15px}
+</style></head><body>
+<p><a href="/garment">← проверить другую</a> · <a href="/">на главную</a></p>
+<h1>Вердикт по вещи</h1>
+<div class=verdict style="background:{{ color }}">{{ verdict_ru }}</div>
+{% if item %}<p class=item><b>На фото:</b> {{ item }}</p>{% endif %}
+<div class=chips>
+ {% if palette %}<span class=chip><span>палитра:</span> {{ palette }}</span>{% endif %}
+ {% if figure %}<span class=chip><span>фигура:</span> {{ figure }}</span>{% endif %}
+ {% if style %}<span class=chip><span>стиль:</span> {{ style }}</span>{% endif %}
+</div>
+<p class=reason>{{ reason }}</p>
+{% if replace_with %}<div class=replace><b>Чем заменить:</b> {{ replace_with }}</div>{% endif %}
+</body></html>"""
+
+
 def _split(s: str) -> list[str]:
     return [x.strip() for x in (s or "").split(",") if x.strip()]
 
@@ -232,6 +307,66 @@ def demo():
 @app.get("/privacy")
 def privacy():
     return render_template_string(PRIVACY)
+
+
+# карта вердикта/совпадений → русские подписи и цвет
+_VERDICT_RU = {"take": ("Брать", "#2e7d32"), "replace": ("Заменить", "#b8860b"),
+               "skip": ("Не брать", "#9b1c1c")}
+_PALETTE_RU = {"base": "в базе твоей палитры", "accent": "акцент твоей палитры",
+               "neutral": "нейтрально", "taboo": "стоп-цвет", "unclear": "не считывается"}
+_FIGURE_RU = {"works": "работает на фигуру", "risky": "рискованно для фигуры",
+              "wrong": "против фигуры"}
+_STYLE_RU = {"core": "ядро твоего стиля", "adjacent": "смежно со стилем", "off": "вне стиля"}
+
+
+def _garment_profile(form) -> dict:
+    """Минимальная Формула из формы для evaluate_garment (без полного квиза)."""
+    diag = {
+        "colortype": form.get("colortype_known") or None,
+        "figure_type": form.get("figure") or None,
+        "style_formula": (form.get("style_formula") or "").strip() or None,
+    }
+    taboos = _split(form.get("taboos"))
+    if taboos:
+        diag["visual_formula"] = {"stop_list": taboos}
+    return {k: v for k, v in diag.items() if v is not None}
+
+
+@app.get("/garment")
+def garment():
+    return render_template_string(GARMENT_FORM, error=None)
+
+
+@app.post("/garment/check")
+def garment_check():
+    """«Брать / не брать»: фото вещи + Формула → вердикт (одна vision-проверка, без генерации)."""
+    if not _quota_left():
+        return render_template_string(GARMENT_FORM, error="Демо-лимит на сегодня исчерпан — загляни завтра."), 429
+    if not _consent_ok(request.form):
+        return render_template_string(GARMENT_FORM, error="Нужно согласие на обработку и передачу фото."), 400
+    record_consent((request.form.get("client") or "").strip() or "anonymous",
+                   request.remote_addr or "", True, True)
+    try:
+        photo_path = _validate_and_save(request.files.get("photo"))
+    except ValueError as e:
+        return render_template_string(GARMENT_FORM, error=str(e)), 400
+
+    diag = _garment_profile(request.form)
+    record_call()
+    try:
+        v = evaluate_garment(str(photo_path), diag, mode="dev")
+    except Exception as e:  # noqa: BLE001
+        return render_template_string(GARMENT_FORM, error=f"Не удалось проверить: {e}"), 500
+
+    verdict_ru, color = _VERDICT_RU.get(v.get("verdict"), ("Спорно", "#6b645c"))
+    return render_template_string(
+        GARMENT_RESULT, verdict_ru=verdict_ru, color=color,
+        item=v.get("item"), reason=v.get("reason", ""),
+        replace_with=v.get("replace_with"),
+        palette=_PALETTE_RU.get(v.get("palette_match")),
+        figure=_FIGURE_RU.get(v.get("figure_match")),
+        style=_STYLE_RU.get(v.get("style_match")),
+    )
 
 
 def _validate_and_save(file) -> Path:
