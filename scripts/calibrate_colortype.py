@@ -20,6 +20,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core.colortype import analyze_colortype  # noqa: E402
 
+try:  # Windows-консоль бывает cp1251 — выводим в UTF-8, чтобы не падать на юникоде
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001
+    pass
+
 CAL_DIR = Path(__file__).resolve().parent.parent / "data" / "colortype-calibration"
 EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 SEASONS = ("spring", "summer", "autumn", "winter")
@@ -59,7 +64,7 @@ def main() -> None:
             season_ok += s_ok
             m = r.measurements
             rows.append((img.name[:22], true_full, r.colortype, r.undertone,
-                         r.value, r.chroma, m["L"], m["hue"], "✓" if s_ok else "✗"))
+                         r.value, r.chroma, m["L"], m["hue"], "OK" if s_ok else "X"))
 
     if not total:
         print(f"Фото не найдено в {CAL_DIR}. Положи их в подпапки по сезону.")
