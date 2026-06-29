@@ -62,6 +62,14 @@ def test_skin_detection_picks_skin_over_background():
     assert all(p[2] < 160 for p in skin)  # синий фон не попал
 
 
+def test_refine_subtype_guards():
+    # refine не должен падать и не трогает не-сезонный/битый ввод
+    from core.pipeline import refine_colortype_subtype
+    assert refine_colortype_subtype({"colortype": "не_сезон"}, "нет.jpg")["colortype"] == "не_сезон"
+    d = {"colortype": "autumn_natural"}
+    assert refine_colortype_subtype(d, "несуществующий.jpg")["colortype"] == "autumn_natural"
+
+
 def test_analyze_on_synthetic_image():
     # Сплошной «кожаный» кадр → пайплайн отрабатывает и отдаёт сырьё
     img = Image.new("RGB", (64, 64), (210, 165, 120))

@@ -21,7 +21,7 @@ from werkzeug.utils import secure_filename
 
 from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_capsule, generate_directions,
-                           render_look_on_client)
+                           refine_colortype_subtype, render_look_on_client)
 from core.tracking import (count_today, progress, record_call, record_consent,
                            record_session)
 from core.auth import make_token, read_token, send_magic_link
@@ -642,6 +642,7 @@ def _run_analysis(photo_path: Path, quiz: dict) -> tuple[dict, dict, list]:
     if quiz.get("colortype_known"):  # клиентка знает свой цветотип → перебивает ИИ (шаг колориста)
         vision["colortype"] = quiz["colortype_known"]
     diag = diagnose(quiz, vision, mode="dev")
+    diag = refine_colortype_subtype(diag, str(photo_path))  # подтип по измеренному контрасту
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
                "scenarios": ["работа", "повседневное", "выход"], "n_looks": 3,
                "price_segment": quiz["price_segment"], "taboos": quiz["taboos"]}
@@ -790,6 +791,7 @@ def _run_fast(photo_path: Path, quiz: dict, season: str | None = None):
     if quiz.get("colortype_known"):
         vision["colortype"] = quiz["colortype_known"]
     diag = diagnose(quiz, vision, mode="dev")
+    diag = refine_colortype_subtype(diag, str(photo_path))  # подтип по измеренному контрасту
     directions = generate_directions(diag, quiz, season=season, mode="dev")[:N_RENDER]
     if not directions:  # генерация направлений не сработала — синтезируем из диагностики
         directions = _fallback_directions(diag)
