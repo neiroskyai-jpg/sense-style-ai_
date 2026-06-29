@@ -1628,6 +1628,7 @@ footer {
       <a href="#features">О проекте</a>
       <a href="#diagnose">Диагностика</a>
       <a href="#method">Методология</a>
+      <a href="#how">Технологии</a>
       <a href="#gallery">Образы</a>
       <a href="#tiers">Тарифы</a>
     </div>
@@ -1642,6 +1643,7 @@ footer {
     <a href="#features">О проекте</a>
     <a href="#diagnose">Диагностика</a>
     <a href="#method">Методология</a>
+    <a href="#how">Технологии</a>
     <a href="#gallery">Образы</a>
     <a href="#tiers">Тарифы</a>
     <a href="identity-scan-quiz.html" class="btn-cta nav-mobile-cta">Пройти диагностику</a>
@@ -1831,6 +1833,107 @@ footer {
 </section>
 
 </div><!-- /.features-method-wrap -->
+
+<style>
+  #how .how-head { max-width: 720px; }
+  #how .how-eyebrow { font-family: var(--sans); font-size: 11px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--red); margin: 0 0 14px; }
+  #how .how-heading { font-family: var(--serif); font-weight: 500; font-size: clamp(28px, 4vw, 46px);
+    line-height: 1.1; margin: 0 0 16px; color: var(--ink); }
+  #how .how-heading em { font-style: italic; color: var(--red); }
+  #how .how-intro { font-family: var(--sans); font-size: 16px; line-height: 1.6;
+    color: var(--ink-muted); margin: 0 0 40px; max-width: 640px; }
+  #how .how-pipe { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  #how .how-step { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-card);
+    padding: 22px 22px 24px; position: relative; }
+  #how .how-step-num { font-family: var(--serif); font-size: 13px; color: var(--red);
+    letter-spacing: 0.1em; }
+  #how .how-step-name { font-family: var(--serif); font-size: 20px; color: var(--ink);
+    margin: 6px 0 8px; }
+  #how .how-step-text { font-family: var(--sans); font-size: 14px; line-height: 1.55; color: var(--ink-muted); margin: 0 0 12px; }
+  #how .how-step-tech { font-family: var(--sans); font-size: 11.5px; letter-spacing: 0.04em;
+    color: var(--ink-dim); border-top: 1px solid var(--line); padding-top: 10px; }
+  #how .how-caps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 40px; }
+  #how .how-cap { background: var(--rose-soft); border-radius: var(--r-card); padding: 20px; }
+  #how .how-cap-name { font-family: var(--sans); font-weight: 600; font-size: 14px; letter-spacing: 0.02em;
+    color: var(--red); margin: 0 0 7px; text-transform: uppercase; }
+  #how .how-cap-text { font-family: var(--sans); font-size: 13.5px; line-height: 1.5; color: var(--ink-muted); margin: 0; }
+  #how .how-stack { font-family: var(--sans); font-size: 13px; color: var(--ink-dim);
+    margin-top: 34px; line-height: 1.7; }
+  #how .how-stack b { color: var(--ink-muted); font-weight: 600; }
+  @media (max-width: 860px) { #how .how-pipe { grid-template-columns: 1fr 1fr; }
+    #how .how-caps { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 540px) { #how .how-pipe, #how .how-caps { grid-template-columns: 1fr; } }
+</style>
+<section id="how">
+  <div class="container">
+    <div class="how-head">
+      <p class="how-eyebrow">Архитектура · ИИ</p>
+      <h2 class="how-heading">Как устроен <em>Sense&nbsp;Style&nbsp;AI</em></h2>
+      <p class="how-intro">Это не генерация «из головы». Каждый результат проходит шесть шагов: от психологического профиля и анализа фото — через retrieval по авторской базе знаний — к диагностике, объяснению и визуальным образам на тебе.</p>
+    </div>
+
+    <div class="how-pipe">
+      <div class="how-step">
+        <span class="how-step-num">01</span>
+        <p class="how-step-name">Квиз</p>
+        <p class="how-step-text">Психологический профиль образа: как тебя считывают сейчас и какой ты хочешь быть.</p>
+        <p class="how-step-tech">4 семантических поля метода · Identity Scan</p>
+      </div>
+      <div class="how-step">
+        <span class="how-step-num">02</span>
+        <p class="how-step-name">Vision-анализ фото</p>
+        <p class="how-step-text">Модель читает цветотип, контраст, фигуру и силуэт — без оценок «красиво/некрасиво».</p>
+        <p class="how-step-tech">Claude / Gemini Vision</p>
+      </div>
+      <div class="how-step">
+        <span class="how-step-num">03</span>
+        <p class="how-step-name">RAG-база правил</p>
+        <p class="how-step-text">Под твой профиль из авторской базы достаются релевантные правила: цветотип, фигура, подстиль.</p>
+        <p class="how-step-tech">эмбеддинги + гибридный retrieval</p>
+      </div>
+      <div class="how-step">
+        <span class="how-step-num">04</span>
+        <p class="how-step-name">LLM-диагностика</p>
+        <p class="how-step-text">Формула стиля, Identity Gap в % и объяснение — на правилах базы, а не наугад.</p>
+        <p class="how-step-tech">Claude · объяснимость (XAI)</p>
+      </div>
+      <div class="how-step">
+        <span class="how-step-num">05</span>
+        <p class="how-step-name">Генерация образов</p>
+        <p class="how-step-text">Два направления образа — на твоём лице и фигуре, identity-preserving рендер.</p>
+        <p class="how-step-tech">Gemini Image (i2i)</p>
+      </div>
+      <div class="how-step">
+        <span class="how-step-num">06</span>
+        <p class="how-step-name">Результат + трекинг</p>
+        <p class="how-step-text">Направления, «почему ИИ так решил» и динамика Identity Gap «до/после» во времени.</p>
+        <p class="how-step-tech">измеримая трансформация</p>
+      </div>
+    </div>
+
+    <div class="how-caps">
+      <div class="how-cap">
+        <p class="how-cap-name">Мультимодальность</p>
+        <p class="how-cap-text">Три входа — ответы квиза, фото, фото вещей. Три выхода — диагностика, объяснение, образы.</p>
+      </div>
+      <div class="how-cap">
+        <p class="how-cap-name">Объяснимость</p>
+        <p class="how-cap-text">Видно, какие сигналы и какие правила базы привели к результату — это Explainable AI.</p>
+      </div>
+      <div class="how-cap">
+        <p class="how-cap-name">RAG</p>
+        <p class="how-cap-text">Рекомендации опираются на авторскую методологию, а не на общие представления модели.</p>
+      </div>
+      <div class="how-cap">
+        <p class="how-cap-name">Измеримость</p>
+        <p class="how-cap-text">Identity Gap в % — переход «неприметность → уверенность» можно замерить до и после.</p>
+      </div>
+    </div>
+
+    <p class="how-stack"><b>Стек:</b> OpenRouter · Claude / Gemini Vision · multilingual-эмбеддинги · Gemini Image · Flask · хостинг и хранение данных в РФ (152-ФЗ)</p>
+  </div>
+</section>
 
 <section class="diagnose" id="diagnose">
   <div class="container">

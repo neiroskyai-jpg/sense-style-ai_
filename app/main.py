@@ -375,6 +375,7 @@ def _explainability(diag: dict, quiz: dict) -> dict:
         "photo": photo,
         "dna": diag.get("dna_explanation", ""),
         "stop_list": (vf.get("stop_list") or [])[:4],
+        "rules": diag.get("retrieved_rules") or [],  # RAG: сработавшие правила базы
     }
 
 
