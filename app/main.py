@@ -220,66 +220,115 @@ PRIVACY = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
-<title>Брать или не брать — Sense Style</title>
+<title>Брать или не брать — Чувство стиля</title>
 <style>
- :root{--cream:#F5F1EA;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
- body{font-family:Georgia,serif;max-width:640px;margin:0 auto;padding:28px 20px 70px;background:var(--cream);color:var(--ink);line-height:1.55}
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
+ *{box-sizing:border-box}
+ body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ .wrap{max-width:600px;margin:0 auto;padding:22px 20px 70px}
  .top{display:flex;justify-content:space-between;align-items:center}
  .logo{font-size:18px;letter-spacing:.5px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
- h1{font-weight:normal;font-size:30px;margin:14px 0 4px}
- label{display:block;margin:16px 0 5px;font-size:14px;color:var(--muted)}
- input,select{width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:6px;font:inherit;background:#fff;box-sizing:border-box}
- button{margin-top:24px;padding:14px 30px;background:var(--wine);color:#fff;border:0;border-radius:6px;font:inherit;font-size:16px;cursor:pointer}
- button:hover{opacity:.92}
- .hint{color:var(--muted);font-size:13px} .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:6px}
-</style></head><body>
+ .eyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine);margin:30px 0 10px}
+ h1{font-weight:normal;font-size:34px;line-height:1.12;margin:0 0 12px}
+ .lead{font-size:17px;color:var(--muted);margin:0 0 8px}
+ .steps{display:flex;gap:10px;margin:22px 0 6px}
+ .step{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:13px;color:#4a443c}
+ .step b{display:block;color:var(--wine);font-size:18px;margin-bottom:3px}
+ .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px 22px 26px;margin-top:18px}
+ label{display:block;margin:20px 0 6px;font-size:14px;color:var(--ink)}
+ .sub{font-size:12px;color:var(--muted);font-weight:normal}
+ input,select{width:100%;padding:12px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;background:#fff}
+ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235D2230' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+ .file{border:1.5px dashed #cdbfa6;border-radius:10px;padding:16px;text-align:center;background:#fbf8f1}
+ button{margin-top:26px;width:100%;padding:15px;background:var(--wine);color:#fff;border:0;border-radius:10px;font:inherit;font-size:17px;cursor:pointer}
+ button:hover{opacity:.93}
+ .consent{font-size:13px;color:var(--muted);display:flex;gap:8px;margin-top:14px;line-height:1.4} .consent input{width:auto;margin-top:3px}
+ .hint{color:var(--muted);font-size:13px;text-align:center;margin-top:14px}
+ .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:8px}
+</style></head><body><div class=wrap>
 <div class=top><span class=logo>Чувство стиля</span><a href="/">← на главную</a></div>
-<h1>Брать или не брать</h1>
-<p class=hint>Сфоткала вещь в магазине? Загрузи фото и укажи свою Формулу — ИИ скажет, работает ли она на тебя, и чем заменить, если мимо.</p>
+
+<div class=eyebrow>Проверка вещи · ИИ</div>
+<h1>Брать или не брать?</h1>
+<p class=lead>Стоишь в примерочной и сомневаешься? Сфоткай вещь — и узнай за пару секунд, работает ли она на твой образ. Чтобы не покупать то, что потом висит с биркой.</p>
+
+<div class=steps>
+ <div class=step><b>1</b>Фото вещи</div>
+ <div class=step><b>2</b>Пара штрихов о тебе</div>
+ <div class=step><b>3</b>Честный вердикт</div>
+</div>
+
 {% if error %}<p class=err>{{ error }}</p>{% endif %}
 <form method=post action="/garment/check" enctype="multipart/form-data">
- <label>Фото вещи</label><input type=file name=photo accept="image/*" required>
- <label>Твоя Формула стиля (если знаешь — впиши)</label><input name=style_formula placeholder="например: Классика × Драма × Натуральный">
- <label>Цветотип</label>
+<div class=card>
+ <label>Фото вещи</label>
+ <div class=file><input type=file name=photo accept="image/*" required></div>
+
+ <label>Какой образ тебе ближе <span class=sub>— выбери один</span></label>
+ <select name=base_style>
+  <option value="">Пока не знаю — оцени по фото</option>
+  <option value="classic">Классика — структура, статус, собранность</option>
+  <option value="natural">Натуральный — естественность, лёгкость, комфорт</option>
+  <option value="romance">Романтика — женственность, мягкость</option>
+  <option value="drama">Драма — выразительность, акцент, эффект</option>
+ </select>
+
+ <label>Твой цветотип <span class=sub>— если знаешь</span></label>
  <select name=colortype_known>
-  <option value="">Не знаю</option>
+  <option value="">Пока не знаю</option>
   <option value="spring_light">Весна светлая</option><option value="spring_natural">Весна натуральная</option><option value="spring_contrast">Весна контрастная</option>
   <option value="summer_light">Лето светлое</option><option value="summer_natural">Лето натуральное</option><option value="summer_contrast">Лето контрастное</option>
   <option value="autumn_light">Осень мягкая</option><option value="autumn_natural">Осень натуральная</option><option value="autumn_contrast">Осень контрастная</option>
   <option value="winter_light">Зима светлая</option><option value="winter_natural">Зима натуральная</option><option value="winter_contrast">Зима контрастная</option>
  </select>
- <label>Тип фигуры</label>
+
+ <label>Тип фигуры <span class=sub>— если знаешь</span></label>
  <select name=figure>
-  <option value="">Не знаю</option>
+  <option value="">Пока не знаю</option>
   <option value="rectangle">Прямоугольник</option><option value="hourglass">Песочные часы</option>
   <option value="pear">Груша</option><option value="inverted_triangle">Перевёрнутый треугольник</option><option value="apple">Яблоко</option>
  </select>
- <label>Стоп-цвета / табу (через запятую)</label><input name=taboos placeholder="например: чёрный, неон">
- <label style="font-weight:normal;font-size:13px;margin-top:16px;display:flex;gap:8px"><input type=checkbox name=consent_processing required style="width:auto"> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
- <label style="font-weight:normal;font-size:13px;display:flex;gap:8px"><input type=checkbox name=consent_transfer required style="width:auto"> Согласна на трансграничную передачу фото в AI-сервис для анализа.</label>
- <button>Проверить вещь</button>
- <p class=hint>Анализ занимает несколько секунд.</p>
-</form></body></html>"""
+
+ <label class=consent style="font-weight:normal"><input type=checkbox name=consent_processing required> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
+ <label class=consent style="font-weight:normal"><input type=checkbox name=consent_transfer required> Согласна на передачу фото в ИИ-сервис для анализа.</label>
+</div>
+ <button>Узнать вердикт →</button>
+ <p class=hint>Анализ занимает несколько секунд. Фото не сохраняется после проверки.</p>
+</form></div></body></html>"""
 
 
 GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
-<meta name=viewport content="width=device-width, initial-scale=1"><title>Вердикт по вещи</title>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Вердикт по вещи — Чувство стиля</title>
 <style>
- :root{--cream:#F5F1EA;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
- body{font-family:Georgia,serif;max-width:640px;margin:0 auto;padding:28px 20px 70px;background:var(--cream);color:var(--ink);line-height:1.55}
- a{color:var(--wine)} h1{font-weight:normal;font-size:28px}
- .verdict{display:inline-block;font-size:22px;color:#fff;padding:10px 22px;border-radius:8px;margin:6px 0 14px}
- .item{font-size:16px;margin:0 0 16px}
- .chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
- .chip{background:#fff;border:1px solid #e6ddcd;border-radius:999px;padding:6px 13px;font-size:13px;color:#5a5246}
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
+ *{box-sizing:border-box}
+ body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ .wrap{max-width:600px;margin:0 auto;padding:22px 20px 70px}
+ .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+ .logo{font-size:18px;letter-spacing:.5px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
+ .vcard{border-radius:18px;padding:34px 26px;text-align:center;color:#fff;margin-top:14px}
+ .vicon{font-size:46px;line-height:1;margin-bottom:6px}
+ .vlabel{font-size:13px;letter-spacing:.18em;text-transform:uppercase;opacity:.85;font-family:Arial,sans-serif}
+ .vword{font-size:38px;font-weight:normal;margin-top:4px}
+ .item{font-size:16px;color:var(--muted);margin:20px 0 4px;text-align:center}
+ .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:18px 0}
+ .chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13px;color:#5a5246}
  .chip span{color:#9a8f80}
- .reason{font-size:16px;line-height:1.6;margin:14px 0}
- .replace{background:#fbf3ee;border:1px solid #ecd9cd;border-radius:10px;padding:14px 18px;font-size:15px}
-</style></head><body>
-<p><a href="/garment">← проверить другую</a> · <a href="/">на главную</a></p>
-<h1>Вердикт по вещи</h1>
-<div class=verdict style="background:{{ color }}">{{ verdict_ru }}</div>
-{% if item %}<p class=item><b>На фото:</b> {{ item }}</p>{% endif %}
+ .reason{font-size:17px;line-height:1.65;margin:18px 0;text-align:center}
+ .replace{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 20px;font-size:15px;line-height:1.55}
+ .replace b{color:var(--wine)}
+ .cta{display:block;text-align:center;margin-top:26px;padding:15px;background:var(--wine);color:#fff;border-radius:10px;text-decoration:none;font-size:16px}
+ .back{text-align:center;margin-top:14px} .back a{color:var(--wine);font-size:14px}
+</style></head><body><div class=wrap>
+<div class=top><span class=logo>Чувство стиля</span><a href="/">← на главную</a></div>
+
+<div class=vcard style="background:{{ color }}">
+ <div class=vicon>{{ icon }}</div>
+ <div class=vlabel>вердикт</div>
+ <div class=vword>{{ verdict_ru }}</div>
+</div>
+
+{% if item %}<p class=item>На фото: {{ item }}</p>{% endif %}
 <div class=chips>
  {% if palette %}<span class=chip><span>палитра:</span> {{ palette }}</span>{% endif %}
  {% if figure %}<span class=chip><span>фигура:</span> {{ figure }}</span>{% endif %}
@@ -287,7 +336,10 @@ GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div>
 <p class=reason>{{ reason }}</p>
 {% if replace_with %}<div class=replace><b>Чем заменить:</b> {{ replace_with }}</div>{% endif %}
-</body></html>"""
+
+<a class=cta href="/garment">Проверить ещё вещь</a>
+<div class=back><a href="/demo">Пройти полную диагностику стиля →</a></div>
+</div></body></html>"""
 
 
 def _split(s: str) -> list[str]:
@@ -309,26 +361,27 @@ def privacy():
     return render_template_string(PRIVACY)
 
 
-# карта вердикта/совпадений → русские подписи и цвет
-_VERDICT_RU = {"take": ("Брать", "#2e7d32"), "replace": ("Заменить", "#b8860b"),
-               "skip": ("Не брать", "#9b1c1c")}
+# карта вердикта/совпадений → русские подписи, цвет и иконка
+_VERDICT_RU = {"take": ("Брать", "#3b7a4b", "✓"), "replace": ("Заменить", "#b8860b", "↺"),
+               "skip": ("Не брать", "#9b3030", "✕")}
 _PALETTE_RU = {"base": "в базе твоей палитры", "accent": "акцент твоей палитры",
                "neutral": "нейтрально", "taboo": "стоп-цвет", "unclear": "не считывается"}
 _FIGURE_RU = {"works": "работает на фигуру", "risky": "рискованно для фигуры",
               "wrong": "против фигуры"}
 _STYLE_RU = {"core": "ядро твоего стиля", "adjacent": "смежно со стилем", "off": "вне стиля"}
+_BASE_RU = {"classic": "Классика", "natural": "Натуральный",
+            "romance": "Романтика", "drama": "Драма"}
 
 
 def _garment_profile(form) -> dict:
-    """Минимальная Формула из формы для evaluate_garment (без полного квиза)."""
+    """Минимальная Формула из формы для evaluate_garment — всё через выбор, без ввода руками."""
+    base = form.get("base_style") or None
     diag = {
         "colortype": form.get("colortype_known") or None,
         "figure_type": form.get("figure") or None,
-        "style_formula": (form.get("style_formula") or "").strip() or None,
+        "base_style": base,
+        "style_formula": _BASE_RU.get(base) if base else None,
     }
-    taboos = _split(form.get("taboos"))
-    if taboos:
-        diag["visual_formula"] = {"stop_list": taboos}
     return {k: v for k, v in diag.items() if v is not None}
 
 
@@ -358,9 +411,9 @@ def garment_check():
     except Exception as e:  # noqa: BLE001
         return render_template_string(GARMENT_FORM, error=f"Не удалось проверить: {e}"), 500
 
-    verdict_ru, color = _VERDICT_RU.get(v.get("verdict"), ("Спорно", "#6b645c"))
+    verdict_ru, color, icon = _VERDICT_RU.get(v.get("verdict"), ("Спорно", "#6b645c", "?"))
     return render_template_string(
-        GARMENT_RESULT, verdict_ru=verdict_ru, color=color,
+        GARMENT_RESULT, verdict_ru=verdict_ru, color=color, icon=icon,
         item=v.get("item"), reason=v.get("reason", ""),
         replace_with=v.get("replace_with"),
         palette=_PALETTE_RU.get(v.get("palette_match")),
