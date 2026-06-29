@@ -254,7 +254,7 @@ GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 <div class=steps>
  <div class=step><b>1</b>Фото вещи</div>
- <div class=step><b>2</b>Пара штрихов о тебе</div>
+ <div class=step><b>2</b>Какой образ ближе</div>
  <div class=step><b>3</b>Честный вердикт</div>
 </div>
 
@@ -264,32 +264,17 @@ GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label>Фото вещи</label>
  <div class=file><input type=file name=photo accept="image/*" required></div>
 
- <label>Какой образ тебе ближе <span class=sub>— выбери один</span></label>
+ <label>Какой образ тебе ближе <span class=sub>— выбери настроение</span></label>
  <select name=base_style>
-  <option value="">Пока не знаю — оцени по фото</option>
-  <option value="classic">Классика — структура, статус, собранность</option>
-  <option value="natural">Натуральный — естественность, лёгкость, комфорт</option>
-  <option value="romance">Романтика — женственность, мягкость</option>
-  <option value="drama">Драма — выразительность, акцент, эффект</option>
+  <option value="">Не уверена — оцени по фото вещи</option>
+  <option value="classic">Собранная и статусная</option>
+  <option value="natural">Естественная и лёгкая</option>
+  <option value="romance">Женственная и мягкая</option>
+  <option value="drama">Яркая и выразительная</option>
  </select>
+ <p class=sub style="margin:8px 2px 0">Цветотип и фигуру определять не нужно — это ИИ читает сам на полной диагностике по фото.</p>
 
- <label>Твой цветотип <span class=sub>— если знаешь</span></label>
- <select name=colortype_known>
-  <option value="">Пока не знаю</option>
-  <option value="spring_light">Весна светлая</option><option value="spring_natural">Весна натуральная</option><option value="spring_contrast">Весна контрастная</option>
-  <option value="summer_light">Лето светлое</option><option value="summer_natural">Лето натуральное</option><option value="summer_contrast">Лето контрастное</option>
-  <option value="autumn_light">Осень мягкая</option><option value="autumn_natural">Осень натуральная</option><option value="autumn_contrast">Осень контрастная</option>
-  <option value="winter_light">Зима светлая</option><option value="winter_natural">Зима натуральная</option><option value="winter_contrast">Зима контрастная</option>
- </select>
-
- <label>Тип фигуры <span class=sub>— если знаешь</span></label>
- <select name=figure>
-  <option value="">Пока не знаю</option>
-  <option value="rectangle">Прямоугольник</option><option value="hourglass">Песочные часы</option>
-  <option value="pear">Груша</option><option value="inverted_triangle">Перевёрнутый треугольник</option><option value="apple">Яблоко</option>
- </select>
-
- <label class=consent style="font-weight:normal"><input type=checkbox name=consent_processing required> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
+ <label class=consent style="font-weight:normal;margin-top:22px"><input type=checkbox name=consent_processing required> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
  <label class=consent style="font-weight:normal"><input type=checkbox name=consent_transfer required> Согласна на передачу фото в ИИ-сервис для анализа.</label>
 </div>
  <button>Узнать вердикт →</button>
@@ -374,14 +359,10 @@ _BASE_RU = {"classic": "Классика", "natural": "Натуральный",
 
 
 def _garment_profile(form) -> dict:
-    """Минимальная Формула из формы для evaluate_garment — всё через выбор, без ввода руками."""
+    """Контекст для evaluate_garment: только желаемый образ (выбор настроения).
+    Цветотип/фигуру не спрашиваем — их ИИ читает по фото на полной диагностике."""
     base = form.get("base_style") or None
-    diag = {
-        "colortype": form.get("colortype_known") or None,
-        "figure_type": form.get("figure") or None,
-        "base_style": base,
-        "style_formula": _BASE_RU.get(base) if base else None,
-    }
+    diag = {"base_style": base, "style_formula": _BASE_RU.get(base) if base else None}
     return {k: v for k, v in diag.items() if v is not None}
 
 
