@@ -2233,8 +2233,8 @@ const RU_FIGURE = {
   inverted_triangle: 'Перевёрнутый треугольник', apple: 'Яблоко',
 };
 const ruLabel = (map, code) => map[code] || (code == null ? '' : String(code));
-// Отсеиваем «отписки» модели — фразы про сам метод, а не про клиентку
-const isMetaFiller = s => /квиз|для точного определения|нужны ответы|чтобы определить/i.test(String(s || ''));
+// Отсеиваем «отписки» модели — фразы про сам метод/нехватку данных, а не про клиентку
+const isMetaFiller = s => /квиз|больше информац|недостаточно (данных|информац)|для (точного )?определени|нужны? (ответ|больше|данны)|чтобы определить/i.test(String(s || ''));
 
 // AI-результат по фото: объяснимость + 2 направления (из /api/analyze)
 function renderAIResult() {
@@ -2261,15 +2261,8 @@ function renderAIResult() {
       html += `<div class="ai-signal"><b>→</b><span>${esc(s)}</span></div>`;
     });
     if (dna) html += `<div class="ai-dna">${esc(dna)}</div>`;
-    // RAG: правила из авторской базы знаний, на которые опёрся ИИ
-    if (ex.rules && ex.rules.length) {
-      html += `<div class="ai-rules"><div class="ai-rules-cap">Из авторской базы знаний сработали правила:</div>`;
-      ex.rules.forEach(r => {
-        html += `<div class="ai-rule"><span class="ai-rule-tag">${esc(r.label)}</span>
-          <span class="ai-rule-txt"><b>${esc(r.section)}</b> — ${esc(r.snippet)}</span></div>`;
-      });
-      html += `</div>`;
-    }
+    // RAG-правила базы знаний — внутренняя «кухня» (сырой markdown/коды курса), клиенту не показываем.
+    // База знаний продолжает грунтовать диагностику на бэкенде, но raw-чанки сюда не выводим.
     html += `</div>`;
   }
 
