@@ -8,13 +8,14 @@
 from __future__ import annotations
 import concurrent.futures
 import io
+import json
 import os
 import threading
 import uuid
 from pathlib import Path
 
-from flask import (Flask, jsonify, render_template_string, request,
-                   send_from_directory)
+from flask import (Flask, jsonify, redirect, render_template_string, request,
+                   session, send_from_directory)
 from PIL import Image, UnidentifiedImageError
 from werkzeug.utils import secure_filename
 
@@ -23,6 +24,8 @@ from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            render_look_on_client)
 from core.tracking import (count_today, progress, record_call, record_consent,
                            record_session)
+from core.auth import make_token, read_token, send_magic_link
+from core.profiles import get_profile, save_diagnosis, save_style_profile
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"  # дизайнерский сайт (статика)
@@ -33,6 +36,8 @@ DEMO_DAILY_LIMIT = int(os.getenv("DEMO_DAILY_LIMIT", "40"))  # защита от
 # статика сайта раздаётся из web/ в корне; зарегистрированные роуты (/demo, /api…) важнее
 app = Flask(__name__, static_folder=str(WEB_DIR), static_url_path="")
 app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # лимит загрузки 15 МБ
+# секрет для подписи сессий/magic-link; в проде задать SENSE_SECRET_KEY в панели Amvera
+app.secret_key = os.getenv("SENSE_SECRET_KEY", "dev-insecure-secret-change-in-prod")
 
 
 @app.after_request
@@ -57,7 +62,7 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  button:hover{opacity:.92}
  .hint{color:var(--muted);font-size:13px} .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:6px}
 </style></head><body>
-<div class=top><span class=logo>Чувство стиля</span><a href="/">← на главную</a></div>
+<div class=top><span class=logo>Чувство стиля</span><span><a href="/me" style="margin-right:14px">Мой профиль</a><a href="/">← на главную</a></span></div>
 <h1>Диагностика стиля</h1>
 <p class=hint>Загрузи фото в полный рост и ответь на несколько вопросов — определим Формулу стиля и покажем тебя в новых образах.</p>
 {% if error %}<p class=err>{{ error }}</p>{% endif %}
@@ -230,7 +235,7 @@ GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .chip input:checked+span{background:var(--wine);color:#fff;border-color:var(--wine)}
  .note{background:#eef6ee;border:1px solid #cfe3cf;border-radius:10px;padding:11px 14px;font-size:13.5px;color:#3a5a3a;margin-top:8px}
 </style></head><body><div class=wrap>
-<div class=top><span class=logo>Чувство стиля</span><a href="/">← на главную</a></div>
+<div class=top><span class=logo>Чувство стиля</span><span><a href="/me" style="margin-right:14px">Мой профиль</a><a href="/">← на главную</a></span></div>
 
 <div class=eyebrow>Проверка вещи · ИИ</div>
 <h1>Брать или не брать?</h1>
@@ -320,7 +325,9 @@ GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   });
  }
  try{
-  var saved=JSON.parse(localStorage.getItem(KEY)||'null');
+  // профиль из аккаунта (если вошла) важнее локального; иначе — localStorage
+  var server={{ profile_json|default('null')|safe }};
+  var saved=server||JSON.parse(localStorage.getItem(KEY)||'null');
   if(saved){ Object.keys(saved).forEach(function(k){ setVal(k, saved[k]); });
    var n=document.getElementById('savednote'); if(n) n.style.display='block'; }
  }catch(e){}
@@ -387,6 +394,70 @@ GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div></body></html>"""
 
 
+LOGIN_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Вход — Чувство стиля</title>
+<style>
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
+ *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ .wrap{max-width:460px;margin:0 auto;padding:40px 22px 70px}
+ .top{display:flex;justify-content:space-between;align-items:center} .logo{font-size:18px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
+ h1{font-weight:normal;font-size:30px;margin:30px 0 8px} .lead{color:var(--muted);margin:0 0 22px}
+ .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px}
+ label{display:block;font-size:14px;color:var(--muted);margin-bottom:6px}
+ input{width:100%;padding:12px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;background:#fff}
+ button{margin-top:16px;width:100%;padding:14px;background:var(--wine);color:#fff;border:0;border-radius:10px;font:inherit;font-size:16px;cursor:pointer}
+ .ok{background:#eef6ee;border:1px solid #cfe3cf;border-radius:12px;padding:16px;color:#3a5a3a}
+ .devlink{margin-top:12px;font-size:13px;word-break:break-all} .devlink a{color:var(--wine)}
+ .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:8px;margin-bottom:14px}
+ .hint{color:var(--muted);font-size:13px;margin-top:14px}
+</style></head><body><div class=wrap>
+<div class=top><span class=logo>Чувство стиля</span><a href="/">← на главную</a></div>
+<h1>Вход</h1>
+<p class=lead>Введи email — пришлём ссылку для входа. Без пароля. Профиль и Формула сохранятся за тобой.</p>
+{% if error %}<p class=err>{{ error }}</p>{% endif %}
+{% if sent %}
+ <div class=ok>Ссылка для входа отправлена на <b>{{ email }}</b>. Открой письмо и перейди по ссылке (действует 15 минут).</div>
+ {% if dev_link %}<div class=devlink>Демо-режим (почта не настроена) — ссылка для входа:<br><a href="{{ dev_link }}">{{ dev_link }}</a></div>{% endif %}
+{% else %}
+ <form method=post action="/login" class=card>
+  <label>Email</label><input type=email name=email required placeholder="anna@example.com" value="{{ email or '' }}">
+  <button>Получить ссылку для входа</button>
+ </form>
+ <p class=hint>Входя, ты соглашаешься с <a href="/privacy">Политикой</a>. Пароль не нужен.</p>
+{% endif %}
+</div></body></html>"""
+
+
+ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Мой профиль — Чувство стиля</title>
+<style>
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
+ *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ .wrap{max-width:560px;margin:0 auto;padding:34px 22px 70px}
+ .top{display:flex;justify-content:space-between;align-items:center} .logo{font-size:18px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
+ h1{font-weight:normal;font-size:30px;margin:26px 0 4px} .email{color:var(--muted);margin:0 0 22px}
+ .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px}
+ .card h3{font-weight:normal;font-size:18px;margin:0 0 6px} .card p{margin:0;color:var(--muted);font-size:14px}
+ .badge{display:inline-block;font-size:12px;padding:3px 10px;border-radius:999px;margin-left:8px}
+ .yes{background:#eef6ee;color:#3a5a3a} .no{background:#f3efe7;color:#9a8f80}
+ .links{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+ .btn{background:var(--wine);color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-size:15px}
+ .btn.sec{background:#fff;color:var(--wine);border:1px solid var(--line)}
+</style></head><body><div class=wrap>
+<div class=top><span class=logo>Чувство стиля</span><a href="/logout">Выйти</a></div>
+<h1>Мой профиль</h1>
+<p class=email>{{ email }}</p>
+<div class=card><h3>Формула стиля {% if has_diag %}<span class="badge yes">есть</span>{% else %}<span class="badge no">ещё нет</span>{% endif %}</h3>
+ <p>{% if has_diag %}{{ formula }}{% else %}Пройди диагностику — Формула сохранится здесь.{% endif %}</p></div>
+<div class=card><h3>Профиль «Примерочной» {% if has_style %}<span class="badge yes">заполнен</span>{% else %}<span class="badge no">не заполнен</span>{% endif %}</h3>
+ <p>Линии, ДНК стиля и анти-гардероб — чтобы проверка вещей работала мгновенно.</p></div>
+<div class=links>
+ <a class=btn href="/demo">Пройти диагностику</a>
+ <a class="btn sec" href="/garment">Проверить вещь</a>
+</div>
+</div></body></html>"""
+
+
 def _split(s: str) -> list[str]:
     return [x.strip() for x in (s or "").split(",") if x.strip()]
 
@@ -404,6 +475,58 @@ def demo():
 @app.get("/privacy")
 def privacy():
     return render_template_string(PRIVACY)
+
+
+@app.get("/login")
+def login():
+    if session.get("email"):
+        return redirect("/me")
+    return render_template_string(LOGIN_PAGE, error=None, sent=False, email="", dev_link=None)
+
+
+@app.post("/login")
+def login_send():
+    email = (request.form.get("email") or "").strip()
+    if "@" not in email or "." not in email:
+        return render_template_string(LOGIN_PAGE, error="Введи корректный email.",
+                                      sent=False, email=email, dev_link=None), 400
+    link = request.url_root.rstrip("/") + "/auth?token=" + make_token(email)
+    sent = send_magic_link(email, link)
+    # если почта не настроена (dev) — показываем ссылку прямо на странице, чтобы можно было войти
+    return render_template_string(LOGIN_PAGE, error=None, sent=True, email=email,
+                                  dev_link=None if sent else link)
+
+
+@app.get("/auth")
+def auth_verify():
+    email = read_token(request.args.get("token") or "")
+    if not email:
+        return render_template_string(
+            LOGIN_PAGE, error="Ссылка недействительна или устарела — запроси новую.",
+            sent=False, email="", dev_link=None), 400
+    session["email"] = email
+    session.permanent = True
+    return redirect("/me")
+
+
+@app.get("/logout")
+def logout():
+    session.pop("email", None)
+    return redirect("/")
+
+
+@app.get("/me")
+def me():
+    email = session.get("email")
+    if not email:
+        return redirect("/login")
+    prof = get_profile(email)
+    diag = prof.get("diagnosis") or {}
+    return render_template_string(
+        ME_PAGE, email=email, has_diag=bool(diag),
+        formula=diag.get("style_formula", ""),
+        has_style=bool(prof.get("style_profile")),
+    )
 
 
 # карта вердикта/совпадений → русские подписи, цвет и иконка
@@ -430,9 +553,18 @@ def _garment_profile(form) -> dict:
     return {k: v for k, v in diag.items() if v}
 
 
+def _server_profile_json() -> str:
+    """JSON профиля «Примерочной» из аккаунта (если вошёл) — для префилла формы; иначе null."""
+    email = session.get("email")
+    if not email:
+        return "null"
+    sp = (get_profile(email) or {}).get("style_profile") or None
+    return json.dumps(sp, ensure_ascii=False)
+
+
 @app.get("/garment")
 def garment():
-    return render_template_string(GARMENT_FORM, error=None)
+    return render_template_string(GARMENT_FORM, error=None, profile_json=_server_profile_json())
 
 
 @app.post("/garment/check")
@@ -450,6 +582,8 @@ def garment_check():
         return render_template_string(GARMENT_FORM, error=str(e)), 400
 
     diag = _garment_profile(request.form)
+    if session.get("email"):  # вошла — сохраняем анкету в профиль (заполнить один раз)
+        save_style_profile(session["email"], diag)
     record_call()
     try:
         v = evaluate_garment(str(photo_path), diag, mode="dev")
@@ -557,6 +691,8 @@ def analyze():
     if client:  # трекинг динамики Identity Gap во времени
         record_session(client, diag)
         prog = progress(client)
+    if session.get("email"):  # вошла — сохраняем Формулу в профиль
+        save_diagnosis(session["email"], diag)
 
     cap = capsule.get("capsule") or {}
     return render_template_string(
@@ -713,13 +849,19 @@ def _fallback_directions(diag: dict) -> list[dict]:
     ]
 
 
-def _job_worker(job_id: str, photo_path: Path, quiz: dict, client: str) -> None:
+def _job_worker(job_id: str, photo_path: Path, quiz: dict, client: str,
+                account_email: str | None = None) -> None:
     """Фоновая генерация — чтобы HTTP-запрос не висел (таймауты/блокировка)."""
     try:
         diag, directions, explain = _run_fast(photo_path, quiz)
         if client:
             try:
                 record_session(client, diag)
+            except Exception:  # noqa: BLE001
+                pass
+        if account_email:  # вошла — сохраняем Формулу в профиль
+            try:
+                save_diagnosis(account_email, diag)
             except Exception:  # noqa: BLE001
                 pass
         _JOBS[job_id] = {"status": "done", "result": {
@@ -755,7 +897,8 @@ def api_analyze():
     job_id = uuid.uuid4().hex
     _JOBS[job_id] = {"status": "processing"}
     client = (request.form.get("client") or "").strip()
-    threading.Thread(target=_job_worker, args=(job_id, photo_path, quiz, client),
+    account_email = session.get("email")
+    threading.Thread(target=_job_worker, args=(job_id, photo_path, quiz, client, account_email),
                      daemon=True).start()
     return jsonify({"job_id": job_id}), 202
 
