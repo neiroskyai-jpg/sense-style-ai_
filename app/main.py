@@ -390,18 +390,64 @@ def _run_fast(photo_path: Path, quiz: dict):
         vision["colortype"] = quiz["colortype_known"]
     diag = diagnose(quiz, vision, mode="dev")
     directions = generate_directions(diag, quiz, mode="dev")[:N_RENDER]
+    if not directions:  # генерация направлений не сработала — синтезируем из диагностики
+        directions = _fallback_directions(diag)
 
     def _render(d):
         return {
             "name": d.get("name", ""),
             "fits_if": d.get("fits_if", ""),
             "items": d.get("items") or [],
-            "img": render_look_on_client(str(photo_path), d.get("image_generation_prompt", "")),
+            "img": render_look_on_client(str(photo_path), _look_prompt(d, diag)),
         }
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(directions))) as ex:
         rendered = list(ex.map(_render, directions))
     return diag, rendered, _explainability(diag, quiz)
+
+
+def _palette_names(diag: dict) -> str:
+    pal = (diag.get("visual_formula") or {}).get("palette") or []
+    names = [p.get("name", "") for p in pal if p.get("role") in ("base", "accent")][:4]
+    return ", ".join(n for n in names if n)
+
+
+def _look_prompt(d: dict, diag: dict) -> str:
+    """Промпт образа для рендера. Строим из РЕАЛЬНЫХ вещей направления + палитры +
+    силуэта — чтобы он был конкретным, отличался между направлениями и НИКОГДА не был
+    пустым (иначе identity-рендер просто повторяет исходную одежду)."""
+    items = ", ".join(d.get("items") or [])
+    pal = _palette_names(diag)
+    figure = diag.get("figure_type") or ""
+    base = (d.get("image_generation_prompt") or "").strip()
+    parts = []
+    if d.get("name"):
+        parts.append(f"Образ «{d['name']}»")
+    if items:
+        parts.append(f"вещи: {items}")
+    if pal:
+        parts.append(f"палитра: {pal}")
+    if figure:
+        parts.append(f"силуэт под фигуру {figure}")
+    if base:
+        parts.append(base)
+    prompt = ". ".join(parts)
+    return prompt or (diag.get("style_formula") or "современный стильный образ в нейтральной палитре")
+
+
+def _fallback_directions(diag: dict) -> list[dict]:
+    """Если generate_directions не дала результата — 2 направления из visual_formula,
+    чтобы демо всё равно показало образы (а не исходное фото без изменений)."""
+    sils = (diag.get("visual_formula") or {}).get("silhouettes") or []
+    formula = diag.get("style_formula") or "твоя Формула стиля"
+    return [
+        {"name": "Мягкая версия", "fits_if": "Подходит, если хочется спокойствия и уместности.",
+         "items": sils[:3] or ["мягкий жакет", "прямые брюки", "блуза"],
+         "image_generation_prompt": f"Спокойный образ по формуле «{formula}», мягкие чистые линии."},
+        {"name": "Собранная версия", "fits_if": "Подходит, если хочется уверенности и статуса.",
+         "items": sils[1:4] or ["структурный жакет", "юбка-карандаш", "рубашка"],
+         "image_generation_prompt": f"Собранный образ по формуле «{formula}», структура и один акцент."},
+    ]
 
 
 def _job_worker(job_id: str, photo_path: Path, quiz: dict, client: str) -> None:
