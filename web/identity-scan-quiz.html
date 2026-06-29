@@ -1109,25 +1109,6 @@ body {
 }
 .upload-skip:hover { color: #7A1C2E; }
 
-/* Необязательный выбор цветотипа (перебивает определение ИИ, если клиентка знает) */
-.quiz-colortype-row {
-  max-width: 420px; margin: 16px auto 0; text-align: center;
-}
-.quiz-colortype-row label {
-  display: block; font-size: 12px; color: rgba(26, 26, 26, 0.7);
-  margin-bottom: 7px;
-}
-.quiz-colortype-row label span {
-  color: rgba(26, 26, 26, 0.42); font-size: 11px;
-}
-.quiz-colortype-row select {
-  width: 100%; padding: 10px 12px;
-  border: 1px solid rgba(26, 26, 26, 0.14); border-radius: 10px;
-  background: #FFFFFF; font-family: inherit; font-size: 13px; color: #1A1A1A;
-  -webkit-tap-highlight-color: transparent;
-}
-.quiz-colortype-row select:focus { outline: none; border-color: #7A1C2E; }
-
 /* Processing — спиннер */
 .processing-wrap {
   text-align: center;
@@ -1291,25 +1272,6 @@ body {
     <p class="dropzone-meta">JPG · PNG · до 10 МБ</p>
     <input type="file" id="quiz-file-input" accept="image/jpeg,image/png">
   </label>
-
-  <div class="quiz-colortype-row">
-    <label for="quiz-colortype">Знаешь свой цветотип? <span>необязательно — иначе определит ИИ по фото</span></label>
-    <select id="quiz-colortype">
-      <option value="">Определит ИИ по фото</option>
-      <option value="spring_light">Весна светлая</option>
-      <option value="spring_natural">Весна натуральная</option>
-      <option value="spring_contrast">Весна контрастная</option>
-      <option value="summer_light">Лето светлое</option>
-      <option value="summer_natural">Лето натуральное</option>
-      <option value="summer_contrast">Лето контрастное</option>
-      <option value="autumn_light">Осень мягкая</option>
-      <option value="autumn_natural">Осень натуральная</option>
-      <option value="autumn_contrast">Осень контрастная</option>
-      <option value="winter_light">Зима светлая</option>
-      <option value="winter_natural">Зима натуральная</option>
-      <option value="winter_contrast">Зима контрастная</option>
-    </select>
-  </div>
 
   <button type="button" class="upload-skip" onclick="skipUpload()">Пропустить · показать результат без фото</button>
 </div>
@@ -2362,9 +2324,6 @@ function generateLooks(file) {
   fd.append('photo', file);
   fd.append('consent_processing', 'on');
   fd.append('consent_transfer', 'on');
-  // если клиентка знает свой цветотип — перебиваем определение ИИ (шаг колориста)
-  const ctSel = document.getElementById('quiz-colortype');
-  if (ctSel && ctSel.value) fd.append('colortype_known', ctSel.value);
   fetch('/api/analyze', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(d => {
