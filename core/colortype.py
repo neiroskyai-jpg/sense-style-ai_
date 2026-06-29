@@ -42,9 +42,11 @@ class ColortypeResult:
 # ── Публичное API ─────────────────────────────────────────────────────────────
 
 def analyze_colortype(image_path: str | Path, white_balance: bool = True) -> ColortypeResult:
-    """Фото → ColortypeResult. white_balance — мягкая коррекция засвета (white-patch)."""
+    """Фото → ColortypeResult по методу photo-reading.md: температура (кожа) → сезон,
+    КОНТРАСТ (кожа vs волосы по 11-шкале) → подтип. white_balance — коррекция засвета."""
     img = Image.open(image_path).convert("RGB")
     img.thumbnail((256, 256))            # ускоряем: пиксельная математика на чистом Python
+    w, h = img.size
     data = img.tobytes()                 # RGB-байты подряд (без deprecated getdata)
     pixels = [(data[i], data[i + 1], data[i + 2]) for i in range(0, len(data), 3)]
 
@@ -58,11 +60,18 @@ def analyze_colortype(image_path: str | Path, white_balance: bool = True) -> Col
         skin = pixels
     skin_rgb = _median_rgb(skin)
 
-    return classify(skin_rgb, confidence=min(1.0, skin_px / (total * 0.12)))
+    # Волосы: тёмная неъкожная зона в верхней части кадра (грубая оценка без сегментации)
+    hair_rgb = _hair_rgb(pixels, w, h)
+
+    return classify(skin_rgb, hair_rgb=hair_rgb,
+                    confidence=min(1.0, skin_px / (total * 0.12)))
 
 
-def classify(skin_rgb: tuple[int, int, int], confidence: float = 1.0) -> ColortypeResult:
-    """Чистая классификация по усреднённому цвету кожи (тестируется без фото)."""
+def classify(skin_rgb: tuple[int, int, int],
+             hair_rgb: tuple[int, int, int] | None = None,
+             confidence: float = 1.0) -> ColortypeResult:
+    """Классификация по методу: сезон — из температуры+светлоты кожи; подтип — из КОНТРАСТА
+    (светлота кожи vs волос по 11-ступенчатой шкале). Тестируется без фото."""
     L, a, b = _rgb_to_lab(skin_rgb)
     hue = math.degrees(math.atan2(b, a)) if (a or b) else 0.0
     chroma_c = math.hypot(a, b)
@@ -77,20 +86,48 @@ def classify(skin_rgb: tuple[int, int, int], confidence: float = 1.0) -> Colorty
 
     # Светлота кожи по L*.
     value = "light" if L >= 68 else ("deep" if L <= 56 else "medium")
-    # Насыщенность/чистота кожи по chroma.
-    chroma = "clear" if chroma_c >= 28 else "muted"
 
+    # Контраст внешности (ПРАВИЛО ПРИОРИТЕТА photo-reading.md: контраст важнее таблицы).
+    # 11-ступенчатая ахроматическая шкала: разница делений кожа↔волосы → уровень → подтип.
+    contrast_steps = None
+    if hair_rgb is not None:
+        L_hair = _rgb_to_lab(hair_rgb)[0]
+        contrast_steps = abs(_l_step(L) - _l_step(L_hair))
+        contrast_level = _contrast_level(contrast_steps)
+    else:
+        contrast_level = None
+
+    chroma = "clear" if chroma_c >= 28 else "muted"
     season = _season(undertone, value)
-    subtype = _subtype(value, chroma)
+    subtype = _subtype(contrast_level, value, chroma)
+
+    meas = {
+        "skin_rgb": list(skin_rgb), "L": round(L, 1), "a": round(a, 1),
+        "b": round(b, 1), "hue": round(hue, 1), "chroma_c": round(chroma_c, 1),
+    }
+    if hair_rgb is not None:
+        meas.update({"hair_rgb": list(hair_rgb), "L_hair": round(_rgb_to_lab(hair_rgb)[0], 1),
+                     "contrast_steps": contrast_steps, "contrast_level": contrast_level})
+
     return ColortypeResult(
         season=season, subtype=subtype, colortype=f"{season}_{subtype}",
         undertone=undertone, value=value, chroma=chroma,
-        measurements={
-            "skin_rgb": list(skin_rgb), "L": round(L, 1), "a": round(a, 1),
-            "b": round(b, 1), "hue": round(hue, 1), "chroma_c": round(chroma_c, 1),
-        },
-        confidence=confidence,
+        measurements=meas, confidence=confidence,
     )
+
+
+def _l_step(L: float) -> int:
+    """L* (0..100) → деление ахроматической шкалы 1 (чёрный) .. 11 (белый)."""
+    return max(1, min(11, round(L / 100 * 10) + 1))
+
+
+def _contrast_level(steps: int) -> str:
+    """Разница делений → уровень контраста (пороги из photo-reading.md, Шаг 2)."""
+    if steps >= 7:
+        return "high"
+    if steps >= 4:
+        return "medium"
+    return "low"
 
 
 def _season(undertone: str, value: str) -> str:
@@ -105,12 +142,42 @@ def _season(undertone: str, value: str) -> str:
     return "winter"  # cool + deep/medium
 
 
-def _subtype(value: str, chroma: str) -> str:
+def _subtype(contrast_level: str | None, value: str, chroma: str) -> str:
+    """Подтип по КОНТРАСТУ (приоритет метода): high→contrast, medium→natural, low→light.
+    Без замера волос — фолбэк на старую логику (chroma/светлота)."""
+    if contrast_level == "high":
+        return "contrast"
+    if contrast_level == "medium":
+        return "natural"
+    if contrast_level == "low":
+        return "light"
+    # фолбэк, если волосы не считались
     if chroma == "clear":
         return "contrast"
-    if value == "light":
-        return "light"
-    return "natural"
+    return "light" if value == "light" else "natural"
+
+
+def _hair_rgb(pixels: list[tuple[int, int, int]], w: int, h: int) -> tuple[int, int, int] | None:
+    """Грубая оценка цвета волос: тёмные неъкожные пиксели в верхних ~45% кадра.
+
+    Без сегментации лица — эвристика. Отсекаем кожу и почти-чёрный фон/тени (L<8).
+    Берём медиану самой тёмной трети найденного. None — если кандидатов мало.
+    """
+    top_rows = int(h * 0.45)
+    cand = []
+    for idx, px in enumerate(pixels):
+        if idx // w >= top_rows:
+            break
+        if _is_skin(px):
+            continue
+        L = _rgb_to_lab(px)[0]
+        if 8 <= L <= 60:                 # тёмное, но не угольный фон
+            cand.append((L, px))
+    if len(cand) < 15:
+        return None
+    cand.sort(key=lambda t: t[0])        # от тёмного к светлому
+    darkest = [px for _, px in cand[: max(15, len(cand) // 3)]]
+    return _median_rgb(darkest)
 
 
 # ── Пиксельная математика (чистый Python) ─────────────────────────────────────
@@ -133,16 +200,18 @@ def _white_patch(pixels: list[tuple[int, int, int]]) -> list[tuple[int, int, int
     return out
 
 
+def _is_skin(px: tuple[int, int, int]) -> bool:
+    """Пиксель похож на кожу по YCbCr (Cr∈[133,173], Cb∈[77,127])."""
+    r, g, b = px
+    y = 0.299 * r + 0.587 * g + 0.114 * b
+    cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b
+    cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b
+    return 80 <= y <= 245 and 77 <= cb <= 127 and 133 <= cr <= 173
+
+
 def _skin_pixels(pixels: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
     """Отбор пикселей кожи по YCbCr (классический диапазон Cr∈[133,173], Cb∈[77,127])."""
-    out = []
-    for r, g, b in pixels:
-        y = 0.299 * r + 0.587 * g + 0.114 * b
-        cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b
-        cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b
-        if 80 <= y <= 245 and 77 <= cb <= 127 and 133 <= cr <= 173:
-            out.append((r, g, b))
-    return out
+    return [px for px in pixels if _is_skin(px)]
 
 
 def _median_rgb(pixels: list[tuple[int, int, int]]) -> tuple[int, int, int]:

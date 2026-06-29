@@ -36,6 +36,18 @@ def test_value_light_vs_deep():
     assert light.measurements["L"] > deep.measurements["L"]
 
 
+def test_subtype_by_contrast():
+    # Правило приоритета: подтип определяет КОНТРАСТ кожа↔волосы, не chroma.
+    skin = (235, 205, 185)               # светлая кожа
+    high = classify(skin, hair_rgb=(25, 20, 18))    # очень тёмные волосы → высокий контраст
+    med = classify(skin, hair_rgb=(95, 75, 60))     # средне-тёмные → средний
+    low = classify(skin, hair_rgb=(205, 180, 150))  # светлые → низкий
+    assert high.subtype == "contrast"
+    assert med.subtype == "natural"
+    assert low.subtype == "light"
+    assert high.measurements["contrast_steps"] > low.measurements["contrast_steps"]
+
+
 def test_season_mapping():
     # тёплый+светлый → spring; холодный+тёмный → winter
     assert classify((235, 200, 150)).season in ("spring", "autumn")
