@@ -222,6 +222,13 @@ GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .consent{font-size:13px;color:var(--muted);display:flex;gap:8px;margin-top:14px;line-height:1.4} .consent input{width:auto;margin-top:3px}
  .hint{color:var(--muted);font-size:13px;text-align:center;margin-top:14px}
  .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:8px}
+ .group{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)} .group:first-of-type{border-top:0;padding-top:0}
+ .gtitle{font-family:Arial,sans-serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--wine);margin-bottom:6px}
+ .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+ .chip{display:inline-flex;cursor:pointer} .chip input{position:absolute;opacity:0;pointer-events:none}
+ .chip span{display:inline-block;padding:9px 14px;border:1px solid #d9d2c7;border-radius:999px;font-size:13.5px;color:#4a443c;background:#fff;transition:.15s}
+ .chip input:checked+span{background:var(--wine);color:#fff;border-color:var(--wine)}
+ .note{background:#eef6ee;border:1px solid #cfe3cf;border-radius:10px;padding:11px 14px;font-size:13.5px;color:#3a5a3a;margin-top:8px}
 </style></head><body><div class=wrap>
 <div class=top><span class=logo>Чувство стиля</span><a href="/">← на главную</a></div>
 
@@ -231,7 +238,7 @@ GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 <div class=steps>
  <div class=step><b>1</b>Фото вещи</div>
- <div class=step><b>2</b>Какой образ ближе</div>
+ <div class=step><b>2</b>Профиль стиля</div>
  <div class=step><b>3</b>Честный вердикт</div>
 </div>
 
@@ -241,22 +248,96 @@ GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label>Фото вещи</label>
  <div class=file><input type=file name=photo accept="image/*" required></div>
 
- <label>Какой образ тебе ближе <span class=sub>— выбери настроение</span></label>
- <select name=base_style>
-  <option value="">Не уверена — оцени по фото вещи</option>
-  <option value="classic">Собранная и статусная</option>
-  <option value="natural">Естественная и лёгкая</option>
-  <option value="romance">Женственная и мягкая</option>
-  <option value="drama">Яркая и выразительная</option>
- </select>
- <p class=sub style="margin:8px 2px 0">Цветотип и фигуру определять не нужно — это ИИ читает сам на полной диагностике по фото.</p>
+ <div class=note id=savednote style="display:none">Твой профиль стиля сохранён — можно сразу загрузить фото. Изменить ответы можно ниже.</div>
 
- <label class=consent style="font-weight:normal;margin-top:22px"><input type=checkbox name=consent_processing required> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
+ <div class=group><div class=gtitle>1 · Линии и посадка</div>
+  <label>Какие линии силуэта тебе ближе</label>
+  <select name=silhouette_lines>
+   <option value="">— выбери —</option>
+   <option value="straight">Прямые и чёткие</option>
+   <option value="soft">Мягкие и округлые</option>
+   <option value="balanced">Сбалансированные</option>
+  </select>
+  <label>Что любишь подчёркивать</label>
+  <select name=fit_focus>
+   <option value="">— выбери —</option>
+   <option value="waist">Талию</option>
+   <option value="relaxed">Свободу, оверсайз</option>
+   <option value="elongate">Вертикаль, удлинённый силуэт</option>
+  </select>
+  <label>Где вещи обычно сидят плохо <span class=sub>— можно несколько</span></label>
+  <div class=chips>
+   <label class=chip><input type=checkbox name=fit_challenges value=waist_gap><span>Велико в талии, если впору в бёдрах</span></label>
+   <label class=chip><input type=checkbox name=fit_challenges value=tight_shoulders><span>Узко в плечах</span></label>
+   <label class=chip><input type=checkbox name=fit_challenges value=short_sleeves><span>Коротки рукава</span></label>
+   <label class=chip><input type=checkbox name=fit_challenges value=long_torso><span>Длинный торс / короткие ноги</span></label>
+  </div>
+ </div>
+
+ <div class=group><div class=gtitle>2 · ДНК стиля</div>
+  <label>3 слова о твоём идеальном образе <span class=sub>— до трёх</span></label>
+  <div class=chips>
+   <label class=chip><input type=checkbox name=style_dna value="Elevated Minimalism"><span>Утончённый минимализм</span></label>
+   <label class=chip><input type=checkbox name=style_dna value="Quiet Luxury"><span>Тихая роскошь</span></label>
+   <label class=chip><input type=checkbox name=style_dna value="Comfort First"><span>Комфорт прежде всего</span></label>
+   <label class=chip><input type=checkbox name=style_dna value="Power Tailoring"><span>Властный тейлоринг</span></label>
+   <label class=chip><input type=checkbox name=style_dna value="Romantic"><span>Романтика</span></label>
+   <label class=chip><input type=checkbox name=style_dna value="Bold & Edgy"><span>Смелость и акцент</span></label>
+  </div>
+  <label>Какое впечатление должен производить гардероб</label>
+  <select name=impression>
+   <option value="">— выбери —</option>
+   <option value="professional">Уверенность, статус, авторитет</option>
+   <option value="effortless">Расслабленность, лёгкость, комфорт</option>
+   <option value="creative">Творчество, уникальность, яркость</option>
+  </select>
+ </div>
+
+ <div class=group><div class=gtitle>3 · Анти-гардероб</div>
+  <label>Что ты точно НЕ носишь <span class=sub>— в чём неуютно</span></label>
+  <div class=chips>
+   <label class=chip><input type=checkbox name=dealbreakers value=clingy><span>Облегающий тонкий трикотаж</span></label>
+   <label class=chip><input type=checkbox name=dealbreakers value=fuss><span>Оборки, воланы, лишний декор</span></label>
+   <label class=chip><input type=checkbox name=dealbreakers value=rigid><span>Сковывающая движения одежда</span></label>
+   <label class=chip><input type=checkbox name=dealbreakers value=loud_prints><span>Слишком пёстрые принты</span></label>
+  </div>
+ </div>
+
+ <label class=consent style="font-weight:normal;margin-top:8px"><input type=checkbox name=consent_processing required> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
  <label class=consent style="font-weight:normal"><input type=checkbox name=consent_transfer required> Согласна на передачу фото в ИИ-сервис для анализа.</label>
 </div>
  <button>Узнать вердикт →</button>
- <p class=hint>Анализ занимает несколько секунд. Фото не сохраняется после проверки.</p>
-</form></div></body></html>"""
+ <p class=hint>Профиль стиля заполняется один раз — потом проверка работает мгновенно. Фото не сохраняется.</p>
+</form></div>
+<script>
+(function(){
+ var KEY='ssGarmentProfile';
+ var f=document.querySelector('form');
+ function setVal(name,vals){
+  document.querySelectorAll('[name="'+name+'"]').forEach(function(el){
+   if(el.type==='checkbox') el.checked = vals.indexOf(el.value)>-1;
+   else el.value = vals[0]||'';
+  });
+ }
+ try{
+  var saved=JSON.parse(localStorage.getItem(KEY)||'null');
+  if(saved){ Object.keys(saved).forEach(function(k){ setVal(k, saved[k]); });
+   var n=document.getElementById('savednote'); if(n) n.style.display='block'; }
+ }catch(e){}
+ f.addEventListener('submit', function(){
+  var data={};
+  ['silhouette_lines','fit_focus','impression','fit_challenges','style_dna','dealbreakers'].forEach(function(name){
+   var vals=[]; document.querySelectorAll('[name="'+name+'"]').forEach(function(el){
+    if(el.type==='checkbox'){ if(el.checked) vals.push(el.value); }
+    else if(el.value) vals.push(el.value);
+   });
+   data[name]=vals;
+  });
+  try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){}
+ });
+})();
+</script>
+</body></html>"""
 
 
 GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
@@ -279,6 +360,7 @@ GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .reason{font-size:17px;line-height:1.65;margin:18px 0;text-align:center}
  .replace{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 20px;font-size:15px;line-height:1.55}
  .replace b{color:var(--wine)}
+ .db{background:#fbf1ef;border:1px solid #eccfc9;border-radius:12px;padding:13px 18px;font-size:14px;color:#9b3030;text-align:center;margin:6px 0}
  .cta{display:block;text-align:center;margin-top:26px;padding:15px;background:var(--wine);color:#fff;border-radius:10px;text-decoration:none;font-size:16px}
  .back{text-align:center;margin-top:14px} .back a{color:var(--wine);font-size:14px}
 </style></head><body><div class=wrap>
@@ -292,12 +374,13 @@ GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 {% if item %}<p class=item>На фото: {{ item }}</p>{% endif %}
 <div class=chips>
- {% if palette %}<span class=chip><span>палитра:</span> {{ palette }}</span>{% endif %}
- {% if figure %}<span class=chip><span>фигура:</span> {{ figure }}</span>{% endif %}
+ {% if figure %}<span class=chip><span>линии:</span> {{ figure }}</span>{% endif %}
  {% if style %}<span class=chip><span>стиль:</span> {{ style }}</span>{% endif %}
+ {% if palette %}<span class=chip><span>цвет:</span> {{ palette }}</span>{% endif %}
 </div>
+{% if dealbreaker %}<div class=db>⚠ Сработал твой анти-гардероб: {{ dealbreaker }}</div>{% endif %}
 <p class=reason>{{ reason }}</p>
-{% if replace_with %}<div class=replace><b>Чем заменить:</b> {{ replace_with }}</div>{% endif %}
+{% if replace_with %}<div class=replace><b>Что проверить / чем заменить:</b> {{ replace_with }}</div>{% endif %}
 
 <a class=cta href="/garment">Проверить ещё вещь</a>
 <div class=back><a href="/demo">Пройти полную диагностику стиля →</a></div>
@@ -324,23 +407,27 @@ def privacy():
 
 
 # карта вердикта/совпадений → русские подписи, цвет и иконка
-_VERDICT_RU = {"take": ("Брать", "#3b7a4b", "✓"), "replace": ("Заменить", "#b8860b", "↺"),
-               "skip": ("Не брать", "#9b3030", "✕")}
+_VERDICT_RU = {"take": ("Брать", "#3b7a4b", "✓"), "replace": ("Подумай", "#b8860b", "↺"),
+               "skip": ("Оставь в магазине", "#9b3030", "✕")}
 _PALETTE_RU = {"base": "в базе твоей палитры", "accent": "акцент твоей палитры",
                "neutral": "нейтрально", "taboo": "стоп-цвет", "unclear": "не считывается"}
-_FIGURE_RU = {"works": "работает на фигуру", "risky": "рискованно для фигуры",
-              "wrong": "против фигуры"}
+_LINES_RU = {"works": "в твоих линиях", "risky": "рискованно по линиям",
+             "wrong": "против твоих линий"}
 _STYLE_RU = {"core": "ядро твоего стиля", "adjacent": "смежно со стилем", "off": "вне стиля"}
-_BASE_RU = {"classic": "Классика", "natural": "Натуральный",
-            "romance": "Романтика", "drama": "Драма"}
 
 
 def _garment_profile(form) -> dict:
-    """Контекст для evaluate_garment: только желаемый образ (выбор настроения).
-    Цветотип/фигуру не спрашиваем — их ИИ читает по фото на полной диагностике."""
-    base = form.get("base_style") or None
-    diag = {"base_style": base, "style_formula": _BASE_RU.get(base) if base else None}
-    return {k: v for k, v in diag.items() if v is not None}
+    """Экспресс-профиль из анкеты «Примерочной»: визуальные маркеры, ДНК стиля,
+    анти-гардероб. Никакой техники (цветотип/фигуру ИИ читает по фото отдельно)."""
+    diag = {
+        "silhouette_lines": form.get("silhouette_lines") or None,
+        "fit_focus": form.get("fit_focus") or None,
+        "impression": form.get("impression") or None,
+        "fit_challenges": form.getlist("fit_challenges") or None,
+        "style_dna": form.getlist("style_dna") or None,
+        "dealbreakers": form.getlist("dealbreakers") or None,
+    }
+    return {k: v for k, v in diag.items() if v}
 
 
 @app.get("/garment")
@@ -370,13 +457,17 @@ def garment_check():
         return render_template_string(GARMENT_FORM, error=f"Не удалось проверить: {e}"), 500
 
     verdict_ru, color, icon = _VERDICT_RU.get(v.get("verdict"), ("Спорно", "#6b645c", "?"))
+    palette = _PALETTE_RU.get(v.get("palette_match"))
+    if v.get("palette_match") == "unclear":
+        palette = None  # цветотип неизвестен — не показываем «не считывается»
     return render_template_string(
         GARMENT_RESULT, verdict_ru=verdict_ru, color=color, icon=icon,
         item=v.get("item"), reason=v.get("reason", ""),
         replace_with=v.get("replace_with"),
-        palette=_PALETTE_RU.get(v.get("palette_match")),
-        figure=_FIGURE_RU.get(v.get("figure_match")),
+        palette=palette,
+        figure=_LINES_RU.get(v.get("lines_match")),
         style=_STYLE_RU.get(v.get("style_match")),
+        dealbreaker=v.get("dealbreaker"),
     )
 
 

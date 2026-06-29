@@ -234,13 +234,18 @@ def evaluate_garment(garment_photo: str, diagnosis: dict, mode: str | None = Non
     content = [
         provider.text_block("Фото вещи для оценки:"),
         provider.image_block(garment_photo),
-        provider.text_block("Формула стиля клиентки:\n" + json.dumps(_garment_input(diagnosis), ensure_ascii=False)),
+        provider.text_block("Профиль клиентки:\n" + json.dumps(_garment_input(diagnosis), ensure_ascii=False)),
     ]
     return provider.chat_json(config.model_for("vision", mode), system, content, max_tokens=700)
 
 
 def _garment_input(d: dict) -> dict:
-    keys = ["style_formula", "base_style", "figure_type", "colortype", "visual_formula"]
+    # экспресс-анкета (линии/посадка/ДНК/анти-гардероб) + при наличии полная диагностика
+    keys = [
+        "silhouette_lines", "fit_focus", "fit_challenges", "style_dna", "impression",
+        "dealbreakers", "style_formula", "base_style", "figure_type", "colortype",
+        "visual_formula",
+    ]
     return {k: d.get(k) for k in keys if d.get(k) is not None}
 
 
