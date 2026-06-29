@@ -11,6 +11,8 @@ import os
 import requests
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
+from .config import secret_key
+
 MAGIC_MAX_AGE = 900  # ссылка живёт 15 минут
 _SALT = "sense-magic-link"
 
@@ -22,9 +24,8 @@ _UNISENDER_URL = os.getenv(
 
 
 def _serializer() -> URLSafeTimedSerializer:
-    # секрет читаем при каждом вызове — чтобы подхватить env без перезапуска при отладке
-    secret = os.getenv("SENSE_SECRET_KEY", "dev-insecure-secret-change-in-prod")
-    return URLSafeTimedSerializer(secret, salt=_SALT)
+    # тот же секрет, что и у сессий Flask (env или файл на постоянном томе)
+    return URLSafeTimedSerializer(secret_key(), salt=_SALT)
 
 
 def make_token(email: str) -> str:

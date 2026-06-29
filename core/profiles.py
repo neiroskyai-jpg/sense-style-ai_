@@ -6,13 +6,13 @@
 """
 from __future__ import annotations
 import json
-import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-_DATA_DIR = Path(os.getenv("SENSE_DATA_DIR", str(Path(__file__).resolve().parent.parent / "data")))
-DB_PATH = _DATA_DIR / "profiles.db"
+from .config import data_dir
+
+DB_PATH = data_dir() / "profiles.db"
 
 
 def _conn(db_path: Path = DB_PATH) -> sqlite3.Connection:

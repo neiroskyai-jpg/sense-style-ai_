@@ -1255,6 +1255,24 @@ body {
   <h2 class="upload-title">Хочешь увидеть <em>себя</em> в своей формуле?</h2>
   <p class="upload-sub">Загрузи фото в полный рост — и я покажу, как твоя Формула стиля выглядит именно на тебе. Это самая важная часть диагностики.</p>
 
+  <style>
+    .season-pick{margin:0 0 18px}
+    .season-q{font-size:15px;color:#6b645c;margin-bottom:10px;text-align:center}
+    .season-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .season-chip{cursor:pointer;border:1px solid #d9cdbb;background:#fff;color:#4a443c;border-radius:999px;padding:10px 20px;font:inherit;font-size:15px;transition:.15s}
+    .season-chip:hover{border-color:#5D2230}
+    .season-chip.active{background:#5D2230;color:#fff;border-color:#5D2230}
+  </style>
+  <div class="season-pick">
+    <div class="season-q">На какой сезон собрать образ?</div>
+    <div class="season-row" id="season-row">
+      <button type="button" class="season-chip" data-season="spring">Весна</button>
+      <button type="button" class="season-chip" data-season="summer">Лето</button>
+      <button type="button" class="season-chip" data-season="autumn">Осень</button>
+      <button type="button" class="season-chip" data-season="winter">Зима</button>
+    </div>
+  </div>
+
   <label class="dropzone" id="quiz-dropzone" for="quiz-file-input">
     <div class="dropzone-icon">
       <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -2317,6 +2335,10 @@ function readJob() {
 }
 function clearJob() { try { sessionStorage.removeItem(SS_JOB_KEY); } catch (e) {} }
 
+// выбранный сезон для образов (по умолчанию — текущий по месяцу)
+var selectedSeason = (function(){ var m=new Date().getMonth();
+  return m<=1||m===11 ? 'winter' : m<=4 ? 'spring' : m<=7 ? 'summer' : 'autumn'; })();
+
 function generateLooks(file) {
   aiLooks = null;
   aiResult = null;
@@ -2324,6 +2346,7 @@ function generateLooks(file) {
   fd.append('photo', file);
   fd.append('consent_processing', 'on');
   fd.append('consent_transfer', 'on');
+  if (selectedSeason) fd.append('season', selectedSeason);
   fetch('/api/analyze', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(d => {
@@ -2369,6 +2392,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Drag & drop + click на dropzone — навешиваем после загрузки DOM
 document.addEventListener('DOMContentLoaded', function() {
+  // выбор сезона: подсветить дефолт + клики
+  var srow = document.getElementById('season-row');
+  if (srow) {
+    srow.querySelectorAll('.season-chip').forEach(function(b){
+      if (b.dataset.season === selectedSeason) b.classList.add('active');
+      b.addEventListener('click', function(){
+        srow.querySelectorAll('.season-chip').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active'); selectedSeason = b.dataset.season;
+      });
+    });
+  }
+
   const dz = document.getElementById('quiz-dropzone');
   const input = document.getElementById('quiz-file-input');
   if (!dz || !input) return;

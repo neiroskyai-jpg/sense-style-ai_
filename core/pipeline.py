@@ -113,6 +113,9 @@ Theory, enclothed cognition). На вход — Формула стиля кли
 два образа должны явно отличаться силуэтом (где-то платье/юбка, где-то брюки), чтобы на \
 фото это были два разных образа, а не один и тот же костюм в двух ракурсах.
 
+Если в данных есть season/season_guidance — образы СТРОГО под этот сезон: вес и тип ткани, \
+наличие/отсутствие верхней одежды, обувь, многослойность. Летом — без пальто; зимой — тёплый слой.
+
 Тон: тёплый, на «ты», без восклицательных знаков, без эмодзи, без пустых усилителей \
 («потрясающе», «вау», «магия»). Объясняй через психологию впечатления, не через тренд. \
 Палитра — из visual_formula, без табу-цветов из stop_list. Силуэты — под figure_type.
@@ -134,11 +137,22 @@ Theory, enclothed cognition). На вход — Формула стиля кли
 }"""
 
 
-def generate_directions(diagnosis: dict, quiz: dict | None = None, mode: str | None = None) -> list[dict]:
+SEASON_RU = {"spring": "весна", "summer": "лето", "autumn": "осень", "winter": "зима"}
+_SEASON_HINT = {
+    "spring": "весна — лёгкие слои, тренчи, рубашки, светлые ткани, прохладное утро",
+    "summer": "лето — лёгкие ткани (лён, хлопок, шёлк), открытые силуэты, сандалии, без верхней одежды",
+    "autumn": "осень — многослойность, трикотаж, жакеты, пальто, плотные ткани, ботинки",
+    "winter": "зима — тёплый слой (пальто, шерсть, кашемир), закрытые силуэты, сапоги",
+}
+
+
+def generate_directions(diagnosis: dict, quiz: dict | None = None,
+                        season: str | None = None, mode: str | None = None) -> list[dict]:
     """2 именованных направления образа из Формулы стиля (для экрана результата квиза).
 
     Один дешёвый текстовый вызов, grounded в диагностике и tone of voice. Каждое
     направление: name, fits_if, items[], image_generation_prompt (под рендер на клиентке).
+    season — spring|summer|autumn|winter: образы собираются под этот сезон.
     """
     vf = diagnosis.get("visual_formula") or {}
     payload = {
@@ -154,6 +168,9 @@ def generate_directions(diagnosis: dict, quiz: dict | None = None, mode: str | N
         "stop_list": vf.get("stop_list"),
         "want_traits_top3": (quiz or {}).get("want_traits_top3"),
     }
+    if season in _SEASON_HINT:
+        payload["season"] = SEASON_RU[season]
+        payload["season_guidance"] = _SEASON_HINT[season]
     result = provider.chat_json(
         config.model_for("text", mode), _DIRECTIONS_SYSTEM,
         json.dumps(payload, ensure_ascii=False), max_tokens=2048,

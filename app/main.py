@@ -36,8 +36,9 @@ DEMO_DAILY_LIMIT = int(os.getenv("DEMO_DAILY_LIMIT", "40"))  # защита от
 # статика сайта раздаётся из web/ в корне; зарегистрированные роуты (/demo, /api…) важнее
 app = Flask(__name__, static_folder=str(WEB_DIR), static_url_path="")
 app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # лимит загрузки 15 МБ
-# секрет для подписи сессий/magic-link; в проде задать SENSE_SECRET_KEY в панели Amvera
-app.secret_key = os.getenv("SENSE_SECRET_KEY", "dev-insecure-secret-change-in-prod")
+# секрет сессий/magic-link: env SENSE_SECRET_KEY или стабильный файл на постоянном томе
+from core.config import secret_key as _secret_key  # noqa: E402
+app.secret_key = _secret_key()
 
 
 @app.after_request
@@ -778,17 +779,18 @@ def _explainability(diag: dict, quiz: dict) -> dict:
     }
 
 
-def _run_fast(photo_path: Path, quiz: dict):
+def _run_fast(photo_path: Path, quiz: dict, season: str | None = None):
     """Быстрый путь для квиза: vision → диагностика → 2 именованных направления →
     рендер параллельно. Возвращает (diag, directions, explain).
 
     directions[i] = {name, fits_if, items[], img}. explain — блоки объяснимости.
+    season — spring|summer|autumn|winter: образы собираются под сезон.
     """
     vision = analyze_photos([str(photo_path)], height_cm=quiz["physical"]["height"], mode="dev")
     if quiz.get("colortype_known"):
         vision["colortype"] = quiz["colortype_known"]
     diag = diagnose(quiz, vision, mode="dev")
-    directions = generate_directions(diag, quiz, mode="dev")[:N_RENDER]
+    directions = generate_directions(diag, quiz, season=season, mode="dev")[:N_RENDER]
     if not directions:  # генерация направлений не сработала — синтезируем из диагностики
         directions = _fallback_directions(diag)
 
@@ -797,7 +799,7 @@ def _run_fast(photo_path: Path, quiz: dict):
             "name": d.get("name", ""),
             "fits_if": d.get("fits_if", ""),
             "items": d.get("items") or [],
-            "img": render_look_on_client(str(photo_path), _look_prompt(d, diag)),
+            "img": render_look_on_client(str(photo_path), _look_prompt(d, diag, season)),
         }
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(directions))) as ex:
@@ -811,7 +813,15 @@ def _palette_names(diag: dict) -> str:
     return ", ".join(n for n in names if n)
 
 
-def _look_prompt(d: dict, diag: dict) -> str:
+_SEASON_LOOK = {
+    "spring": "сезон: весна, лёгкие слои (тренч/рубашка), светлые ткани",
+    "summer": "сезон: лето, лёгкие ткани (лён/хлопок/шёлк), без верхней одежды, открытая обувь",
+    "autumn": "сезон: осень, многослойность, трикотаж и жакет/пальто, плотные ткани, ботинки",
+    "winter": "сезон: зима, тёплый слой (пальто/шерсть/кашемир), закрытый силуэт, сапоги",
+}
+
+
+def _look_prompt(d: dict, diag: dict, season: str | None = None) -> str:
     """Промпт образа для рендера. Строим из РЕАЛЬНЫХ вещей направления + палитры +
     силуэта — чтобы он был конкретным, отличался между направлениями и НИКОГДА не был
     пустым (иначе identity-рендер просто повторяет исходную одежду)."""
@@ -828,6 +838,8 @@ def _look_prompt(d: dict, diag: dict) -> str:
         parts.append(f"палитра: {pal}")
     if figure:
         parts.append(f"силуэт под фигуру {figure}")
+    if season in _SEASON_LOOK:
+        parts.append(_SEASON_LOOK[season])
     if base:
         parts.append(base)
     prompt = ". ".join(parts)
@@ -850,10 +862,10 @@ def _fallback_directions(diag: dict) -> list[dict]:
 
 
 def _job_worker(job_id: str, photo_path: Path, quiz: dict, client: str,
-                account_email: str | None = None) -> None:
+                account_email: str | None = None, season: str | None = None) -> None:
     """Фоновая генерация — чтобы HTTP-запрос не висел (таймауты/блокировка)."""
     try:
-        diag, directions, explain = _run_fast(photo_path, quiz)
+        diag, directions, explain = _run_fast(photo_path, quiz, season=season)
         if client:
             try:
                 record_session(client, diag)
@@ -898,7 +910,9 @@ def api_analyze():
     _JOBS[job_id] = {"status": "processing"}
     client = (request.form.get("client") or "").strip()
     account_email = session.get("email")
-    threading.Thread(target=_job_worker, args=(job_id, photo_path, quiz, client, account_email),
+    season = (request.form.get("season") or "").strip() or None
+    threading.Thread(target=_job_worker,
+                     args=(job_id, photo_path, quiz, client, account_email, season),
                      daemon=True).start()
     return jsonify({"job_id": job_id}), 202
 

@@ -4,14 +4,14 @@
 SQLite-хранилище: одна запись на прохождение диагностики.
 """
 from __future__ import annotations
-import os
 import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-# путь к БД настраивается через SENSE_DATA_DIR — на Amvera это persistent-том (/data)
-_DATA_DIR = Path(os.getenv("SENSE_DATA_DIR", str(Path(__file__).resolve().parent.parent / "data")))
-DB_PATH = _DATA_DIR / "tracking.db"  # локально data/ в .gitignore
+from .config import data_dir
+
+# на Amvera это persistent-том (/data); определяется автоматически (см. config.data_dir)
+DB_PATH = data_dir() / "tracking.db"  # локально data/ в .gitignore
 
 
 def _conn(db_path: Path) -> sqlite3.Connection:

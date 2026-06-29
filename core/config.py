@@ -10,6 +10,8 @@
 """
 from __future__ import annotations
 import os
+import secrets
+from pathlib import Path
 
 try:
     from dotenv import load_dotenv
@@ -18,6 +20,36 @@ except ImportError:
     pass
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
+
+def data_dir() -> Path:
+    """Каталог данных. На Amvera — постоянный том `/data` (persistenceMount), иначе
+    локальная `data/`. Переопределяется `SENSE_DATA_DIR`. Без env работает само:
+    если `/data` смонтирован — используем его, чтобы данные переживали редеплой."""
+    env = os.getenv("SENSE_DATA_DIR")
+    if env:
+        return Path(env)
+    mount = Path("/data")
+    return mount if mount.is_dir() else Path(__file__).resolve().parent.parent / "data"
+
+
+def secret_key() -> str:
+    """Секрет для подписи сессий и magic-link. Приоритет — `SENSE_SECRET_KEY`; иначе
+    стабильный секрет из файла на постоянном томе (генерируется один раз, не в git),
+    чтобы сессии не слетали при редеплое и секрет не лежал в репозитории."""
+    env = os.getenv("SENSE_SECRET_KEY")
+    if env:
+        return env
+    f = data_dir() / "secret_key"
+    try:
+        if f.exists():
+            return f.read_text(encoding="utf-8").strip()
+        key = secrets.token_urlsafe(48)
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(key, encoding="utf-8")
+        return key
+    except OSError:
+        return "dev-insecure-secret-change-in-prod"
 
 MODE = os.getenv("SENSE_MODE", "dev").lower()
 
