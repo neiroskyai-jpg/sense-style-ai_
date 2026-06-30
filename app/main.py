@@ -830,6 +830,118 @@ def privacy():
     return render_template_string(PRIVACY)
 
 
+# ── Блог /blog — дом контента и SEO; статьи из content/blog/*.md ──────────────────
+_BLOG_DIR = Path(__file__).resolve().parent.parent / "content" / "blog"
+
+_BLOG_CSS = (
+    " :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#7A1C2E;--muted:#6b645c;--line:#e3dccf}"
+    " *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.7}"
+    " .wrap{max-width:740px;margin:0 auto;padding:34px 22px 80px}"
+    " .top{display:flex;justify-content:space-between;align-items:center} .logo{font-size:18px} .top a{color:var(--muted);font-size:14px;text-decoration:none}"
+    " .eyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine);margin:26px 0 10px}"
+    " h1{font-weight:normal;font-size:34px;margin:0 0 10px;line-height:1.2} .lead{color:var(--muted);margin:0 0 8px;font-size:17px}"
+    " .art{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:16px}"
+    " .art:hover{border-color:#cdbfa6} .art h2{font-weight:normal;font-size:22px;margin:0 0 6px} .art .d{color:var(--muted);font-size:15px;margin:0} .art .dt{font-size:12px;color:#a89f92;letter-spacing:.08em;text-transform:uppercase}"
+    " .empty{background:#fff;border:1px solid var(--line);border-radius:14px;padding:28px 24px;margin-top:18px;color:var(--muted)}"
+    " article{font-size:18px} article h2{font-weight:normal;font-size:26px;margin:30px 0 10px} article p{margin:0 0 18px} article ul{padding-left:22px} article li{margin:6px 0} article a{color:var(--wine)}"
+    " .meta{font-size:13px;color:#a89f92;letter-spacing:.08em;text-transform:uppercase;margin:0 0 22px}"
+    " .cta{background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;margin-top:34px;text-align:center}"
+    " .cta a{display:inline-block;margin-top:12px;background:var(--wine);color:#fff;padding:13px 26px;border-radius:999px;text-decoration:none;font-size:15px}"
+)
+
+BLOG_INDEX = ("<!doctype html><html lang=ru><head><meta charset=utf-8>"
+    "<meta name=viewport content=\"width=device-width, initial-scale=1\"><title>Журнал — Чувство стиля</title>"
+    "<meta name=description content=\"Журнал «Чувство стиля»: психология стиля, стилевой разрыв, формула образа под новую роль.\">"
+    "<style>" + _BLOG_CSS + "</style></head><body><div class=wrap>"
+    "<div class=top><span class=logo>Чувство стиля</span><a href=\"/\">← на главную</a></div>"
+    "<div class=eyebrow>Журнал</div><h1>Психология стиля</h1>"
+    "<p class=lead>Не про тренды — про то, как образ совпадает с тем, кем ты стала.</p>"
+    "{% for a in articles %}<a class=art href=\"/blog/{{ a.slug }}\">"
+    "{% if a.date %}<div class=dt>{{ a.date }}</div>{% endif %}<h2>{{ a.title }}</h2>"
+    "{% if a.description %}<p class=d>{{ a.description }}</p>{% endif %}</a>{% endfor %}"
+    "{% if not articles %}<div class=empty>Здесь скоро появятся статьи. А пока — пройди бесплатную диагностику и узнай свой стилевой разрыв.<br><br>"
+    "<a href=\"/quiz\" style=\"color:var(--wine)\">Пройти диагностику →</a></div>{% endif %}"
+    "</div></body></html>")
+
+BLOG_ARTICLE = ("<!doctype html><html lang=ru><head><meta charset=utf-8>"
+    "<meta name=viewport content=\"width=device-width, initial-scale=1\"><title>{{ a.title }} — Чувство стиля</title>"
+    "{% if a.description %}<meta name=description content=\"{{ a.description }}\">{% endif %}"
+    "<style>" + _BLOG_CSS + "</style></head><body><div class=wrap>"
+    "<div class=top><span class=logo>Чувство стиля</span><a href=\"/blog\">← журнал</a></div>"
+    "<div class=eyebrow>Журнал</div><h1>{{ a.title }}</h1>"
+    "{% if a.date %}<p class=meta>{{ a.date }}</p>{% endif %}"
+    "<article>{{ a.html|safe }}</article>"
+    "<div class=cta>Хочешь понять, как твой образ считывается сейчас, и собрать стиль под новый этап?"
+    "<br><a href=\"/quiz\">Пройти бесплатную диагностику</a></div>"
+    "</div></body></html>")
+
+
+def _render_markdown(text: str) -> str:
+    """Markdown → HTML. Есть пакет markdown — полный рендер; нет — минимальный фолбэк (прод не падает)."""
+    try:
+        import markdown as _md  # type: ignore
+        return _md.markdown(text, extensions=["extra", "sane_lists"])
+    except Exception:  # noqa: BLE001 — фолбэк без зависимости
+        import html as _h
+        out = []
+        for block in text.split("\n\n"):
+            b = block.strip()
+            if not b:
+                continue
+            if b.startswith("## ") or b.startswith("# "):
+                out.append("<h2>" + _h.escape(b.lstrip("# ")) + "</h2>")
+            elif b.startswith("- "):
+                items = "".join("<li>" + _h.escape(l[2:]) + "</li>"
+                                for l in b.splitlines() if l.startswith("- "))
+                out.append("<ul>" + items + "</ul>")
+            else:
+                p = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", _h.escape(b))
+                p = re.sub(r"\[(.+?)\]\((.+?)\)", r'<a href="\2">\1</a>', p)
+                out.append("<p>" + p.replace("\n", "<br>") + "</p>")
+        return "\n".join(out)
+
+
+def _load_articles() -> list:
+    """Статьи из content/blog/*.md (frontmatter title/description/date/slug). Новые сверху."""
+    arts = []
+    if not _BLOG_DIR.exists():
+        return arts
+    for f in sorted(_BLOG_DIR.glob("*.md")):
+        if f.name.lower() == "readme.md":
+            continue
+        try:
+            raw = f.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        meta, body = {}, raw
+        if raw.startswith("---"):
+            end = raw.find("\n---", 3)
+            if end != -1:
+                for line in raw[3:end].splitlines():
+                    if ":" in line:
+                        k, _, v = line.partition(":")
+                        meta[k.strip()] = v.strip().strip('"')
+                body = raw[end + 4:].lstrip("\n")
+        arts.append({"slug": meta.get("slug") or f.stem, "title": meta.get("title") or f.stem,
+                     "description": meta.get("description", ""), "date": meta.get("date", ""), "body": body})
+    arts.sort(key=lambda a: a.get("date", ""), reverse=True)
+    return arts
+
+
+@app.get("/blog")
+def blog_index():
+    return render_template_string(BLOG_INDEX, articles=_load_articles())
+
+
+@app.get("/blog/<slug>")
+def blog_article(slug):
+    for a in _load_articles():
+        if a["slug"] == slug:
+            a = dict(a, html=_render_markdown(a["body"]))
+            return render_template_string(BLOG_ARTICLE, a=a)
+    return redirect("/blog")
+
+
 @app.get("/login")
 def login():
     nxt = _safe_next(request.args.get("next"))
