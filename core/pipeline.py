@@ -281,6 +281,41 @@ def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None
     )
 
 
+_STYLING_SYSTEM = (
+    "Ты — стилист-методолог сервиса «Чувство стиля». Покажи капсульную логику наглядно: "
+    "ОДНА базовая вещь — ДВА разных образа. Это демонстрация принципа «мало вещей — много образов».\n"
+    "Дано: Формула клиентки, палитра, фигура, список вещей капсулы. Выбери ОДНУ универсальную "
+    "базовую вещь ИЗ капсулы (брюки, юбка, тренч, рубашка, джемпер) и собери на ней ДВА контрастных "
+    "по сценарию образа — например, деловой и расслабленный выходной. Вещи бери из палитры/капсулы, "
+    "носибельно для реальной жизни, под фигуру.\n"
+    "Описания — на русском, на «ты», через психологию запроса, без восклицательных знаков и штампов.\n"
+    "image_generation_prompt — на АНГЛИЙСКОМ, конкретный (вещи, цвета, силуэт, обувь, сценарий), "
+    "для фотореалистичного рендера в полный рост.\n"
+    "Верни СТРОГО JSON: {\"base_item\":\"<вещь>\", \"idea\":\"<1 фраза: как одна вещь даёт два образа>\", "
+    "\"looks\":[{\"title\":\"<коротко>\",\"scenario\":\"<сценарий>\",\"items\":[\"<вещь>\"],"
+    "\"description\":\"<2-3 фразы>\",\"image_generation_prompt\":\"<english>\"}]} — РОВНО 2 образа в looks."
+)
+
+
+def generate_styling_pair(diagnosis: dict, capsule_items: list | None, mode: str | None = None) -> dict:
+    """Стилизация: одна базовая вещь → два образа (капсульная логика). Для Карты стиля.
+
+    Лёгкий focused-вызов (flash): надёжнее, чем тащить это в большой look-generator.
+    Возвращает {base_item, idea, looks:[{…, image_generation_prompt} x2]} для рендера на клиентке.
+    """
+    names = [it.get("name") for it in (capsule_items or []) if isinstance(it, dict) and it.get("name")]
+    payload = {
+        "style_formula_result": _diagnosis_to_formula_result(diagnosis),
+        "palette": (diagnosis.get("visual_formula") or {}).get("palette"),
+        "figure_type": diagnosis.get("figure_type"),
+        "capsule_items": names[:14],
+    }
+    return provider.chat_json(
+        config.model_for("text", mode), _STYLING_SYSTEM,
+        json.dumps(payload, ensure_ascii=False), max_tokens=2200,
+    )
+
+
 def generate_shopping_list(diagnosis: dict, capsule: dict, price_segment: str = "middle",
                            mode: str = "teaser", text_mode: str | None = None) -> dict:
     """Шаг 4. Шоп-лист + бюджет: по капсуле подбирает бренды/запросы под бюджет и фигуру.

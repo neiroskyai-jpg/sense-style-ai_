@@ -23,7 +23,8 @@ from werkzeug.utils import secure_filename
 from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_capsule, generate_card_palette,
                            generate_directions, generate_shopping_list,
-                           refine_colortype_subtype, render_look_on_client)
+                           generate_styling_pair, refine_colortype_subtype,
+                           render_look_on_client)
 from core.tracking import (count_today, progress, record_call, record_consent,
                            record_session)
 from core.auth import make_token, read_token, send_magic_link
@@ -500,6 +501,13 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .look .nm{font-size:18px;margin:3px 0 8px}
  .look .it{font-size:13.5px;color:#4a443c;margin:0 0 8px}
  .look .ds{font-size:14px;color:#5a5246}
+ .cap-h{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine);margin:18px 0 8px;font-weight:normal}
+ .caps{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+ @media(max-width:560px){.caps{grid-template-columns:1fr}}
+ .capitem{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+ .capdot{flex:none;width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.12);margin-top:3px}
+ .capitem b{font-size:14.5px;font-weight:normal} .captag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--wine);border-radius:6px;padding:1px 6px;vertical-align:middle}
+ .capwhy{font-size:12.5px;color:#7a7064}
  .shop{display:flex;flex-direction:column;gap:10px} .shopitem{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px}
  .shopname{font-size:16px;color:#2a2620} .shopwhy{font-size:13.5px;color:#5a5246;margin:3px 0 6px}
  .shoplinks{font-size:13px;color:#9a8f80} .shoplinks a{color:var(--wine);text-decoration:none}
@@ -539,16 +547,33 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if c.silhouettes %}<h2>Силуэты под твою фигуру</h2>
 <ul class=clean>{% for s in c.silhouettes %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
 
-{% if c.looks %}<h2>6 образов под твои сценарии</h2>
-<div class=looks>
- {% for lk in c.looks %}<div class=look>
-  {% if lk.img %}<img src="{{ lk.img }}" alt="Образ: {{ lk.scenario }}" style="width:100%;border-radius:10px;margin-bottom:10px;display:block">{% endif %}
-  <div class=scn>{{ lk.scenario }}</div>
-  {% if lk.name %}<div class=nm>{{ lk.name }}</div>{% endif %}
-  {% if lk['items'] %}<p class=it>{{ lk['items']|join(' · ') }}</p>{% endif %}
-  <p class=ds>{{ lk.description }}</p>
+{% if c.base_capsule %}<h2>Базовая капсула — ядро гардероба</h2>
+<p class=meta>Эти вещи — основа, всё остальное собирается вокруг них{% if c.combination_count %}: из них получается около {{ c.combination_count }} рабочих образов{% endif %}.</p>
+<div class=caps>
+ {% for it in c.base_capsule %}<div class=capitem>
+  {% if it.color and it.color.hex %}<span class=capdot style="background:{{ it.color.hex }}"></span>{% endif %}
+  <div><b>{{ it.name }}</b>{% if it.role == 'base' %} <span class=captag>база</span>{% endif %}{% if it.why %}<br><span class=capwhy>{{ it.why }}</span>{% endif %}</div>
  </div>{% endfor %}
 </div>{% endif %}
+
+{% macro lookcard(lk) %}<div class=look>
+  {% if lk.img %}<img src="{{ lk.img }}" alt="Образ" style="width:100%;border-radius:10px;margin-bottom:10px;display:block">{% endif %}
+  {% if lk.scenario %}<div class=scn>{{ lk.scenario }}</div>{% endif %}
+  {% if lk.title %}<div class=nm>{{ lk.title }}</div>{% elif lk.name %}<div class=nm>{{ lk.name }}</div>{% endif %}
+  {% if lk['items'] %}<p class=it>{{ lk['items']|join(' · ') }}</p>{% endif %}
+  {% if lk.description %}<p class=ds>{{ lk.description }}</p>{% endif %}
+ </div>{% endmacro %}
+
+{% if c.looks %}<h2>Капсулы под реальную жизнь</h2>
+<p class=meta>Образы сгруппированы по жизни — видно, как одни и те же базовые вещи работают в разных ситуациях.</p>
+{% for bucket in ['Работа','Повседневное','Выход'] %}
+ {% set bl = c.looks|selectattr('bucket','equalto',bucket)|list %}
+ {% if bl %}<h3 class=cap-h>{{ bucket }}</h3><div class=looks>{% for lk in bl %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
+{% endfor %}{% endif %}
+
+{% if c.styling and c.styling.looks %}<h2>Стилизация: одна вещь — два образа</h2>
+<p class=meta>{% if c.styling.idea %}{{ c.styling.idea }}{% else %}Одна базовая вещь{% if c.styling.base_item %} ({{ c.styling.base_item }}){% endif %} — два разных образа.{% endif %} Так работает капсула: мало вещей, много решений.</p>
+<div class=looks>{% for lk in c.styling.looks %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
 
 {% if c.shopping %}<h2>Топ покупок под твою Формулу</h2>
 <div class=shop>
@@ -823,6 +848,15 @@ def build_style_card(diag: dict) -> dict:
         shopping = generate_shopping_list(diag, capsule, price_segment="middle", mode="teaser")
     except Exception:  # noqa: BLE001
         shopping = {}
+    cap_items = (capsule.get("capsule") or {}).get("items") or []
+    styling = {}
+    try:  # стилизация: 1 вещь → 2 образа (капсульная логика) — не должна ронять карту
+        styling = generate_styling_pair(diag, cap_items, mode="dev")
+    except Exception:  # noqa: BLE001
+        styling = {}
+    looks = _ensure_n_looks(capsule.get("looks") or [], scenarios, capsule, diag)
+    for lk in looks:  # жизненная капсула: группируем сценарии в Работа/Повседневное/Выход
+        lk["bucket"] = _LIFE_BUCKET.get((lk.get("scenario") or "").strip().lower(), "Повседневное")
     protos = diag.get("prototypes") or []
     return {
         "formula": diag.get("style_formula"),
@@ -835,12 +869,24 @@ def build_style_card(diag: dict) -> dict:
         "palette": palette.get("palette") or [],
         "stop_colors": palette.get("stop_colors") or [],
         "silhouettes": vf.get("silhouettes") or [],
-        "looks": _ensure_n_looks(capsule.get("looks") or [], scenarios, capsule, diag),
+        # базовая капсула (ядро) — вещи, из которых собираются все образы
+        "base_capsule": [it for it in cap_items if isinstance(it, dict) and it.get("name")][:14],
+        "combination_count": (capsule.get("capsule") or {}).get("combination_count"),
+        "looks": looks,
+        "styling": styling,  # {base_item, idea, looks:[…x2]} — рендерятся в воркере
         "shopping": (shopping.get("shopping_items") or [])[:5],
         "budget": shopping.get("budget_estimate") or {},
         "style_reference": protos[0] if protos else None,
         "stop_list": vf.get("stop_list") or [],
     }
+
+
+# Группировка 6 сценариев в 3 жизненные капсулы (Карта стиля)
+_LIFE_BUCKET = {
+    "работа": "Работа", "деловая встреча": "Работа",
+    "повседневное": "Повседневное", "путешествие": "Повседневное",
+    "событие и выход": "Выход", "свидание": "Выход",
+}
 
 
 def _ensure_n_looks(looks: list, scenarios: list, capsule: dict, diag: dict) -> list:
@@ -904,7 +950,8 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str) -> None:
     try:
         diag = (get_profile(email) or {}).get("diagnosis") or {}
         card = build_style_card(diag)
-        looks = card.get("looks") or []
+        # рендерим 6 образов карты + 2 образа стилизации (одна вещь → два образа)
+        targets = list(card.get("looks") or []) + list((card.get("styling") or {}).get("looks") or [])
 
         def _render(lk):
             try:
@@ -912,9 +959,9 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str) -> None:
             except Exception:  # noqa: BLE001 — один неудавшийся образ не валит карту
                 return None
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(looks))) as ex:
-            imgs = list(ex.map(_render, looks))
-        for lk, img in zip(looks, imgs):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(targets))) as ex:
+            imgs = list(ex.map(_render, targets))
+        for lk, img in zip(targets, imgs):
             if img:
                 lk["img"] = img
         save_card(email, card)  # храним готовые образы, не исходное фото
