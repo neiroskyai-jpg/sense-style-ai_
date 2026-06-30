@@ -6,7 +6,7 @@
   window.__ssStylistWidget = true;
 
   var css =
-    '.ssw-btn{position:fixed;right:20px;bottom:20px;z-index:99998;display:flex;align-items:center;gap:9px;' +
+    '.ssw-btn{position:fixed;right:20px;bottom:20px;z-index:99998;width:auto;max-width:none;display:inline-flex;align-items:center;gap:9px;' +
     'background:#7A1C2E;color:#fff;border:0;border-radius:999px;padding:13px 20px;font-family:Georgia,serif;' +
     'font-size:15px;cursor:pointer;box-shadow:0 6px 22px rgba(0,0,0,.22)}' +
     '.ssw-btn:hover{opacity:.93}.ssw-btn svg{width:18px;height:18px}' +
@@ -24,7 +24,7 @@
     '.ssw-bar{border-top:1px solid #e3dccf;background:#fff;padding:10px;display:flex;gap:8px}' +
     '.ssw-bar textarea{flex:1;resize:none;border:1px solid #d9d2c7;border-radius:10px;padding:9px 11px;' +
     'font:inherit;font-size:14px;height:40px;max-height:90px}' +
-    '.ssw-bar button{background:#7A1C2E;color:#fff;border:0;border-radius:10px;padding:0 16px;font-size:16px;cursor:pointer}';
+    '.ssw-bar button{flex:none;width:auto;background:#7A1C2E;color:#fff;border:0;border-radius:10px;padding:0 16px;font-size:16px;cursor:pointer}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
   var btn = document.createElement('button');
