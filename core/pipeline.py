@@ -316,6 +316,51 @@ def generate_styling_pair(diagnosis: dict, capsule_items: list | None, mode: str
     )
 
 
+_PORTRAIT_SYSTEM = (
+    "Ты — психолог-стилист сервиса «Чувство стиля». По уровням черт Big Five (научная модель личности) "
+    "напиши ЖИВОЙ персональный портрет клиентки и связь с её стилем. БЕЗ ярлыков-архетипов "
+    "(не «ты — Королева»), без процентов и терминов Big Five — только человеческим языком про НЕЁ.\n"
+    "Тон: тёплый, на «ты», через психологию, без восклицаний и штампов (как Ксения Колупаева).\n"
+    "Свяжи личность с одеждой: как её натура хочет считываться и что это значит для образа "
+    "(силуэт, цвет, степень драмы/спокойствия, формальность). Опирайся на принцип «ценности → стиль».\n"
+    "Верни СТРОГО JSON: {\"portrait\": \"<2-4 фразы про неё, человечно>\", "
+    "\"style_implications\": [\"<вывод для стиля>\", \"<вывод>\", \"<вывод>\"]} — 3 вывода."
+)
+
+# Человеческие ярлыки уровней (для подсказки модели, не показываются клиентке)
+_TRAIT_RU = {
+    "O": ("открытость новому, любознательность, тяга к эстетике", "практичность, опора на привычное"),
+    "C": ("организованность, дисциплина, доведение до конца", "спонтанность, гибкость, лёгкость"),
+    "E": ("энергия от людей, инициатива, заметность", "сдержанность, глубина, комфорт в тишине"),
+    "A": ("забота о других, тепло, уступчивость", "автономность, прямота, опора на себя"),
+    "S": ("спокойствие, устойчивость, ровный фон", "чувствительность, эмоциональная тонкость"),
+}
+
+
+def generate_personality_portrait(traits: dict, diagnosis: dict, mode: str | None = None) -> dict:
+    """Big Five → живой персональный портрет + выводы для стиля (без архетипов-ярлыков).
+
+    traits: {O/C/E/A/S: 'high'|'mid'|'low'}. Возвращает {portrait, style_implications:[…]}.
+    """
+    hints = []
+    for k, (hi, lo) in _TRAIT_RU.items():
+        lvl = (traits or {}).get(k)
+        if lvl == "high":
+            hints.append(hi)
+        elif lvl == "low":
+            hints.append(lo)
+    payload = {
+        "trait_levels": traits,
+        "human_hints": hints,  # к чему склонна (человеческим языком)
+        "style_formula": diagnosis.get("style_formula"),
+        "want_traits": (diagnosis.get("semantic_field_distribution") or {}),
+    }
+    return provider.chat_json(
+        config.model_for("text", mode), _PORTRAIT_SYSTEM,
+        json.dumps(payload, ensure_ascii=False), max_tokens=1200,
+    )
+
+
 def generate_shopping_list(diagnosis: dict, capsule: dict, price_segment: str = "middle",
                            mode: str = "teaser", text_mode: str | None = None) -> dict:
     """Шаг 4. Шоп-лист + бюджет: по капсуле подбирает бренды/запросы под бюджет и фигуру.

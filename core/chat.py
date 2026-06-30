@@ -73,6 +73,9 @@ def _profile_block(profile: dict | None) -> str:
         lines.append(f"- Личные табу (не предлагать): {deep['taboo']}")
     if deep.get("audience"):
         lines.append(f"- Учитывает мнение: {deep['audience']} — но веди к запросу про СЕБЯ")
+    portrait = (deep.get("personality") or {}).get("portrait") or diag.get("personality_portrait")
+    if portrait:
+        lines.append(f"- Её натура (личность): {portrait}")
     if rag is not None:
         try:
             rules = rag.retrieve({

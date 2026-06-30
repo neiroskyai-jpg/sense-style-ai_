@@ -23,9 +23,9 @@ from werkzeug.utils import secure_filename
 
 from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_capsule, generate_card_palette,
-                           generate_directions, generate_shopping_list,
-                           generate_styling_pair, refine_colortype_subtype,
-                           render_look_on_client)
+                           generate_directions, generate_personality_portrait,
+                           generate_shopping_list, generate_styling_pair,
+                           refine_colortype_subtype, render_look_on_client)
 from core.tracking import (count_today, progress, record_call, record_consent,
                            record_session)
 from core.auth import make_token, read_token, send_magic_link
@@ -552,6 +552,10 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  {% if c.emphasize %}<li><b>Подчёркиваем:</b> {{ c.emphasize }} — образы строим вокруг этого</li>{% endif %}
 </ul>{% endif %}
 
+{% if c.personality and c.personality.portrait %}<h2>Твоя натура и стиль</h2>
+<p style="font-size:16px;color:#3a352e;margin:0 0 12px">{{ c.personality.portrait }}</p>
+{% if c.personality.style_implications %}<ul class=clean>{% for s in c.personality.style_implications %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}{% endif %}
+
 <h2>Твоя палитра — 30 цветов</h2>
 {% for grp, title in [('base','База и нейтрали'),('main','Основные'),('accent','Акценты')] %}
  {% set items = c.palette|selectattr('group','equalto',grp)|list %}
@@ -676,6 +680,34 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <input type=text name=taboo placeholder="например: не ношу мини, красный, каблук выше 5 см" style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
  <label>Чьё мнение учитываем в стиле? (по желанию)</label>
  <input type=text name=audience placeholder="например: никого / партнёр / дети / коллеги" style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+
+ <div class=eyebrow style="margin:26px 0 2px">Пара вопросов о тебе (по желанию)</div>
+ <p style="font-size:13px;color:var(--muted);margin:0 0 10px">По шкале: 1 — совсем не про меня, 5 — точно про меня. Это поможет собрать образы под твою натуру.</p>
+ {% for i, q in big5_questions %}
+  <div style="margin:12px 0">
+   <div style="font-size:14px">{{ q[2] }}</div>
+   <div style="display:flex;gap:16px;margin-top:6px">
+    {% for n in [1,2,3,4,5] %}<label style="font-size:13px;color:var(--muted);display:inline-flex;gap:4px;align-items:center;font-weight:normal;margin:0"><input type=radio name="b5_{{ i }}" value="{{ n }}" style="width:auto">{{ n }}</label>{% endfor %}
+   </div>
+  </div>
+ {% endfor %}
+
+ <div class=eyebrow style="margin:24px 0 2px">Твой круг жизни (по желанию)</div>
+ <p style="font-size:13px;color:var(--muted);margin:0 0 8px">Сколько примерно времени в неделю (%) — чтобы образы попали в реальную жизнь.</p>
+ <div style="display:flex;gap:10px">
+  <label style="flex:1;margin:0;font-size:13px">Работа<input type=number name=life_work min=0 max=100 placeholder="%" style="width:100%;padding:9px;border:1px solid #d9d2c7;border-radius:8px;font:inherit"></label>
+  <label style="flex:1;margin:0;font-size:13px">Дом<input type=number name=life_home min=0 max=100 placeholder="%" style="width:100%;padding:9px;border:1px solid #d9d2c7;border-radius:8px;font:inherit"></label>
+  <label style="flex:1;margin:0;font-size:13px">Свободное<input type=number name=life_free min=0 max=100 placeholder="%" style="width:100%;padding:9px;border:1px solid #d9d2c7;border-radius:8px;font:inherit"></label>
+ </div>
+
+ <label>Бюджет на обновление гардероба (по желанию)</label>
+ <select name=budget style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+  <option value="">— не важно —</option>
+  <option value="budget">Экономный</option>
+  <option value="middle">Средний</option>
+  <option value="premium">Премиум</option>
+ </select>
+
  <label class=consent style="font-weight:normal;margin-top:22px"><input type=checkbox name=consent_processing required> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
  <label class=consent style="font-weight:normal"><input type=checkbox name=consent_transfer required> Согласна на передачу фото в ИИ-сервис для генерации образов.</label>
 </div>
@@ -865,22 +897,24 @@ def build_style_card(diag: dict) -> dict:
     """Собрать продукт «Карта стиля» из Формулы: палитра 30 цветов + 6 образов + секции.
     Два текстовых вызова (палитра + капсула), без рендера картинок."""
     vf = diag.get("visual_formula") or {}
-    deep = diag.get("deep_intake") or {}  # тело+возражения из анкеты Карты
+    deep = diag.get("deep_intake") or {}  # глубокая диагностика из анкеты Карты
     taboo_items = [t.strip() for t in re.split(r"[;,]", deep.get("taboo", "")) if t.strip()]
+    price_segment = deep.get("budget") or "middle"  # из анкеты, иначе средний
     # Палитра и капсула — на flash (dev): надёжно и быстро. pro@final в проде отдаёт
     # finish_reason=error (нестабилен), поэтому для продукта НЕ используем (2026-06-29).
     palette = generate_card_palette(diag, mode="dev")
     scenarios = ["работа", "деловая встреча", "повседневное",
                  "событие и выход", "свидание", "путешествие"]
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
-               "scenarios": scenarios, "n_looks": 6, "price_segment": "middle",
+               "scenarios": scenarios, "n_looks": 6, "price_segment": price_segment,
                "taboos": taboo_items,  # что точно не носит → не предлагаем
-               "emphasize": deep.get("adv"),    # достоинство → подчеркнуть
-               "balance": deep.get("balance")}  # что уравновесить
+               "emphasize": deep.get("adv"),         # достоинство → подчеркнуть
+               "balance": deep.get("balance"),       # что уравновесить
+               "lifecircle": deep.get("lifecircle")}  # круг жизни → вес сценариев
     capsule = generate_capsule(diag, gen_req, mode="dev")
     shopping = {}
     try:  # топ покупок со ссылками — не должен ронять карту
-        shopping = generate_shopping_list(diag, capsule, price_segment="middle", mode="teaser")
+        shopping = generate_shopping_list(diag, capsule, price_segment=price_segment, mode="teaser")
     except Exception:  # noqa: BLE001
         shopping = {}
     cap_items = (capsule.get("capsule") or {}).get("items") or []
@@ -892,6 +926,12 @@ def build_style_card(diag: dict) -> dict:
     looks = _ensure_n_looks(capsule.get("looks") or [], scenarios, capsule, diag)
     for lk in looks:  # жизненная капсула: группируем сценарии в Работа/Повседневное/Выход
         lk["bucket"] = _LIFE_BUCKET.get((lk.get("scenario") or "").strip().lower(), "Повседневное")
+    personality = {}
+    if deep.get("big5"):  # личность Big Five → живой портрет (не архетип-ярлык)
+        try:
+            personality = generate_personality_portrait(deep["big5"], diag, mode="dev")
+        except Exception:  # noqa: BLE001 — портрет не должен ронять карту
+            personality = {}
     protos = diag.get("prototypes") or []
     return {
         "formula": diag.get("style_formula"),
@@ -915,19 +955,73 @@ def build_style_card(diag: dict) -> dict:
         # личные табу из анкеты добавляем в стоп-лист (без дублей)
         "stop_list": (vf.get("stop_list") or []) + [t for t in taboo_items if t not in (vf.get("stop_list") or [])],
         "emphasize": deep.get("adv"),  # достоинство — показываем в Карте «что подчёркиваем»
+        "personality": personality,  # {portrait, style_implications} или {}
     }
 
 
+# Big Five: 10 утверждений (2 на черту), шкала согласия 1..5. (черта, reverse?, текст).
+# Черта S = устойчивость (вопросы про тревожность реверсивны). Без терминов — для клиентки это «пара вопросов о тебе».
+BIG5_QUESTIONS = [
+    ("O", False, "Меня тянет к новому и необычному, люблю эксперименты"),
+    ("O", False, "Мне важны эстетика, искусство и красота вокруг"),
+    ("C", False, "Люблю порядок, планы и довожу начатое до конца"),
+    ("C", False, "Я собранная и дисциплинированная"),
+    ("E", False, "Среди людей я заряжаюсь, мне комфортно быть заметной"),
+    ("E", False, "Легко завожу разговор и проявляю инициативу"),
+    ("A", False, "Мне важно заботиться о близких и хранить тёплые отношения"),
+    ("A", False, "Я скорее уступлю, чем буду настаивать на своём"),
+    ("S", True, "Я часто тревожусь и переживаю по мелочам"),
+    ("S", True, "Меня легко выбить из равновесия"),
+]
+
+
+def _score_big5(form) -> dict:
+    """Ответы формы (b5_0..b5_9, 1..5) → уровни черт {O/C/E/A/S: high|mid|low}. Мало ответов → {}."""
+    sums, counts = {}, {}
+    for i, (trait, rev, _) in enumerate(BIG5_QUESTIONS):
+        raw = (form.get(f"b5_{i}") or "").strip()
+        if not raw.isdigit():
+            continue
+        v = int(raw)
+        if not 1 <= v <= 5:
+            continue
+        v = 6 - v if rev else v  # реверс для устойчивости
+        sums[trait] = sums.get(trait, 0) + v
+        counts[trait] = counts.get(trait, 0) + 1
+    if sum(counts.values()) < 6:  # слишком мало ответов — не считаем личность
+        return {}
+    levels = {}
+    for trait, total in sums.items():
+        avg = total / counts[trait]
+        levels[trait] = "high" if avg >= 3.7 else ("low" if avg <= 2.3 else "mid")
+    return levels
+
+
+@app.context_processor
+def _big5_ctx():  # вопросы Big Five доступны в шаблоне формы Карты
+    return {"big5_questions": list(enumerate(BIG5_QUESTIONS))}
+
+
 def _save_deep_intake(email: str, form) -> None:
-    """Тело+возражения из формы Карты (анкета курса) → в профиль (diagnosis.deep_intake).
-    Питает Формулу/стоп-лист/чат. Все поля опциональны."""
+    """Глубокая диагностика из формы Карты (анкета курса) → профиль (diagnosis.deep_intake).
+    Тело+возражения + круг жизни + бюджет + личность Big Five. Питает Формулу/стоп-лист/портрет/чат."""
     deep = {k: (form.get(k) or "").strip()[:200]
             for k in ("adv", "balance", "taboo", "audience")}
     deep = {k: v for k, v in deep.items() if v}
+    lc = {key: int(form.get("life_" + key))
+          for key in ("work", "home", "free")
+          if (form.get("life_" + key) or "").strip().isdigit()}
+    if lc:
+        deep["lifecircle"] = lc
+    if (form.get("budget") or "").strip() in ("budget", "middle", "premium"):
+        deep["budget"] = form.get("budget").strip()
+    levels = _score_big5(form)
+    if levels:
+        deep["big5"] = levels
     if not deep:
         return
     diag = (get_profile(email) or {}).get("diagnosis") or {}
-    diag["deep_intake"] = deep
+    diag["deep_intake"] = {**(diag.get("deep_intake") or {}), **deep}
     save_diagnosis(email, diag)
 
 
@@ -1015,6 +1109,11 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str) -> None:
             if img:
                 lk["img"] = img
         save_card(email, card)  # храним готовые образы, не исходное фото
+        port = (card.get("personality") or {}).get("portrait")
+        if port:  # портрет личности — в профиль, чтобы видел чат-стилист
+            d2 = (get_profile(email) or {}).get("diagnosis") or {}
+            d2["personality_portrait"] = port
+            save_diagnosis(email, d2)
         _JOBS[job_id] = {"status": "done"}
     except Exception as e:  # noqa: BLE001
         _JOBS[job_id] = {"status": "error", "error": str(e)}
