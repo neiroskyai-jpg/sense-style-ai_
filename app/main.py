@@ -609,12 +609,12 @@ def build_style_card(diag: dict) -> dict:
     """Собрать продукт «Карта стиля» из Формулы: палитра 30 цветов + 6 образов + секции.
     Два текстовых вызова (палитра + капсула), без рендера картинок."""
     vf = diag.get("visual_formula") or {}
-    palette = generate_card_palette(diag, mode="dev")
+    palette = generate_card_palette(diag, mode="final")  # платный продукт — хорошая Gemini
     scenarios = ["работа", "деловая встреча", "повседневное",
                  "событие и выход", "свидание", "путешествие"]
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
                "scenarios": scenarios, "n_looks": 6, "price_segment": "middle", "taboos": []}
-    capsule = generate_capsule(diag, gen_req, mode="dev")
+    capsule = generate_capsule(diag, gen_req, mode="final")
     looks = (capsule.get("looks") or [])[:6]
     return {
         "formula": diag.get("style_formula"),

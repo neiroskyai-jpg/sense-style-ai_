@@ -56,13 +56,15 @@ MODE = os.getenv("SENSE_MODE", "dev").lower()
 # ВНИМАНИЕ: точные слаги сверить с живым каталогом https://openrouter.ai/models.
 # При неверном слаге OpenRouter вернёт 404 — это и есть точка исправления.
 MODELS = {
+    # стек на Gemini: dev — flash (дёшево, хороший русский), final — 2.5-pro (качество для продукта).
+    # final-слаг можно сменить на gemini-3-pro, когда подтвердим в каталоге OpenRouter.
     "vision": {
         "dev": "google/gemini-2.5-flash",
-        "final": "anthropic/claude-sonnet-4.6",
+        "final": "google/gemini-2.5-pro",
     },
     "text": {
-        "dev": "deepseek/deepseek-chat",
-        "final": "anthropic/claude-sonnet-4.6",
+        "dev": "google/gemini-2.5-flash",
+        "final": "google/gemini-2.5-pro",
     },
     "image": {
         # Seedream на OpenRouter недоступна → работаем на Gemini/GPT image
