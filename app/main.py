@@ -486,7 +486,7 @@ ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=card><h3>Профиль «Примерочной» {% if has_style %}<span class="badge yes">заполнен</span>{% else %}<span class="badge no">не заполнен</span>{% endif %}</h3>
  <p>Линии, ДНК стиля и анти-гардероб — чтобы проверка вещей работала мгновенно.</p></div>
 <div class=links>
- {% if has_diag %}<a class=btn href="/card">Открыть Карту стиля</a>{% else %}<a class=btn href="/identity-scan-quiz.html">Пройти диагностику</a>{% endif %}
+ {% if has_diag %}<a class=btn href="/card">Открыть Карту стиля</a>{% else %}<a class=btn href="/identity-scan-quiz.html?fresh=1">Пройти диагностику</a>{% endif %}
  <a class="btn sec" href="/garment">Проверить вещь</a>
  <a class="btn sec" href="/stylist">Спросить стилиста</a>
 </div>
@@ -811,7 +811,7 @@ def _safe_next(url: str | None) -> str | None:
 @app.get("/demo")
 def demo():
     # Единая диагностика — это КВИЗ. /demo больше не дублирует форму, ведём на квиз.
-    return redirect("/identity-scan-quiz.html")
+    return redirect("/identity-scan-quiz.html?fresh=1")
 
 
 @app.get("/privacy")
@@ -1142,7 +1142,7 @@ def style_card():
     prof = get_profile(email)
     diag = prof.get("diagnosis") or {}
     if not diag.get("style_formula"):
-        return redirect("/identity-scan-quiz.html")  # сначала нужна диагностика (квиз)
+        return redirect("/identity-scan-quiz.html?fresh=1")  # сначала нужна диагностика (квиз)
     card = prof.get("card") or {}
     if card and not request.args.get("rebuild") and not request.args.get("text"):
         return render_template_string(STYLE_CARD, c=card, name=email)
@@ -1167,7 +1167,7 @@ def card_build():
         return redirect("/login")
     diag = (get_profile(email) or {}).get("diagnosis") or {}
     if not diag.get("style_formula"):
-        return redirect("/identity-scan-quiz.html")
+        return redirect("/identity-scan-quiz.html?fresh=1")
     if not _quota_left():
         return render_template_string(CARD_BUILD_FORM, error="Лимит на сегодня исчерпан."), 429
     if not _consent_ok(request.form):
