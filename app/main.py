@@ -617,7 +617,6 @@ def build_style_card(diag: dict) -> dict:
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
                "scenarios": scenarios, "n_looks": 6, "price_segment": "middle", "taboos": []}
     capsule = generate_capsule(diag, gen_req, mode="dev")
-    looks = (capsule.get("looks") or [])[:6]
     return {
         "formula": diag.get("style_formula"),
         "gap": diag.get("gap_percentage"),
@@ -625,11 +624,46 @@ def build_style_card(diag: dict) -> dict:
         "palette": palette.get("palette") or [],
         "stop_colors": palette.get("stop_colors") or [],
         "silhouettes": vf.get("silhouettes") or [],
-        "looks": [{"scenario": lk.get("scenario"), "name": lk.get("name"),
-                   "items": lk.get("items"), "description": lk.get("description", "")}
-                  for lk in looks],
+        "looks": _ensure_n_looks(capsule.get("looks") or [], scenarios, capsule, diag),
         "stop_list": vf.get("stop_list") or [],
     }
+
+
+def _ensure_n_looks(looks: list, scenarios: list, capsule: dict, diag: dict) -> list:
+    """Гарантия ровно по одному образу на каждый сценарий (LLM иногда отдаёт меньше).
+    Переиспользуем образы LLM, лишние переназначаем на пустые сценарии, недостающие
+    дособираем из вещей капсулы — без дополнительных вызовов модели."""
+    def _norm(s):
+        return (s or "").strip().lower()
+
+    by_scn, extras = {}, []
+    for lk in looks:
+        scn = _norm(lk.get("scenario"))
+        match = next((s for s in scenarios if _norm(s) in scn or scn in _norm(s)), None)
+        if match and match not in by_scn:
+            by_scn[match] = lk
+        else:
+            extras.append(lk)
+
+    items = [it.get("name") for it in ((capsule.get("capsule") or {}).get("items") or [])
+             if it.get("name")]
+    sils = (diag.get("visual_formula") or {}).get("silhouettes") or []
+    formula = diag.get("style_formula") or "твоя Формула стиля"
+
+    out = []
+    for s in scenarios:
+        if s in by_scn:
+            lk = by_scn[s]
+        elif extras:
+            lk = dict(extras.pop(0))
+            lk["scenario"] = s  # переназначаем лишний образ на пустой сценарий
+        else:  # досборка из капсулы (детерминированно, без вызова)
+            lk = {"scenario": s, "name": None, "items": (items or sils)[:4],
+                  "description": f"Образ под сценарий «{s}» в формуле «{formula}» — "
+                                 f"собран из ключевых вещей твоей капсулы."}
+        out.append({"scenario": s, "name": lk.get("name"),
+                    "items": lk.get("items"), "description": lk.get("description", "")})
+    return out
 
 
 @app.get("/card")
