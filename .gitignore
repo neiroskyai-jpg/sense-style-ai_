@@ -48,3 +48,10 @@ web/**/*.doc
 web/**/*.xlsx
 web/index-collage-backup.html
 web/index-dwp-backup.html
+
+# Курс (raw-inbox/course): исходные видео и временный звук НЕ коммитим;
+# транскрипты (.txt/.srt) и ключевые кадры слайдов (.png) — коммитим.
+architecture/reference/raw-inbox/course/inbox/*
+!architecture/reference/raw-inbox/course/inbox/.gitkeep
+architecture/reference/raw-inbox/course/**/*.wav
+!architecture/reference/raw-inbox/course/slides/**/*.png
