@@ -74,9 +74,9 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label>Фото (портрет/в полный рост)</label><input type=file name=photo accept="image/*" required>
  <label>Рост, см</label><input type=number name=height value=168>
  <label>Возраст</label><input type=number name=age value=38>
- <label>Чем занимаешься</label><input name=profession value="руководитель отдела">
- <label>Как тебя считывают сейчас (через запятую)</label><input name=now_traits value="сдержанная, простая, незаметная">
- <label>Как хочешь, чтобы считывали — топ-3</label><input name=want_traits value="властная, элегантная, статусная">
+ <label>Чем занимаешься</label><input name=profession placeholder="например: руководитель отдела">
+ <label>Как тебя считывают сейчас (через запятую)</label><input name=now_traits required placeholder="например: сдержанная, простая, незаметная">
+ <label>Как хочешь, чтобы считывали — топ-3 (через запятую)</label><input name=want_traits required placeholder="например: уверенная, элегантная, тёплая">
  <p class=hint style="margin:16px 0 0">Цветотип, контраст и силуэт фигуры ИИ определит сам по фото — указывать не нужно.</p>
  <label>Сегмент бюджета</label>
  <select name=price>
@@ -114,10 +114,17 @@ RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <p>{{ dna }}</p>
 <p class=meta>Цветотип: {{ colortype }} · Фигура: {{ figure }} · В капсуле {{ items }} вещей.</p>
 <h2>Ты в новых образах</h2>
+<p class=meta>Это короткое превью — 2 образа. Полная Карта стиля собирает палитру из 30 цветов, силуэты, стоп-лист и 6 образов под твои сценарии, с PDF к шкафу.</p>
 <div class=looks>
  {% for lk in looks %}
  <div class=look><img src="{{ lk.img }}"><p class=desc>{{ lk.desc }}</p></div>
  {% endfor %}
+</div>
+<div style="margin-top:34px;padding-top:22px;border-top:1px solid #d9d2c7">
+ <h2 style="margin:0 0 12px">Что дальше</h2>
+ <a href="/card" style="display:inline-block;background:var(--wine);color:#fff;text-decoration:none;padding:14px 26px;border-radius:8px;font-size:16px;margin:0 10px 10px 0">Собрать полную Карту стиля →</a>
+ <a href="/garment" style="display:inline-block;background:#fff;color:var(--wine);border:1px solid var(--wine);text-decoration:none;padding:14px 26px;border-radius:8px;font-size:16px;margin:0 10px 10px 0">Проверить вещь по фото</a>
+ <a href="/me" style="display:inline-block;color:var(--muted);text-decoration:none;padding:14px 0;font-size:15px">Мой профиль</a>
 </div></body></html>"""
 
 
@@ -629,10 +636,9 @@ def build_style_card(diag: dict) -> dict:
     """Собрать продукт «Карта стиля» из Формулы: палитра 30 цветов + 6 образов + секции.
     Два текстовых вызова (палитра + капсула), без рендера картинок."""
     vf = diag.get("visual_formula") or {}
-    # Палитра — на pro (final): колорист, где нюанс цвета важнее всего (~40с, max_tokens 8000,
-    # карта кэшируется → один раз). Капсула — на flash (dev): большой промпт style-library +
-    # pro = таймаут; flash быстр, образы качественные (проверено вживую 2026-06-29).
-    palette = generate_card_palette(diag, mode="final")
+    # Палитра и капсула — на flash (dev): надёжно и быстро. pro@final в проде отдаёт
+    # finish_reason=error (нестабилен), поэтому для продукта НЕ используем (2026-06-29).
+    palette = generate_card_palette(diag, mode="dev")
     scenarios = ["работа", "деловая встреча", "повседневное",
                  "событие и выход", "свидание", "путешествие"]
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
