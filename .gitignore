@@ -55,3 +55,11 @@ architecture/reference/raw-inbox/course/inbox/*
 !architecture/reference/raw-inbox/course/inbox/.gitkeep
 architecture/reference/raw-inbox/course/**/*.wav
 !architecture/reference/raw-inbox/course/slides/**/*.png
+
+# Купленный «Скилл статей» (лицензия запрещает публикацию) + личные образцы голоса
+statejnik/
+statejnik/voice-samples/
+
+# Образцы голоса — личные тексты не коммитим (README оставляем)
+voice-samples/*
+!voice-samples/README.md

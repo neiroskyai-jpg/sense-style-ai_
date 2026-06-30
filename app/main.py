@@ -814,6 +814,12 @@ def demo():
     return redirect("/identity-scan-quiz.html?fresh=1")
 
 
+@app.get("/quiz")
+def quiz_short():
+    # Короткий путь для статей/воронки (cta_url из «Скилла статей») → диагностика-квиз.
+    return redirect("/identity-scan-quiz.html?fresh=1")
+
+
 @app.get("/privacy")
 def privacy():
     return render_template_string(PRIVACY)
