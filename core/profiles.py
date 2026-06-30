@@ -23,8 +23,13 @@ def _conn(db_path: Path = DB_PATH) -> sqlite3.Connection:
         " email TEXT PRIMARY KEY,"
         " style_profile TEXT,"   # JSON: анкета Примерочной (линии/ДНК/анти-гардероб)
         " diagnosis TEXT,"       # JSON: последняя Формула стиля
+        " card TEXT,"            # JSON: собранная «Карта стиля» (кэш)
         " updated_at TEXT)"
     )
+    # миграция: добавить колонку card в существующую БД, если её нет
+    cols = {r[1] for r in con.execute("PRAGMA table_info(profiles)").fetchall()}
+    if "card" not in cols:
+        con.execute("ALTER TABLE profiles ADD COLUMN card TEXT")
     return con
 
 
@@ -38,13 +43,14 @@ def get_profile(email: str, db_path: Path = DB_PATH) -> dict:
         return {}
     with _conn(db_path) as con:
         row = con.execute(
-            "SELECT style_profile, diagnosis FROM profiles WHERE email=?", (_norm(email),)
+            "SELECT style_profile, diagnosis, card FROM profiles WHERE email=?", (_norm(email),)
         ).fetchone()
     if not row:
         return {}
     return {
         "style_profile": json.loads(row[0]) if row[0] else {},
         "diagnosis": json.loads(row[1]) if row[1] else {},
+        "card": json.loads(row[2]) if row[2] else {},
     }
 
 
@@ -68,3 +74,8 @@ def save_style_profile(email: str, style_profile: dict, db_path: Path = DB_PATH)
 def save_diagnosis(email: str, diagnosis: dict, db_path: Path = DB_PATH) -> None:
     if _norm(email):
         _upsert(email, "diagnosis", diagnosis, db_path)
+
+
+def save_card(email: str, card: dict, db_path: Path = DB_PATH) -> None:
+    if _norm(email):
+        _upsert(email, "card", card, db_path)

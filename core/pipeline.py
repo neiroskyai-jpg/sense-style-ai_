@@ -212,6 +212,46 @@ def generate_directions(diagnosis: dict, quiz: dict | None = None,
     return (result.get("directions") or [])[:2]
 
 
+_PALETTE_SYSTEM = """Ты — колорист Sense Style. На вход — цветотип и тональные параметры клиентки. \
+Собери РАСШИРЕННУЮ персональную палитру СТРОГО под её цветотип: ровно 30 цветов, плюс стоп-цвета.
+
+Правила:
+- 30 цветов делятся: ~10 базовых/нейтралей, ~14 основных, ~6 акцентных.
+- Каждый цвет — реальный, носибельный оттенок под её подтон/светлоту/контраст, с корректным hex.
+- НЕ включай табу-цвета и цвета вне её цветотипа — они идут в stop_colors с короткой причиной.
+- Названия по-русски, тёплым языком (например «тёплый графит», «пыльная роза», «сливочный»).
+
+Верни ТОЛЬКО валидный JSON:
+{
+  "palette": [
+    {"name": "<рус. имя>", "hex": "#RRGGBB", "group": "<base | main | accent>"}
+    // ровно 30 элементов
+  ],
+  "stop_colors": [
+    {"name": "<рус. имя>", "hex": "#RRGGBB", "why": "<почему гасит, 3-6 слов>"}
+    // 4-6 элементов
+  ]
+}"""
+
+
+def generate_card_palette(diagnosis: dict, mode: str | None = None) -> dict:
+    """Палитра 30 цветов + стоп-цвета под цветотип (для продукта «Карта стиля»).
+
+    Один текстовый вызов, grounded в цветотипе/тоне. Возвращает {palette[], stop_colors[]}.
+    """
+    vf = diagnosis.get("visual_formula") or {}
+    payload = {
+        "colortype": diagnosis.get("colortype"),
+        "tonal_characteristics": diagnosis.get("tonal_characteristics"),
+        "base_palette": vf.get("palette"),
+        "stop_list": vf.get("stop_list"),
+    }
+    return provider.chat_json(
+        config.model_for("text", mode), _PALETTE_SYSTEM,
+        json.dumps(payload, ensure_ascii=False), max_tokens=2600,
+    )
+
+
 def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None = None) -> dict:
     """Шаг 3. Капсула: Формула стиля + запрос → капсула вещей + образы с промптами для генерации.
 

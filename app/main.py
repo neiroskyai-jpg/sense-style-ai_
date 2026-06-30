@@ -20,12 +20,14 @@ from PIL import Image, UnidentifiedImageError
 from werkzeug.utils import secure_filename
 
 from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
-                           generate_capsule, generate_directions,
-                           refine_colortype_subtype, render_look_on_client)
+                           generate_capsule, generate_card_palette,
+                           generate_directions, refine_colortype_subtype,
+                           render_look_on_client)
 from core.tracking import (count_today, progress, record_call, record_consent,
                            record_session)
 from core.auth import make_token, read_token, send_magic_link
-from core.profiles import get_profile, save_diagnosis, save_style_profile
+from core.profiles import (get_profile, save_card, save_diagnosis,
+                           save_style_profile)
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"  # дизайнерский сайт (статика)
@@ -453,9 +455,82 @@ ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=card><h3>Профиль «Примерочной» {% if has_style %}<span class="badge yes">заполнен</span>{% else %}<span class="badge no">не заполнен</span>{% endif %}</h3>
  <p>Линии, ДНК стиля и анти-гардероб — чтобы проверка вещей работала мгновенно.</p></div>
 <div class=links>
- <a class=btn href="/demo">Пройти диагностику</a>
+ {% if has_diag %}<a class=btn href="/card">Открыть Карту стиля</a>{% else %}<a class=btn href="/demo">Пройти диагностику</a>{% endif %}
  <a class="btn sec" href="/garment">Проверить вещь</a>
 </div>
+</div></body></html>"""
+
+
+STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Карта стиля{% if name %} — {{ name }}{% endif %}</title>
+<style>
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
+ *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ .wrap{max-width:760px;margin:0 auto;padding:30px 24px 80px}
+ .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+ .bar a,.bar button{color:var(--wine);font:inherit;font-size:14px;background:none;border:0;cursor:pointer;text-decoration:none}
+ .eyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine)}
+ h1{font-weight:normal;font-size:38px;margin:6px 0 2px} .who{color:var(--muted);margin:0 0 6px}
+ h2{font-weight:normal;font-size:22px;margin:34px 0 12px;border-bottom:1px solid var(--line);padding-bottom:6px}
+ .formula{font-size:22px;margin:2px 0} .gap{color:var(--wine);font-weight:bold}
+ .dna{font-size:16px;line-height:1.65}
+ .sw-group{font-size:13px;color:var(--muted);margin:14px 0 6px;letter-spacing:.04em;text-transform:uppercase}
+ .swatches{display:flex;flex-wrap:wrap;gap:10px}
+ .sw{width:84px} .sw .chip{height:54px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
+ .sw .nm{font-size:11.5px;color:#4a443c;margin-top:4px;line-height:1.25}
+ .stopcolors .chip{height:40px;border-radius:8px} .stopcolors .nm b{color:#9b3030}
+ ul.clean{list-style:none;padding:0;margin:0} ul.clean li{padding:6px 0 6px 18px;position:relative;font-size:15.5px}
+ ul.clean li:before{content:'·';position:absolute;left:4px;color:var(--wine)}
+ .stop li:before{content:'✕';font-size:11px;color:#c07a6a}
+ .looks{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+ @media(max-width:560px){.looks{grid-template-columns:1fr}}
+ .look{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+ .look .scn{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--wine)}
+ .look .nm{font-size:18px;margin:3px 0 8px}
+ .look .it{font-size:13.5px;color:#4a443c;margin:0 0 8px}
+ .look .ds{font-size:14px;color:#5a5246}
+ .print{display:block;margin:30px auto 0;background:var(--wine);color:#fff;border:0;border-radius:10px;padding:14px 26px;font:inherit;font-size:16px;cursor:pointer}
+ @media print{.bar,.print{display:none} body{background:#fff} .wrap{max-width:none;padding:0} .look{break-inside:avoid}}
+</style></head><body><div class=wrap>
+<div class=bar><a href="/me">← мой профиль</a><a href="/card?refresh=1">пересобрать</a></div>
+
+<div class=eyebrow>Карта стиля</div>
+<h1>Твоя Формула</h1>
+{% if name %}<p class=who>для {{ name }}</p>{% endif %}
+<p class=formula><b>{{ c.formula }}</b></p>
+{% if c.gap is not none %}<p>Identity Gap: <span class=gap>{{ c.gap }}%</span> — разрыв между тем, как тебя считывают и как ты хочешь.</p>{% endif %}
+{% if c.dna %}<p class=dna>{{ c.dna }}</p>{% endif %}
+
+<h2>Твоя палитра — 30 цветов</h2>
+{% for grp, title in [('base','База и нейтрали'),('main','Основные'),('accent','Акценты')] %}
+ {% set items = c.palette|selectattr('group','equalto',grp)|list %}
+ {% if items %}<div class=sw-group>{{ title }}</div><div class=swatches>
+  {% for p in items %}<div class=sw><div class=chip style="background:{{ p.hex }}"></div><div class=nm>{{ p.name }}</div></div>{% endfor %}
+ </div>{% endif %}
+{% endfor %}
+
+{% if c.stop_colors %}<h2>Стоп-цвета — что тебя гасит</h2>
+<div class="swatches stopcolors">
+ {% for p in c.stop_colors %}<div class=sw><div class=chip style="background:{{ p.hex }}"></div><div class=nm><b>{{ p.name }}</b><br>{{ p.why }}</div></div>{% endfor %}
+</div>{% endif %}
+
+{% if c.silhouettes %}<h2>Силуэты под твою фигуру</h2>
+<ul class=clean>{% for s in c.silhouettes %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
+
+{% if c.looks %}<h2>6 образов под твои сценарии</h2>
+<div class=looks>
+ {% for lk in c.looks %}<div class=look>
+  <div class=scn>{{ lk.scenario }}</div>
+  {% if lk.name %}<div class=nm>{{ lk.name }}</div>{% endif %}
+  {% if lk['items'] %}<p class=it>{{ lk['items']|join(' · ') }}</p>{% endif %}
+  <p class=ds>{{ lk.description }}</p>
+ </div>{% endfor %}
+</div>{% endif %}
+
+{% if c.stop_list %}<h2>Стоп-лист — что не носить</h2>
+<ul class="clean stop">{% for s in c.stop_list %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
+
+<button class=print onclick="window.print()">Скачать PDF к шкафу</button>
 </div></body></html>"""
 
 
@@ -524,10 +599,59 @@ def me():
     prof = get_profile(email)
     diag = prof.get("diagnosis") or {}
     return render_template_string(
-        ME_PAGE, email=email, has_diag=bool(diag),
+        ME_PAGE, email=email, has_diag=bool(diag.get("style_formula")),
         formula=diag.get("style_formula", ""),
         has_style=bool(prof.get("style_profile")),
     )
+
+
+def build_style_card(diag: dict) -> dict:
+    """Собрать продукт «Карта стиля» из Формулы: палитра 30 цветов + 6 образов + секции.
+    Два текстовых вызова (палитра + капсула), без рендера картинок."""
+    vf = diag.get("visual_formula") or {}
+    palette = generate_card_palette(diag, mode="dev")
+    scenarios = ["работа", "деловая встреча", "повседневное",
+                 "событие и выход", "свидание", "путешествие"]
+    gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
+               "scenarios": scenarios, "n_looks": 6, "price_segment": "middle", "taboos": []}
+    capsule = generate_capsule(diag, gen_req, mode="dev")
+    looks = (capsule.get("looks") or [])[:6]
+    return {
+        "formula": diag.get("style_formula"),
+        "gap": diag.get("gap_percentage"),
+        "dna": diag.get("dna_explanation", ""),
+        "palette": palette.get("palette") or [],
+        "stop_colors": palette.get("stop_colors") or [],
+        "silhouettes": vf.get("silhouettes") or [],
+        "looks": [{"scenario": lk.get("scenario"), "name": lk.get("name"),
+                   "items": lk.get("items"), "description": lk.get("description", "")}
+                  for lk in looks],
+        "stop_list": vf.get("stop_list") or [],
+    }
+
+
+@app.get("/card")
+def style_card():
+    """Продукт «Карта стиля» — для вошедшей клиентки с готовой Формулой. Кэшируется в профиле."""
+    email = session.get("email")
+    if not email:
+        return redirect("/login")
+    prof = get_profile(email)
+    diag = prof.get("diagnosis") or {}
+    if not diag.get("style_formula"):
+        return redirect("/demo")  # сначала нужна диагностика
+    card = prof.get("card") or {}
+    if not card or request.args.get("refresh"):
+        if not _quota_left():
+            return render_template_string(LOGIN_PAGE, error="Демо-лимит на сегодня исчерпан.",
+                                          sent=False, email=email, dev_link=None), 429
+        record_call()
+        try:
+            card = build_style_card(diag)
+            save_card(email, card)
+        except Exception as e:  # noqa: BLE001
+            return f"Не удалось собрать карту: {e}", 500
+    return render_template_string(STYLE_CARD, c=card, name=email)
 
 
 # карта вердикта/совпадений → русские подписи, цвет и иконка
