@@ -609,12 +609,14 @@ def build_style_card(diag: dict) -> dict:
     """Собрать продукт «Карта стиля» из Формулы: палитра 30 цветов + 6 образов + секции.
     Два текстовых вызова (палитра + капсула), без рендера картинок."""
     vf = diag.get("visual_formula") or {}
-    palette = generate_card_palette(diag, mode="final")  # платный продукт — хорошая Gemini
+    # gemini-2.5-flash (mode dev): быстро (~8с) и полный JSON. Pro («думающая») не годится
+    # для структурированной генерации — медленно (~90с) и обрезает JSON (проверено вживую).
+    palette = generate_card_palette(diag, mode="dev")
     scenarios = ["работа", "деловая встреча", "повседневное",
                  "событие и выход", "свидание", "путешествие"]
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
                "scenarios": scenarios, "n_looks": 6, "price_segment": "middle", "taboos": []}
-    capsule = generate_capsule(diag, gen_req, mode="final")
+    capsule = generate_capsule(diag, gen_req, mode="dev")
     looks = (capsule.get("looks") or [])[:6]
     return {
         "formula": diag.get("style_formula"),
