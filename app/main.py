@@ -833,43 +833,61 @@ def privacy():
 # ── Блог /blog — дом контента и SEO; статьи из content/blog/*.md ──────────────────
 _BLOG_DIR = Path(__file__).resolve().parent.parent / "content" / "blog"
 
+_BLOG_FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">'
+    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+    '<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;1,6..96,400&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">')
+
 _BLOG_CSS = (
-    " :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#7A1C2E;--muted:#6b645c;--line:#e3dccf}"
-    " *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.7}"
-    " .wrap{max-width:740px;margin:0 auto;padding:34px 22px 80px}"
-    " .top{display:flex;justify-content:space-between;align-items:center} .logo{font-size:18px} .top a{color:var(--muted);font-size:14px;text-decoration:none}"
-    " .eyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine);margin:26px 0 10px}"
-    " h1{font-weight:normal;font-size:34px;margin:0 0 10px;line-height:1.2} .lead{color:var(--muted);margin:0 0 8px;font-size:17px}"
-    " .art{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:16px}"
-    " .art:hover{border-color:#cdbfa6} .art h2{font-weight:normal;font-size:22px;margin:0 0 6px} .art .d{color:var(--muted);font-size:15px;margin:0} .art .dt{font-size:12px;color:#a89f92;letter-spacing:.08em;text-transform:uppercase}"
-    " .empty{background:#fff;border:1px solid var(--line);border-radius:14px;padding:28px 24px;margin-top:18px;color:var(--muted)}"
-    " article{font-size:18px} article h2{font-weight:normal;font-size:26px;margin:30px 0 10px} article p{margin:0 0 18px} article ul{padding-left:22px} article li{margin:6px 0} article a{color:var(--wine)}"
-    " .meta{font-size:13px;color:#a89f92;letter-spacing:.08em;text-transform:uppercase;margin:0 0 22px}"
-    " .cta{background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;margin-top:34px;text-align:center}"
-    " .cta a{display:inline-block;margin-top:12px;background:var(--wine);color:#fff;padding:13px 26px;border-radius:999px;text-decoration:none;font-size:15px}"
+    ":root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#7A1C2E;--muted:#6b645c;--line:#e3dccf;--ph:#e9e0d0}"
+    "*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Onest,Georgia,serif;line-height:1.6}"
+    ".wrap{max-width:1040px;margin:0 auto;padding:28px 22px 90px}.artwrap{max-width:720px}"
+    ".top{display:flex;justify-content:space-between;align-items:center}.logo{font-family:'Bodoni Moda',serif;font-size:20px}.top a{color:var(--muted);font-size:14px;text-decoration:none}"
+    ".eyebrow{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--wine);margin:30px 0 8px}"
+    "h1.jt{font-family:'Bodoni Moda',serif;font-weight:500;font-size:46px;line-height:1.05;margin:0 0 10px}"
+    ".lead{color:var(--muted);font-size:17px;margin:0 0 26px;max-width:580px}"
+    ".chip{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine);background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 12px;margin-bottom:10px}"
+    ".feat{display:block;text-decoration:none;color:inherit;margin-top:8px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#fff}"
+    ".feat .cov{aspect-ratio:16/7;background-size:cover;background-position:center;background-color:var(--ph)}"
+    ".feat .body{padding:22px 26px 26px}.feat h2{font-family:'Bodoni Moda',serif;font-weight:500;font-size:32px;line-height:1.1;margin:0 0 8px}.feat p{color:var(--muted);font-size:16px;margin:0}"
+    ".grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:24px}"
+    "@media(max-width:680px){.grid{grid-template-columns:1fr}h1.jt{font-size:36px}.feat h2{font-size:26px}}"
+    ".card{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff}"
+    ".card:hover{border-color:#cdbfa6}.card .cov{aspect-ratio:3/2;background-size:cover;background-position:center;background-color:var(--ph)}"
+    ".card .body{padding:16px 18px 18px}.card h3{font-family:'Bodoni Moda',serif;font-weight:500;font-size:21px;line-height:1.15;margin:0 0 6px}.card p{color:var(--muted);font-size:14.5px;margin:0}"
+    ".empty{background:#fff;border:1px solid var(--line);border-radius:16px;padding:34px;margin-top:18px;color:var(--muted)}"
+    ".hero{aspect-ratio:16/8;background-size:cover;background-position:center;background-color:var(--ph);border-radius:18px;margin:6px 0 28px}"
+    "article{font-size:18px;line-height:1.75}article h2{font-family:'Bodoni Moda',serif;font-weight:500;font-size:28px;margin:34px 0 12px}article p{margin:0 0 20px}article ul{padding-left:20px}article li{margin:7px 0}article a{color:var(--wine)}article img{max-width:100%;border-radius:12px;margin:12px 0}"
+    ".meta{font-size:13px;color:#a89f92;letter-spacing:.06em;text-transform:uppercase;margin:0 0 22px}"
+    ".cta{background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px;margin-top:40px;text-align:center;font-size:17px}"
+    ".cta a{display:inline-block;margin-top:14px;background:var(--wine);color:#fff;padding:14px 30px;border-radius:999px;text-decoration:none}"
 )
 
 BLOG_INDEX = ("<!doctype html><html lang=ru><head><meta charset=utf-8>"
     "<meta name=viewport content=\"width=device-width, initial-scale=1\"><title>Журнал — Чувство стиля</title>"
-    "<meta name=description content=\"Журнал «Чувство стиля»: психология стиля, стилевой разрыв, формула образа под новую роль.\">"
-    "<style>" + _BLOG_CSS + "</style></head><body><div class=wrap>"
+    "<meta name=description content=\"Журнал «Чувство стиля»: психология стиля, цвет, силуэт, капсула, образ под новую роль.\">"
+    + _BLOG_FONTS + "<style>" + _BLOG_CSS + "</style></head><body><div class=wrap>"
     "<div class=top><span class=logo>Чувство стиля</span><a href=\"/\">← на главную</a></div>"
-    "<div class=eyebrow>Журнал</div><h1>Психология стиля</h1>"
-    "<p class=lead>Не про тренды — про то, как образ совпадает с тем, кем ты стала.</p>"
-    "{% for a in articles %}<a class=art href=\"/blog/{{ a.slug }}\">"
-    "{% if a.date %}<div class=dt>{{ a.date }}</div>{% endif %}<h2>{{ a.title }}</h2>"
-    "{% if a.description %}<p class=d>{{ a.description }}</p>{% endif %}</a>{% endfor %}"
-    "{% if not articles %}<div class=empty>Здесь скоро появятся статьи. А пока — пройди бесплатную диагностику и узнай свой стилевой разрыв.<br><br>"
+    "<div class=eyebrow>Журнал</div><h1 class=jt>Психология стиля</h1>"
+    "<p class=lead>Не про тренды. Про то, как образ совпадает с тем, кем ты стала: цвет, силуэт, капсула, роль.</p>"
+    "{% if articles %}{% set f = articles[0] %}"
+    "<a class=feat href=\"/blog/{{ f.slug }}\"><div class=cov style=\"{% if f.cover %}background-image:url('{{ f.cover }}'){% endif %}\"></div>"
+    "<div class=body>{% if f.category %}<span class=chip>{{ f.category }}</span>{% endif %}<h2>{{ f.title }}</h2>{% if f.description %}<p>{{ f.description }}</p>{% endif %}</div></a>"
+    "{% if articles[1:] %}<div class=grid>{% for a in articles[1:] %}"
+    "<a class=card href=\"/blog/{{ a.slug }}\"><div class=cov style=\"{% if a.cover %}background-image:url('{{ a.cover }}'){% endif %}\"></div>"
+    "<div class=body>{% if a.category %}<span class=chip>{{ a.category }}</span>{% endif %}<h3>{{ a.title }}</h3>{% if a.description %}<p>{{ a.description }}</p>{% endif %}</div></a>"
+    "{% endfor %}</div>{% endif %}"
+    "{% else %}<div class=empty>Здесь скоро появятся статьи. А пока — пройди бесплатную диагностику и узнай свой стилевой разрыв.<br><br>"
     "<a href=\"/quiz\" style=\"color:var(--wine)\">Пройти диагностику →</a></div>{% endif %}"
     "</div></body></html>")
 
 BLOG_ARTICLE = ("<!doctype html><html lang=ru><head><meta charset=utf-8>"
     "<meta name=viewport content=\"width=device-width, initial-scale=1\"><title>{{ a.title }} — Чувство стиля</title>"
     "{% if a.description %}<meta name=description content=\"{{ a.description }}\">{% endif %}"
-    "<style>" + _BLOG_CSS + "</style></head><body><div class=wrap>"
+    + _BLOG_FONTS + "<style>" + _BLOG_CSS + "</style></head><body><div class=\"wrap artwrap\">"
     "<div class=top><span class=logo>Чувство стиля</span><a href=\"/blog\">← журнал</a></div>"
-    "<div class=eyebrow>Журнал</div><h1>{{ a.title }}</h1>"
+    "<div class=eyebrow>{% if a.category %}{{ a.category }}{% else %}Журнал{% endif %}</div><h1 class=jt>{{ a.title }}</h1>"
     "{% if a.date %}<p class=meta>{{ a.date }}</p>{% endif %}"
+    "{% if a.cover %}<div class=hero style=\"background-image:url('{{ a.cover }}')\"></div>{% endif %}"
     "<article>{{ a.html|safe }}</article>"
     "<div class=cta>Хочешь понять, как твой образ считывается сейчас, и собрать стиль под новый этап?"
     "<br><a href=\"/quiz\">Пройти бесплатную диагностику</a></div>"
@@ -923,7 +941,8 @@ def _load_articles() -> list:
                         meta[k.strip()] = v.strip().strip('"')
                 body = raw[end + 4:].lstrip("\n")
         arts.append({"slug": meta.get("slug") or f.stem, "title": meta.get("title") or f.stem,
-                     "description": meta.get("description", ""), "date": meta.get("date", ""), "body": body})
+                     "description": meta.get("description", ""), "date": meta.get("date", ""),
+                     "category": meta.get("category", ""), "cover": meta.get("cover", ""), "body": body})
     arts.sort(key=lambda a: a.get("date", ""), reverse=True)
     return arts
 
