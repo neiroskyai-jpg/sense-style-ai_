@@ -71,7 +71,7 @@
   }
   function open() {
     panel.style.display = 'flex'; btn.style.display = 'none';
-    if (!history.length) add('assistant', 'Привет. Я твой стилист — подскажу, что тебе работает, и куда двигаться. Спроси что угодно про образ, или напиши «с чего начать».');
+    if (!history.length) add('assistant', 'Привет. Я твой стилист. Помогу одеваться так, чтобы тебя считывали той, кем ты себя ощущаешь — а не той, кем привыкли видеть. С чем хочешь разобраться?');
     inp.focus();
   }
   function close() { panel.style.display = 'none'; btn.style.display = 'flex'; }

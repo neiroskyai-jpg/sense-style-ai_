@@ -698,7 +698,7 @@ function sendMsg(){var inp=document.getElementById('inp');var t=inp.value.trim()
    var rep=d.reply||'Не получилось ответить, попробуй ещё раз.';add('assistant',rep);history.push({role:'assistant',content:rep});})
   .catch(function(){tip.remove();add('assistant','Связь прервалась — попробуй ещё раз.');});}
 document.getElementById('inp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
-add('assistant','Привет. Я твой стилист — помогу понять, что тебе работает, и подскажу следующий шаг. Спроси что угодно про образ, или напиши «с чего начать».');
+add('assistant','Привет. Я твой стилист. Помогу одеваться так, чтобы тебя считывали той, кем ты себя ощущаешь — а не той, кем привыкли видеть. С чем хочешь разобраться?');
 </script>
 </body></html>"""
 
