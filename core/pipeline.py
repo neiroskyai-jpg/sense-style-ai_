@@ -31,22 +31,28 @@ def refine_colortype_subtype(diagnosis: dict, photo_path: str) -> dict:
     пикселям ненадёжен (его оставляем LLM/Vision = СЕЗОН), а контраст устойчив → ставит ПОДТИП.
     Любая ошибка — возвращаем диагноз как есть, чтобы не ронять генерацию.
     """
-    if analyze_colortype is None:
-        return diagnosis
     ct = diagnosis.get("colortype")
     season = ct.split("_")[0] if isinstance(ct, str) and "_" in ct else ""
     if season not in _SEASONS:
         return diagnosis
-    try:
-        level = analyze_colortype(photo_path).measurements.get("contrast_level")
-        sub = _CONTRAST_SUBTYPE.get(level)
-        if not sub:
-            return diagnosis
-        diagnosis = dict(diagnosis)
-        diagnosis["colortype"] = f"{season}_{sub}"
-        diagnosis["colortype_subtype_source"] = "measured_contrast"
-    except Exception:  # noqa: BLE001
-        pass
+    # 1) измеренный контраст «кожа↔волосы» (надёжнее);
+    level, source = None, "measured_contrast"
+    if analyze_colortype is not None:
+        try:
+            level = analyze_colortype(photo_path).measurements.get("contrast_level")
+        except Exception:  # noqa: BLE001
+            level = None
+    # 2) фолбэк: контраст из диагностики (LLM) — чтобы ПОДТИП не противоречил контрасту
+    #    (раньше при неудачном замере оставался подтип LLM: «высокий контраст» + «светлая»).
+    if level not in _CONTRAST_SUBTYPE:
+        level = (diagnosis.get("tonal_characteristics") or {}).get("contrast")
+        source = "diagnosis_contrast"
+    sub = _CONTRAST_SUBTYPE.get(level)
+    if not sub:
+        return diagnosis
+    diagnosis = dict(diagnosis)
+    diagnosis["colortype"] = f"{season}_{sub}"
+    diagnosis["colortype_subtype_source"] = source
     return diagnosis
 
 
