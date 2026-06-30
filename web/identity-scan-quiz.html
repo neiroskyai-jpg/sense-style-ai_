@@ -1535,7 +1535,7 @@ body {
     <div class="cta-eyebrow">Следующий шаг</div>
     <div class="cta-title" id="r-cta-title"></div>
     <div class="cta-desc" id="r-cta-desc"></div>
-    <a class="btn-cta" id="r-cta-btn" href="index.html#tiers">Получить полную Формулу стиля · 3 900 ₽ →</a>
+    <a class="btn-cta" id="r-cta-btn" href="/card">Получить полную Карту стиля · 3 900 ₽ →</a>
     <button class="btn-restart" onclick="restart()">Пройти квиз заново</button>
   </div>
 
@@ -2212,6 +2212,10 @@ function buildResult() {
   };
   document.getElementById('r-cta-desc').textContent = ctaDescByLevel[level];
 
+  // кнопка ведёт на сборку Карты стиля; привязываем серверную диагностику по job_id
+  var ctaBtn = document.getElementById('r-cta-btn');
+  if (ctaBtn) ctaBtn.href = currentJobId ? '/card?from_job=' + currentJobId : '/card';
+
   renderAIResult();
 
   // Сохраняем готовый результат — перезагрузка вернёт сюда, а не на старт квиза
@@ -2335,6 +2339,7 @@ function handleQuizUpload(file) {
 // Реальная генерация: фото -> /api/analyze -> образы клиентки в её Формуле
 let aiLooks = null;
 let aiResult = null;   // полный ответ сервера: directions[] + explain{} + looks[]
+let currentJobId = null;   // id серверной диагностики — привязываем к аккаунту при сборке карты
 
 // ── Состояние генерации в sessionStorage: перезагрузка не сбрасывает на старт квиза ──
 const SS_JOB_KEY = 'ssQuizJob';
@@ -2367,7 +2372,7 @@ function generateLooks(file) {
   fetch('/api/analyze', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(d => {
-      if (d && d.job_id) { persistJob({ status: 'pending', jobId: d.job_id, answers }); pollResult(d.job_id, 0); }
+      if (d && d.job_id) { currentJobId = d.job_id; persistJob({ status: 'pending', jobId: d.job_id, answers }); pollResult(d.job_id, 0); }
       else buildResult();
     })
     .catch(() => buildResult());

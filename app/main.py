@@ -13,6 +13,7 @@ import os
 import threading
 import uuid
 from pathlib import Path
+from urllib.parse import quote
 
 from flask import (Flask, jsonify, redirect, render_template_string, request,
                    session, send_from_directory)
@@ -430,6 +431,7 @@ LOGIN_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  {% if dev_link %}<div class=devlink>Демо-режим (почта не настроена) — ссылка для входа:<br><a href="{{ dev_link }}">{{ dev_link }}</a></div>{% endif %}
 {% else %}
  <form method=post action="/login" class=card>
+  <input type=hidden name=next value="{{ next or '' }}">
   <label>Email</label><input type=email name=email required placeholder="anna@example.com" value="{{ email or '' }}">
   <button>Получить ссылку для входа</button>
  </form>
@@ -462,7 +464,7 @@ ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=card><h3>Профиль «Примерочной» {% if has_style %}<span class="badge yes">заполнен</span>{% else %}<span class="badge no">не заполнен</span>{% endif %}</h3>
  <p>Линии, ДНК стиля и анти-гардероб — чтобы проверка вещей работала мгновенно.</p></div>
 <div class=links>
- {% if has_diag %}<a class=btn href="/card">Открыть Карту стиля</a>{% else %}<a class=btn href="/demo">Пройти диагностику</a>{% endif %}
+ {% if has_diag %}<a class=btn href="/card">Открыть Карту стиля</a>{% else %}<a class=btn href="/identity-scan-quiz.html">Пройти диагностику</a>{% endif %}
  <a class="btn sec" href="/garment">Проверить вещь</a>
 </div>
 </div></body></html>"""
@@ -664,9 +666,17 @@ def landing():
     return send_from_directory(str(WEB_DIR), "index.html")
 
 
+def _safe_next(url: str | None) -> str | None:
+    """Локальный путь для редиректа после входа (защита от open redirect)."""
+    if url and url.startswith("/") and not url.startswith("//"):
+        return url
+    return None
+
+
 @app.get("/demo")
 def demo():
-    return render_template_string(FORM, error=None)
+    # Единая диагностика — это КВИЗ. /demo больше не дублирует форму, ведём на квиз.
+    return redirect("/identity-scan-quiz.html")
 
 
 @app.get("/privacy")
@@ -676,22 +686,27 @@ def privacy():
 
 @app.get("/login")
 def login():
+    nxt = _safe_next(request.args.get("next"))
     if session.get("email"):
-        return redirect("/me")
-    return render_template_string(LOGIN_PAGE, error=None, sent=False, email="", dev_link=None)
+        return redirect(nxt or "/me")
+    return render_template_string(LOGIN_PAGE, error=None, sent=False, email="",
+                                  dev_link=None, next=nxt or "")
 
 
 @app.post("/login")
 def login_send():
     email = (request.form.get("email") or "").strip()
+    nxt = _safe_next(request.form.get("next"))
     if "@" not in email or "." not in email:
         return render_template_string(LOGIN_PAGE, error="Введи корректный email.",
-                                      sent=False, email=email, dev_link=None), 400
+                                      sent=False, email=email, dev_link=None, next=nxt or ""), 400
+    if nxt:
+        session["next_url"] = nxt  # вернёмся сюда после клика по ссылке входа
     link = request.url_root.rstrip("/") + "/auth?token=" + make_token(email)
     sent = send_magic_link(email, link)
     # если почта не настроена (dev) — показываем ссылку прямо на странице, чтобы можно было войти
     return render_template_string(LOGIN_PAGE, error=None, sent=True, email=email,
-                                  dev_link=None if sent else link)
+                                  dev_link=None if sent else link, next=nxt or "")
 
 
 @app.get("/auth")
@@ -700,10 +715,10 @@ def auth_verify():
     if not email:
         return render_template_string(
             LOGIN_PAGE, error="Ссылка недействительна или устарела — запроси новую.",
-            sent=False, email="", dev_link=None), 400
+            sent=False, email="", dev_link=None, next=""), 400
     session["email"] = email
     session.permanent = True
-    return redirect("/me")
+    return redirect(_safe_next(session.pop("next_url", None)) or "/me")
 
 
 @app.get("/logout")
@@ -853,12 +868,18 @@ def style_card():
     """Карта стиля. Готовая (кэш) → показываем; иначе форма загрузки фото для сборки.
     ?text=1 — собрать без образов (только текст, синхронно); ?rebuild=1 — пересобрать."""
     email = session.get("email")
-    if not email:
-        return redirect("/login")
+    if not email:  # не вошла → на регистрацию, потом вернёмся сюда (с from_job)
+        return redirect("/login?next=" + quote(request.full_path))
+    # привязка диагностики из квиза (анонимный прошёл квиз → зарегистрировался → сюда)
+    from_job = request.args.get("from_job")
+    if from_job:
+        job_diag = (_JOBS.get(from_job) or {}).get("diag")
+        if job_diag:
+            save_diagnosis(email, job_diag)
     prof = get_profile(email)
     diag = prof.get("diagnosis") or {}
     if not diag.get("style_formula"):
-        return redirect("/demo")  # сначала нужна диагностика
+        return redirect("/identity-scan-quiz.html")  # сначала нужна диагностика (квиз)
     card = prof.get("card") or {}
     if card and not request.args.get("rebuild") and not request.args.get("text"):
         return render_template_string(STYLE_CARD, c=card, name=email)
@@ -883,7 +904,7 @@ def card_build():
         return redirect("/login")
     diag = (get_profile(email) or {}).get("diagnosis") or {}
     if not diag.get("style_formula"):
-        return redirect("/demo")
+        return redirect("/identity-scan-quiz.html")
     if not _quota_left():
         return render_template_string(CARD_BUILD_FORM, error="Лимит на сегодня исчерпан."), 429
     if not _consent_ok(request.form):
@@ -1254,7 +1275,7 @@ def _job_worker(job_id: str, photo_path: Path, quiz: dict, client: str,
                 save_diagnosis(account_email, diag)
             except Exception:  # noqa: BLE001
                 pass
-        _JOBS[job_id] = {"status": "done", "result": {
+        _JOBS[job_id] = {"status": "done", "diag": diag, "result": {
             "gap_percentage": diag.get("gap_percentage"),
             "style_formula": diag.get("style_formula"),
             "colortype": diag.get("colortype"),
@@ -1297,8 +1318,9 @@ def api_analyze():
 
 @app.get("/api/result/<job_id>")
 def api_result(job_id):
-    """Статус/результат фоновой генерации."""
-    return jsonify(_JOBS.get(job_id) or {"status": "unknown"})
+    """Статус/результат фоновой генерации (без внутреннего diag — он только на сервере)."""
+    j = _JOBS.get(job_id) or {"status": "unknown"}
+    return jsonify({k: v for k, v in j.items() if k != "diag"})
 
 
 @app.get("/healthz")
