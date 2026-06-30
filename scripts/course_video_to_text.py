@@ -21,8 +21,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-# ── ПАРАМЕТРЫ (правь тут) ─────────────────────────────────────────────────────
-SCENE_THRESHOLD = 0.3          # порог смены кадра для выемки слайдов (0..1, выше = реже)
+# ── ПАРАМЕТРЫ (правь тут или через env) ───────────────────────────────────────
+SCENE_THRESHOLD = float(os.environ.get("SCENE_THRESHOLD", "0.3"))  # смена слайда (0..1)
+# SLIDES_ONLY=1 → только ключевые кадры (без модели/транскрипции; не нужно скачивать 3 ГБ):
+SLIDES_ONLY = bool(os.environ.get("SLIDES_ONLY"))
 WHISPER_MODEL = "large-v3"     # точная для русского; "medium" — быстрее, но грубее
 COMPUTE_TYPE = "int8"          # CPU-режим; на GPU можно "float16"
 DEVICE = "cpu"                 # нет CUDA → cpu
@@ -140,6 +142,26 @@ def main() -> None:
                     if p.is_file() and p.suffix.lower() in VIDEO_EXTS)
     if not videos:
         print(f"В inbox нет видео ({', '.join(VIDEO_EXTS)}). Положи файлы в:\n  {INBOX}")
+        return
+
+    # Режим «только кадры» — без модели и без скачивания 3 ГБ (для разбора слайдов).
+    if SLIDES_ONLY:
+        processed, skipped = 0, 0
+        for video in videos:
+            name = "_".join(video.relative_to(INBOX).with_suffix("").parts)
+            sdir = SLIDES / name
+            if sdir.exists() and any(sdir.glob("slide_*.png")):
+                print(f"  ↷ пропуск (кадры есть): {video.name}")
+                skipped += 1
+                continue
+            print(f"  ▶ кадры: {video.name}")
+            try:
+                frames = extract_keyframes(ffmpeg, video, sdir)
+                print(f"    ✓ кадров слайдов: {frames}")
+                processed += 1
+            except Exception as e:  # noqa: BLE001
+                print(f"    ✗ ошибка на {video.name}: {e}")
+        print(f"\n[SLIDES_ONLY] кадры: обработано {processed}, пропущено {skipped} → {SLIDES}")
         return
 
     # модель грузим ОДИН раз (первый запуск качает large-v3 ~3 ГБ)
