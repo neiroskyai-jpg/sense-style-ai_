@@ -530,8 +530,28 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if c.stop_list %}<h2>Стоп-лист — что не носить</h2>
 <ul class="clean stop">{% for s in c.stop_list %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
 
-<button class=print onclick="window.print()">Скачать PDF к шкафу</button>
-</div></body></html>"""
+<button class=print id=pdfbtn onclick="downloadPdf()">Скачать PDF к шкафу</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+function downloadPdf(){
+  var btn=document.getElementById('pdfbtn'); var bar=document.querySelector('.bar');
+  btn.textContent='Готовлю файл…'; btn.disabled=true;
+  if(bar) bar.style.visibility='hidden'; btn.style.visibility='hidden';
+  var opt={margin:[10,10,12,10], filename:'Карта-стиля.pdf', image:{type:'jpeg',quality:0.96},
+    html2canvas:{scale:2,useCORS:true,backgroundColor:'#F5EFE3'},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+    pagebreak:{mode:['css','legacy'],avoid:'.look'}};
+  html2pdf().set(opt).from(document.querySelector('.wrap')).save().then(function(){
+    if(bar) bar.style.visibility='visible'; btn.style.visibility='visible';
+    btn.textContent='Скачать PDF к шкафу'; btn.disabled=false;
+  }).catch(function(){
+    if(bar) bar.style.visibility='visible'; btn.style.visibility='visible';
+    btn.textContent='Скачать PDF к шкафу'; btn.disabled=false;
+  });
+}
+</script>
+</body></html>"""
 
 
 def _split(s: str) -> list[str]:
@@ -609,9 +629,10 @@ def build_style_card(diag: dict) -> dict:
     """Собрать продукт «Карта стиля» из Формулы: палитра 30 цветов + 6 образов + секции.
     Два текстовых вызова (палитра + капсула), без рендера картинок."""
     vf = diag.get("visual_formula") or {}
-    # gemini-2.5-flash (mode dev): быстро (~8с) и полный JSON. Pro («думающая») не годится
-    # для структурированной генерации — медленно (~90с) и обрезает JSON (проверено вживую).
-    palette = generate_card_palette(diag, mode="dev")
+    # Палитра — на pro (final): колорист, где нюанс цвета важнее всего (~40с, max_tokens 8000,
+    # карта кэшируется → один раз). Капсула — на flash (dev): большой промпт style-library +
+    # pro = таймаут; flash быстр, образы качественные (проверено вживую 2026-06-29).
+    palette = generate_card_palette(diag, mode="final")
     scenarios = ["работа", "деловая встреча", "повседневное",
                  "событие и выход", "свидание", "путешествие"]
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",

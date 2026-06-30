@@ -246,9 +246,11 @@ def generate_card_palette(diagnosis: dict, mode: str | None = None) -> dict:
         "base_palette": vf.get("palette"),
         "stop_list": vf.get("stop_list"),
     }
+    # max_tokens большой: pro («думающая») тратит часть на reasoning — при низком лимите
+    # обрезает JSON (вернёт <30 цветов). 8000 хватает и pro, и flash.
     return provider.chat_json(
         config.model_for("text", mode), _PALETTE_SYSTEM,
-        json.dumps(payload, ensure_ascii=False), max_tokens=2600,
+        json.dumps(payload, ensure_ascii=False), max_tokens=8000,
     )
 
 
