@@ -32,9 +32,15 @@ VIDEO_EXTS = (".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v")
 
 ROOT = Path(__file__).resolve().parent.parent
 COURSE = ROOT / "architecture" / "reference" / "raw-inbox" / "course"
-INBOX = COURSE / "inbox"
+# Видео можно держать НЕ на диске проекта (если C переполнен / это OneDrive):
+#   задай папку через env COURSE_INBOX, напр.  set COURSE_INBOX=D:\course-video
+INBOX = Path(os.environ["COURSE_INBOX"]) if os.environ.get("COURSE_INBOX") else COURSE / "inbox"
+# Лёгкий результат (текст + кадры) всегда в проект:
 TRANSCRIPTS = COURSE / "transcripts"
 SLIDES = COURSE / "slides"
+# Куда качать модель Whisper (~3 ГБ). По умолчанию — кэш HF; можно увести на другой диск:
+#   set WHISPER_MODEL_DIR=D:\whisper-models
+MODEL_DIR = os.environ.get("WHISPER_MODEL_DIR") or None
 
 
 # ── Поиск ffmpeg/ffprobe (PATH может не обновиться после установки) ────────────
@@ -139,7 +145,8 @@ def main() -> None:
     print(f"Загружаю модель Whisper '{WHISPER_MODEL}' ({DEVICE}/{COMPUTE_TYPE})… "
           "первый раз это скачивание ~3 ГБ.")
     from faster_whisper import WhisperModel
-    model = WhisperModel(WHISPER_MODEL, device=DEVICE, compute_type=COMPUTE_TYPE)
+    model = WhisperModel(WHISPER_MODEL, device=DEVICE, compute_type=COMPUTE_TYPE,
+                         download_root=MODEL_DIR)
 
     processed, skipped = 0, 0
     for video in videos:
