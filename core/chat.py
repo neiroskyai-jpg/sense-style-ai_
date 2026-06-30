@@ -64,6 +64,15 @@ def _profile_block(profile: dict | None) -> str:
     vf = diag.get("visual_formula") or {}
     if vf.get("stop_list"):
         lines.append("- Стоп-лист: " + ", ".join(vf["stop_list"][:5]))
+    deep = diag.get("deep_intake") or {}  # тело+возражения из анкеты Карты
+    if deep.get("adv"):
+        lines.append(f"- Подчёркиваем достоинство: {deep['adv']}")
+    if deep.get("balance"):
+        lines.append(f"- Хочет уравновесить: {deep['balance']}")
+    if deep.get("taboo"):
+        lines.append(f"- Личные табу (не предлагать): {deep['taboo']}")
+    if deep.get("audience"):
+        lines.append(f"- Учитывает мнение: {deep['audience']} — но веди к запросу про СЕБЯ")
     if rag is not None:
         try:
             rules = rag.retrieve({

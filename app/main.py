@@ -10,6 +10,7 @@ import concurrent.futures
 import io
 import json
 import os
+import re
 import threading
 import uuid
 from pathlib import Path
@@ -548,6 +549,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <ul class=clean>
  {% if c.colortype %}<li><b>Цветотип:</b> {{ c.colortype }}{% if c.contrast %} · контраст {{ c.contrast }}{% endif %} — на нём строится палитра ниже</li>{% endif %}
  {% if c.figure %}<li><b>Фигура:</b> {{ c.figure }} — под неё силуэты и образы</li>{% endif %}
+ {% if c.emphasize %}<li><b>Подчёркиваем:</b> {{ c.emphasize }} — образы строим вокруг этого</li>{% endif %}
 </ul>{% endif %}
 
 <h2>Твоя палитра — 30 цветов</h2>
@@ -665,7 +667,16 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=card>
  <label>Фото (в полный рост)</label>
  <div class=file><input type=file name=photo accept="image/*" required></div>
- <label class=consent style="font-weight:normal"><input type=checkbox name=consent_processing required> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
+ <div class=eyebrow style="margin:24px 0 2px">Чтобы Карта была точнее (по желанию)</div>
+ <label>Что в твоей внешности тебе нравится больше всего — что подчеркнём?</label>
+ <input type=text name=adv placeholder="например: длинные ноги, талия, плечи, шея" style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+ <label>Что хочешь визуально уравновесить?</label>
+ <input type=text name=balance placeholder="например: сбалансировать бёдра и плечи" style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+ <label>Стильные табу — что точно не носишь?</label>
+ <input type=text name=taboo placeholder="например: не ношу мини, красный, каблук выше 5 см" style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+ <label>Чьё мнение учитываем в стиле? (по желанию)</label>
+ <input type=text name=audience placeholder="например: никого / партнёр / дети / коллеги" style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+ <label class=consent style="font-weight:normal;margin-top:22px"><input type=checkbox name=consent_processing required> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
  <label class=consent style="font-weight:normal"><input type=checkbox name=consent_transfer required> Согласна на передачу фото в ИИ-сервис для генерации образов.</label>
 </div>
  <button>Собрать Карту стиля →</button>
@@ -854,13 +865,18 @@ def build_style_card(diag: dict) -> dict:
     """Собрать продукт «Карта стиля» из Формулы: палитра 30 цветов + 6 образов + секции.
     Два текстовых вызова (палитра + капсула), без рендера картинок."""
     vf = diag.get("visual_formula") or {}
+    deep = diag.get("deep_intake") or {}  # тело+возражения из анкеты Карты
+    taboo_items = [t.strip() for t in re.split(r"[;,]", deep.get("taboo", "")) if t.strip()]
     # Палитра и капсула — на flash (dev): надёжно и быстро. pro@final в проде отдаёт
     # finish_reason=error (нестабилен), поэтому для продукта НЕ используем (2026-06-29).
     palette = generate_card_palette(diag, mode="dev")
     scenarios = ["работа", "деловая встреча", "повседневное",
                  "событие и выход", "свидание", "путешествие"]
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
-               "scenarios": scenarios, "n_looks": 6, "price_segment": "middle", "taboos": []}
+               "scenarios": scenarios, "n_looks": 6, "price_segment": "middle",
+               "taboos": taboo_items,  # что точно не носит → не предлагаем
+               "emphasize": deep.get("adv"),    # достоинство → подчеркнуть
+               "balance": deep.get("balance")}  # что уравновесить
     capsule = generate_capsule(diag, gen_req, mode="dev")
     shopping = {}
     try:  # топ покупок со ссылками — не должен ронять карту
@@ -896,8 +912,23 @@ def build_style_card(diag: dict) -> dict:
         "shopping": (shopping.get("shopping_items") or [])[:5],
         "budget": shopping.get("budget_estimate") or {},
         "style_reference": protos[0] if protos else None,
-        "stop_list": vf.get("stop_list") or [],
+        # личные табу из анкеты добавляем в стоп-лист (без дублей)
+        "stop_list": (vf.get("stop_list") or []) + [t for t in taboo_items if t not in (vf.get("stop_list") or [])],
+        "emphasize": deep.get("adv"),  # достоинство — показываем в Карте «что подчёркиваем»
     }
+
+
+def _save_deep_intake(email: str, form) -> None:
+    """Тело+возражения из формы Карты (анкета курса) → в профиль (diagnosis.deep_intake).
+    Питает Формулу/стоп-лист/чат. Все поля опциональны."""
+    deep = {k: (form.get(k) or "").strip()[:200]
+            for k in ("adv", "balance", "taboo", "audience")}
+    deep = {k: v for k, v in deep.items() if v}
+    if not deep:
+        return
+    diag = (get_profile(email) or {}).get("diagnosis") or {}
+    diag["deep_intake"] = deep
+    save_diagnosis(email, diag)
 
 
 # Группировка 6 сценариев в 3 жизненные капсулы (Карта стиля)
@@ -1045,6 +1076,7 @@ def card_build():
         photo_path = _validate_and_save(request.files.get("photo"))
     except ValueError as e:
         return render_template_string(CARD_BUILD_FORM, error=str(e)), 400
+    _save_deep_intake(email, request.form)  # тело+возражения из анкеты → в Формулу/стоп-лист/чат
     record_call()
     job_id = uuid.uuid4().hex
     _JOBS[job_id] = {"status": "processing"}
