@@ -53,6 +53,25 @@ def _cors(resp):  # чтобы статический квиз с Vercel мог 
     resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
     return resp
 
+
+# Виджет чат-стилиста на ВСЕ HTML-страницы (кроме самого чата и логина) — одной инъекцией,
+# чтобы не дублировать <script> в каждом шаблоне. Уже включающие виджет (лендинг/квиз) пропускаем.
+_WIDGET_SKIP = {"/stylist", "/login"}
+
+
+@app.after_request
+def _inject_widget(resp):
+    try:
+        ct = resp.content_type or ""
+        if ct.startswith("text/html") and request.path not in _WIDGET_SKIP:
+            body = resp.get_data(as_text=True)
+            if "</body>" in body and "stylist-widget.js" not in body:
+                resp.set_data(body.replace(
+                    "</body>", '<script src="/stylist-widget.js" defer></script></body>', 1))
+    except Exception:  # noqa: BLE001 — инъекция не должна ронять ответ
+        pass
+    return resp
+
 FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Sense Style AI</title>
