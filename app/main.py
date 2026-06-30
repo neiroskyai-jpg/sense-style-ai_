@@ -27,6 +27,7 @@ from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
 from core.tracking import (count_today, progress, record_call, record_consent,
                            record_session)
 from core.auth import make_token, read_token, send_magic_link
+from core.chat import stylist_reply
 from core.profiles import (get_profile, save_card, save_diagnosis,
                            save_style_profile)
 
@@ -466,6 +467,7 @@ ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=links>
  {% if has_diag %}<a class=btn href="/card">Открыть Карту стиля</a>{% else %}<a class=btn href="/identity-scan-quiz.html">Пройти диагностику</a>{% endif %}
  <a class="btn sec" href="/garment">Проверить вещь</a>
+ <a class="btn sec" href="/stylist">Спросить стилиста</a>
 </div>
 </div></body></html>"""
 
@@ -657,6 +659,50 @@ setTimeout(poll, 3000);
 </div></body></html>"""
 
 
+STYLIST_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Стилист — Чувство стиля</title>
+<style>
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
+ *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);height:100vh;display:flex;flex-direction:column}
+ .top{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);background:#fff}
+ .top .logo{font-size:17px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
+ .feed{flex:1;overflow-y:auto;padding:20px;max-width:720px;width:100%;margin:0 auto}
+ .msg{margin:10px 0;display:flex} .msg .b{padding:11px 15px;border-radius:14px;font-size:15.5px;line-height:1.5;max-width:80%}
+ .msg.u{justify-content:flex-end} .msg.u .b{background:var(--wine);color:#fff;border-bottom-right-radius:4px}
+ .msg.a .b{background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+ .typing{color:var(--muted);font-size:14px;padding:0 4px}
+ .bar{border-top:1px solid var(--line);background:#fff;padding:12px 16px}
+ .bar .in{max-width:720px;margin:0 auto;display:flex;gap:10px}
+ textarea{flex:1;resize:none;border:1px solid #d9d2c7;border-radius:10px;padding:11px 13px;font:inherit;font-size:15px;height:46px;max-height:120px}
+ .bar button{background:var(--wine);color:#fff;border:0;border-radius:10px;padding:0 20px;font:inherit;font-size:15px;cursor:pointer}
+ .hint{max-width:720px;margin:8px auto 0;color:var(--muted);font-size:12px;text-align:center}
+</style></head><body>
+<div class=top><span class=logo>Чувство стиля · стилист</span><a href="/me">← профиль</a></div>
+<div class=feed id=feed></div>
+<div class=bar><div class=in>
+ <textarea id=inp placeholder="Спроси: что надеть на встречу? идёт ли мне это пальто? с чего начать?"></textarea>
+ <button id=send onclick=sendMsg()>→</button>
+</div><div class=hint>Стилист опирается на твою Формулу стиля и методологию. Не виртуальная примерка — живой совет.</div></div>
+<script>
+var history=[];
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function add(role,text){var f=document.getElementById('feed');var d=document.createElement('div');
+ d.className='msg '+(role==='user'?'u':'a');d.innerHTML='<div class=b>'+esc(text).replace(/\\n/g,'<br>')+'</div>';
+ f.appendChild(d);f.scrollTop=f.scrollHeight;return d;}
+function sendMsg(){var inp=document.getElementById('inp');var t=inp.value.trim();if(!t)return;
+ inp.value='';add('user',t);history.push({role:'user',content:t});
+ var tip=document.createElement('div');tip.className='msg a';tip.innerHTML='<div class="b typing">печатает…</div>';
+ document.getElementById('feed').appendChild(tip);
+ fetch('/stylist/msg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({history:history})})
+  .then(function(r){return r.json();}).then(function(d){tip.remove();
+   var rep=d.reply||'Не получилось ответить, попробуй ещё раз.';add('assistant',rep);history.push({role:'assistant',content:rep});})
+  .catch(function(){tip.remove();add('assistant','Связь прервалась — попробуй ещё раз.');});}
+document.getElementById('inp').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
+add('assistant','Привет. Я твой стилист — помогу понять, что тебе работает, и подскажу следующий шаг. Спроси что угодно про образ, или напиши «с чего начать».');
+</script>
+</body></html>"""
+
+
 def _split(s: str) -> list[str]:
     return [x.strip() for x in (s or "").split(",") if x.strip()]
 
@@ -739,6 +785,25 @@ def me():
         formula=diag.get("style_formula", ""),
         has_style=bool(prof.get("style_profile")),
     )
+
+
+@app.get("/stylist")
+def stylist_page():
+    return render_template_string(STYLIST_PAGE)
+
+
+@app.post("/stylist/msg")
+def stylist_msg():
+    """Один ход диалога со стилистом. Контекст — Формула вошедшей клиентки + RAG."""
+    data = request.get_json(silent=True) or {}
+    history = data.get("history") if isinstance(data.get("history"), list) else []
+    email = session.get("email")
+    profile = get_profile(email) if email else None
+    try:
+        reply = stylist_reply(history, profile, mode="dev")
+    except Exception as e:  # noqa: BLE001
+        return jsonify({"error": str(e), "reply": "Сейчас не получилось ответить — попробуй ещё раз."}), 200
+    return jsonify({"reply": reply})
 
 
 def build_style_card(diag: dict) -> dict:

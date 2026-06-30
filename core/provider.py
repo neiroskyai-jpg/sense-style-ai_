@@ -92,6 +92,22 @@ def chat(model: str, system: str, content, max_tokens: int = 2048,
     return content
 
 
+def chat_messages(model: str, messages: list[dict], max_tokens: int = 700) -> str:
+    """Многоходовой диалог: messages = [{role, content}, …] (system + история). Вернёт текст."""
+    body = {"model": model, "max_tokens": max_tokens, "messages": messages}
+    r = requests.post(
+        f"{config.OPENROUTER_BASE_URL}/chat/completions",
+        headers=_headers(), json=body, timeout=_TIMEOUT,
+    )
+    if r.status_code >= 400:
+        raise RuntimeError(f"OpenRouter {r.status_code}: {r.text[:500]}")
+    choice = r.json()["choices"][0]
+    content = choice["message"].get("content")
+    if not content or not content.strip():
+        raise RuntimeError(f"Модель {model} вернула пустой ответ (finish_reason={choice.get('finish_reason')}).")
+    return content
+
+
 def generate_image(prompt: str, model: str | None = None, ref_images=None) -> list[str]:
     """Генерация изображения через OpenRouter (Seedream / Nano Banana).
 
