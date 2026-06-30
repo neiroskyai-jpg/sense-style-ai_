@@ -508,6 +508,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if c.gap is not none %}<p>Identity Gap: <span class=gap>{{ c.gap }}%</span> — разрыв между тем, как тебя считывают и как ты хочешь.</p>{% endif %}
 {% if c.dna %}<p class=dna>{{ c.dna }}</p>{% endif %}
 
+{% if c.colortype or c.figure %}<h2>Твоя основа</h2>
+<ul class=clean>
+ {% if c.colortype %}<li><b>Цветотип:</b> {{ c.colortype }}{% if c.contrast %} · контраст {{ c.contrast }}{% endif %} — на нём строится палитра ниже</li>{% endif %}
+ {% if c.figure %}<li><b>Фигура:</b> {{ c.figure }} — под неё силуэты и образы</li>{% endif %}
+</ul>{% endif %}
+
 <h2>Твоя палитра — 30 цветов</h2>
 {% for grp, title in [('base','База и нейтрали'),('main','Основные'),('accent','Акценты')] %}
  {% set items = c.palette|selectattr('group','equalto',grp)|list %}
@@ -648,6 +654,10 @@ def build_style_card(diag: dict) -> dict:
         "formula": diag.get("style_formula"),
         "gap": diag.get("gap_percentage"),
         "dna": diag.get("dna_explanation", ""),
+        # основа — определяется в диагностике ДО цветов/образов (цветотип → палитра, фигура → силуэты)
+        "colortype": _colortype_label(diag.get("colortype")),
+        "figure": _figure_label(diag.get("figure_type")),
+        "contrast": _CONTRAST_RU.get((diag.get("tonal_characteristics") or {}).get("contrast"), ""),
         "palette": palette.get("palette") or [],
         "stop_colors": palette.get("stop_colors") or [],
         "silhouettes": vf.get("silhouettes") or [],
