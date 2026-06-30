@@ -591,10 +591,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 {% if c.looks %}<h2>Капсулы под реальную жизнь</h2>
 <p class=meta>Образы сгруппированы по жизни — видно, как одни и те же базовые вещи работают в разных ситуациях.</p>
+{% set ns = namespace(shown=0) %}
 {% for bucket in ['Работа','Повседневное','Выход'] %}
  {% set bl = c.looks|selectattr('bucket','equalto',bucket)|list %}
- {% if bl %}<h3 class=cap-h>{{ bucket }}</h3><div class=looks>{% for lk in bl %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
-{% endfor %}{% endif %}
+ {% if bl %}{% set ns.shown = ns.shown + bl|length %}<h3 class=cap-h>{{ bucket }}</h3><div class=looks>{% for lk in bl %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
+{% endfor %}
+{% if ns.shown == 0 %}<div class=looks>{% for lk in c.looks %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}{% endif %}
 
 {% if c.styling and c.styling.looks %}<h2>Стилизация: одна вещь — два образа</h2>
 <p class=meta>{% if c.styling.idea %}{{ c.styling.idea }}{% else %}Одна базовая вещь{% if c.styling.base_item %} ({{ c.styling.base_item }}){% endif %} — два разных образа.{% endif %} Так работает капсула: мало вещей, много решений.</p>
