@@ -536,7 +536,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .print{display:block;margin:30px auto 0;background:var(--wine);color:#fff;border:0;border-radius:10px;padding:14px 26px;font:inherit;font-size:16px;cursor:pointer}
  @media print{.bar,.print{display:none} body{background:#fff} .wrap{max-width:none;padding:0} .look{break-inside:avoid}}
 </style></head><body><div class=wrap>
-<div class=bar><a href="/me">← мой профиль</a><a href="/card?refresh=1">пересобрать</a></div>
+<div class=bar><a href="/me">← мой профиль</a><a href="/card?rebuild=1">пересобрать (с анкетой)</a></div>
 
 <div class=eyebrow>Карта стиля</div>
 <h1>Твоя Формула</h1>
