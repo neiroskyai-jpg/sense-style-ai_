@@ -538,6 +538,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if c.looks %}<h2>6 образов под твои сценарии</h2>
 <div class=looks>
  {% for lk in c.looks %}<div class=look>
+  {% if lk.img %}<img src="{{ lk.img }}" alt="Образ: {{ lk.scenario }}" style="width:100%;border-radius:10px;margin-bottom:10px;display:block">{% endif %}
   <div class=scn>{{ lk.scenario }}</div>
   {% if lk.name %}<div class=nm>{{ lk.name }}</div>{% endif %}
   {% if lk['items'] %}<p class=it>{{ lk['items']|join(' · ') }}</p>{% endif %}
@@ -587,6 +588,71 @@ function downloadPdf(){
 }
 </script>
 </body></html>"""
+
+
+CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Собрать Карту стиля</title>
+<style>
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
+ *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ .wrap{max-width:560px;margin:0 auto;padding:34px 22px 70px}
+ .top{display:flex;justify-content:space-between;align-items:center} .logo{font-size:18px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
+ .eyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine);margin:26px 0 10px}
+ h1{font-weight:normal;font-size:32px;margin:0 0 12px} .lead{color:var(--muted);margin:0 0 8px}
+ .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px 22px 24px;margin-top:16px}
+ label{display:block;margin:18px 0 6px;font-size:14px}
+ .file{border:1.5px dashed #cdbfa6;border-radius:10px;padding:16px;text-align:center;background:#fbf8f1}
+ input[type=file]{width:100%}
+ button{margin-top:24px;width:100%;padding:15px;background:var(--wine);color:#fff;border:0;border-radius:10px;font:inherit;font-size:17px;cursor:pointer}
+ .consent{font-size:13px;color:var(--muted);display:flex;gap:8px;margin-top:14px;line-height:1.4} .consent input{width:auto;margin-top:3px}
+ .hint{color:var(--muted);font-size:13px;text-align:center;margin-top:14px} .hint a{color:var(--wine)}
+ .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:8px}
+</style></head><body><div class=wrap>
+<div class=top><span class=logo>Чувство стиля</span><a href="/me">← мой профиль</a></div>
+<div class=eyebrow>Карта стиля</div>
+<h1>Покажем тебя в 6 образах</h1>
+<p class=lead>Загрузи фото в полный рост — соберём твою Карту стиля и покажем тебя в 6 образах под твои сценарии. Это занимает пару минут.</p>
+{% if error %}<p class=err>{{ error }}</p>{% endif %}
+<form method=post action="/card/build" enctype="multipart/form-data">
+<div class=card>
+ <label>Фото (в полный рост)</label>
+ <div class=file><input type=file name=photo accept="image/*" required></div>
+ <label class=consent style="font-weight:normal"><input type=checkbox name=consent_processing required> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
+ <label class=consent style="font-weight:normal"><input type=checkbox name=consent_transfer required> Согласна на передачу фото в ИИ-сервис для генерации образов.</label>
+</div>
+ <button>Собрать Карту стиля →</button>
+ <p class=hint>Фото нужно только для генерации образов и <b>удаляется сразу после сборки</b> — храним лишь готовые образы. <a href="/card?text=1">Собрать пока без образов (только текст)</a></p>
+</form></div></body></html>"""
+
+
+CARD_BUILDING = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Собираем Карту стиля…</title>
+<style>
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
+ body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center}
+ .box{max-width:440px;padding:30px}
+ h1{font-weight:normal;font-size:28px;margin:0 0 10px} p{color:var(--muted)}
+ .sp{width:46px;height:46px;border:4px solid #e3dccf;border-top-color:var(--wine);border-radius:50%;margin:24px auto;animation:spin 1s linear infinite}
+ @keyframes spin{to{transform:rotate(360deg)}}
+ .err{color:#9b1c1c} a{color:var(--wine)}
+</style></head><body><div class=box>
+<h1>Собираем твою Карту стиля</h1>
+<div class=sp id=sp></div>
+<p id=msg>Палитра, силуэты, 6 образов на тебе… Это занимает 1–2 минуты, не закрывай страницу.</p>
+<script>
+var jid="{{ job_id }}";
+function poll(){
+  fetch('/card/status/'+jid).then(function(r){return r.json();}).then(function(d){
+    if(d.status==='done'){ location.href='/card'; }
+    else if(d.status==='error'||d.status==='unknown'){
+      document.getElementById('sp').style.display='none';
+      document.getElementById('msg').innerHTML='<span class=err>Не удалось собрать: '+(d.error||'ошибка')+'</span><br><br><a href="/card?rebuild=1">Попробовать снова</a>';
+    } else { setTimeout(poll, 4000); }
+  }).catch(function(){ setTimeout(poll, 4000); });
+}
+setTimeout(poll, 3000);
+</script>
+</div></body></html>"""
 
 
 def _split(s: str) -> list[str]:
@@ -730,13 +796,62 @@ def _ensure_n_looks(looks: list, scenarios: list, capsule: dict, diag: dict) -> 
                   "description": f"Образ под сценарий «{s}» в формуле «{formula}» — "
                                  f"собран из ключевых вещей твоей капсулы."}
         out.append({"scenario": s, "name": lk.get("name"),
-                    "items": lk.get("items"), "description": lk.get("description", "")})
+                    "items": lk.get("items"), "description": lk.get("description", ""),
+                    "image_generation_prompt": lk.get("image_generation_prompt", "")})
     return out
+
+
+def _card_look_prompt(lk: dict, diag: dict) -> str:
+    """Промпт для рендера образа карты на клиентке: промпт из капсулы или досборка."""
+    base = (lk.get("image_generation_prompt") or "").strip()
+    if base:
+        return base
+    parts = []
+    if lk.get("scenario"):
+        parts.append(f"Образ для сценария «{lk['scenario']}»")
+    if lk.get("items"):
+        parts.append("вещи: " + ", ".join(lk["items"]))
+    pal = _palette_names(diag)
+    if pal:
+        parts.append(f"палитра: {pal}")
+    if diag.get("figure_type"):
+        parts.append(f"силуэт под фигуру {diag['figure_type']}")
+    return ". ".join(parts) or (diag.get("style_formula") or "современный стильный образ")
+
+
+def _card_job_worker(job_id: str, photo_path: Path, email: str) -> None:
+    """Фоновая сборка карты + рендер 6 образов на клиентке. Фото удаляем после."""
+    try:
+        diag = (get_profile(email) or {}).get("diagnosis") or {}
+        card = build_style_card(diag)
+        looks = card.get("looks") or []
+
+        def _render(lk):
+            try:
+                return render_look_on_client(str(photo_path), _card_look_prompt(lk, diag))
+            except Exception:  # noqa: BLE001 — один неудавшийся образ не валит карту
+                return None
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(looks))) as ex:
+            imgs = list(ex.map(_render, looks))
+        for lk, img in zip(looks, imgs):
+            if img:
+                lk["img"] = img
+        save_card(email, card)  # храним готовые образы, не исходное фото
+        _JOBS[job_id] = {"status": "done"}
+    except Exception as e:  # noqa: BLE001
+        _JOBS[job_id] = {"status": "error", "error": str(e)}
+    finally:
+        try:
+            Path(photo_path).unlink()  # фото не храним (Политика)
+        except OSError:
+            pass
 
 
 @app.get("/card")
 def style_card():
-    """Продукт «Карта стиля» — для вошедшей клиентки с готовой Формулой. Кэшируется в профиле."""
+    """Карта стиля. Готовая (кэш) → показываем; иначе форма загрузки фото для сборки.
+    ?text=1 — собрать без образов (только текст, синхронно); ?rebuild=1 — пересобрать."""
     email = session.get("email")
     if not email:
         return redirect("/login")
@@ -745,17 +860,50 @@ def style_card():
     if not diag.get("style_formula"):
         return redirect("/demo")  # сначала нужна диагностика
     card = prof.get("card") or {}
-    if not card or request.args.get("refresh"):
+    if card and not request.args.get("rebuild") and not request.args.get("text"):
+        return render_template_string(STYLE_CARD, c=card, name=email)
+    if request.args.get("text"):  # текстовая карта без образов (синхронно)
         if not _quota_left():
-            return render_template_string(LOGIN_PAGE, error="Демо-лимит на сегодня исчерпан.",
-                                          sent=False, email=email, dev_link=None), 429
+            return render_template_string(CARD_BUILD_FORM, error="Лимит на сегодня исчерпан."), 429
         record_call()
         try:
             card = build_style_card(diag)
             save_card(email, card)
         except Exception as e:  # noqa: BLE001
-            return f"Не удалось собрать карту: {e}", 500
-    return render_template_string(STYLE_CARD, c=card, name=email)
+            return render_template_string(CARD_BUILD_FORM, error=f"Не удалось собрать: {e}"), 500
+        return render_template_string(STYLE_CARD, c=card, name=email)
+    return render_template_string(CARD_BUILD_FORM, error=None)
+
+
+@app.post("/card/build")
+def card_build():
+    """Старт асинхронной сборки карты с образами на клиентке (фото → рендер → удаление)."""
+    email = session.get("email")
+    if not email:
+        return redirect("/login")
+    diag = (get_profile(email) or {}).get("diagnosis") or {}
+    if not diag.get("style_formula"):
+        return redirect("/demo")
+    if not _quota_left():
+        return render_template_string(CARD_BUILD_FORM, error="Лимит на сегодня исчерпан."), 429
+    if not _consent_ok(request.form):
+        return render_template_string(CARD_BUILD_FORM, error="Нужно согласие на обработку и передачу фото."), 400
+    record_consent(email, request.remote_addr or "", True, True)
+    try:
+        photo_path = _validate_and_save(request.files.get("photo"))
+    except ValueError as e:
+        return render_template_string(CARD_BUILD_FORM, error=str(e)), 400
+    record_call()
+    job_id = uuid.uuid4().hex
+    _JOBS[job_id] = {"status": "processing"}
+    threading.Thread(target=_card_job_worker, args=(job_id, photo_path, email),
+                     daemon=True).start()
+    return render_template_string(CARD_BUILDING, job_id=job_id)
+
+
+@app.get("/card/status/<job_id>")
+def card_status(job_id):
+    return jsonify(_JOBS.get(job_id) or {"status": "unknown"})
 
 
 # карта вердикта/совпадений → русские подписи, цвет и иконка
