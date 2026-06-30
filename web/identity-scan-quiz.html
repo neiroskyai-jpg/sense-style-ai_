@@ -2267,16 +2267,8 @@ function renderAIResult() {
     html += `</div>`;
   }
 
-  // ── Что ИИ увидел по фото ──
-  const chips = [];
-  if (photo.contrast)  chips.push(`<span class="ai-chip"><span>контраст:</span> ${esc(photo.contrast)}</span>`);
-  if (photo.colortype) chips.push(`<span class="ai-chip"><span>цветотип:</span> ${esc(ruLabel(RU_COLORTYPE, photo.colortype))}</span>`);
-  if (photo.figure)    chips.push(`<span class="ai-chip"><span>фигура:</span> ${esc(ruLabel(RU_FIGURE, photo.figure))}</span>`);
-  if (photo.silhouette)chips.push(`<span class="ai-chip"><span>силуэт:</span> ${esc(photo.silhouette)}</span>`);
-  if (chips.length) {
-    html += `<div class="ai-block-title">Что ИИ увидел по фото</div><div class="ai-seen">${chips.join('')}</div>`;
-    if (photo.risk) html += `<div class="ai-risk">${esc(photo.risk)}.</div>`;
-  }
+  // Блок «Что ИИ увидел по фото» убран по решению фаундера: техника (цветотип/контраст)
+  // может ошибаться до калибровки — не показываем клиентке, чтобы не подрывать доверие.
 
   // ── 2 направления образа ──
   html += `<div class="ai-block-title">Два направления твоего образа</div><div class="ai-dirs">`;
@@ -2499,5 +2491,6 @@ function submitEmail(e) {
   document.querySelector('.email-capture').classList.add('is-submitted');
 }
 </script>
+<script src="/stylist-widget.js" defer></script>
 </body>
 </html>
