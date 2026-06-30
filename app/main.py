@@ -21,8 +21,8 @@ from werkzeug.utils import secure_filename
 
 from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_capsule, generate_card_palette,
-                           generate_directions, refine_colortype_subtype,
-                           render_look_on_client)
+                           generate_directions, generate_shopping_list,
+                           refine_colortype_subtype, render_look_on_client)
 from core.tracking import (count_today, progress, record_call, record_consent,
                            record_session)
 from core.auth import make_token, read_token, send_magic_link
@@ -496,6 +496,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .look .nm{font-size:18px;margin:3px 0 8px}
  .look .it{font-size:13.5px;color:#4a443c;margin:0 0 8px}
  .look .ds{font-size:14px;color:#5a5246}
+ .shop{display:flex;flex-direction:column;gap:10px} .shopitem{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px}
+ .shopname{font-size:16px;color:#2a2620} .shopwhy{font-size:13.5px;color:#5a5246;margin:3px 0 6px}
+ .shoplinks{font-size:13px;color:#9a8f80} .shoplinks a{color:var(--wine);text-decoration:none}
+ .ref{background:#fbf8f3;border:1px solid var(--line);border-radius:14px;padding:16px 20px}
+ .refname{font-size:20px;color:var(--wine)} .refline{font-size:14px;color:#5a5246;margin:6px 0 0}
  .print{display:block;margin:30px auto 0;background:var(--wine);color:#fff;border:0;border-radius:10px;padding:14px 26px;font:inherit;font-size:16px;cursor:pointer}
  @media print{.bar,.print{display:none} body{background:#fff} .wrap{max-width:none;padding:0} .look{break-inside:avoid}}
 </style></head><body><div class=wrap>
@@ -538,6 +543,23 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% if lk['items'] %}<p class=it>{{ lk['items']|join(' · ') }}</p>{% endif %}
   <p class=ds>{{ lk.description }}</p>
  </div>{% endfor %}
+</div>{% endif %}
+
+{% if c.shopping %}<h2>Топ покупок под твою Формулу</h2>
+<div class=shop>
+ {% for it in c.shopping %}<div class=shopitem>
+  <div class=shopname>{{ it.item_name }}</div>
+  {% if it.closes_gap %}<div class=shopwhy>{{ it.closes_gap }}</div>{% endif %}
+  {% if it.links %}<div class=shoplinks>Найти: <a href="{{ it.links.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.links.lamoda }}" target=_blank rel=noopener>Lamoda</a> · <a href="{{ it.links.ozon }}" target=_blank rel=noopener>Ozon</a></div>{% endif %}
+ </div>{% endfor %}
+</div>
+{% if c.budget and c.budget.min %}<p class=meta>Ориентир по бюджету: {{ '{:,}'.format(c.budget.min).replace(',',' ') }}–{{ '{:,}'.format(c.budget.max).replace(',',' ') }} ₽{% if c.budget.note %} · {{ c.budget.note }}{% endif %}</p>{% endif %}{% endif %}
+
+{% if c.style_reference %}<h2>Стилевой ориентир</h2>
+<div class=ref>
+ <div class=refname>{{ c.style_reference.name }}</div>
+ {% if c.style_reference.match_axis_1_impression %}<p class=refline>По впечатлению: {{ c.style_reference.match_axis_1_impression }}</p>{% endif %}
+ {% if c.style_reference.match_axis_2_physical %}<p class=refline>По параметрам: {{ c.style_reference.match_axis_2_physical }}</p>{% endif %}
 </div>{% endif %}
 
 {% if c.stop_list %}<h2>Стоп-лист — что не носить</h2>
@@ -650,6 +672,12 @@ def build_style_card(diag: dict) -> dict:
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
                "scenarios": scenarios, "n_looks": 6, "price_segment": "middle", "taboos": []}
     capsule = generate_capsule(diag, gen_req, mode="dev")
+    shopping = {}
+    try:  # топ покупок со ссылками — не должен ронять карту
+        shopping = generate_shopping_list(diag, capsule, price_segment="middle", mode="teaser")
+    except Exception:  # noqa: BLE001
+        shopping = {}
+    protos = diag.get("prototypes") or []
     return {
         "formula": diag.get("style_formula"),
         "gap": diag.get("gap_percentage"),
@@ -662,6 +690,9 @@ def build_style_card(diag: dict) -> dict:
         "stop_colors": palette.get("stop_colors") or [],
         "silhouettes": vf.get("silhouettes") or [],
         "looks": _ensure_n_looks(capsule.get("looks") or [], scenarios, capsule, diag),
+        "shopping": (shopping.get("shopping_items") or [])[:5],
+        "budget": shopping.get("budget_estimate") or {},
+        "style_reference": protos[0] if protos else None,
         "stop_list": vf.get("stop_list") or [],
     }
 
