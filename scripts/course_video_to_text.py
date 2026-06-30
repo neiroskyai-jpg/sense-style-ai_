@@ -135,7 +135,8 @@ def main() -> None:
     for d in (INBOX, TRANSCRIPTS, SLIDES):
         d.mkdir(parents=True, exist_ok=True)
 
-    videos = sorted(p for p in INBOX.iterdir()
+    # рекурсивно — можно раскладывать видео по подпапкам-темам (напр. inbox/цветотипы/)
+    videos = sorted(p for p in INBOX.rglob("*")
                     if p.is_file() and p.suffix.lower() in VIDEO_EXTS)
     if not videos:
         print(f"В inbox нет видео ({', '.join(VIDEO_EXTS)}). Положи файлы в:\n  {INBOX}")
@@ -150,7 +151,8 @@ def main() -> None:
 
     processed, skipped = 0, 0
     for video in videos:
-        name = video.stem
+        # имя результата включает подпапку-тему: «цветотипы_20260525_111107»
+        name = "_".join(video.relative_to(INBOX).with_suffix("").parts)
         txt = TRANSCRIPTS / f"{name}.txt"
         srt = TRANSCRIPTS / f"{name}.srt"
         if txt.exists():  # идемпотентность
