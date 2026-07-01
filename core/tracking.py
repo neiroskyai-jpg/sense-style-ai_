@@ -149,11 +149,14 @@ def leads(db_path: Path = DB_PATH) -> list[dict]:
         ).fetchall()
         cons = c.execute("SELECT client, MIN(ts), MAX(ts) FROM consents GROUP BY client").fetchall()
         fb = c.execute("SELECT client, COUNT(*) FROM feedback WHERE client IS NOT NULL GROUP BY client").fetchall()
+        mkt = {r[0] for r in c.execute(
+            "SELECT DISTINCT client FROM events WHERE name='marketing_optin' AND client IS NOT NULL").fetchall()}
     agg: dict[str, dict] = {}
 
     def _blank(email):
-        return {"email": email, "sessions": 0, "first": None, "last": None,
-                "gap": None, "formula": None, "colortype": None, "figure": None, "feedback": 0}
+        return {"email": email, "sessions": 0, "first": None, "last": None, "gap": None,
+                "formula": None, "colortype": None, "figure": None, "feedback": 0,
+                "marketing": email in mkt}
 
     for client, ts, gap, formula, ct, fig in sess:
         if not client:

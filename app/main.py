@@ -458,6 +458,7 @@ LOGIN_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <form method=post action="/login" class=card>
   <input type=hidden name=next value="{{ next or '' }}">
   <label>Email</label><input type=email name=email required placeholder="anna@example.com" value="{{ email or '' }}">
+  <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:#6b645c;font-weight:normal;margin:12px 0 4px;line-height:1.4"><input type=checkbox name=marketing value=1 style="width:auto;margin-top:3px"> Хочу получать письма о стиле, разборах и новинках (по желанию)</label>
   <button>Получить ссылку для входа</button>
  </form>
  <p class=hint>Входя, ты соглашаешься с <a href="/privacy">Политикой</a>. Пароль не нужен.</p>
@@ -1060,6 +1061,8 @@ def login_send():
                                       sent=False, email=email, dev_link=None, next=nxt or ""), 400
     if nxt:
         session["next_url"] = nxt  # вернёмся сюда после клика по ссылке входа
+    if request.form.get("marketing"):  # согласие на рассылку → для выгрузки в UniSender
+        record_event("marketing_optin", email.lower())
     link = request.url_root.rstrip("/") + "/auth?token=" + make_token(email)
     sent = send_magic_link(email, link)
     # если почта не настроена (dev) — показываем ссылку прямо на странице, чтобы можно было войти
@@ -1532,10 +1535,10 @@ td,th{text-align:left;padding:8px 6px;border-bottom:1px solid #e3dccf;vertical-a
  <div class=kpi><b>{{ g.clients_with_progress }}</b><span>с повторным замером</span></div>
  <div class=kpi><b>{{ g.avg_gap_reduction if g.avg_gap_reduction is not none else '—' }}</b><span>среднее снижение Gap, п.п.</span></div>
 </div>
-<h2>Почты клиенток ({{ leads|length }}) &nbsp;<a href="/metrics/leads.csv{{ keyq }}">скачать CSV</a></h2>
-<table><tr><th>Email</th><th>Первый раз</th><th>Последний</th><th>Формула</th><th>Цветотип</th><th>Gap</th><th>Отзывов</th></tr>
-{% for l in leads %}<tr><td>{{ l.email }}</td><td>{{ l.first }}</td><td>{{ l.last }}</td><td>{{ l.formula or '' }}</td><td>{{ l.colortype or '' }}</td><td>{{ l.gap if l.gap is not none else '' }}</td><td>{{ l.feedback or '' }}</td></tr>{% endfor %}
-{% if not leads %}<tr><td colspan=7 style="color:#6b645c">Пока нет почт.</td></tr>{% endif %}
+<h2>Почты клиенток ({{ leads|length }}) &nbsp;<a href="/metrics/leads.csv{{ keyq }}">скачать все CSV</a> &nbsp;·&nbsp; <a href="/metrics/unisender.csv{{ keyq }}">для UniSender (согласившиеся)</a></h2>
+<table><tr><th>Email</th><th>Письма</th><th>Первый раз</th><th>Последний</th><th>Формула</th><th>Цветотип</th><th>Gap</th><th>Отзывов</th></tr>
+{% for l in leads %}<tr><td>{{ l.email }}</td><td>{{ '✓' if l.marketing else '' }}</td><td>{{ l.first }}</td><td>{{ l.last }}</td><td>{{ l.formula or '' }}</td><td>{{ l.colortype or '' }}</td><td>{{ l.gap if l.gap is not none else '' }}</td><td>{{ l.feedback or '' }}</td></tr>{% endfor %}
+{% if not leads %}<tr><td colspan=8 style="color:#6b645c">Пока нет почт.</td></tr>{% endif %}
 </table>
 <h2>Отзывы и комментарии ({{ f.feedback }}{% if f.avg_rating %}, средняя {{ f.avg_rating }}★{% endif %}) &nbsp;<a href="/metrics/feedback.csv{{ keyq }}">скачать CSV</a></h2>
 <table><tr><th>Когда</th><th>Клиентка</th><th>Оценка</th><th>Текст</th></tr>
@@ -1581,6 +1584,16 @@ def metrics_leads_csv():
              l["figure"], l["gap"], l["sessions"], l["feedback"]] for l in leads()]
     return _csv_response(rows, ["email", "first_seen", "last_seen", "formula", "colortype",
                                 "figure", "gap", "sessions", "feedback_count"], "leads.csv")
+
+
+@app.get("/metrics/unisender.csv")
+def metrics_unisender_csv():
+    """Выгрузка только согласившихся на письма — для импорта в UniSender (email + Формула как тег)."""
+    if not _is_admin():
+        return redirect("/login?next=/metrics")
+    rows = [[l["email"], l["formula"] or "", l["colortype"] or ""]
+            for l in leads() if l["marketing"]]
+    return _csv_response(rows, ["email", "formula", "colortype"], "unisender.csv")
 
 
 @app.get("/metrics/feedback.csv")
