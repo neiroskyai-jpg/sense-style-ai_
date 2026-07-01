@@ -915,14 +915,22 @@ def _render_markdown(text: str) -> str:
             b = block.strip()
             if not b:
                 continue
+            img = re.match(r"!\[(.*?)\]\((.+?)\)$", b)
             if b.startswith("## ") or b.startswith("# "):
                 out.append("<h2>" + _h.escape(b.lstrip("# ")) + "</h2>")
+            elif img:
+                out.append('<img src="%s" alt="%s">' % (img.group(2), _h.escape(img.group(1))))
+            elif b.startswith("> "):
+                q = " ".join(l[2:] if l.startswith("> ") else l for l in b.splitlines())
+                out.append("<blockquote>" + _h.escape(q) + "</blockquote>")
             elif b.startswith("- "):
                 items = "".join("<li>" + _h.escape(l[2:]) + "</li>"
                                 for l in b.splitlines() if l.startswith("- "))
                 out.append("<ul>" + items + "</ul>")
             else:
-                p = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", _h.escape(b))
+                p = _h.escape(b)
+                p = re.sub(r"!\[(.*?)\]\((.+?)\)", r'<img src="\2" alt="\1">', p)
+                p = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", p)
                 p = re.sub(r"\[(.+?)\]\((.+?)\)", r'<a href="\2">\1</a>', p)
                 out.append("<p>" + p.replace("\n", "<br>") + "</p>")
         return "\n".join(out)
