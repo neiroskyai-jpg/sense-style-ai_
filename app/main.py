@@ -530,6 +530,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .capdot{flex:none;width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.12);margin-top:3px}
  .capitem b{font-size:14.5px;font-weight:normal} .captag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--wine);border-radius:6px;padding:1px 6px;vertical-align:middle}
  .capwhy{font-size:12.5px;color:#7a7064}
+ .capslot{margin:18px 0 8px} .capslotname{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine)}
  .shop{display:flex;flex-direction:column;gap:10px} .shopitem{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px}
  .shopname{font-size:16px;color:#2a2620} .shopwhy{font-size:13.5px;color:#5a5246;margin:3px 0 6px}
  .shoplinks{font-size:13px;color:#9a8f80} .shoplinks a{color:var(--wine);text-decoration:none}
@@ -585,12 +586,23 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 {% if c.base_capsule %}<h2>Базовая капсула — ядро гардероба</h2>
 <p class=meta>Эти вещи — основа, всё остальное собирается вокруг них{% if c.combination_count %}: из них получается около {{ c.combination_count }} рабочих образов{% endif %}.</p>
+{% if c.capsule_board %}
+ {% for grp in c.capsule_board %}
+ <div class=capslot><span class=capslotname>{{ grp.slot }}</span></div>
+ <div class=caps>
+  {% for it in grp['items'] %}<div class=capitem>
+   {% if it.color and it.color.hex %}<span class=capdot style="background:{{ it.color.hex }}"></span>{% endif %}
+   <div><b>{{ it.name }}</b>{% if it.role == 'base' %} <span class=captag>база</span>{% endif %}{% if it.why %}<br><span class=capwhy>{{ it.why }}</span>{% endif %}</div>
+  </div>{% endfor %}
+ </div>
+ {% endfor %}
+{% else %}
 <div class=caps>
  {% for it in c.base_capsule %}<div class=capitem>
   {% if it.color and it.color.hex %}<span class=capdot style="background:{{ it.color.hex }}"></span>{% endif %}
   <div><b>{{ it.name }}</b>{% if it.role == 'base' %} <span class=captag>база</span>{% endif %}{% if it.why %}<br><span class=capwhy>{{ it.why }}</span>{% endif %}</div>
  </div>{% endfor %}
-</div>{% endif %}
+</div>{% endif %}{% endif %}
 
 {% macro lookcard(lk) %}<div class=look>
   {% if lk.img %}<img src="{{ lk.img }}" alt="Образ" style="width:100%;border-radius:10px;margin-bottom:10px;display:block">{% endif %}
@@ -1141,6 +1153,7 @@ def build_style_card(diag: dict) -> dict:
         "silhouettes": vf.get("silhouettes") or [],
         # базовая капсула (ядро) — вещи, из которых собираются все образы
         "base_capsule": [it for it in cap_items if isinstance(it, dict) and it.get("name")][:14],
+        "capsule_board": _capsule_board([it for it in cap_items if isinstance(it, dict) and it.get("name")][:14]),
         "combination_count": (capsule.get("capsule") or {}).get("combination_count"),
         "looks": looks,
         "styling": styling,  # {base_item, idea, looks:[…x2]} — рендерятся в воркере
@@ -1684,6 +1697,39 @@ _COLORTYPE_LABEL = {
 
 def _figure_label(code):
     return _FIGURE_LABEL.get(code, code) if code else code
+
+
+# капсула по одежде: раскладываем вещи по слотам гардероба для наглядного борда
+_CAPSULE_SLOTS = [
+    ("Верхний слой", ("пальто", "тренч", "жакет", "пиджак", "куртка", "косуха", "кардиган",
+                       "плащ", "шуба", "дублёнка", "бомбер", "джинсовк")),
+    ("Платья и комбинезоны", ("платье", "комбинезон", "сарафан")),
+    ("Верх", ("рубашка", "блуз", "топ", "футболк", "водолазк", "свитер", "джемпер", "худи",
+              "свитшот", "боди", "лонгслив", "майка", "поло", "тельняшк", "корсет", "бюстье", "кроп")),
+    ("Низ", ("брюки", "джинс", "юбка", "шорты", "палаццо", "легинс", "чинос", "кюлот")),
+    ("Обувь", ("туфли", "лодочки", "ботинки", "ботильон", "челси", "сапог", "кроссовк", "кед",
+               "босоножк", "лофер", "балетк", "сандал", "мюли", "слипон", "угги")),
+    ("Аксессуары", ("сумк", "ремень", "пояс", "шарф", "платок", "очки", "шляп", "берет", "кепк",
+                    "серьг", "браслет", "колье", "цепочк", "часы", "перчатк", "клатч", "шопер")),
+]
+
+
+def _capsule_slot(name: str) -> str:
+    n = (name or "").lower()
+    for slot, keys in _CAPSULE_SLOTS:
+        if any(k in n for k in keys):
+            return slot
+    return "База и прочее"
+
+
+def _capsule_board(items: list) -> list:
+    """Группировка вещей капсулы по слотам гардероба (для визуального борда). Порядок — как в _CAPSULE_SLOTS."""
+    order = [s for s, _ in _CAPSULE_SLOTS] + ["База и прочее"]
+    groups: dict[str, list] = {}
+    for it in items:
+        if isinstance(it, dict) and it.get("name"):
+            groups.setdefault(_capsule_slot(it["name"]), []).append(it)
+    return [{"slot": s, "items": groups[s]} for s in order if groups.get(s)]
 
 
 def _colortype_label(code):
