@@ -26,8 +26,9 @@ from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_directions, generate_personality_portrait,
                            generate_shopping_list, generate_styling_pair,
                            refine_colortype_subtype, render_look_on_client)
-from core.tracking import (count_today, progress, record_call, record_consent,
-                           record_session)
+from core.tracking import (count_today, feedback_list, funnel, gap_summary,
+                           progress, record_call, record_consent, record_event,
+                           record_feedback, record_session)
 from core.auth import make_token, read_token, send_magic_link
 from core.chat import stylist_reply
 from core.profiles import (get_profile, save_card, save_diagnosis,
@@ -623,22 +624,39 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <ul class="clean stop">{% for s in c.stop_list %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
 
 <button class=print id=pdfbtn onclick="downloadPdf()">Скачать PDF к шкафу</button>
+
+<div id=fbblock style="margin-top:38px;padding:22px;border:1px solid var(--line,#e3dccf);border-radius:14px;background:#fff">
+{% if thanks %}
+  <p style="margin:0;font-size:16px">Спасибо. Твой отзыв записан — он помогает делать Карту точнее.</p>
+{% else %}
+  <h2 style="margin:0 0 4px">Как тебе Карта?</h2>
+  <p style="margin:0 0 14px;color:var(--muted,#6b645c);font-size:14px">Оцени и напиши пару слов — что откликнулось, чего не хватило.</p>
+  <form method=post action="/card/feedback">
+   <div style="display:flex;gap:10px;margin-bottom:12px">
+    {% for n in [1,2,3,4,5] %}<label style="display:inline-flex;align-items:center;gap:5px;font-size:14px"><input type=radio name=rating value="{{ n }}" style="width:auto">{{ n }}</label>{% endfor %}
+   </div>
+   <textarea name=text rows=3 placeholder="Что откликнулось, чего не хватило?" style="width:100%;padding:11px 13px;border:1px solid #d9d2c7;border-radius:10px;font:inherit;font-size:15px"></textarea>
+   <button type=submit style="margin-top:12px;padding:12px 24px;background:var(--wine,#5D2230);color:#fff;border:0;border-radius:10px;font:inherit;font-size:15px;cursor:pointer">Отправить отзыв</button>
+  </form>
+{% endif %}
+</div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 function downloadPdf(){
   var btn=document.getElementById('pdfbtn'); var bar=document.querySelector('.bar');
+  var fb=document.getElementById('fbblock');
   btn.textContent='Готовлю файл…'; btn.disabled=true;
-  if(bar) bar.style.visibility='hidden'; btn.style.visibility='hidden';
+  if(bar) bar.style.visibility='hidden'; btn.style.visibility='hidden'; if(fb) fb.style.display='none';
   var opt={margin:[10,10,12,10], filename:'Карта-стиля.pdf', image:{type:'jpeg',quality:0.96},
     html2canvas:{scale:2,useCORS:true,backgroundColor:'#F5EFE3'},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
     pagebreak:{mode:['css','legacy'],avoid:'.look'}};
   html2pdf().set(opt).from(document.querySelector('.wrap')).save().then(function(){
-    if(bar) bar.style.visibility='visible'; btn.style.visibility='visible';
+    if(bar) bar.style.visibility='visible'; btn.style.visibility='visible'; if(fb) fb.style.display='';
     btn.textContent='Скачать PDF к шкафу'; btn.disabled=false;
   }).catch(function(){
-    if(bar) bar.style.visibility='visible'; btn.style.visibility='visible';
+    if(bar) bar.style.visibility='visible'; btn.style.visibility='visible'; if(fb) fb.style.display='';
     btn.textContent='Скачать PDF к шкафу'; btn.disabled=false;
   });
 }
@@ -1297,6 +1315,8 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str) -> None:
             if img:
                 lk["img"] = img
         save_card(email, card)  # храним готовые образы, не исходное фото
+        record_event("card_built", email)
+        record_event("look_generated", email, meta=str(sum(1 for i in imgs if i)))
         port = (card.get("personality") or {}).get("portrait")
         if port:  # портрет личности — в профиль, чтобы видел чат-стилист
             d2 = (get_profile(email) or {}).get("diagnosis") or {}
@@ -1331,7 +1351,8 @@ def style_card():
         return redirect("/identity-scan-quiz.html?fresh=1")  # сначала нужна диагностика (квиз)
     card = prof.get("card") or {}
     if card and not request.args.get("rebuild") and not request.args.get("text"):
-        return render_template_string(STYLE_CARD, c=card, name=email)
+        return render_template_string(STYLE_CARD, c=card, name=email,
+                                      thanks=request.args.get("fb"))
     if request.args.get("text"):  # текстовая карта без образов (синхронно)
         if not _quota_left():
             return render_template_string(CARD_BUILD_FORM, error="Лимит на сегодня исчерпан."), 429
@@ -1339,9 +1360,11 @@ def style_card():
         try:
             card = build_style_card(diag)
             save_card(email, card)
+            record_event("card_built", email, meta="text")
         except Exception as e:  # noqa: BLE001
             return render_template_string(CARD_BUILD_FORM, error=f"Не удалось собрать: {e}"), 500
         return render_template_string(STYLE_CARD, c=card, name=email)
+    record_event("card_form_view", email)
     return render_template_string(CARD_BUILD_FORM, error=None)
 
 
@@ -1375,6 +1398,76 @@ def card_build():
 @app.get("/card/status/<job_id>")
 def card_status(job_id):
     return jsonify(_JOBS.get(job_id) or {"status": "unknown"})
+
+
+@app.post("/card/feedback")
+def card_feedback():
+    """Отзыв клиентки о Карте (оценка + текст). Питает артефакт «обратная связь» конкурса."""
+    email = session.get("email")
+    if not email:
+        return redirect("/login")
+    try:
+        rating = int(request.form.get("rating") or 0) or None
+    except ValueError:
+        rating = None
+    record_feedback(email, rating, request.form.get("text"))
+    record_event("feedback_left", email, meta=str(rating or ""))
+    return redirect("/card?fb=1")
+
+
+# приборная панель метрик для конкурса — доступ по email основателя ИЛИ ?key=SENSE_METRICS_KEY
+_ADMIN_EMAILS = {e.strip().lower() for e in
+                 os.getenv("SENSE_ADMIN_EMAILS", "neiroskyai@gmail.com").split(",") if e.strip()}
+
+
+def _is_admin() -> bool:
+    if (session.get("email") or "").lower() in _ADMIN_EMAILS:
+        return True
+    key = os.getenv("SENSE_METRICS_KEY")
+    return bool(key) and request.args.get("key") == key
+
+
+METRICS_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Метрики</title>
+<style>body{font-family:Onest,Arial,sans-serif;max-width:820px;margin:0 auto;padding:32px 22px 70px;background:#F5EFE3;color:#1f1d1b}
+h1{font-weight:600;font-size:26px} h2{font-size:16px;margin:28px 0 10px;color:#5D2230}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:#fff;border:1px solid #e3dccf;border-radius:12px;padding:14px}
+.kpi b{display:block;font-size:28px} .kpi span{color:#6b645c;font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+td,th{text-align:left;padding:8px 6px;border-bottom:1px solid #e3dccf;vertical-align:top}
+.star{color:#5D2230}</style></head><body>
+<h1>Метрики продукта</h1>
+<h2>Воронка</h2>
+<div class=grid>
+ <div class=kpi><b>{{ f.quiz_done }}</b><span>прошли квиз (диагностик)</span></div>
+ <div class=kpi><b>{{ f.unique_clients }}</b><span>уникальных клиенток</span></div>
+ <div class=kpi><b>{{ f.card_form_view }}</b><span>открыли форму Карты</span></div>
+ <div class=kpi><b>{{ f.card_built }}</b><span>собрали Карту</span></div>
+ <div class=kpi><b>{{ f.quiz_to_card_pct }}%</b><span>квиз → Карта</span></div>
+ <div class=kpi><b>{{ f.looks_generated }}</b><span>прогонов генерации образов</span></div>
+</div>
+<h2>Identity Gap</h2>
+<div class=grid>
+ <div class=kpi><b>{{ g.clients_measured }}</b><span>замерено клиенток</span></div>
+ <div class=kpi><b>{{ g.avg_first_gap if g.avg_first_gap is not none else '—' }}%</b><span>средний Gap (старт)</span></div>
+ <div class=kpi><b>{{ g.clients_with_progress }}</b><span>с повторным замером</span></div>
+ <div class=kpi><b>{{ g.avg_gap_reduction if g.avg_gap_reduction is not none else '—' }}</b><span>среднее снижение Gap, п.п.</span></div>
+</div>
+<h2>Отзывы ({{ f.feedback }}{% if f.avg_rating %}, средняя {{ f.avg_rating }}★{% endif %})</h2>
+<table><tr><th>Когда</th><th>Клиентка</th><th>Оценка</th><th>Текст</th></tr>
+{% for r in fb %}<tr><td>{{ r.ts }}</td><td>{{ r.client }}</td><td class=star>{{ r.rating or '' }}</td><td>{{ r.text or '' }}</td></tr>{% endfor %}
+{% if not fb %}<tr><td colspan=4 style="color:#6b645c">Пока нет отзывов.</td></tr>{% endif %}
+</table>
+</body></html>"""
+
+
+@app.get("/metrics")
+def metrics_page():
+    if not _is_admin():
+        return redirect("/login?next=/metrics")
+    return render_template_string(METRICS_PAGE, f=funnel(), g=gap_summary(),
+                                  fb=feedback_list())
 
 
 # карта вердикта/совпадений → русские подписи, цвет и иконка

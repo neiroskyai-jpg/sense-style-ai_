@@ -30,6 +30,18 @@ def _conn(db_path: Path) -> sqlite3.Connection:
     )
     c.execute("CREATE TABLE IF NOT EXISTS calls (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL)")
     c.execute(
+        """CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL, client TEXT, ts TEXT NOT NULL, meta TEXT
+        )"""
+    )
+    c.execute(
+        """CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            client TEXT, ts TEXT NOT NULL, rating INTEGER, text TEXT
+        )"""
+    )
+    c.execute(
         """CREATE TABLE IF NOT EXISTS consents (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             client TEXT, ip TEXT, ts TEXT NOT NULL,
@@ -61,6 +73,81 @@ def count_today(db_path: Path = DB_PATH) -> int:
     today = datetime.now().date().isoformat()
     with _conn(db_path) as c:
         return c.execute("SELECT COUNT(*) FROM calls WHERE ts LIKE ?", (today + "%",)).fetchone()[0]
+
+
+def record_event(name: str, client: str | None = None, meta: str | None = None,
+                 ts: str | None = None, db_path: Path = DB_PATH) -> None:
+    """Событие воронки (quiz_done, card_form_view, card_built, look_generated, feedback_left…).
+
+    Тихо глотает ошибки: метрика никогда не должна ронять пользовательский поток.
+    """
+    try:
+        ts = ts or datetime.now().isoformat(timespec="seconds")
+        with _conn(db_path) as c:
+            c.execute("INSERT INTO events (name, client, ts, meta) VALUES (?,?,?,?)",
+                      (name, client, ts, meta))
+    except Exception:  # noqa: BLE001 — трекинг не критичен для пользователя
+        pass
+
+
+def record_feedback(client: str | None, rating: int | None, text: str | None,
+                    ts: str | None = None, db_path: Path = DB_PATH) -> None:
+    """Отзыв клиентки о Карте (оценка 1–5 + текст). Питает артефакт «обратная связь» конкурса."""
+    ts = ts or datetime.now().isoformat(timespec="seconds")
+    with _conn(db_path) as c:
+        c.execute("INSERT INTO feedback (client, ts, rating, text) VALUES (?,?,?,?)",
+                  (client, ts, rating, (text or "").strip() or None))
+
+
+def funnel(db_path: Path = DB_PATH) -> dict:
+    """Числа воронки для приборной панели/конкурса."""
+    with _conn(db_path) as c:
+        def ev(name):
+            return c.execute("SELECT COUNT(*) FROM events WHERE name=?", (name,)).fetchone()[0]
+        quiz_done = c.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
+        uniq_clients = c.execute("SELECT COUNT(DISTINCT client) FROM sessions").fetchone()[0]
+        cards = ev("card_built")
+        fb = c.execute("SELECT COUNT(*) FROM feedback").fetchone()[0]
+        avg_rating = c.execute("SELECT AVG(rating) FROM feedback WHERE rating IS NOT NULL").fetchone()[0]
+    conv = round(100.0 * cards / quiz_done, 1) if quiz_done else 0.0
+    return {"quiz_done": quiz_done, "unique_clients": uniq_clients,
+            "card_form_view": _ev_count("card_form_view", db_path), "card_built": cards,
+            "looks_generated": _ev_count("look_generated", db_path),
+            "feedback": fb, "avg_rating": round(avg_rating, 2) if avg_rating else None,
+            "quiz_to_card_pct": conv}
+
+
+def _ev_count(name: str, db_path: Path = DB_PATH) -> int:
+    with _conn(db_path) as c:
+        return c.execute("SELECT COUNT(*) FROM events WHERE name=?", (name,)).fetchone()[0]
+
+
+def feedback_list(limit: int = 50, db_path: Path = DB_PATH) -> list[dict]:
+    with _conn(db_path) as c:
+        rows = c.execute(
+            "SELECT ts, client, rating, text FROM feedback ORDER BY ts DESC, id DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+    return [{"ts": r[0], "client": r[1], "rating": r[2], "text": r[3]} for r in rows]
+
+
+def gap_summary(db_path: Path = DB_PATH) -> dict:
+    """Средний Identity Gap и динамика «до/после» по клиенткам с ≥2 замерами."""
+    with _conn(db_path) as c:
+        rows = c.execute(
+            "SELECT client, gap_percentage FROM sessions WHERE gap_percentage IS NOT NULL ORDER BY client, ts, id"
+        ).fetchall()
+    by_client: dict[str, list[int]] = {}
+    for client, gap in rows:
+        by_client.setdefault(client, []).append(gap)
+    all_first = [v[0] for v in by_client.values()]
+    deltas = [v[0] - v[-1] for v in by_client.values() if len(v) >= 2]
+    return {
+        "clients_measured": len(by_client),
+        "avg_first_gap": round(sum(all_first) / len(all_first), 1) if all_first else None,
+        "clients_with_progress": len(deltas),
+        "avg_gap_reduction": round(sum(deltas) / len(deltas), 1) if deltas else None,
+    }
 
 
 def record_session(client: str, diagnosis: dict, ts: str | None = None,
