@@ -111,6 +111,41 @@ def count_generations(client: str, names: tuple = ("card_built",), db_path: Path
         ).fetchone()[0]
 
 
+def leads(db_path: Path = DB_PATH) -> list[dict]:
+    """Консолидированный список лидов: email + когда, последняя Формула/Gap/цветотип, число отзывов.
+    Источники — sessions (диагностика) + consents (согласие) + feedback. Для выгрузки/связи."""
+    with _conn(db_path) as c:
+        sess = c.execute(
+            "SELECT client, ts, gap_percentage, style_formula, colortype, figure_type "
+            "FROM sessions ORDER BY client, ts, id"
+        ).fetchall()
+        cons = c.execute("SELECT client, MIN(ts), MAX(ts) FROM consents GROUP BY client").fetchall()
+        fb = c.execute("SELECT client, COUNT(*) FROM feedback WHERE client IS NOT NULL GROUP BY client").fetchall()
+    agg: dict[str, dict] = {}
+
+    def _blank(email):
+        return {"email": email, "sessions": 0, "first": None, "last": None,
+                "gap": None, "formula": None, "colortype": None, "figure": None, "feedback": 0}
+
+    for client, ts, gap, formula, ct, fig in sess:
+        if not client:
+            continue
+        d = agg.setdefault(client, _blank(client))
+        d["sessions"] += 1
+        d["first"] = ts if d["first"] is None else min(d["first"], ts)
+        d["last"] = ts if d["last"] is None else max(d["last"], ts)
+        d.update(gap=gap, formula=formula, colortype=ct, figure=fig)  # последняя (по порядку ts)
+    for client, fts, lts in cons:
+        if not client:
+            continue
+        d = agg.setdefault(client, _blank(client))
+        d["first"] = fts if d["first"] is None else min(d["first"], fts)
+        d["last"] = lts if d["last"] is None else max(d["last"], lts)
+    for client, cnt in fb:
+        agg.setdefault(client, _blank(client))["feedback"] = cnt
+    return sorted(agg.values(), key=lambda d: d["last"] or "", reverse=True)
+
+
 def funnel(db_path: Path = DB_PATH) -> dict:
     """Числа воронки для приборной панели/конкурса."""
     with _conn(db_path) as c:

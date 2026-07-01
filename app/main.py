@@ -16,8 +16,8 @@ import uuid
 from pathlib import Path
 from urllib.parse import quote
 
-from flask import (Flask, jsonify, redirect, render_template_string, request,
-                   session, send_from_directory)
+from flask import (Flask, Response, jsonify, redirect, render_template_string,
+                   request, session, send_from_directory)
 from PIL import Image, UnidentifiedImageError
 from werkzeug.utils import secure_filename
 
@@ -27,7 +27,7 @@ from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_shopping_list, generate_styling_pair,
                            refine_colortype_subtype, render_look_on_client)
 from core.tracking import (count_generations, count_today, feedback_list, funnel,
-                           gap_summary, progress, record_call, record_consent,
+                           gap_summary, leads, progress, record_call, record_consent,
                            record_event, record_feedback, record_session)
 from core.auth import make_token, read_token, send_magic_link
 from core.figure_rules import fit_rules_client
@@ -1526,7 +1526,12 @@ td,th{text-align:left;padding:8px 6px;border-bottom:1px solid #e3dccf;vertical-a
  <div class=kpi><b>{{ g.clients_with_progress }}</b><span>с повторным замером</span></div>
  <div class=kpi><b>{{ g.avg_gap_reduction if g.avg_gap_reduction is not none else '—' }}</b><span>среднее снижение Gap, п.п.</span></div>
 </div>
-<h2>Отзывы ({{ f.feedback }}{% if f.avg_rating %}, средняя {{ f.avg_rating }}★{% endif %})</h2>
+<h2>Почты клиенток ({{ leads|length }}) &nbsp;<a href="/metrics/leads.csv{{ keyq }}">скачать CSV</a></h2>
+<table><tr><th>Email</th><th>Первый раз</th><th>Последний</th><th>Формула</th><th>Цветотип</th><th>Gap</th><th>Отзывов</th></tr>
+{% for l in leads %}<tr><td>{{ l.email }}</td><td>{{ l.first }}</td><td>{{ l.last }}</td><td>{{ l.formula or '' }}</td><td>{{ l.colortype or '' }}</td><td>{{ l.gap if l.gap is not none else '' }}</td><td>{{ l.feedback or '' }}</td></tr>{% endfor %}
+{% if not leads %}<tr><td colspan=7 style="color:#6b645c">Пока нет почт.</td></tr>{% endif %}
+</table>
+<h2>Отзывы и комментарии ({{ f.feedback }}{% if f.avg_rating %}, средняя {{ f.avg_rating }}★{% endif %}) &nbsp;<a href="/metrics/feedback.csv{{ keyq }}">скачать CSV</a></h2>
 <table><tr><th>Когда</th><th>Клиентка</th><th>Оценка</th><th>Текст</th></tr>
 {% for r in fb %}<tr><td>{{ r.ts }}</td><td>{{ r.client }}</td><td class=star>{{ r.rating or '' }}</td><td>{{ r.text or '' }}</td></tr>{% endfor %}
 {% if not fb %}<tr><td colspan=4 style="color:#6b645c">Пока нет отзывов.</td></tr>{% endif %}
@@ -1534,12 +1539,45 @@ td,th{text-align:left;padding:8px 6px;border-bottom:1px solid #e3dccf;vertical-a
 </body></html>"""
 
 
+def _csv_response(rows: list, header: list, fname: str) -> Response:
+    import csv
+    import io as _io
+    buf = _io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(header)
+    for r in rows:
+        w.writerow(r)
+    data = "﻿" + buf.getvalue()  # BOM — чтобы Excel корректно открыл кириллицу
+    return Response(data, mimetype="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="{fname}"'})
+
+
 @app.get("/metrics")
 def metrics_page():
     if not _is_admin():
         return redirect("/login?next=/metrics")
+    key = request.args.get("key")
+    keyq = ("?key=" + key) if key else ""
     return render_template_string(METRICS_PAGE, f=funnel(), g=gap_summary(),
-                                  fb=feedback_list())
+                                  fb=feedback_list(), leads=leads(), keyq=keyq)
+
+
+@app.get("/metrics/leads.csv")
+def metrics_leads_csv():
+    if not _is_admin():
+        return redirect("/login?next=/metrics")
+    rows = [[l["email"], l["first"], l["last"], l["formula"], l["colortype"],
+             l["figure"], l["gap"], l["sessions"], l["feedback"]] for l in leads()]
+    return _csv_response(rows, ["email", "first_seen", "last_seen", "formula", "colortype",
+                                "figure", "gap", "sessions", "feedback_count"], "leads.csv")
+
+
+@app.get("/metrics/feedback.csv")
+def metrics_feedback_csv():
+    if not _is_admin():
+        return redirect("/login?next=/metrics")
+    rows = [[r["ts"], r["client"], r["rating"], r["text"]] for r in feedback_list(limit=1000)]
+    return _csv_response(rows, ["ts", "email", "rating", "text"], "feedback.csv")
 
 
 # карта вердикта/совпадений → русские подписи, цвет и иконка
