@@ -936,6 +936,16 @@ body {
 }
 .cta-title em { font-style: italic; color: var(--gold-l); }
 .cta-desc { font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.7; margin-bottom: 22px; font-weight: 300; }
+.lead-cap { text-align:left; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:16px 16px 18px; margin-bottom:16px; }
+.lead-cap-t { font-size:15px; color:#fff; margin-bottom:4px; }
+.lead-cap-d { font-size:12.5px; color:rgba(255,255,255,.55); line-height:1.5; margin-bottom:12px; font-weight:300; }
+#lead-form input[type=email] { width:100%; padding:12px 13px; border:1px solid rgba(255,255,255,.22); border-radius:9px; background:rgba(0,0,0,.2); color:#fff; font-family:'Onest',-apple-system,sans-serif; font-size:15px; margin-bottom:10px; }
+#lead-form input[type=email]::placeholder { color:rgba(255,255,255,.4); }
+.lead-mkt { display:flex; gap:8px; align-items:flex-start; font-size:12.5px; color:rgba(255,255,255,.65); line-height:1.4; margin-bottom:12px; cursor:pointer; }
+.lead-mkt input { width:auto; margin-top:2px; }
+#lead-btn { width:100%; padding:13px; background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.25); border-radius:9px; font-family:'Onest',-apple-system,sans-serif; font-size:14px; cursor:pointer; }
+#lead-btn:hover { background:rgba(255,255,255,.18); }
+.lead-done { text-align:left; color:rgba(255,255,255,.8); font-size:14px; margin-bottom:14px; }
 .btn-cta {
   display: block;
   width: 100%;
@@ -1535,6 +1545,18 @@ body {
     <div class="cta-eyebrow">Следующий шаг</div>
     <div class="cta-title" id="r-cta-title"></div>
     <div class="cta-desc" id="r-cta-desc"></div>
+
+    <div class="lead-cap" id="lead-cap">
+      <div class="lead-cap-t">Сохранить твой разбор</div>
+      <div class="lead-cap-d">Оставь почту — вернёшься к результату и получишь письма о стиле и разборах.</div>
+      <form id="lead-form" onsubmit="return submitLead(event)">
+        <input type="email" id="lead-email" placeholder="твой email" required autocomplete="email">
+        <label class="lead-mkt"><input type="checkbox" id="lead-mkt" checked> Хочу письма о стиле и новинках</label>
+        <button type="submit" id="lead-btn">Сохранить разбор</button>
+      </form>
+    </div>
+    <div class="lead-done" id="lead-done" style="display:none">Сохранили твой разбор. Дальше — полная Карта:</div>
+
     <a class="btn-cta" id="r-cta-btn" href="/card">Получить полную Карту стиля · 3 900 ₽ →</a>
     <button class="btn-restart" onclick="restart()">Пройти квиз заново</button>
   </div>
@@ -2382,6 +2404,27 @@ function pollResult(jobId, tries) {
 function skipUpload() {
   userPhotoDataUrl = null;
   buildResult();
+}
+
+// Захват почты на экране результата (лид + согласие на письма)
+function submitLead(e) {
+  e.preventDefault();
+  var email = (document.getElementById('lead-email').value || '').trim();
+  var mkt = document.getElementById('lead-mkt').checked;
+  var btn = document.getElementById('lead-btn');
+  if (!email) return false;
+  btn.disabled = true; btn.textContent = 'Сохраняем…';
+  fetch('/lead', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, marketing: mkt, job_id: currentJobId }) })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d && d.ok) {
+        document.getElementById('lead-cap').style.display = 'none';
+        document.getElementById('lead-done').style.display = 'block';
+      } else { btn.disabled = false; btn.textContent = 'Сохранить разбор'; }
+    })
+    .catch(function () { btn.disabled = false; btn.textContent = 'Сохранить разбор'; });
+  return false;
 }
 
 // Восстановление после перезагрузки: если генерация шла или результат уже готов —

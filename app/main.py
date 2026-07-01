@@ -1468,6 +1468,24 @@ def card_status(job_id):
     return jsonify(_JOBS.get(job_id) or {"status": "unknown"})
 
 
+@app.post("/lead")
+def capture_lead():
+    """Захват почты на экране результата квиза (лид). Привязываем диагностику из job, согласие на письма."""
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    if "@" not in email or "." not in email:
+        return jsonify({"ok": False, "error": "email"}), 400
+    job_id = data.get("job_id")
+    diag = (_JOBS.get(job_id) or {}).get("diag") if job_id else None
+    if diag:
+        save_diagnosis(email, diag)   # привязали диагностику из квиза к почте
+    record_session(email, diag or {})  # почта с Формулой/Gap → попадёт в список лидов
+    if data.get("marketing"):
+        record_event("marketing_optin", email)
+    record_event("lead_captured", email, meta="quiz")
+    return jsonify({"ok": True})
+
+
 @app.post("/card/feedback")
 def card_feedback():
     """Отзыв клиентки о Карте (оценка + текст). Питает артефакт «обратная связь» конкурса."""
