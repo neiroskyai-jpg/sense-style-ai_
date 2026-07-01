@@ -26,9 +26,10 @@ from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_directions, generate_personality_portrait,
                            generate_shopping_list, generate_styling_pair,
                            refine_colortype_subtype, render_look_on_client)
-from core.tracking import (count_generations, count_today, feedback_list, funnel,
-                           gap_summary, leads, progress, record_call, record_consent,
-                           record_event, record_feedback, record_session)
+from core.tracking import (chat_log, count_generations, count_today, feedback_list,
+                           funnel, gap_summary, leads, progress, record_call,
+                           record_chat, record_consent, record_event, record_feedback,
+                           record_session)
 from core.auth import make_token, read_token, send_magic_link
 from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
@@ -1110,10 +1111,15 @@ def stylist_msg():
     history = data.get("history") if isinstance(data.get("history"), list) else []
     email = session.get("email")
     profile = get_profile(email) if email else None
+    # сохраняем последнюю реплику пользователя (переписка со стилистом)
+    if history and isinstance(history[-1], dict) and history[-1].get("role") == "user":
+        last = history[-1].get("content") or history[-1].get("text") or ""
+        record_chat(email, "user", last)
     try:
         reply = stylist_reply(history, profile, mode="dev")
     except Exception as e:  # noqa: BLE001
         return jsonify({"error": str(e), "reply": "Сейчас не получилось ответить — попробуй ещё раз."}), 200
+    record_chat(email, "assistant", reply)
     return jsonify({"reply": reply})
 
 
@@ -1536,6 +1542,11 @@ td,th{text-align:left;padding:8px 6px;border-bottom:1px solid #e3dccf;vertical-a
 {% for r in fb %}<tr><td>{{ r.ts }}</td><td>{{ r.client }}</td><td class=star>{{ r.rating or '' }}</td><td>{{ r.text or '' }}</td></tr>{% endfor %}
 {% if not fb %}<tr><td colspan=4 style="color:#6b645c">Пока нет отзывов.</td></tr>{% endif %}
 </table>
+<h2>Чат «Спросить стилиста» ({{ chat|length }}) &nbsp;<a href="/metrics/chat.csv{{ keyq }}">скачать CSV</a></h2>
+<table><tr><th>Когда</th><th>Кто</th><th>Роль</th><th>Сообщение</th></tr>
+{% for m in chat %}<tr><td>{{ m.ts }}</td><td>{{ m.client }}</td><td>{{ 'клиент' if m.role=='user' else 'стилист' }}</td><td>{{ m.text }}</td></tr>{% endfor %}
+{% if not chat %}<tr><td colspan=4 style="color:#6b645c">Пока нет переписки.</td></tr>{% endif %}
+</table>
 </body></html>"""
 
 
@@ -1559,7 +1570,7 @@ def metrics_page():
     key = request.args.get("key")
     keyq = ("?key=" + key) if key else ""
     return render_template_string(METRICS_PAGE, f=funnel(), g=gap_summary(),
-                                  fb=feedback_list(), leads=leads(), keyq=keyq)
+                                  fb=feedback_list(), leads=leads(), chat=chat_log(), keyq=keyq)
 
 
 @app.get("/metrics/leads.csv")
@@ -1578,6 +1589,14 @@ def metrics_feedback_csv():
         return redirect("/login?next=/metrics")
     rows = [[r["ts"], r["client"], r["rating"], r["text"]] for r in feedback_list(limit=1000)]
     return _csv_response(rows, ["ts", "email", "rating", "text"], "feedback.csv")
+
+
+@app.get("/metrics/chat.csv")
+def metrics_chat_csv():
+    if not _is_admin():
+        return redirect("/login?next=/metrics")
+    rows = [[m["ts"], m["client"], m["role"], m["text"]] for m in chat_log(limit=5000)]
+    return _csv_response(rows, ["ts", "email", "role", "text"], "chat.csv")
 
 
 # карта вердикта/совпадений → русские подписи, цвет и иконка

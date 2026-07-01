@@ -42,6 +42,12 @@ def _conn(db_path: Path) -> sqlite3.Connection:
         )"""
     )
     c.execute(
+        """CREATE TABLE IF NOT EXISTS chat (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            client TEXT, ts TEXT NOT NULL, role TEXT, text TEXT
+        )"""
+    )
+    c.execute(
         """CREATE TABLE IF NOT EXISTS consents (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             client TEXT, ip TEXT, ts TEXT NOT NULL,
@@ -97,6 +103,28 @@ def record_feedback(client: str | None, rating: int | None, text: str | None,
     with _conn(db_path) as c:
         c.execute("INSERT INTO feedback (client, ts, rating, text) VALUES (?,?,?,?)",
                   (client, ts, rating, (text or "").strip() or None))
+
+
+def record_chat(client: str | None, role: str, text: str, ts: str | None = None,
+                db_path: Path = DB_PATH) -> None:
+    """Сохранить реплику чата «Спросить стилиста» (role=user/assistant). Тихо глотает ошибки."""
+    if not (text or "").strip():
+        return
+    try:
+        ts = ts or datetime.now().isoformat(timespec="seconds")
+        with _conn(db_path) as c:
+            c.execute("INSERT INTO chat (client, ts, role, text) VALUES (?,?,?,?)",
+                      (client or "anon", ts, role, text.strip()[:4000]))
+    except Exception:  # noqa: BLE001 — чат не должен падать из-за трекинга
+        pass
+
+
+def chat_log(limit: int = 500, db_path: Path = DB_PATH) -> list[dict]:
+    with _conn(db_path) as c:
+        rows = c.execute(
+            "SELECT ts, client, role, text FROM chat ORDER BY ts DESC, id DESC LIMIT ?", (limit,)
+        ).fetchall()
+    return [{"ts": r[0], "client": r[1], "role": r[2], "text": r[3]} for r in rows]
 
 
 def count_generations(client: str, names: tuple = ("card_built",), db_path: Path = DB_PATH) -> int:
