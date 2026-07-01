@@ -463,9 +463,12 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
     """
     instruction = (
         "Photo editing task: dress the SAME real woman from the reference photo in a new outfit. "
-        "Preserve her identity EXACTLY — she must be instantly recognizable as the same person:\n"
-        "- Face: keep the same face shape, eyes, nose, lips, eyebrows, skin tone and complexion, and age. "
-        "Do NOT beautify, slim the face, or alter any feature.\n"
+        "The reference photo is the GROUND TRUTH for her identity — study her face carefully and "
+        "reproduce it precisely so she is instantly recognizable as the exact same person. "
+        "If the reference is a full-body shot with a small face, zoom into the face region to capture "
+        "her exact features — do NOT replace her with a generic model.\n"
+        "- Face: keep the SAME face — face shape, eyes (shape and colour), nose, lips, eyebrows, "
+        "skin tone and complexion, freckles and age. Do NOT beautify, slim, or alter any feature.\n"
         "- Hair: keep the same colour, length and texture.\n"
         "- Body: keep the same height, build, weight and body proportions (figure type). "
         "Do NOT slim, lengthen, or idealise her body — keep her real silhouette.\n"
@@ -475,7 +478,10 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
         + " Full-body head to toe, photorealistic, natural light, vertical 3:4 ratio."
     )
     model = config.MODELS["image"]["dressing"]
-    return provider.generate_image(instruction, model=model, ref_images=[ref_image or client_photo])[0]
+    # референс личности — в ВЫСОКОМ разрешении (иначе в фото в полный рост лицо ~1024/8 ≈ мелкое,
+    # модель «додумывает» чужое лицо). data-URL пропускается провайдером без пересжатия до 1024.
+    ref = ref_image or provider.encode_image(client_photo, max_side=1536)
+    return provider.generate_image(instruction, model=model, ref_images=[ref])[0]
 
 
 def render_capsule_on_client(client_photo: str, look_prompts: list[str]) -> list[str]:

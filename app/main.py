@@ -718,6 +718,7 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=card>
  <label>Фото (в полный рост)</label>
  <div class=file><input type=file name=photo accept="image/*" required></div>
+ <p class=hint style="text-align:left;margin:6px 0 0">Лицо должно быть хорошо видно — крупно, при дневном свете, без тёмных очков и сильной тени. От этого зависит сходство в образах.</p>
  <div class=eyebrow style="margin:24px 0 2px">Чтобы Карта была точнее (по желанию)</div>
  <label>{% if current_colortype_label %}Твой цветотип по фото — <b>{{ current_colortype_label }}</b>. Если знаешь свой сезон и он другой, выбери его — палитра пересоберётся:{% else %}Знаешь свой цветотип? Выбери сезон, и палитра соберётся под него (по желанию):{% endif %}</label>
  <select name=colortype_override class=fld>
