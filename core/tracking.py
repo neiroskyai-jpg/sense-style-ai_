@@ -99,6 +99,18 @@ def record_feedback(client: str | None, rating: int | None, text: str | None,
                   (client, ts, rating, (text or "").strip() or None))
 
 
+def count_generations(client: str, names: tuple = ("card_built",), db_path: Path = DB_PATH) -> int:
+    """Сколько раз этот email уже запускал дорогую генерацию (по событиям). Для лимита бесплатных прогонов."""
+    if not client:
+        return 0
+    placeholders = ",".join("?" for _ in names)
+    with _conn(db_path) as c:
+        return c.execute(
+            f"SELECT COUNT(*) FROM events WHERE client=? AND name IN ({placeholders})",
+            (client, *names),
+        ).fetchone()[0]
+
+
 def funnel(db_path: Path = DB_PATH) -> dict:
     """Числа воронки для приборной панели/конкурса."""
     with _conn(db_path) as c:

@@ -261,6 +261,8 @@ def generate_card_palette(diagnosis: dict, mode: str | None = None) -> dict:
     )
 
 
+_STYLE_RU = {"classic": "Классика", "drama": "Драма", "romantic": "Романтика", "natural": "Натуральный"}
+
 # Правила качества капсулы: против монотонности, «мягкого уюта по умолчанию» и приглушённости.
 # Появились из разбора реального промаха (клиентка: «не моё» — все образы одинаковые, casual, без акцента).
 _CAPSULE_QUALITY_RULES = (
@@ -297,6 +299,12 @@ def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None
     if fit_prompt:
         system += "\n\n# ПОСАДКА ПОД ФИГУРУ (обязательно к соблюдению)\n\n" + fit_prompt
     system += "\n\n# КАЧЕСТВО КАПСУЛЫ (обязательно к соблюдению)\n\n" + _CAPSULE_QUALITY_RULES
+    # клиентка сама отметила любимые стили (визуальный выбор) → явный регистр образов
+    want = generation_request.get("want_styles") or []
+    if want:
+        names = ", ".join(_STYLE_RU.get(c, c) for c in want)
+        system += ("\n\n# ВЫБОР СТИЛЯ КЛИЕНТКОЙ\nОна отметила, что ей откликаются направления: "
+                   + names + ". Строй образы в этом характере (в рамках её Формулы), не уводи в другой регистр.")
     payload = {
         "style_formula_result": _diagnosis_to_formula_result(diagnosis),
         "generation_request": generation_request,
