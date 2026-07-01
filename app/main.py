@@ -1572,7 +1572,7 @@ _COLORTYPE_LABEL = {
     "spring_light": "Весна светлая", "spring_natural": "Весна натуральная",
     "spring_contrast": "Весна контрастная", "summer_light": "Лето светлое",
     "summer_natural": "Лето натуральное", "summer_contrast": "Лето контрастное",
-    "autumn_light": "Осень мягкая", "autumn_natural": "Осень натуральная",
+    "autumn_light": "Осень светлая", "autumn_natural": "Осень натуральная",
     "autumn_contrast": "Осень контрастная", "winter_light": "Зима светлая",
     "winter_natural": "Зима натуральная", "winter_contrast": "Зима контрастная",
 }
