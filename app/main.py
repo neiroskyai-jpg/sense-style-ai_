@@ -835,37 +835,37 @@ _BLOG_DIR = Path(__file__).resolve().parent.parent / "content" / "blog"
 
 _BLOG_FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">'
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-    '<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;1,6..96,400&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">')
+    '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">')
 
 _BLOG_CSS = (
     ":root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#7A1C2E;--muted:#6b645c;--line:#e3dccf;--ph:#e9e0d0}"
     "*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Onest,Georgia,serif;line-height:1.6}"
     ".wrap{max-width:1120px;margin:0 auto;padding:30px 26px 110px}.artwrap{max-width:680px}"
-    ".top{display:flex;justify-content:space-between;align-items:center}.logo{font-family:'Bodoni Moda',serif;font-size:20px}.top a{color:var(--muted);font-size:14px;text-decoration:none}"
+    ".top{display:flex;justify-content:space-between;align-items:center}.logo{font-family:'Cormorant Garamond',serif;font-size:20px}.top a{color:var(--muted);font-size:14px;text-decoration:none}"
     ".eyebrow{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--wine);margin:44px 0 12px}"
-    "h1.jt{font-family:'Bodoni Moda',serif;font-weight:500;font-size:56px;line-height:1.02;margin:0 0 14px;letter-spacing:-.01em}"
+    "h1.jt{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:56px;line-height:1.02;margin:0 0 14px;letter-spacing:-.01em}"
     ".lead{color:var(--muted);font-size:18px;margin:0 0 46px;max-width:560px}"
     ".chip{display:inline-block;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine);margin-bottom:12px}"
     # featured: крупный образ, минимум текста
     ".feat{display:block;text-decoration:none;color:inherit;margin-top:6px}"
     ".feat .cov{aspect-ratio:16/9;background-size:cover;background-position:center;background-color:var(--ph);border-radius:8px}"
-    ".feat .body{padding:24px 4px 0;max-width:760px}.feat h2{font-family:'Bodoni Moda',serif;font-weight:500;font-size:38px;line-height:1.06;margin:0 0 10px}.feat p{color:var(--muted);font-size:17px;margin:0}"
+    ".feat .body{padding:24px 4px 0;max-width:760px}.feat h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:38px;line-height:1.06;margin:0 0 10px}.feat p{color:var(--muted);font-size:17px;margin:0}"
     # сетка карточек: образ доминирует
     ".grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 30px;margin-top:64px}"
     "@media(max-width:720px){.grid{grid-template-columns:1fr;gap:44px}h1.jt{font-size:40px}.feat h2{font-size:28px}}"
     ".card{display:block;text-decoration:none;color:inherit}"
     ".card .cov{aspect-ratio:4/5;background-size:cover;background-position:center;background-color:var(--ph);border-radius:8px;transition:opacity .2s}"
     ".card:hover .cov{opacity:.92}"
-    ".card .body{padding:16px 2px 0}.card h3{font-family:'Bodoni Moda',serif;font-weight:500;font-size:23px;line-height:1.12;margin:0 0 6px}.card p{color:var(--muted);font-size:15px;margin:0}"
+    ".card .body{padding:16px 2px 0}.card h3{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:23px;line-height:1.12;margin:0 0 6px}.card p{color:var(--muted);font-size:15px;margin:0}"
     ".empty{padding:40px 2px;margin-top:18px;color:var(--muted);font-size:18px}"
     # статья: редакционная подача
     ".hero{aspect-ratio:3/2;background-size:cover;background-position:center;background-color:var(--ph);border-radius:10px;margin:10px 0 40px}"
     "article{font-size:19px;line-height:1.85}"
     "article>p:first-of-type{font-size:23px;line-height:1.5;color:#2a2620;margin:0 0 30px}"
-    "article h2{font-family:'Bodoni Moda',serif;font-weight:500;font-size:30px;line-height:1.15;margin:46px 0 16px}"
+    "article h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:30px;line-height:1.15;margin:46px 0 16px}"
     "article p{margin:0 0 26px}article ul{padding-left:22px;margin:0 0 26px}article li{margin:9px 0}article a{color:var(--wine)}"
     "article img{width:100%;border-radius:10px;margin:20px 0}"
-    "article blockquote{font-family:'Bodoni Moda',serif;font-style:italic;font-size:27px;line-height:1.35;color:var(--wine);margin:40px 0;padding:0;border:0}"
+    "article blockquote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:27px;line-height:1.35;color:var(--wine);margin:40px 0;padding:0;border:0}"
     ".meta{font-size:12.5px;color:#a89f92;letter-spacing:.08em;text-transform:uppercase;margin:0 0 24px}"
     ".cta{border-top:1px solid var(--line);padding-top:34px;margin-top:56px;text-align:center;font-size:18px}"
     ".cta a{display:inline-block;margin-top:16px;background:var(--wine);color:#fff;padding:15px 34px;border-radius:999px;text-decoration:none;font-size:15px}"
