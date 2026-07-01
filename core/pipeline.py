@@ -8,6 +8,7 @@ import json
 from urllib.parse import quote_plus
 
 from . import config, provider
+from .figure_rules import fit_rules_prompt
 from .prompts import load_knowledge, load_reference, load_system_prompt
 
 try:
@@ -271,6 +272,10 @@ def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None
         + "\n\n# БАЗА ЗНАНИЙ (style-library)\n\n"
         + load_knowledge("style-library")
     )
+    # грунтуем подбор явными правилами посадки под фигуру (размеры/силуэты считываются при подборе)
+    fit_prompt = fit_rules_prompt(diagnosis.get("figure_type"))
+    if fit_prompt:
+        system += "\n\n# ПОСАДКА ПОД ФИГУРУ (обязательно к соблюдению)\n\n" + fit_prompt
     payload = {
         "style_formula_result": _diagnosis_to_formula_result(diagnosis),
         "generation_request": generation_request,

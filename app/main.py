@@ -30,6 +30,7 @@ from core.tracking import (count_today, feedback_list, funnel, gap_summary,
                            progress, record_call, record_consent, record_event,
                            record_feedback, record_session)
 from core.auth import make_token, read_token, send_magic_link
+from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
 from core.profiles import (get_profile, save_card, save_diagnosis,
                            save_style_profile)
@@ -551,6 +552,15 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  {% if c.colortype %}<li><b>Цветотип:</b> {{ c.colortype }}{% if c.contrast %} · контраст {{ c.contrast }}{% endif %} — на нём строится палитра ниже</li>{% endif %}
  {% if c.figure %}<li><b>Фигура:</b> {{ c.figure }} — под неё силуэты и образы</li>{% endif %}
  {% if c.emphasize %}<li><b>Подчёркиваем:</b> {{ c.emphasize }} — образы строим вокруг этого</li>{% endif %}
+</ul>{% endif %}
+
+{% if c.figure_fit %}<h2>Посадка под твою фигуру</h2>
+<p style="font-size:15px;color:var(--muted);margin:0 0 10px">По этим правилам подобрана капсула и образы ниже — чтобы вещи сидели по твоим пропорциям.</p>
+<ul class=clean>
+ <li><b>Подчёркиваем:</b> {{ c.figure_fit.emphasize }}</li>
+ <li><b>Баланс:</b> {{ c.figure_fit.balance }}</li>
+ <li><b>Посадка и размеры:</b> {{ c.figure_fit.fit }}</li>
+ <li><b>Твои силуэты:</b> {{ c.figure_fit.silhouettes | join('; ') }}</li>
 </ul>{% endif %}
 
 {% if c.personality and c.personality.portrait %}<h2>Твоя натура и стиль</h2>
@@ -1124,6 +1134,7 @@ def build_style_card(diag: dict) -> dict:
         # основа — определяется в диагностике ДО цветов/образов (цветотип → палитра, фигура → силуэты)
         "colortype": _colortype_label(diag.get("colortype")),
         "figure": _figure_label(diag.get("figure_type")),
+        "figure_fit": fit_rules_client(diag.get("figure_type")),  # посадка/силуэты под фигуру
         "contrast": _CONTRAST_RU.get((diag.get("tonal_characteristics") or {}).get("contrast"), ""),
         "palette": palette.get("palette") or [],
         "stop_colors": palette.get("stop_colors") or [],
