@@ -100,7 +100,7 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label>Чем занимаешься</label><input name=profession placeholder="например: руководитель отдела">
  <label>Как тебя считывают сейчас (через запятую)</label><input name=now_traits required placeholder="например: сдержанная, простая, незаметная">
  <label>Как хочешь, чтобы считывали — топ-3 (через запятую)</label><input name=want_traits required placeholder="например: уверенная, элегантная, тёплая">
- <p class=hint style="margin:16px 0 0">Цветотип, контраст и силуэт фигуры ИИ определит сам по фото — указывать не нужно.</p>
+ <p class=hint style="margin:16px 0 0">Цветотип, контраст и силуэт фигуры определим сами по фото — указывать не нужно.</p>
  <label>Сегмент бюджета</label>
  <select name=price>
   <option value="middle">Средний</option>
@@ -181,7 +181,7 @@ LANDING = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <header><div class=logo>Sense&nbsp;Style</div><a class="btn sm" href="/demo">Пройти диагностику</a></header>
  <section class=hero>
   <h1>Стиль, в котором ты&nbsp;— настоящая</h1>
-  <p>ИИ-стилист на основе психологии моды. Загрузи фото и ответь на несколько вопросов — определим твою Формулу стиля, измерим разрыв между тем, как тебя считывают сейчас и как ты хочешь, и покажем тебя в новых образах.</p>
+  <p>Персональный стилист на основе психологии моды. Загрузи фото и ответь на несколько вопросов — определим твою Формулу стиля, измерим разрыв между тем, как тебя считывают сейчас и как ты хочешь, и покажем тебя в новых образах.</p>
   <a class=btn href="/demo">Построить свои образы →</a>
  </section>
 
@@ -270,7 +270,7 @@ GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </style></head><body><div class=wrap>
 <div class=top><span class=logo>Чувство стиля</span><span><a href="/me" style="margin-right:14px">Мой профиль</a><a href="/">← на главную</a></span></div>
 
-<div class=eyebrow>Проверка вещи · ИИ</div>
+<div class=eyebrow>Проверка вещи</div>
 <h1>Брать или не брать?</h1>
 <p class=lead>Стоишь в примерочной и сомневаешься? Сфоткай вещь — и узнай за пару секунд, работает ли она на твой образ. Чтобы не покупать то, что потом висит с биркой.</p>
 
@@ -679,9 +679,9 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label>Фото (в полный рост)</label>
  <div class=file><input type=file name=photo accept="image/*" required></div>
  <div class=eyebrow style="margin:24px 0 2px">Чтобы Карта была точнее (по желанию)</div>
- <label>Цветотип{% if current_colortype_label %} — ИИ определил по фото: <b>{{ current_colortype_label }}</b>{% endif %}. Если знаешь, что он другой — поправь, и палитра пересоберётся:</label>
+ <label>{% if current_colortype_label %}Твой цветотип по фото — <b>{{ current_colortype_label }}</b>. Если знаешь свой сезон и он другой, выбери его — палитра пересоберётся:{% else %}Знаешь свой цветотип? Выбери сезон, и палитра соберётся под него (по желанию):{% endif %}</label>
  <select name=colortype_override class=fld>
-  <option value="">— оставить как определил ИИ —</option>
+  <option value="">{% if current_colortype_label %}— оставить как есть —{% else %}— определим по фото —{% endif %}</option>
   {% for code, lab in colortype_options %}<option value="{{ code }}">{{ lab }}</option>{% endfor %}
  </select>
  <label>Что в твоей внешности тебе нравится больше всего — что подчеркнём?</label>
