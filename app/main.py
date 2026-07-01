@@ -648,18 +648,23 @@ function downloadPdf(){
 
 CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Собрать Карту стиля</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
- *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ *{box-sizing:border-box} body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
  .wrap{max-width:560px;margin:0 auto;padding:34px 22px 70px}
- .top{display:flex;justify-content:space-between;align-items:center} .logo{font-size:18px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
- .eyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine);margin:26px 0 10px}
- h1{font-weight:normal;font-size:32px;margin:0 0 12px} .lead{color:var(--muted);margin:0 0 8px}
- .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px 22px 24px;margin-top:16px}
- label{display:block;margin:18px 0 6px;font-size:14px}
+ .top{display:flex;justify-content:space-between;align-items:center} .logo{font-family:'Cormorant Garamond',serif;font-size:22px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
+ .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine);margin:26px 0 10px}
+ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:36px;line-height:1.08;margin:0 0 12px} .lead{color:var(--muted);margin:0 0 8px;font-size:15px}
+ .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px 22px 26px;margin-top:16px}
+ label{display:block;margin:20px 0 7px;font-size:14px;font-weight:500;color:var(--ink)}
+ .fld{width:100%;padding:12px 13px;border:1px solid #d9d2c7;border-radius:10px;font-family:inherit;font-size:15px;color:var(--ink);background:#fff;transition:border-color .15s}
+ .fld:focus{outline:0;border-color:var(--wine)} .fld::placeholder{color:#a89f92}
+ select.fld{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b645c' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
  .file{border:1.5px dashed #cdbfa6;border-radius:10px;padding:16px;text-align:center;background:#fbf8f1}
  input[type=file]{width:100%}
- button{margin-top:24px;width:100%;padding:15px;background:var(--wine);color:#fff;border:0;border-radius:10px;font:inherit;font-size:17px;cursor:pointer}
+ button{margin-top:26px;width:100%;padding:15px;background:var(--wine);color:#fff;border:0;border-radius:10px;font-family:inherit;font-size:17px;cursor:pointer}
  .consent{font-size:13px;color:var(--muted);display:flex;gap:8px;margin-top:14px;line-height:1.4} .consent input{width:auto;margin-top:3px}
  .hint{color:var(--muted);font-size:13px;text-align:center;margin-top:14px} .hint a{color:var(--wine)}
  .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:8px}
@@ -675,18 +680,18 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <div class=file><input type=file name=photo accept="image/*" required></div>
  <div class=eyebrow style="margin:24px 0 2px">Чтобы Карта была точнее (по желанию)</div>
  <label>Цветотип{% if current_colortype_label %} — ИИ определил по фото: <b>{{ current_colortype_label }}</b>{% endif %}. Если знаешь, что он другой — поправь, и палитра пересоберётся:</label>
- <select name=colortype_override style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+ <select name=colortype_override class=fld>
   <option value="">— оставить как определил ИИ —</option>
   {% for code, lab in colortype_options %}<option value="{{ code }}">{{ lab }}</option>{% endfor %}
  </select>
  <label>Что в твоей внешности тебе нравится больше всего — что подчеркнём?</label>
- <input type=text name=adv placeholder="например: длинные ноги, талия, плечи, шея" style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+ <input type=text name=adv class=fld placeholder="например: длинные ноги, талия, плечи, шея">
  <label>Что хочешь визуально уравновесить?</label>
- <input type=text name=balance placeholder="например: сбалансировать бёдра и плечи" style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+ <input type=text name=balance class=fld placeholder="например: сбалансировать бёдра и плечи">
  <label>Стильные табу — что точно не носишь?</label>
- <input type=text name=taboo placeholder="например: не ношу мини, красный, каблук выше 5 см" style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+ <input type=text name=taboo class=fld placeholder="например: не ношу мини, красный, каблук выше 5 см">
  <label>Чьё мнение учитываем в стиле? (по желанию)</label>
- <input type=text name=audience placeholder="например: никого / партнёр / дети / коллеги" style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+ <input type=text name=audience class=fld placeholder="например: никого / партнёр / дети / коллеги">
 
  <div class=eyebrow style="margin:26px 0 2px">Пара вопросов о тебе (по желанию)</div>
  <p style="font-size:13px;color:var(--muted);margin:0 0 10px">По шкале: 1 — совсем не про меня, 5 — точно про меня. Это поможет собрать образы под твою натуру.</p>
@@ -702,13 +707,13 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <div class=eyebrow style="margin:24px 0 2px">Твой круг жизни (по желанию)</div>
  <p style="font-size:13px;color:var(--muted);margin:0 0 8px">Сколько примерно времени в неделю (%) — чтобы образы попали в реальную жизнь.</p>
  <div style="display:flex;gap:10px">
-  <label style="flex:1;margin:0;font-size:13px">Работа<input type=number name=life_work min=0 max=100 placeholder="%" style="width:100%;padding:9px;border:1px solid #d9d2c7;border-radius:8px;font:inherit"></label>
-  <label style="flex:1;margin:0;font-size:13px">Дом<input type=number name=life_home min=0 max=100 placeholder="%" style="width:100%;padding:9px;border:1px solid #d9d2c7;border-radius:8px;font:inherit"></label>
-  <label style="flex:1;margin:0;font-size:13px">Свободное<input type=number name=life_free min=0 max=100 placeholder="%" style="width:100%;padding:9px;border:1px solid #d9d2c7;border-radius:8px;font:inherit"></label>
+  <label style="flex:1;margin:6px 0 0;font-size:13px;font-weight:400;color:var(--muted)">Работа<input type=number name=life_work min=0 max=100 placeholder="%" class=fld style="margin-top:4px"></label>
+  <label style="flex:1;margin:6px 0 0;font-size:13px;font-weight:400;color:var(--muted)">Дом<input type=number name=life_home min=0 max=100 placeholder="%" class=fld style="margin-top:4px"></label>
+  <label style="flex:1;margin:6px 0 0;font-size:13px;font-weight:400;color:var(--muted)">Свободное<input type=number name=life_free min=0 max=100 placeholder="%" class=fld style="margin-top:4px"></label>
  </div>
 
  <label>Бюджет на обновление гардероба (по желанию)</label>
- <select name=budget style="width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;font-size:15px">
+ <select name=budget class=fld>
   <option value="">— не важно —</option>
   <option value="budget">Экономный</option>
   <option value="middle">Средний</option>
