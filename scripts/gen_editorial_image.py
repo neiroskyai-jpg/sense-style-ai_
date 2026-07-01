@@ -29,12 +29,21 @@ _ORIENT = {
 
 # Дух LICHI Inspire: современная редакционная мода, живая элегантная модель,
 # чистый свет, много воздуха, наша палитра. Тело-позитив: женщина 35–48.
+# Анти-пластик (по курсу ART AI): реальная текстура кожи, плёнка/камера,
+# без бьюти-ретуши, зерно, естественный свет, candid — «--style raw».
 _STYLE = (
-    " Modern fashion editorial photograph, LICHI Inspire mood: one elegant woman aged 35 to 48, "
-    "natural confident posture, refined minimal styling, real skin texture, candid editorial framing "
+    " Modern fashion editorial photograph, LICHI Inspire mood: one elegant natural woman aged 35 to 48, "
+    "confident relaxed posture, refined minimal styling, candid editorial framing "
     "(often three-quarter or profile, face not centered), soft natural window light, generous negative space. "
     "Muted warm neutral palette — cream, camel, chocolate, taupe, soft grey — with a single deep wine accent. "
-    "Photorealistic, high-end magazine quality, film-like grain. "
+    # реализм / анти-пластик
+    "Shot on Kodak Portra 400 film with a Hasselblad medium-format camera, 85mm lens, shallow depth of field, "
+    "authentic film grain, true-to-life colors, natural soft contrast. "
+    "Real unretouched skin with visible texture, pores, fine lines and natural freckles, "
+    "no beauty retouching, no skin smoothing, matte natural complexion, believable human proportions, "
+    "candid documentary feel, raw natural style. "
+    # чего избегать
+    "Not plastic, not waxy, not glossy skin, not airbrushed, not CGI, not a 3D render, not over-saturated. "
     "No text, no words, no logos, no captions, no watermark, no brand names."
 )
 
