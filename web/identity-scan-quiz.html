@@ -2001,7 +2001,12 @@ function buildResult() {
     gapSum += q.opts[a].gap;
     gapMax += 3;
   });
-  const gapPct = Math.round((gapSum / gapMax) * 100);
+  // Серверный диагноз (по методологии: field_gap + expression_gap) — ИСТОЧНИК ПРАВДЫ.
+  // Показываем его число, чтобы Gap совпадал с Картой (единый конструктор). Клиентская
+  // эвристика — только запасной вариант, если сервер недоступен (нет фото/ошибка).
+  const clientGap = Math.round((gapSum / gapMax) * 100);
+  const gapPct = (aiResult && Number.isFinite(aiResult.gap_percentage))
+    ? aiResult.gap_percentage : clientGap;
 
   // ── 2. Направление по 3 трейтам из q13 (главный сигнал) ──────────
   // Это прямая реализация шага 1 алгоритма Формулы стиля метода:
@@ -2372,6 +2377,28 @@ function clearJob() { try { sessionStorage.removeItem(SS_JOB_KEY); } catch (e) {
 var selectedSeason = (function(){ var m=new Date().getMonth();
   return m<=1||m===11 ? 'winter' : m<=4 ? 'spring' : m<=7 ? 'summer' : 'autumn'; })();
 
+// Собираем now/want-трейты из ответов квиза — ЭТИ ЖЕ данные считает сервер (единый диагноз).
+// Логика зеркалит buildResult (порядок: явные пики q13 → неявные), чтобы want_traits_top3 на
+// сервере брал именно её 3 выбранные характеристики. Без этого diagnose() падает в «99% / нет данных».
+function collectTraits() {
+  const nowWords = [], wantExplicit = [], wantImplicit = [];
+  questions.forEach(q => {
+    const a = answers[q.id];
+    if (a === undefined) return;
+    if (q.kind === 'multi') {
+      a.forEach(idx => wantExplicit.push(q.opts[idx].t.toLowerCase()));
+    } else {
+      const opt = q.opts[a];
+      if (opt.now) nowWords.push(...opt.now);
+      if (opt.want) wantImplicit.push(...opt.want);
+    }
+  });
+  return {
+    now: [...new Set(nowWords)],
+    want: [...new Set([...wantExplicit, ...wantImplicit])],
+  };
+}
+
 function generateLooks(file) {
   aiLooks = null;
   aiResult = null;
@@ -2380,6 +2407,9 @@ function generateLooks(file) {
   fd.append('consent_processing', 'on');
   fd.append('consent_transfer', 'on');
   if (selectedSeason) fd.append('season', selectedSeason);
+  const traits = collectTraits();  // ответы квиза → серверу, иначе диагноз вырождается в 99%
+  fd.append('now_traits', traits.now.join(','));
+  fd.append('want_traits', traits.want.join(','));
   fetch('/api/analyze', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(d => {
