@@ -395,6 +395,47 @@ def generate_personality_portrait(traits: dict, diagnosis: dict, mode: str | Non
     )
 
 
+def refine_substyle(diagnosis: dict, deep_intake: dict, mode: str | None = None) -> dict:
+    """Шаг 4 метода: уточнить ПОДСТИЛЬ (из 25) по ПСИХОТИПУ (Big Five) + визуальному выбору
+    стилей + кругу жизни. Психотип — движок глубины: превращает базовый стиль (4) в подстиль (25).
+
+    Возвращает {base_style, primary_substyle, secondary_substyle, accent_note, style_formula,
+    substyle_rationale, requires_stylist_validation}. Без психотипа (big5) возвращает {} —
+    подстиль остаётся тем, что дала диагностика (базовый уровень).
+    """
+    big5 = (deep_intake or {}).get("big5") or {}
+    if not big5:
+        return {}
+    hints = []
+    for k, (hi, lo) in _TRAIT_RU.items():
+        lvl = big5.get(k)
+        if lvl == "high":
+            hints.append(hi)
+        elif lvl == "low":
+            hints.append(lo)
+    system = (
+        load_system_prompt("substyle-refine")
+        + "\n\n# БАЗА ЗНАНИЙ (25 подстилей)\n\n"
+        + load_reference("reference/style-typology/style-typology.md")
+    )
+    payload = {
+        "base_style": diagnosis.get("base_style"),
+        "current_primary_substyle": diagnosis.get("primary_substyle"),
+        "current_secondary_substyle": diagnosis.get("secondary_substyle"),
+        "current_accent_note": diagnosis.get("accent_note"),
+        "semantic_field_distribution": diagnosis.get("semantic_field_distribution"),
+        "want_traits_top3": diagnosis.get("want_traits_top3"),
+        "psychotype_levels": big5,
+        "psychotype_hints": hints,  # к чему склонна её натура (человеческим языком)
+        "want_styles": (deep_intake or {}).get("want_styles"),  # визуальный выбор стилей
+        "lifecircle": (deep_intake or {}).get("lifecircle"),
+    }
+    return provider.chat_json(
+        config.model_for("text", mode), system,
+        json.dumps(payload, ensure_ascii=False), max_tokens=1500,
+    )
+
+
 def generate_shopping_list(diagnosis: dict, capsule: dict, price_segment: str = "middle",
                            mode: str = "teaser", text_mode: str | None = None) -> dict:
     """Шаг 4. Шоп-лист + бюджет: по капсуле подбирает бренды/запросы под бюджет и фигуру.

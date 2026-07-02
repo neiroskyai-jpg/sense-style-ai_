@@ -25,7 +25,8 @@ from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_capsule, generate_card_palette,
                            generate_directions, generate_personality_portrait,
                            generate_shopping_list, generate_styling_pair,
-                           refine_colortype_subtype, render_look_on_client)
+                           refine_colortype_subtype, refine_substyle,
+                           render_look_on_client)
 from core.tracking import (chat_log, count_generations, count_today, feedback_list,
                            funnel, gap_summary, leads, progress, record_call,
                            record_chat, record_consent, record_event, record_feedback,
@@ -549,6 +550,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <p class=formula><b>{{ c.formula }}</b></p>
 {% if c.gap is not none %}<p>Identity Gap: <span class=gap>{{ c.gap }}%</span> — разрыв между тем, как тебя считывают и как ты хочешь.</p>{% endif %}
 {% if c.dna %}<p class=dna>{{ c.dna }}</p>{% endif %}
+{% if c.substyle_rationale %}<h2>Почему именно этот подстиль</h2>
+<p style="font-size:16px;color:#3a352e;margin:0 0 12px">{{ c.substyle_rationale }}</p>{% endif %}
 
 {% if c.colortype or c.figure %}<h2>Твоя основа</h2>
 <ul class=clean>
@@ -1133,6 +1136,18 @@ def build_style_card(diag: dict) -> dict:
     deep = diag.get("deep_intake") or {}  # глубокая диагностика из анкеты Карты
     taboo_items = [t.strip() for t in re.split(r"[;,]", deep.get("taboo", "")) if t.strip()]
     price_segment = deep.get("budget") or "middle"  # из анкеты, иначе средний
+    # ШАГ 4 метода: психотип (Big Five) уточняет ПОДСТИЛЬ из 25 — платная глубина. Делаем ДО
+    # палитры/капсулы/направлений, чтобы они строились уже по уточнённому подстилю. Без big5 — {}.
+    substyle_rationale = ""
+    try:
+        ref = refine_substyle(diag, deep, mode="dev")
+    except Exception:  # noqa: BLE001 — уточнение подстиля не должно ронять карту
+        ref = {}
+    if ref.get("primary_substyle"):
+        for key in ("primary_substyle", "secondary_substyle", "accent_note", "style_formula"):
+            if ref.get(key):
+                diag[key] = ref[key]
+        substyle_rationale = ref.get("substyle_rationale") or ""
     # Палитра и капсула — на flash (dev): надёжно и быстро. pro@final в проде отдаёт
     # finish_reason=error (нестабилен), поэтому для продукта НЕ используем (2026-06-29).
     palette = generate_card_palette(diag, mode="dev")
@@ -1192,6 +1207,7 @@ def build_style_card(diag: dict) -> dict:
         "stop_list": (vf.get("stop_list") or []) + [t for t in taboo_items if t not in (vf.get("stop_list") or [])],
         "emphasize": deep.get("adv"),  # достоинство — показываем в Карте «что подчёркиваем»
         "personality": personality,  # {portrait, style_implications} или {}
+        "substyle_rationale": substyle_rationale,  # «почему этот подстиль из твоей натуры» (шаг 4)
     }
 
 
