@@ -7,7 +7,7 @@ import os
 
 os.environ.setdefault("OPENROUTER_API_KEY", "dummy")  # импорт app.main не должен падать
 
-from app.main import _ensure_n_looks  # noqa: E402
+from app.main import _card_stale, _diag_signature, _ensure_n_looks  # noqa: E402
 
 SCENARIOS = ["работа", "деловая встреча", "повседневное",
              "событие и выход", "свидание", "путешествие"]
@@ -42,3 +42,37 @@ def test_no_duplicate_scenario_assignment():
     looks = [{"scenario": "работа", "items": ["a"]}, {"scenario": "работа", "items": ["b"]}]
     out = _ensure_n_looks(looks, SCENARIOS, CAPSULE, DIAG)
     assert len(out) == 6 and len({o["scenario"] for o in out}) == 6
+
+
+# --- инвалидация кэша Карты при новой диагностике (баг рассинхрона Gap квиз↔Карта) ---
+
+_DIAG = {"gap_percentage": 41, "semantic_field_distribution": {"classic": 3, "romance": 2},
+         "want_traits_top3": ["элегантная", "умная"], "style_formula": "Классика × Романтика"}
+
+
+def test_signature_ignores_refined_formula():
+    # refine_substyle меняет формулу/подстиль на Карте — отпечаток НЕ должен от этого зависеть
+    refined = dict(_DIAG, style_formula="Power Woman", primary_substyle="minimal")
+    assert _diag_signature(refined) == _diag_signature(_DIAG)
+
+
+def test_signature_changes_on_new_gap():
+    # заново пройденный квиз с другим Gap → другой отпечаток
+    assert _diag_signature(dict(_DIAG, gap_percentage=78)) != _diag_signature(_DIAG)
+
+
+def test_fresh_card_not_stale():
+    card = {"_diag_sig": _diag_signature(_DIAG)}
+    refined = dict(_DIAG, style_formula="Power Woman")  # формулу уточнили — не устаревание
+    assert _card_stale({"diagnosis": refined, "card": card}) is False
+
+
+def test_new_quiz_makes_card_stale():
+    card = {"_diag_sig": _diag_signature(_DIAG)}
+    new_diag = dict(_DIAG, gap_percentage=78, semantic_field_distribution={"drama": 4})
+    assert _card_stale({"diagnosis": new_diag, "card": card}) is True
+
+
+def test_legacy_card_without_signature_not_stale():
+    # старые Карты без отпечатка не форсим на пересборку
+    assert _card_stale({"diagnosis": dict(_DIAG, gap_percentage=99), "card": {"gap": 41}}) is False

@@ -7,12 +7,14 @@
 """
 from __future__ import annotations
 import concurrent.futures
+import hashlib
 import io
 import json
 import os
 import re
 import threading
 import uuid
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
 
@@ -28,14 +30,15 @@ from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            refine_colortype_subtype, refine_substyle,
                            render_look_on_client)
 from core.tracking import (chat_log, count_generations, count_today, feedback_list,
-                           funnel, gap_summary, leads, progress, record_call,
+                           funnel, gap_progress, gap_summary, leads, progress, record_call,
                            record_chat, record_consent, record_event, record_feedback,
                            record_session)
 from core.auth import make_token, read_token, send_magic_link
 from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
-from core.profiles import (get_profile, save_card, save_diagnosis,
-                           save_style_profile)
+from core.catalog import match_products, parse_csv
+from core.profiles import (current_card_by_season, get_profile, save_card,
+                           save_diagnosis, save_style_profile)
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"  # дизайнерский сайт (статика)
@@ -482,16 +485,48 @@ ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .links{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
  .btn{background:var(--wine);color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-size:15px}
  .btn.sec{background:#fff;color:var(--wine);border:1px solid var(--line)}
+ .trackhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+ .trackhead .sub{color:var(--muted);font-style:italic;font-size:15px}
+ .track{margin:14px 0 4px}
+ .trow{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:13px}
+ .tdate{flex:0 0 128px;color:var(--muted)} .tdate b{color:var(--wine);font-weight:normal}
+ .tbar{flex:1;height:10px;background:#efe8db;border-radius:999px;overflow:hidden}
+ .tfill{display:block;height:100%;background:var(--wine);border-radius:999px}
+ .tval{flex:0 0 40px;text-align:right}
+ .tnote{font-size:13px;color:var(--muted);margin:10px 0 14px;line-height:1.5}
+ .tdelta{background:#eef6ee;color:#3a5a3a;font-size:12px;padding:3px 10px;border-radius:999px;white-space:nowrap}
 </style></head><body><div class=wrap>
 <div class=top><span class=logo>Чувство стиля</span><a href="/logout">Выйти</a></div>
 <h1>Мой профиль</h1>
 <p class=email>{{ email }}</p>
 <div class=card><h3>Формула стиля {% if has_diag %}<span class="badge yes">есть</span>{% else %}<span class="badge no">ещё нет</span>{% endif %}</h3>
  <p>{% if has_diag %}{{ formula }}{% else %}Пройди диагностику — Формула сохранится здесь.{% endif %}</p></div>
+{% if track %}
+<div class=card>
+ <div class=trackhead><h3>Эволюция <span class=sub>стилевого разрыва</span></h3>
+  {% if track.delta is not none and track.delta > 0 %}<span class=tdelta>−{{ track.delta }} п.п.</span>{% endif %}</div>
+ <div class=track>
+  {% for p in track.points %}
+  <div class=trow>
+   <span class=tdate>{{ p.date }}{% if loop.first %} · <b>точка отсчёта</b>{% endif %}</span>
+   <span class=tbar><span class=tfill style="width:{{ p.gap }}%"></span></span>
+   <span class=tval>{{ p.gap }}%</span>
+  </div>
+  {% endfor %}
+ </div>
+ {% if track.measurements < 2 %}
+ <p class=tnote>Это твоя точка отсчёта. Сделай пере-замер через время — увидишь, как разрыв закрывается. Он двигается только от настоящего замера: новых фото того, как ты одеваешься сейчас.</p>
+ {% else %}
+ <p class=tnote>Разрыв закрывается — и это видно. Двигается он только от реального пере-замера, поэтому цифре можно верить.</p>
+ {% endif %}
+ <a class="btn sec" href="/identity-scan-quiz.html?fresh=1" style="display:inline-block">Сделать пере-замер</a>
+</div>
+{% endif %}
 <div class=card><h3>Профиль «Примерочной» {% if has_style %}<span class="badge yes">заполнен</span>{% else %}<span class="badge no">не заполнен</span>{% endif %}</h3>
  <p>Линии, ДНК стиля и анти-гардероб — чтобы проверка вещей работала мгновенно.</p></div>
 <div class=links>
  {% if has_diag %}<a class=btn href="/card">Открыть Карту стиля</a>{% else %}<a class=btn href="/identity-scan-quiz.html?fresh=1">Пройти диагностику</a>{% endif %}
+ {% if has_diag %}<a class="btn sec" href="/cabinet">Мой гардероб</a>{% endif %}
  <a class="btn sec" href="/garment">Проверить вещь</a>
  <a class="btn sec" href="/stylist">Спросить стилиста</a>
 </div>
@@ -506,6 +541,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .wrap{max-width:760px;margin:0 auto;padding:30px 24px 80px}
  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
  .bar a,.bar button{color:var(--wine);font:inherit;font-size:14px;background:none;border:0;cursor:pointer;text-decoration:none}
+ .stale{background:#fbeee4;border:1px solid #e3cdb8;border-radius:12px;padding:14px 16px;margin:6px 0 20px;font-size:14.5px;color:#5a4a3a;line-height:1.5}
+ .stale b{color:var(--wine)} .stale a{display:inline-block;margin-top:9px;background:var(--wine);color:#fff;text-decoration:none;padding:9px 18px;border-radius:8px;font-size:14px}
  .eyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine)}
  h1{font-weight:normal;font-size:38px;margin:6px 0 2px} .who{color:var(--muted);margin:0 0 6px}
  h2{font-weight:normal;font-size:22px;margin:34px 0 12px;border-bottom:1px solid var(--line);padding-bottom:6px}
@@ -542,13 +579,15 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .print{display:block;margin:30px auto 0;background:var(--wine);color:#fff;border:0;border-radius:10px;padding:14px 26px;font:inherit;font-size:16px;cursor:pointer}
  @media print{.bar,.print{display:none} body{background:#fff} .wrap{max-width:none;padding:0} .look{break-inside:avoid}}
 </style></head><body><div class=wrap>
-<div class=bar><a href="/me">← мой профиль</a><a href="/card?rebuild=1">пересобрать (с анкетой)</a></div>
+<div class=bar><a href="/me">← мой профиль</a><a href="/card?rebuild=1">собрать заново</a></div>
+{% if stale %}<div class=stale><b>Твоя диагностика обновилась.</b> Ты недавно заново прошла квиз, и разрыв изменился. Эта Карта пока собрана на прежней диагностике — числа и подборка ниже от неё. Собери Карту заново, чтобы она совпала с последним квизом.<br><a href="/card?rebuild=1">Собрать Карту заново →</a></div>{% endif %}
 
 <div class=eyebrow>Карта стиля</div>
 <h1>Твоя Формула</h1>
 {% if name %}<p class=who>для {{ name }}</p>{% endif %}
 <p class=formula><b>{{ c.formula }}</b></p>
-{% if c.gap is not none %}<p>Identity Gap: <span class=gap>{{ c.gap }}%</span> — разрыв между тем, как тебя считывают и как ты хочешь.</p>{% endif %}
+{% if c.season_label %}<p class=who style="margin:0 0 4px">Капсула на сезон: {{ c.season_label }}</p>{% endif %}
+{% if c.gap is not none %}<p>Identity Gap: <span class=gap>{{ c.gap }}%</span> — тот самый разрыв с твоей диагностики. Здесь ты видишь, чем именно его закрыть.</p>{% endif %}
 {% if c.dna %}<p class=dna>{{ c.dna }}</p>{% endif %}
 {% if c.substyle_rationale %}<h2>Почему именно этот подстиль</h2>
 <p style="font-size:16px;color:#3a352e;margin:0 0 12px">{{ c.substyle_rationale }}</p>{% endif %}
@@ -714,6 +753,12 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .stylemeta{display:block;padding:8px 10px;font-size:14px} .stylehint{color:var(--muted);font-size:12px}
  .stylecard:has(input:checked){border-color:var(--wine);box-shadow:0 0 0 2px var(--wine)}
  .stylecard:has(input:checked)::after{content:'✓';position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--wine);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px}
+ .chips{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px}
+ .chip{position:relative;cursor:pointer;margin:0}
+ .chip input{position:absolute;opacity:0;pointer-events:none}
+ .chip span{display:inline-block;padding:9px 15px;border:1px solid #d9d2c7;border-radius:999px;font-size:14px;color:var(--ink);background:#fff;transition:background .15s,color .15s,border-color .15s;user-select:none}
+ .chip input:checked+span{background:var(--wine);color:#fff;border-color:var(--wine)}
+ .chip input:focus-visible+span{box-shadow:0 0 0 2px rgba(93,34,48,.35)}
  .file{border:1.5px dashed #cdbfa6;border-radius:10px;padding:16px;text-align:center;background:#fbf8f1}
  input[type=file]{width:100%}
  button{margin-top:26px;width:100%;padding:15px;background:var(--wine);color:#fff;border:0;border-radius:10px;font-family:inherit;font-size:17px;cursor:pointer}
@@ -721,6 +766,7 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .hint{color:var(--muted);font-size:13px;text-align:center;margin-top:14px} .hint a{color:var(--wine)}
  .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:8px}
 </style></head><body><div class=wrap>
+{% macro chips(name, opts) %}<div class=chips>{% for o in opts %}<label class=chip><input type=checkbox name="{{ name }}" value="{{ o }}"><span>{{ o }}</span></label>{% endfor %}</div>{% endmacro %}
 <div class=top><span class=logo>Чувство стиля</span><a href="/me">← мой профиль</a></div>
 <div class=eyebrow>Карта стиля</div>
 <h1>Покажем тебя в 6 образах</h1>
@@ -747,14 +793,21 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <option value="">{% if current_colortype_label %}— оставить как есть —{% else %}— определим по фото —{% endif %}</option>
   {% for code, lab in colortype_options %}<option value="{{ code }}">{{ lab }}</option>{% endfor %}
  </select>
- <label>Что в твоей внешности тебе нравится больше всего — что подчеркнём?</label>
- <input type=text name=adv class=fld placeholder="например: длинные ноги, талия, плечи, шея">
- <label>Что хочешь визуально уравновесить?</label>
- <input type=text name=balance class=fld placeholder="например: сбалансировать бёдра и плечи">
- <label>Стильные табу — что точно не носишь?</label>
- <input type=text name=taboo class=fld placeholder="например: не ношу мини, красный, каблук выше 5 см">
- <label>Чьё мнение учитываем в стиле? (по желанию)</label>
- <input type=text name=audience class=fld placeholder="например: никого / партнёр / дети / коллеги">
+ <label>На какой сезон собрать капсулу?</label>
+ <div class=chips>
+  <label class=chip><input type=radio name=season value=spring><span>Весна</span></label>
+  <label class=chip><input type=radio name=season value=summer><span>Лето</span></label>
+  <label class=chip><input type=radio name=season value=autumn checked><span>Осень</span></label>
+  <label class=chip><input type=radio name=season value=winter><span>Зима</span></label>
+ </div>
+ <label>Что в твоей внешности подчеркнуть? Отметь, что нравится.</label>
+ {{ chips('adv', ['талию','ноги','плечи','шею и декольте','запястья','осанку','грудь','бёдра']) }}
+ <label>Что визуально уравновесить?</label>
+ {{ chips('balance', ['плечи и бёдра','талию','добавить рост','смягчить плечи','объём сверху','объём снизу']) }}
+ <label>Что ты точно не носишь? Уберём из образов.</label>
+ {{ chips('taboo', ['мини','глубокое декольте','каблук выше 5 см','обтягивающее','яркие принты','красный','прозрачное','оверсайз']) }}
+ <label>Чьё мнение учитываем в стиле?</label>
+ {{ chips('audience', ['только своё','партнёр','дети','коллеги','родители']) }}
 
  <div class=eyebrow style="margin:26px 0 2px">Пара вопросов о тебе (по желанию)</div>
  <p style="font-size:13px;color:var(--muted);margin:0 0 10px">По шкале: 1 — совсем не про меня, 5 — точно про меня. Это поможет собрать образы под твою натуру.</p>
@@ -1091,6 +1144,19 @@ def logout():
     return redirect("/")
 
 
+_RU_MON = ["янв", "фев", "мар", "апр", "май", "июн",
+           "июл", "авг", "сен", "окт", "ноя", "дек"]
+
+
+def _ru_date(ts: str) -> str:
+    """ISO-время → «2 июл 2026» для трекера. Битый ts → первые 10 символов."""
+    try:
+        d = datetime.fromisoformat(ts)
+        return f"{d.day} {_RU_MON[d.month - 1]} {d.year}"
+    except (ValueError, TypeError):
+        return (ts or "")[:10]
+
+
 @app.get("/me")
 def me():
     email = session.get("email")
@@ -1098,11 +1164,270 @@ def me():
         return redirect("/login")
     prof = get_profile(email)
     diag = prof.get("diagnosis") or {}
+    track = gap_progress(email)  # трекер разрыва: точки-замеры + дельта только при ≥2 замерах
+    if track:  # человекочитаемые даты точек (точка отсчёта — первая)
+        for p in track["points"]:
+            p["date"] = _ru_date(p["ts"])
     return render_template_string(
         ME_PAGE, email=email, has_diag=bool(diag.get("style_formula")),
         formula=diag.get("style_formula", ""),
-        has_style=bool(prof.get("style_profile")),
+        has_style=bool(prof.get("style_profile")), track=track,
     )
+
+
+_CATALOG_CACHE: list = []
+_BRAND_STYLES_CACHE: dict = {}
+
+
+def _brand_styles() -> dict:
+    """Бренд (в нижнем регистре) → стилевые поля метода (classic/natural/drama/romance)
+    из data/fashion-base/brands.csv. Чтобы вещь наследовала стиль своего бренда (офлайн-разметка)."""
+    global _BRAND_STYLES_CACHE
+    if _BRAND_STYLES_CACHE:
+        return _BRAND_STYLES_CACHE
+    fp = Path(__file__).resolve().parent.parent / "data" / "fashion-base" / "brands.csv"
+    out: dict = {}
+    if fp.exists():
+        import csv as _csv
+        try:
+            for r in _csv.DictReader(fp.open(encoding="utf-8-sig")):
+                name = (r.get("brand_name") or "").strip().lower()
+                if name:
+                    out[name] = (r.get("style_fields") or "").strip()
+        except Exception:  # noqa: BLE001 — разметка не должна ронять кабинет
+            pass
+    _BRAND_STYLES_CACHE = out
+    return out
+
+
+def _catalog_products() -> list:
+    """Реальные вещи брендов (Ushatava/Lichi) с фото и партнёрскими ссылками — кэш в памяти.
+    Каждой вещи проставляем стиль её бренда (из brands.csv) для подбора под подстиль."""
+    global _CATALOG_CACHE
+    if _CATALOG_CACHE:
+        return _CATALOG_CACHE
+    base = Path(__file__).resolve().parent.parent / "data" / "fashion-base"
+    brand_styles = _brand_styles()
+    prods: list = []
+    for fname in ("products_ushatava.csv", "products_lichi.csv"):
+        fp = base / fname
+        if fp.exists():
+            try:
+                for p in parse_csv(fp):
+                    if not p.style_fields:
+                        p.style_fields = brand_styles.get((p.brand or "").strip().lower(), "")
+                    prods.append(p)
+            except Exception:  # noqa: BLE001 — каталог не должен ронять кабинет
+                pass
+    _CATALOG_CACHE = prods
+    return prods
+
+
+def _visual_capsule(card: dict, diag: dict, n: int) -> list:
+    """Визуальная капсула для конструктора: реальные вещи каталога, подобранные под Формулу
+    (палитра/табу/фигура), сгруппированные по слотам. Каждая вещь — с фото и ссылкой купить."""
+    products = _catalog_products()
+    if not products:
+        return []
+    # доминанты стиля клиентки: топ-2 поля из семантики диагностики (classic/natural/drama/romance)
+    dist = diag.get("semantic_field_distribution") or {}
+    styles = [k for k, _ in sorted(dist.items(), key=lambda kv: kv[1] or 0, reverse=True)
+              if (dist.get(k) or 0) > 0][:2]
+    profile = {
+        "palette": card.get("palette") or [],
+        "stop_list": card.get("stop_list") or [],
+        "figure_type": diag.get("figure_type"),
+        "base_style": (diag.get("style_dominant") or diag.get("base_style") or ""),
+        "styles": styles,
+        "gender": "женский",
+    }
+    picked = match_products(profile, products, k=n)
+    groups: dict[str, list] = {}
+    for p in picked:
+        slot = _capsule_slot(p.category or p.name)
+        groups.setdefault(slot, []).append({
+            "name": p.name, "image": p.image, "url": p.url,
+            "brand": p.brand, "price": int(p.price) if p.price else None})
+    order = [s for s, _ in _CAPSULE_SLOTS] + ["База и прочее"]
+    return [{"slot": s, "items": groups[s]} for s in order if groups.get(s)]
+
+
+CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Мой гардероб</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
+ *{box-sizing:border-box} body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ .wrap{max-width:860px;margin:0 auto;padding:30px 22px 80px}
+ .top{display:flex;justify-content:space-between;align-items:center} .logo{font-family:'Cormorant Garamond',serif;font-size:22px} .top a{color:var(--muted);font-size:14px;text-decoration:none;margin-left:16px}
+ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:38px;margin:20px 0 2px}
+ .sub{color:var(--muted);margin:0} .sub .gap{color:var(--wine);font-weight:600}
+ h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:26px;margin:34px 0 4px}
+ .hint{color:var(--muted);font-size:14px;margin:2px 0 14px}
+ .seasons{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+ .seasons a{padding:8px 15px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--ink);text-decoration:none;background:#fff}
+ .seasons a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
+ .build{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:10px}
+ @media(max-width:680px){.build{grid-template-columns:1fr}}
+ .panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+ .slot{margin:0 0 14px} .slotname{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine);margin:0 0 7px}
+ .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:8px}
+ .pitem{cursor:grab;border:1px solid #e3dccf;border-radius:10px;background:#fff;padding:5px;text-align:center;user-select:none;transition:all .12s}
+ .pitem:hover{border-color:var(--wine)} .pitem.on{border-color:var(--wine);box-shadow:0 0 0 2px var(--wine)}
+ .pitem img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;display:block;background:#f2ede3}
+ .pitem .ph{width:100%;aspect-ratio:3/4;border-radius:6px;background:#efe8db}
+ .pitem .pname{display:block;font-size:10.5px;color:#4a443c;margin-top:5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .canvas{position:sticky;top:14px}
+ .cell{display:flex;align-items:center;gap:10px;border:1px dashed #cdbfa6;border-radius:12px;padding:9px 12px;margin:0 0 9px;background:#fbf8f1;transition:all .12s;min-height:56px}
+ .cell.filled{border-style:solid;border-color:var(--wine);background:#fff}
+ .cell.drop{border-color:var(--wine);background:#fdeee2}
+ .cellslot{flex:0 0 96px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+ .cellbody{flex:1;display:flex;align-items:center;gap:10px}
+ .cellbody .thumb{width:38px;aspect-ratio:3/4;object-fit:cover;border-radius:5px;background:#f2ede3;flex:0 0 auto}
+ .cellval{font-size:14px;color:var(--ink)} .cell.filled .cellval{font-weight:500}
+ .cellbody .buy{margin-left:auto;font-size:12.5px;color:var(--wine);text-decoration:none;white-space:nowrap}
+ .itemtoggle{display:flex;gap:8px;margin:0 0 12px} .itemtoggle a{font-size:13px;padding:6px 13px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--ink);background:#fff}
+ .itemtoggle a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
+ .ctrls{display:flex;gap:10px;align-items:center;margin-top:12px}
+ .ctrls button{font:inherit;font-size:14px;padding:9px 15px;border-radius:9px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--wine)}
+ .ctrls .cnt{color:var(--muted);font-size:13px}
+ .pal{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}
+ .pal .c{width:34px;height:34px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
+ .shop{display:flex;flex-direction:column;gap:10px;margin-top:6px} .shopitem{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 15px}
+ .shopname{font-size:15.5px} .shopwhy{font-size:13px;color:var(--muted);margin:2px 0 0}
+ .empty{color:var(--muted);font-size:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+</style></head><body><div class=wrap>
+<div class=top><span class=logo>Чувство стиля</span><span><a href="/me">профиль</a><a href="/card">Карта</a><a href="/logout">выйти</a></span></div>
+<h1>Мой гардероб</h1>
+<p class=sub>{{ formula }}{% if gap is not none %} · разрыв <span class=gap>{{ gap }}%</span>{% endif %}{% if season_label %} · {{ season_label }}{% endif %}</p>
+
+{% if season_tabs %}
+<div class=seasons>
+ {% for s in season_tabs %}<a href="/cabinet?season={{ s.code }}" class="{{ 'on' if s.on else '' }}">{{ s.label }}</a>{% endfor %}
+</div>
+{% endif %}
+
+<h2>Конструктор образа</h2>
+<p class=hint>Собери лук из своей капсулы: перетащи или нажми вещь в каждый слот. Цвета берёшь из своей палитры — они выверены и сочетаются между собой. Вещи настоящие — каждую можно купить.</p>
+<div class=itemtoggle>
+ <a href="/cabinet?items=6{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 6 else '' }}">Капсула 6 вещей</a>
+ <a href="/cabinet?items=12{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 12 else '' }}">Расширенная 12</a>
+</div>
+<div class=build>
+ <div class=panel>
+  {% for grp in board %}
+  <div class=slot>
+   <div class=slotname>{{ grp.slot }}</div>
+   <div class=items>
+    {% for it in grp['items'] %}<span class=pitem data-slot="{{ grp.slot }}" data-name="{{ it.name }}" data-img="{{ it.image or '' }}" data-url="{{ it.url or '' }}">{% if it.image %}<img src="{{ it.image }}" alt="" loading=lazy>{% else %}<span class=ph></span>{% endif %}<span class=pname>{{ it.name }}</span></span>{% endfor %}
+   </div>
+  </div>
+  {% endfor %}
+  {% if not board %}<p class=empty>Капсула ещё не собрана. <a href="/card">Собери Карту стиля</a> — вещи появятся здесь.</p>{% endif %}
+ </div>
+ <div class=panel canvas>
+  <div class=slotname style="margin-bottom:10px">Твой лук</div>
+  {% for grp in board %}
+  <div class=cell data-cell="{{ grp.slot }}"><span class=cellslot>{{ grp.slot }}</span><span class=cellbody><span class=cellval>—</span></span></div>
+  {% endfor %}
+  <div class=ctrls><button type=button onclick=clearOutfit()>Очистить</button><span class=cnt>вещей в луке: <b id=count>0</b></span></div>
+  {% if palette %}
+  <div class=slotname style="margin:16px 0 6px">Твоя палитра — сочетается между собой</div>
+  <div class=pal>{% for p in palette %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>
+  {% endif %}
+ </div>
+</div>
+
+<h2>Лист покупок</h2>
+<p class=hint>Что докупить, чтобы закрыть разрыв — вещи под твою Формулу и сезон.</p>
+{% if shopping %}
+<div class=shop>
+ {% for it in shopping %}<div class=shopitem><div class=shopname>{{ it.name }}</div>{% if it.closes_gap %}<div class=shopwhy>{{ it.closes_gap }}</div>{% endif %}</div>{% endfor %}
+</div>
+{% else %}<p class=empty>Лист покупок появится вместе с собранной Картой.</p>{% endif %}
+
+<script>
+var outfit={}, byKey={};
+document.querySelectorAll('.pitem').forEach(function(i){
+ byKey[i.getAttribute('data-slot')+'|'+i.getAttribute('data-name')]={
+  slot:i.getAttribute('data-slot'), name:i.getAttribute('data-name'),
+  img:i.getAttribute('data-img'), url:i.getAttribute('data-url')};
+});
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function cellHtml(o){
+ var h='';
+ if(o.img) h+='<img class=thumb src="'+esc(o.img)+'" alt="">';
+ h+='<span class=cellval>'+esc(o.name)+'</span>';
+ if(o.url) h+='<a class=buy href="'+esc(o.url)+'" target="_blank" rel="noopener">купить →</a>';
+ return h;
+}
+function render(){
+ document.querySelectorAll('[data-cell]').forEach(function(c){
+  var s=c.getAttribute('data-cell'); var o=outfit[s]; var body=c.querySelector('.cellbody');
+  if(o){ body.innerHTML=cellHtml(o); c.classList.add('filled'); }
+  else { body.innerHTML='<span class=cellval>—</span>'; c.classList.remove('filled'); }
+ });
+ document.querySelectorAll('.pitem').forEach(function(i){
+  var s=i.getAttribute('data-slot');
+  i.classList.toggle('on', outfit[s] && outfit[s].name===i.getAttribute('data-name'));
+ });
+ document.getElementById('count').textContent=Object.keys(outfit).length;
+}
+function pickKey(key){ var o=byKey[key]; if(!o) return;
+ if(outfit[o.slot] && outfit[o.slot].name===o.name){ delete outfit[o.slot]; } else { outfit[o.slot]=o; } render(); }
+function clearOutfit(){ outfit={}; render(); }
+document.querySelectorAll('.pitem').forEach(function(i){
+ var key=i.getAttribute('data-slot')+'|'+i.getAttribute('data-name');
+ i.setAttribute('draggable','true');
+ i.addEventListener('click',function(){ pickKey(key); });
+ i.addEventListener('dragstart',function(e){ e.dataTransfer.setData('text', key); });
+});
+document.querySelectorAll('[data-cell]').forEach(function(c){
+ c.addEventListener('dragover',function(e){ e.preventDefault(); c.classList.add('drop'); });
+ c.addEventListener('dragleave',function(){ c.classList.remove('drop'); });
+ c.addEventListener('drop',function(e){ e.preventDefault(); c.classList.remove('drop');
+  var key=e.dataTransfer.getData('text')||''; if(key.split('|')[0]===c.getAttribute('data-cell')) pickKey(key); });
+});
+</script>
+</div></body></html>"""
+
+
+@app.get("/cabinet")
+def cabinet():
+    """Кабинет: капсульный гардероб по сезонам + конструктор образов (верх/низ/обувь) + лист покупок."""
+    email = session.get("email")
+    if not email:
+        return redirect("/login?next=/cabinet")
+    prof = get_profile(email)
+    diag = prof.get("diagnosis") or {}
+    if not diag.get("style_formula"):
+        return redirect("/identity-scan-quiz.html?fresh=1")
+    by_season = current_card_by_season(email)  # {код_сезона: карта} — последняя версия на сезон
+    card = prof.get("card") or {}
+    sel = (request.args.get("season") or "").strip()
+    if sel in by_season:               # выбран сезон с собранной капсулой
+        card = by_season[sel]
+    else:
+        sel = card.get("season") or ""
+    if not card:
+        return redirect("/card")       # капсулы ещё нет — сначала собрать Карту
+    items_n = 6 if request.args.get("items") == "6" else 12  # капсула 6 / расширенная 12
+    # визуальная капсула из реального каталога (фото+ссылки); фолбэк — текстовый борд из Карты
+    board = _visual_capsule(card, diag, items_n) or \
+        card.get("capsule_board") or _capsule_board(card.get("base_capsule") or [])
+    seasons = [s for s in _SEASON_ORDER if s in by_season]
+    if sel in _CARD_SEASONS and sel not in seasons:
+        seasons.append(sel)
+    season_tabs = [{"code": s, "label": _CARD_SEASONS[s]["label"], "on": s == sel}
+                   for s in _SEASON_ORDER if s in seasons]
+    palette = [p for p in (card.get("palette") or []) if p.get("hex")]
+    return render_template_string(
+        CABINET_PAGE, email=email,
+        formula=card.get("formula") or diag.get("style_formula"),
+        gap=card.get("gap"), season_label=card.get("season_label"),
+        board=board, palette=palette, shopping=card.get("shopping") or [],
+        season_tabs=season_tabs, sel_season=sel, items_n=items_n)
 
 
 @app.get("/stylist")
@@ -1129,9 +1454,47 @@ def stylist_msg():
     return jsonify({"reply": reply})
 
 
-def build_style_card(diag: dict) -> dict:
+def _diag_signature(diag: dict) -> str:
+    """Отпечаток диагностики для инвалидации кэша Карты. Берём поля, которые НЕ мутирует
+    сборка Карты (refine_substyle меняет формулу/подстиль, но не эти): сам Gap + вектор
+    семантического поля + желаемые черты. Новый прогон квиза → другой отпечаток."""
+    payload = json.dumps({
+        "gap": diag.get("gap_percentage"),
+        "field": diag.get("semantic_field_distribution") or {},
+        "want": diag.get("want_traits_top3") or [],
+    }, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha1(payload.encode("utf-8")).hexdigest()[:12]
+
+
+def _card_stale(prof: dict) -> bool:
+    """Собранная Карта устарела: диагностика в профиле изменилась (клиентка заново прошла квиз),
+    а Карта осталась на прежней. Старые Карты без отпечатка не трогаем (не форсим пересборку)."""
+    card = prof.get("card") or {}
+    diag = prof.get("diagnosis") or {}
+    sig = card.get("_diag_sig")
+    if not card or not diag or not sig:
+        return False
+    return sig != _diag_signature(diag)
+
+
+# Сезоны капсульного гардероба: 4 кода → строка для генерации + ярлык + порядок для переключателя.
+_CARD_SEASONS = {
+    "spring": {"label": "Весна 2026", "gen": "весна 2026, межсезонье, лёгкие слои"},
+    "summer": {"label": "Лето 2026", "gen": "лето 2026, лёгкие ткани, жара"},
+    "autumn": {"label": "Осень 2026", "gen": "осень 2026, многослойность, плотные ткани"},
+    "winter": {"label": "Зима 2026–2027", "gen": "зима 2026-2027, тёплый слой, верхняя одежда"},
+}
+_SEASON_ORDER = ["spring", "summer", "autumn", "winter"]
+_DEFAULT_SEASON = "autumn"
+
+
+def build_style_card(diag: dict, season: str | None = None) -> dict:
     """Собрать продукт «Карта стиля» из Формулы: палитра 30 цветов + 6 образов + секции.
-    Два текстовых вызова (палитра + капсула), без рендера картинок."""
+    Два текстовых вызова (палитра + капсула), без рендера картинок. season — ss|fw (капсула
+    собирается под сезон); по умолчанию осень-зима."""
+    season = season if season in _CARD_SEASONS else _DEFAULT_SEASON
+    seas = _CARD_SEASONS[season]
+    diag_sig = _diag_signature(diag)  # до refine_substyle: отпечаток исходной диагностики квиза
     vf = diag.get("visual_formula") or {}
     deep = diag.get("deep_intake") or {}  # глубокая диагностика из анкеты Карты
     taboo_items = [t.strip() for t in re.split(r"[;,]", deep.get("taboo", "")) if t.strip()]
@@ -1153,7 +1516,7 @@ def build_style_card(diag: dict) -> dict:
     palette = generate_card_palette(diag, mode="dev")
     scenarios = ["работа", "деловая встреча", "повседневное",
                  "событие и выход", "свидание", "путешествие"]
-    gen_req = {"mode": "capsule", "capsule_type": "auto", "season": "FW 2026-2027",
+    gen_req = {"mode": "capsule", "capsule_type": "auto", "season": seas["gen"],
                "scenarios": scenarios, "n_looks": 6, "price_segment": price_segment,
                "taboos": taboo_items,  # что точно не носит → не предлагаем
                "emphasize": deep.get("adv"),         # достоинство → подчеркнуть
@@ -1208,6 +1571,9 @@ def build_style_card(diag: dict) -> dict:
         "emphasize": deep.get("adv"),  # достоинство — показываем в Карте «что подчёркиваем»
         "personality": personality,  # {portrait, style_implications} или {}
         "substyle_rationale": substyle_rationale,  # «почему этот подстиль из твоей натуры» (шаг 4)
+        "season": season,               # ss|fw — под какой сезон собрана капсула
+        "season_label": seas["label"],  # человекочитаемо для кабинета
+        "_diag_sig": diag_sig,  # отпечаток диагностики → инвалидация кэша при новом квизе
     }
 
 
@@ -1278,7 +1644,9 @@ def _colortype_ctx():
 def _save_deep_intake(email: str, form) -> None:
     """Глубокая диагностика из формы Карты (анкета курса) → профиль (diagnosis.deep_intake).
     Тело+возражения + круг жизни + бюджет + личность Big Five. Питает Формулу/стоп-лист/портрет/чат."""
-    deep = {k: (form.get(k) or "").strip()[:200]
+    # поля-«чипсы»: клиентка выбирает кнопками (мультивыбор) → склеиваем в строку.
+    # getlist работает и для одного значения, и для нескольких — совместимо со старым текстом.
+    deep = {k: ", ".join(dict.fromkeys(v.strip() for v in form.getlist(k) if v.strip()))[:200]
             for k in ("adv", "balance", "taboo", "audience")}
     deep = {k: v for k, v in deep.items() if v}
     # визуальный выбор стилей («какие образы откликаются») → явный сигнал регистра в генерацию
@@ -1372,11 +1740,11 @@ def _card_look_prompt(lk: dict, diag: dict) -> str:
     return ". ".join(parts) or (diag.get("style_formula") or "современный стильный образ")
 
 
-def _card_job_worker(job_id: str, photo_path: Path, email: str) -> None:
+def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | None = None) -> None:
     """Фоновая сборка карты + рендер 6 образов на клиентке. Фото удаляем после."""
     try:
         diag = (get_profile(email) or {}).get("diagnosis") or {}
-        card = build_style_card(diag)
+        card = build_style_card(diag, season=season)
         # рендерим 6 образов карты + 2 образа стилизации (одна вещь → два образа)
         targets = list(card.get("looks") or []) + list((card.get("styling") or {}).get("looks") or [])
 
@@ -1427,11 +1795,13 @@ def style_card():
     if not diag.get("style_formula"):
         return redirect("/identity-scan-quiz.html?fresh=1")  # сначала нужна диагностика (квиз)
     card = prof.get("card") or {}
+    stale = _card_stale(prof)  # диагностика обновилась (новый квиз), а Карта на прежней
     if card and not request.args.get("rebuild") and not request.args.get("text"):
         return render_template_string(STYLE_CARD, c=card, name=email,
-                                      thanks=request.args.get("fb"))
-    # бесплатная генерация — один раз на email; пересборку/повтор блокируем (защита токенов)
-    if (request.args.get("rebuild") or request.args.get("text")) and not _gen_allowed(email):
+                                      thanks=request.args.get("fb"), stale=stale)
+    # бесплатная генерация — один раз на email; пересборку/повтор блокируем (защита токенов).
+    # Исключение: диагностика реально изменилась (новый квиз) — даём пересобрать Карту под неё.
+    if (request.args.get("rebuild") or request.args.get("text")) and not _gen_allowed(email) and not stale:
         if card:
             return render_template_string(STYLE_CARD, c=card, name=email, thanks=None)
         return render_template_string(CARD_BUILD_FORM, error=_GEN_LIMIT_MSG), 429
@@ -1440,7 +1810,7 @@ def style_card():
             return render_template_string(CARD_BUILD_FORM, error="Лимит на сегодня исчерпан."), 429
         record_call()
         try:
-            card = build_style_card(diag)
+            card = build_style_card(diag, season=request.args.get("season"))
             save_card(email, card)
             record_event("card_built", email, meta="text")
         except Exception as e:  # noqa: BLE001
@@ -1456,10 +1826,13 @@ def card_build():
     email = session.get("email")
     if not email:
         return redirect("/login")
-    diag = (get_profile(email) or {}).get("diagnosis") or {}
+    prof = get_profile(email) or {}
+    diag = prof.get("diagnosis") or {}
     if not diag.get("style_formula"):
         return redirect("/identity-scan-quiz.html?fresh=1")
-    if not _gen_allowed(email):  # бесплатная генерация — один раз на email (защита токенов)
+    # бесплатная генерация — один раз на email (защита токенов). Исключение — устаревшая Карта
+    # (клиентка заново прошла квиз): разрешаем пересобрать под новую диагностику.
+    if not _gen_allowed(email) and not _card_stale(prof):
         return render_template_string(CARD_BUILD_FORM, error=_GEN_LIMIT_MSG), 429
     if not _quota_left():
         return render_template_string(CARD_BUILD_FORM, error="Лимит на сегодня исчерпан."), 429
@@ -1472,9 +1845,10 @@ def card_build():
         return render_template_string(CARD_BUILD_FORM, error=str(e)), 400
     _save_deep_intake(email, request.form)  # тело+возражения из анкеты → в Формулу/стоп-лист/чат
     record_call()
+    season = (request.form.get("season") or "").strip() or None  # ss|fw — сезон капсулы
     job_id = uuid.uuid4().hex
     _JOBS[job_id] = {"status": "processing"}
-    threading.Thread(target=_card_job_worker, args=(job_id, photo_path, email),
+    threading.Thread(target=_card_job_worker, args=(job_id, photo_path, email, season),
                      daemon=True).start()
     return render_template_string(CARD_BUILDING, job_id=job_id)
 

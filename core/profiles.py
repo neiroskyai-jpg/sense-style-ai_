@@ -30,6 +30,12 @@ def _conn(db_path: Path = DB_PATH) -> sqlite3.Connection:
     cols = {r[1] for r in con.execute("PRAGMA table_info(profiles)").fetchall()}
     if "card" not in cols:
         con.execute("ALTER TABLE profiles ADD COLUMN card TEXT")
+    # история версий Карты (капсула была → обновление; снимок на каждую сборку, с сезоном)
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS card_history ("
+        " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        " email TEXT, ts TEXT, season TEXT, card TEXT)"
+    )
     return con
 
 
@@ -79,3 +85,40 @@ def save_diagnosis(email: str, diagnosis: dict, db_path: Path = DB_PATH) -> None
 def save_card(email: str, card: dict, db_path: Path = DB_PATH) -> None:
     if _norm(email):
         _upsert(email, "card", card, db_path)
+        # снимок в историю — чтобы кабинет показывал «капсула была → обновление» (сезон из карты)
+        append_card_version(email, card, season=(card or {}).get("season"), db_path=db_path)
+
+
+def append_card_version(email: str, card: dict, season: str | None = None,
+                        ts: str | None = None, db_path: Path = DB_PATH) -> None:
+    """Снимок Карты в историю версий (капсула+шопинг+палитра) с меткой времени и сезоном."""
+    if not _norm(email):
+        return
+    ts = ts or datetime.now(timezone.utc).isoformat()
+    with _conn(db_path) as con:
+        con.execute(
+            "INSERT INTO card_history (email, ts, season, card) VALUES (?,?,?,?)",
+            (_norm(email), ts, season, json.dumps(card, ensure_ascii=False)),
+        )
+        con.commit()
+
+
+def card_versions(email: str, db_path: Path = DB_PATH) -> list[dict]:
+    """История версий Карты по времени (старые → новые). Каждая: {ts, season, card}."""
+    if not _norm(email):
+        return []
+    with _conn(db_path) as con:
+        rows = con.execute(
+            "SELECT ts, season, card FROM card_history WHERE email=? ORDER BY ts, id",
+            (_norm(email),),
+        ).fetchall()
+    return [{"ts": r[0], "season": r[1], "card": json.loads(r[2]) if r[2] else {}}
+            for r in rows]
+
+
+def current_card_by_season(email: str, db_path: Path = DB_PATH) -> dict:
+    """Последняя версия Карты для каждого сезона: {season: card}. Сезон None → ключ ''."""
+    out: dict[str, dict] = {}
+    for v in card_versions(email, db_path):  # по возрастанию времени → последняя перезапишет
+        out[v.get("season") or ""] = v.get("card") or {}
+    return out

@@ -3,7 +3,8 @@
 Реального фида Lamoda ещё нет — гоняем на синтетическом образце (формат YML, как у CPA).
 Когда придёт настоящий фид: подложить его в SAMPLE_FEED / поправить core.catalog._FIELD_TAGS.
 """
-from core.catalog import Product, match_products, parse_feed
+from core.catalog import (Product, _color_families, match_products, parse_csv,
+                          parse_feed, products_to_csv)
 
 SAMPLE_FEED = """<?xml version="1.0" encoding="utf-8"?>
 <yml_catalog>
@@ -92,3 +93,62 @@ def test_empty_and_garbage_safe():
     p = Product(id="x", name="без полей")
     assert match_products({"base_style": "natural"}, [p], k=5) == [p] or isinstance(
         match_products({"base_style": "natural"}, [p], k=5), list)
+
+
+def test_color_families_map_method_names_to_base():
+    # имена палитры метода и сырые цвета фида сходятся к одной семье
+    assert _color_families("Чёрная ночь") == {"black"}
+    assert "grey" in _color_families("Холодный тауп")
+    assert _color_families("Рубиновый") == {"red"}
+    assert _color_families("чёрный") == {"black"}
+
+
+def test_match_by_palette_family_not_substring():
+    # раньше «Чёрная ночь» не находила «чёрный» (подстрока), теперь находит по семье
+    prods = [
+        Product(id="1", name="Пиджак", category="пиджак", color="чёрный", gender="женский"),
+        Product(id="2", name="Юбка", category="юбка", color="тауп", gender="женский"),
+        Product(id="3", name="Топ", category="топ", color="жёлтый", gender="женский"),
+    ]
+    profile = {"palette": [{"name": "Чёрная ночь"}, {"name": "Холодный тауп"}],
+               "stop_list": ["Горчичный"], "gender": "женский"}
+    picks = match_products(profile, prods, k=12)
+    ids = [p.id for p in picks]
+    assert "3" not in ids            # жёлтый в стоп-семье (горчичный) — отсечён
+    assert ids[:2] == ["1", "2"]     # чёрный и тауп из палитры — выше жёлтого вне палитры
+
+
+def test_match_prefers_client_style_fields():
+    # доминанта клиентки — classic; вещь classic-бренда выше drama-бренда при равном цвете
+    prods = [
+        Product(id="c", name="Жакет", category="жакет", color="чёрный",
+                gender="женский", style_fields="classic; natural"),
+        Product(id="d", name="Платье", category="платье", color="чёрный",
+                gender="женский", style_fields="drama; romance"),
+    ]
+    profile = {"palette": [{"name": "Чёрная ночь"}], "styles": ["classic"], "gender": "женский"}
+    picks = match_products(profile, prods, k=12)
+    assert picks[0].id == "c"  # classic-вещь впереди drama при равном цвете
+
+
+def test_parse_csv_and_roundtrip(tmp_path):
+    """CSV (выгрузка скрейпера) → Product → match_products; и обратная запись."""
+    src = tmp_path / "prods.csv"
+    src.write_text(
+        "id,name,brand,category,price,color,url,gender,sizes\n"
+        "80877,Топ-пиджак из сатина,Ushatava,пиджак,49900,чёрный,https://u.ru/1,женский,\"S,M\"\n"
+        "80900,Брюки прямые,Ushatava,брюки,22900,тауп,https://u.ru/2,женский,M\n",
+        encoding="utf-8-sig",
+    )
+    prods = parse_csv(src)
+    assert len(prods) == 2
+    assert prods[0].brand == "Ushatava" and prods[0].price == 49900.0
+    assert prods[0].sizes == ["S", "M"]
+    # идёт в тот же движок подбора
+    top = match_products({"base_style": "natural", "palette": [{"name": "тауп"}],
+                          "gender": "женский"}, prods, k=2)
+    assert any(p.color == "тауп" for p in top)
+    # round-trip: запись → чтение не теряет полей
+    dest = tmp_path / "out.csv"
+    products_to_csv(prods, dest)
+    assert len(parse_csv(dest)) == 2

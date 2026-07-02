@@ -258,3 +258,30 @@ def progress(client: str, db_path: Path = DB_PATH) -> dict | None:
     delta = (first["gap"] - last["gap"]) if first["gap"] is not None and last["gap"] is not None else None
     return {"sessions": len(h), "first_gap": first["gap"], "last_gap": last["gap"],
             "delta": delta, "history": h}
+
+
+def gap_timeline(client: str, db_path: Path = DB_PATH) -> list[dict]:
+    """Точки трекера = РАЗНЫЕ замеры разрыва. Подряд идущие сессии с одинаковым gap — это
+    один и тот же замер (эхо из сборки Карты/лида на том же диагнозе), схлопываем в одну точку.
+    Разрыв двигается только реальным пере-замером (новые фото), иначе трекер показывает фикцию."""
+    pts: list[dict] = []
+    for h in get_history(client, db_path):
+        if h["gap"] is None:
+            continue
+        if pts and pts[-1]["gap"] == h["gap"]:
+            continue  # то же значение подряд — не новый замер
+        pts.append({"ts": h["ts"], "gap": h["gap"], "formula": h["formula"]})
+    return pts
+
+
+def gap_progress(client: str, db_path: Path = DB_PATH) -> dict | None:
+    """Динамика разрыва для кабинета. Дельту («−N п.п.») отдаём ТОЛЬКО при ≥2 реальных замерах —
+    при одном замере это лишь точка отсчёта, обещать динамику нельзя. None — если замеров нет."""
+    pts = gap_timeline(client, db_path)
+    if not pts:
+        return None
+    first, last = pts[0], pts[-1]
+    measured = len(pts)
+    delta = (first["gap"] - last["gap"]) if measured >= 2 else None
+    return {"points": pts, "measurements": measured,
+            "first_gap": first["gap"], "current_gap": last["gap"], "delta": delta}

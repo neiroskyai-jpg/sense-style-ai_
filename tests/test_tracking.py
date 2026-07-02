@@ -1,6 +1,6 @@
 """Тесты трекинга имиджа (SQLite, без обращения к API)."""
-from core.tracking import (count_today, get_history, progress, record_call,
-                           record_session)
+from core.tracking import (count_today, gap_progress, gap_timeline, get_history,
+                           progress, record_call, record_session)
 
 
 def test_call_quota_counter(tmp_path):
@@ -41,3 +41,40 @@ def test_history_isolated_per_client(tmp_path):
     record_session("b", {"gap_percentage": 60}, db_path=db)
     assert len(get_history("a", db_path=db)) == 1
     assert progress("nobody", db_path=db) is None
+
+
+# --- Фаза 3: целостность трекера (точка = реальный замер, дельта только при ≥2) ---
+
+def test_timeline_collapses_echo_of_same_measurement(tmp_path):
+    # квиз + сборка Карты + лид пишут сессии с ОДНИМ gap — это один замер, не три точки
+    db = tmp_path / "t.db"
+    for _ in range(3):
+        record_session("anna", {"gap_percentage": 41, "style_formula": "A"}, db_path=db)
+    pts = gap_timeline("anna", db_path=db)
+    assert len(pts) == 1 and pts[0]["gap"] == 41
+
+
+def test_single_measurement_has_no_delta(tmp_path):
+    # один реальный замер → точка отсчёта без дельты (нельзя обещать динамику)
+    db = tmp_path / "t.db"
+    record_session("anna", {"gap_percentage": 41}, ts="2026-07-01T10:00:00", db_path=db)
+    p = gap_progress("anna", db_path=db)
+    assert p["measurements"] == 1
+    assert p["current_gap"] == 41
+    assert p["delta"] is None
+
+
+def test_two_real_measurements_give_delta(tmp_path):
+    db = tmp_path / "t.db"
+    record_session("anna", {"gap_percentage": 64}, ts="2026-01-18T10:00:00", db_path=db)
+    record_session("anna", {"gap_percentage": 64}, ts="2026-01-18T10:05:00", db_path=db)  # эхо
+    record_session("anna", {"gap_percentage": 18}, ts="2026-05-04T10:00:00", db_path=db)
+    p = gap_progress("anna", db_path=db)
+    assert p["measurements"] == 2  # эхо схлопнулось
+    assert p["first_gap"] == 64 and p["current_gap"] == 18
+    assert p["delta"] == 46
+
+
+def test_gap_progress_none_without_history(tmp_path):
+    db = tmp_path / "t.db"
+    assert gap_progress("nobody", db_path=db) is None
