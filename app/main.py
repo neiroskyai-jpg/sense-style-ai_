@@ -50,7 +50,7 @@ DEMO_DAILY_LIMIT = int(os.getenv("DEMO_DAILY_LIMIT", "40"))  # защита от
 app = Flask(__name__, static_folder=str(WEB_DIR), static_url_path="")
 app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # лимит загрузки 15 МБ
 # секрет сессий/magic-link: env SENSE_SECRET_KEY или стабильный файл на постоянном томе
-from core.config import secret_key as _secret_key  # noqa: E402
+from core.config import secret_key as _secret_key, data_dir as _data_dir  # noqa: E402
 app.secret_key = _secret_key()
 
 
@@ -535,19 +535,21 @@ ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Карта стиля{% if name %} — {{ name }}{% endif %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
- *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
- .wrap{max-width:760px;margin:0 auto;padding:30px 24px 80px}
+ *{box-sizing:border-box} body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;margin:0;background:var(--cream);color:var(--ink);line-height:1.62}
+ .wrap{max-width:820px;margin:0 auto;padding:40px 30px 90px}
  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
  .bar a,.bar button{color:var(--wine);font:inherit;font-size:14px;background:none;border:0;cursor:pointer;text-decoration:none}
  .stale{background:#fbeee4;border:1px solid #e3cdb8;border-radius:12px;padding:14px 16px;margin:6px 0 20px;font-size:14.5px;color:#5a4a3a;line-height:1.5}
  .stale b{color:var(--wine)} .stale a{display:inline-block;margin-top:9px;background:var(--wine);color:#fff;text-decoration:none;padding:9px 18px;border-radius:8px;font-size:14px}
  .eyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine)}
- h1{font-weight:normal;font-size:38px;margin:6px 0 2px} .who{color:var(--muted);margin:0 0 6px}
- h2{font-weight:normal;font-size:22px;margin:34px 0 12px;border-bottom:1px solid var(--line);padding-bottom:6px}
- .formula{font-size:22px;margin:2px 0} .gap{color:var(--wine);font-weight:bold}
- .dna{font-size:16px;line-height:1.65}
+ h1{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:54px;line-height:1.04;margin:8px 0 4px;letter-spacing:-.01em} .who{color:var(--muted);margin:0 0 6px}
+ h2{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:30px;margin:46px 0 16px;border-bottom:1px solid var(--line);padding-bottom:8px;letter-spacing:-.01em}
+ .formula{font-family:'Cormorant Garamond',Georgia,serif;font-size:31px;font-weight:600;line-height:1.15;margin:4px 0} .gap{color:var(--wine);font-weight:600}
+ .dna{font-size:18px;line-height:1.7;color:#3a352e}
  .sw-group{font-size:13px;color:var(--muted);margin:14px 0 6px;letter-spacing:.04em;text-transform:uppercase}
  .swatches{display:flex;flex-wrap:wrap;gap:10px}
  .sw{width:84px} .sw .chip{height:54px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
@@ -560,10 +562,13 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  @media(max-width:560px){.looks{grid-template-columns:1fr}}
  .look{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
  .look .scn{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--wine)}
- .look .nm{font-size:18px;margin:3px 0 8px}
+ .look .nm{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:23px;margin:4px 0 8px;line-height:1.1}
  .look .it{font-size:13.5px;color:#4a443c;margin:0 0 8px}
  .look .ds{font-size:14px;color:#5a5246}
  .cap-h{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine);margin:18px 0 8px;font-weight:normal}
+ .blocklead{font-family:Arial,sans-serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--wine);margin:46px 0 -4px;padding-top:22px;border-top:2px solid var(--wine)}
+ .blocklead b{opacity:.5;font-weight:normal;margin-right:8px}
+ .meta{font-size:15px;color:var(--muted);margin:0 0 10px}
  .caps{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
  @media(max-width:560px){.caps{grid-template-columns:1fr}}
  .capitem{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px}
@@ -577,7 +582,20 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .ref{background:#fbf8f3;border:1px solid var(--line);border-radius:14px;padding:16px 20px}
  .refname{font-size:20px;color:var(--wine)} .refline{font-size:14px;color:#5a5246;margin:6px 0 0}
  .print{display:block;margin:30px auto 0;background:var(--wine);color:#fff;border:0;border-radius:10px;padding:14px 26px;font:inherit;font-size:16px;cursor:pointer}
- @media print{.bar,.print{display:none} body{background:#fff} .wrap{max-width:none;padding:0} .look{break-inside:avoid}}
+ @media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .bar,.print,#fbblock{display:none!important}
+  body{background:var(--cream)} .wrap{max-width:none;padding:0}
+  /* одна колонка на печати — двухколоночная сетка ломает разбивку и плодит белые листы */
+  .looks,.caps{grid-template-columns:1fr!important;gap:12px}
+  /* карточки и картинки не режем посреди страницы */
+  .look,.capitem,.shopitem,.ref,.sw{break-inside:avoid;page-break-inside:avoid}
+  .look img{break-inside:avoid}
+  h2{break-after:avoid;page-break-after:avoid}
+  /* каждый смысловой блок 02–04 — с новой страницы (у первого разрыв не нужен) */
+  .blocklead{break-before:page;page-break-before:always;border-top:0;padding-top:0;margin:0 0 8px}
+  .blocklead:first-of-type{break-before:avoid;page-break-before:avoid}
+ }
 </style></head><body><div class=wrap>
 <div class=bar><a href="/me">← мой профиль</a><a href="/card?rebuild=1">собрать заново</a></div>
 {% if stale %}<div class=stale><b>Твоя диагностика обновилась.</b> Ты недавно заново прошла квиз, и разрыв изменился. Эта Карта пока собрана на прежней диагностике — числа и подборка ниже от неё. Собери Карту заново, чтобы она совпала с последним квизом.<br><a href="/card?rebuild=1">Собрать Карту заново →</a></div>{% endif %}
@@ -589,30 +607,60 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if c.season_label %}<p class=who style="margin:0 0 4px">Капсула на сезон: {{ c.season_label }}</p>{% endif %}
 {% if c.gap is not none %}<p>Identity Gap: <span class=gap>{{ c.gap }}%</span> — тот самый разрыв с твоей диагностики. Здесь ты видишь, чем именно его закрыть.</p>{% endif %}
 {% if c.dna %}<p class=dna>{{ c.dna }}</p>{% endif %}
-{% if c.substyle_rationale %}<h2>Почему именно этот подстиль</h2>
-<p style="font-size:16px;color:#3a352e;margin:0 0 12px">{{ c.substyle_rationale }}</p>{% endif %}
+{% macro lookcard(lk) %}<div class=look>
+  {% if lk.img %}<img src="{{ lk.img }}" alt="Образ" style="width:100%;border-radius:10px;margin-bottom:10px;display:block">{% endif %}
+  {% if lk.scenario %}<div class=scn>{{ lk.scenario }}</div>{% endif %}
+  {% if lk.title %}<div class=nm>{{ lk.title }}</div>{% elif lk.name %}<div class=nm>{{ lk.name }}</div>{% endif %}
+  {% if lk['items'] %}<p class=it>{{ lk['items']|join(' · ') }}</p>{% endif %}
+  {% if lk.description %}<p class=ds>{{ lk.description }}</p>{% endif %}
+ </div>{% endmacro %}
 
-{% if c.colortype or c.figure %}<h2>Твоя основа</h2>
-<ul class=clean>
- {% if c.colortype %}<li><b>Цветотип:</b> {{ c.colortype }}{% if c.contrast %} · контраст {{ c.contrast }}{% endif %} — на нём строится палитра ниже</li>{% endif %}
- {% if c.figure %}<li><b>Фигура:</b> {{ c.figure }} — под неё силуэты и образы</li>{% endif %}
- {% if c.emphasize %}<li><b>Подчёркиваем:</b> {{ c.emphasize }} — образы строим вокруг этого</li>{% endif %}
-</ul>{% endif %}
-
-{% if c.figure_fit %}<h2>Посадка под твою фигуру</h2>
-<p style="font-size:15px;color:var(--muted);margin:0 0 10px">По этим правилам подобрана капсула и образы ниже — чтобы вещи сидели по твоим пропорциям.</p>
-<ul class=clean>
- <li><b>Подчёркиваем:</b> {{ c.figure_fit.emphasize }}</li>
- <li><b>Баланс:</b> {{ c.figure_fit.balance }}</li>
- <li><b>Посадка и размеры:</b> {{ c.figure_fit.fit }}</li>
- <li><b>Твои силуэты:</b> {{ c.figure_fit.silhouettes | join('; ') }}</li>
-</ul>{% endif %}
-
-{% if c.personality and c.personality.portrait %}<h2>Твоя натура и стиль</h2>
-<p style="font-size:16px;color:#3a352e;margin:0 0 12px">{{ c.personality.portrait }}</p>
+<!-- ═══════ БЛОК 1 · КТО ТЫ ═══════ -->
+{% if c.substyle_rationale or (c.personality and c.personality.portrait) %}
+<div class=blocklead><b>01</b>Кто ты</div>
+<h2>Почему это твой стиль</h2>
+{% if c.substyle_rationale %}<p style="font-size:16px;color:#3a352e;margin:0 0 12px">{{ c.substyle_rationale }}</p>{% endif %}
+{% if c.personality and c.personality.portrait %}<p style="font-size:16px;color:#3a352e;margin:0 0 12px">{{ c.personality.portrait }}</p>
 {% if c.personality.style_implications %}<ul class=clean>{% for s in c.personality.style_implications %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}{% endif %}
+{% endif %}
 
-<h2>Твоя палитра — 30 цветов</h2>
+<!-- ═══════ БЛОК 2 · ТВОИ ОБРАЗЫ ═══════ -->
+{% if c.looks %}
+<div class=blocklead><b>02</b>Твои образы</div>
+<h2>Образы под твою жизнь</h2>
+<p class=meta>Ты в своей Формуле — видно, как одни и те же базовые вещи работают в разных ситуациях.</p>
+{% set ns = namespace(shown=0) %}
+{% for bucket in ['Работа','Повседневное','Выход'] %}
+ {% set bl = c.looks|selectattr('bucket','equalto',bucket)|list %}
+ {% if bl %}{% set ns.shown = ns.shown + bl|length %}<h3 class=cap-h>{{ bucket }}</h3><div class=looks>{% for lk in bl %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
+{% endfor %}
+{% if ns.shown == 0 %}<div class=looks>{% for lk in c.looks %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
+
+{% if c.styling and c.styling.looks %}<h2>Стилизация: одна вещь — два образа</h2>
+<p class=meta>{% if c.styling.idea %}{{ c.styling.idea }}{% else %}Одна базовая вещь{% if c.styling.base_item %} ({{ c.styling.base_item }}){% endif %} — два разных образа.{% endif %} Так работает капсула: мало вещей, много решений.</p>
+<div class=looks>{% for lk in c.styling.looks %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
+{% endif %}
+
+<!-- ═══════ БЛОК 3 · ТВОЯ ФИГУРА ═══════ -->
+{% if c.figure or c.figure_fit or c.silhouettes %}
+<div class=blocklead><b>03</b>Твоя фигура</div>
+<h2>Что носить по твоей фигуре</h2>
+{% if c.figure %}<p class=meta>Силуэт: <b>{{ c.figure }}</b> — по этим правилам подобраны образы выше и капсула ниже, чтобы вещи сидели по твоим пропорциям.</p>{% endif %}
+<ul class=clean>
+ {% if c.emphasize %}<li><b>Твой акцент:</b> {{ c.emphasize }} — образы строим вокруг этого</li>{% endif %}
+ {% if c.figure_fit %}<li><b>Подчёркиваем:</b> {{ c.figure_fit.emphasize }}</li>
+ <li><b>Баланс:</b> {{ c.figure_fit.balance }}</li>
+ <li><b>Посадка и размеры:</b> {{ c.figure_fit.fit }}</li>{% endif %}
+</ul>
+{% set sils = c.figure_fit.silhouettes if (c.figure_fit and c.figure_fit.silhouettes) else c.silhouettes %}
+{% if sils %}<p class=meta style="margin:12px 0 6px">Твои силуэты:</p>
+<ul class=clean>{% for s in sils %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}{% endif %}
+
+<!-- ═══════ БЛОК 4 · ТВОИ ЦВЕТА ═══════ -->
+<div class=blocklead><b>04</b>Твои цвета</div>
+{% if c.colortype %}<h2>Твой цветотип — {{ c.colortype }}</h2>
+<p class=meta>{% if c.contrast %}Контраст {{ c.contrast }}. {% endif %}На нём построена палитра ниже.</p>{% endif %}
+<h2>Палитра — 30 цветов</h2>
 {% for grp, title in [('base','База и нейтрали'),('main','Основные'),('accent','Акценты')] %}
  {% set items = c.palette|selectattr('group','equalto',grp)|list %}
  {% if items %}<div class=sw-group>{{ title }}</div><div class=swatches>
@@ -625,10 +673,10 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  {% for p in c.stop_colors %}<div class=sw><div class=chip style="background:{{ p.hex }}"></div><div class=nm><b>{{ p.name }}</b><br>{{ p.why }}</div></div>{% endfor %}
 </div>{% endif %}
 
-{% if c.silhouettes %}<h2>Силуэты под твою фигуру</h2>
-<ul class=clean>{% for s in c.silhouettes %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
-
-{% if c.base_capsule %}<h2>Базовая капсула — ядро гардероба</h2>
+<!-- ═══════ БЛОК 5 · ТВОЙ ГАРДЕРОБ ═══════ -->
+{% if c.base_capsule %}
+<div class=blocklead><b>05</b>Твой гардероб</div>
+<h2>Базовая капсула — ядро гардероба</h2>
 <p class=meta>Эти вещи — основа, всё остальное собирается вокруг них{% if c.combination_count %}: из них получается около {{ c.combination_count }} рабочих образов{% endif %}.</p>
 {% if c.capsule_board %}
  {% for grp in c.capsule_board %}
@@ -648,27 +696,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  </div>{% endfor %}
 </div>{% endif %}{% endif %}
 
-{% macro lookcard(lk) %}<div class=look>
-  {% if lk.img %}<img src="{{ lk.img }}" alt="Образ" style="width:100%;border-radius:10px;margin-bottom:10px;display:block">{% endif %}
-  {% if lk.scenario %}<div class=scn>{{ lk.scenario }}</div>{% endif %}
-  {% if lk.title %}<div class=nm>{{ lk.title }}</div>{% elif lk.name %}<div class=nm>{{ lk.name }}</div>{% endif %}
-  {% if lk['items'] %}<p class=it>{{ lk['items']|join(' · ') }}</p>{% endif %}
-  {% if lk.description %}<p class=ds>{{ lk.description }}</p>{% endif %}
- </div>{% endmacro %}
-
-{% if c.looks %}<h2>Капсулы под реальную жизнь</h2>
-<p class=meta>Образы сгруппированы по жизни — видно, как одни и те же базовые вещи работают в разных ситуациях.</p>
-{% set ns = namespace(shown=0) %}
-{% for bucket in ['Работа','Повседневное','Выход'] %}
- {% set bl = c.looks|selectattr('bucket','equalto',bucket)|list %}
- {% if bl %}{% set ns.shown = ns.shown + bl|length %}<h3 class=cap-h>{{ bucket }}</h3><div class=looks>{% for lk in bl %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
-{% endfor %}
-{% if ns.shown == 0 %}<div class=looks>{% for lk in c.looks %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}{% endif %}
-
-{% if c.styling and c.styling.looks %}<h2>Стилизация: одна вещь — два образа</h2>
-<p class=meta>{% if c.styling.idea %}{{ c.styling.idea }}{% else %}Одна базовая вещь{% if c.styling.base_item %} ({{ c.styling.base_item }}){% endif %} — два разных образа.{% endif %} Так работает капсула: мало вещей, много решений.</p>
-<div class=looks>{% for lk in c.styling.looks %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
-
+<!-- ═══════ БЛОК 6 · ЧТО КУПИТЬ ═══════ -->
+{% if c.shopping or c.style_reference or c.stop_list %}<div class=blocklead><b>06</b>Что купить</div>{% endif %}
 {% if c.shopping %}<h2>Топ покупок под твою Формулу</h2>
 <div class=shop>
  {% for it in c.shopping %}<div class=shopitem>
@@ -714,10 +743,11 @@ function downloadPdf(){
   var fb=document.getElementById('fbblock');
   btn.textContent='Готовлю файл…'; btn.disabled=true;
   if(bar) bar.style.visibility='hidden'; btn.style.visibility='hidden'; if(fb) fb.style.display='none';
-  var opt={margin:[10,10,12,10], filename:'Карта-стиля.pdf', image:{type:'jpeg',quality:0.96},
-    html2canvas:{scale:2,useCORS:true,backgroundColor:'#F5EFE3'},
+  var opt={margin:[12,12,14,12], filename:'Карта-стиля.pdf', image:{type:'jpeg',quality:0.96},
+    html2canvas:{scale:2,useCORS:true,backgroundColor:'#F5EFE3',windowWidth:820},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-    pagebreak:{mode:['css','legacy'],avoid:'.look'}};
+    // css — уважать break-before блоков; avoid-all — не резать карточки. legacy убран: плодил пустые листы
+    pagebreak:{mode:['css','avoid-all']}};
   html2pdf().set(opt).from(document.querySelector('.wrap')).save().then(function(){
     if(bar) bar.style.visibility='visible'; btn.style.visibility='visible'; if(fb) fb.style.display='';
     btn.textContent='Скачать PDF к шкафу'; btn.disabled=false;
@@ -765,12 +795,14 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .consent{font-size:13px;color:var(--muted);display:flex;gap:8px;margin-top:14px;line-height:1.4} .consent input{width:auto;margin-top:3px}
  .hint{color:var(--muted);font-size:13px;text-align:center;margin-top:14px} .hint a{color:var(--wine)}
  .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:8px}
+ .notice{color:#5a4a2a;background:#f6efdf;border:1px solid #e3d3a8;padding:14px 16px;border-radius:10px;margin-bottom:8px;font-size:14.5px;line-height:1.5} .notice b{color:var(--wine)}
 </style></head><body><div class=wrap>
 {% macro chips(name, opts) %}<div class=chips>{% for o in opts %}<label class=chip><input type=checkbox name="{{ name }}" value="{{ o }}"><span>{{ o }}</span></label>{% endfor %}</div>{% endmacro %}
 <div class=top><span class=logo>Чувство стиля</span><a href="/me">← мой профиль</a></div>
 <div class=eyebrow>Карта стиля</div>
 <h1>Покажем тебя в 6 образах</h1>
 <p class=lead>Загрузи фото в полный рост — соберём твою Карту стиля и покажем тебя в 6 образах под твои сценарии. Это занимает пару минут.</p>
+{% if notice %}<p class=notice>{{ notice|safe }}</p>{% endif %}
 {% if error %}<p class=err>{{ error }}</p>{% endif %}
 <form method=post action="/card/build" enctype="multipart/form-data">
 <div class=card>
@@ -1468,13 +1500,18 @@ def _diag_signature(diag: dict) -> str:
 
 def _card_stale(prof: dict) -> bool:
     """Собранная Карта устарела: диагностика в профиле изменилась (клиентка заново прошла квиз),
-    а Карта осталась на прежней. Старые Карты без отпечатка не трогаем (не форсим пересборку)."""
+    а Карта осталась на прежней."""
     card = prof.get("card") or {}
     diag = prof.get("diagnosis") or {}
-    sig = card.get("_diag_sig")
-    if not card or not diag or not sig:
+    if not card or not diag:
         return False
-    return sig != _diag_signature(diag)
+    sig = card.get("_diag_sig")
+    if sig:
+        return sig != _diag_signature(diag)
+    # Старая Карта без отпечатка (собрана до фичи): сверяем Gap напрямую. Если разошёлся с текущей
+    # диагностикой — Карта устарела (это и был баг: квиз 44%, а Карта показывала прежние 78%).
+    cg, dg = card.get("gap"), diag.get("gap_percentage")
+    return cg is not None and dg is not None and cg != dg
 
 
 # Сезоны капсульного гардероба: 4 кода → строка для генерации + ярлык + порядок для переключателя.
@@ -1787,7 +1824,8 @@ def style_card():
     # привязка диагностики из квиза (анонимный прошёл квиз → зарегистрировался → сюда)
     from_job = request.args.get("from_job")
     if from_job:
-        job_diag = (_JOBS.get(from_job) or {}).get("diag")
+        # из памяти (быстро) или с диска (переживает рестарт сервера) — иначе была петля на квиз
+        job_diag = (_JOBS.get(from_job) or {}).get("diag") or _load_pending_diag(from_job)
         if job_diag:
             save_diagnosis(email, job_diag)
     prof = get_profile(email)
@@ -1796,9 +1834,18 @@ def style_card():
         return redirect("/identity-scan-quiz.html?fresh=1")  # сначала нужна диагностика (квиз)
     card = prof.get("card") or {}
     stale = _card_stale(prof)  # диагностика обновилась (новый квиз), а Карта на прежней
+    # Новый квиз → НЕ показываем старую Карту (путает: «прошлый результат»). Ведём вперёд: новый Gap
+    # + пересборка под свежую диагностику. Только Gap переходит из квиза, дальше собираем заново.
+    if stale and not request.args.get("rebuild") and not request.args.get("text"):
+        gap = diag.get("gap_percentage")
+        notice = ("<b>Твой разрыв обновился по новому квизу"
+                  + (f": {gap}%" if gap is not None else "") + ".</b> "
+                  "Старая Карта осталась на прежней диагностике. Собери её заново под свежий результат.")
+        record_event("card_stale_rebuild_prompt", email)
+        return render_template_string(CARD_BUILD_FORM, error=None, notice=notice)
     if card and not request.args.get("rebuild") and not request.args.get("text"):
         return render_template_string(STYLE_CARD, c=card, name=email,
-                                      thanks=request.args.get("fb"), stale=stale)
+                                      thanks=request.args.get("fb"), stale=False)
     # бесплатная генерация — один раз на email; пересборку/повтор блокируем (защита токенов).
     # Исключение: диагностика реально изменилась (новый квиз) — даём пересобрать Карту под неё.
     if (request.args.get("rebuild") or request.args.get("text")) and not _gen_allowed(email) and not stale:
@@ -2196,6 +2243,29 @@ def analyze():
 
 
 _JOBS: dict = {}  # job_id -> {status: processing|done|error, result|error}
+_PENDING_DIR = _data_dir() / "pending_diag"  # диагноз анонимного квиза на диске (переживает рестарт)
+
+
+def _save_pending_diag(job_id: str, diag: dict) -> None:
+    """Диагноз анонимного квиза → на диск. In-memory _JOBS теряется при перезапуске сервера
+    (особенно с --debug: рестарт от каждой правки), из-за чего /card?from_job не находил диагноз
+    и зацикливал на квиз. Файл это чинит — диагноз доступен после рестарта."""
+    try:
+        _PENDING_DIR.mkdir(parents=True, exist_ok=True)
+        (_PENDING_DIR / f"{job_id}.json").write_text(
+            json.dumps(diag, ensure_ascii=False), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _load_pending_diag(job_id: str) -> dict | None:
+    try:
+        f = _PENDING_DIR / f"{job_id}.json"
+        if f.exists():
+            return json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pass
+    return None
 
 
 _FIELD_RU = {"natural": "естественность", "romance": "женственность",
@@ -2401,6 +2471,7 @@ def _job_worker(job_id: str, photo_path: Path, quiz: dict, client: str,
     """Фоновая генерация — чтобы HTTP-запрос не висел (таймауты/блокировка)."""
     try:
         diag, directions, explain = _run_fast(photo_path, quiz, season=season)
+        _save_pending_diag(job_id, diag)  # на диск: /card?from_job найдёт диагноз даже после рестарта
         if client:
             try:
                 record_session(client, diag)

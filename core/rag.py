@@ -72,22 +72,29 @@ def _vectors():
 
 @lru_cache(maxsize=1)
 def _embedder():
-    """Ленивая fastembed-модель. None, если библиотеки нет (фолбэк на теги)."""
+    """Ленивая fastembed-модель. None → фолбэк на теги.
+
+    Ловим не только ImportError: модель кэшируется в системном TEMP и может быть удалена/побита
+    (onnxruntime NoSuchFile), а в CI её просто нет. Семантика — усиление, а не обязательное звено.
+    """
     try:
         from fastembed import TextEmbedding
-    except ImportError:
+        return TextEmbedding(model_name=EMBED_MODEL)
+    except Exception:  # noqa: BLE001 — RAG не должен ронять диагностику из-за модели
         return None
-    return TextEmbedding(model_name=EMBED_MODEL)
 
 
 def _embed_query(text: str):
     model = _embedder()
     if model is None:
         return None
-    import numpy as np
-    vec = next(iter(model.embed([text])))
-    vec = np.asarray(vec, dtype="float32")
-    return vec / (np.linalg.norm(vec) + 1e-9)
+    try:
+        import numpy as np
+        vec = next(iter(model.embed([text])))
+        vec = np.asarray(vec, dtype="float32")
+        return vec / (np.linalg.norm(vec) + 1e-9)
+    except Exception:  # noqa: BLE001 — битая модель/рантайм → тихий фолбэк на теги
+        return None
 
 
 def _profile_tags(profile: dict) -> dict:

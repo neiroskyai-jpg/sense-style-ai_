@@ -2463,23 +2463,19 @@ function submitLead(e) {
 // Восстановление после перезагрузки: если генерация шла или результат уже готов —
 // возвращаемся на нужный экран, а не на старт квиза
 document.addEventListener('DOMContentLoaded', function() {
-  // ?fresh=1 / ?restart=1 (или новый вход) — начинаем квиз с нуля, не показываем прошлый результат
-  if (/[?&](fresh|restart)=1/.test(location.search)) { clearJob(); return; }
+  // ?fresh=1 / ?restart=1 — начинаем квиз с нуля, явно показываем интро
+  if (/[?&](fresh|restart)=1/.test(location.search)) { clearJob(); show('s-intro'); return; }
   const saved = readJob();
   if (!saved || !saved.answers) return;
   if (saved.status === 'pending' && saved.jobId) {
-    // генерация ещё шла — снова ждём её, а не сбрасываем всё
+    // генерация ещё шла (перезагрузка во время ожидания) — продолжаем ждать её
     answers = saved.answers;
     show('s-processing');
     pollResult(saved.jobId, 0);
-  } else if (saved.status === 'done' && saved.ts && (Date.now() - saved.ts) < 1800000) {
-    // готовый результат восстанавливаем ТОЛЬКО если он свежий (< 30 мин) — иначе чистый старт
-    answers = saved.answers;
-    aiResult = saved.result || null;
-    aiLooks = (aiResult && aiResult.looks) ? aiResult.looks : null;
-    buildResult();
   } else {
-    clearJob();  // устаревший результат — убираем, чтобы не висел «готовый квиз»
+    // Готовый результат НЕ восстанавливаем: заход на квиз = намерение пройти заново.
+    // Иначе «пройти диагностику» показывал прежний Gap (44%) вместо чистого старта.
+    clearJob();
   }
 });
 

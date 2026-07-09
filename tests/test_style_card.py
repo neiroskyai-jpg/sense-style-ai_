@@ -73,6 +73,12 @@ def test_new_quiz_makes_card_stale():
     assert _card_stale({"diagnosis": new_diag, "card": card}) is True
 
 
-def test_legacy_card_without_signature_not_stale():
-    # старые Карты без отпечатка не форсим на пересборку
-    assert _card_stale({"diagnosis": dict(_DIAG, gap_percentage=99), "card": {"gap": 41}}) is False
+def test_legacy_card_without_signature_stale_on_gap_mismatch():
+    # старая Карта без отпечатка: если Gap разошёлся с новой диагностикой — устарела
+    # (это был баг: квиз 44%, а Карта показывала прежние 78%)
+    assert _card_stale({"diagnosis": dict(_DIAG, gap_percentage=99), "card": {"gap": 41}}) is True
+
+
+def test_legacy_card_without_signature_same_gap_not_stale():
+    # старая Карта без отпечатка, но Gap совпадает → не форсим пересборку
+    assert _card_stale({"diagnosis": dict(_DIAG, gap_percentage=41), "card": {"gap": 41}}) is False

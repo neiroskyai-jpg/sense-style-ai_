@@ -15,6 +15,10 @@ COPY app/ ./app/
 COPY scripts/ ./scripts/
 COPY architecture/prompts/ ./architecture/prompts/
 COPY architecture/reference/ ./architecture/reference/
+# статика сайта: лендинг, квиз, карточки стилей — app.main отдаёт web/ как static_folder
+COPY web/ ./web/
+# RAG-индекс: chunks.json нужен и без fastembed (фолбэк на теги), vectors.npz — для семантики
+COPY data/rag/ ./data/rag/
 
 # OPENROUTER_API_KEY задаётся переменной окружения на хосте (не в образ)
 ENV SENSE_MODE=dev

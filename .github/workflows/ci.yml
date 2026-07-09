@@ -7,6 +7,7 @@ on:
 
 jobs:
   test:
+    name: Тесты
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,4 +17,31 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Run tests
+        # fastembed не в requirements — RAG идёт по тегам (фолбэк), тесты не требуют ML-модели
         run: pytest -q
+
+  docker:
+    name: Docker-образ собирается и отвечает
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t sense-style:ci .
+      - name: Smoke-тест — контейнер поднимается и отдаёт /healthz
+        run: |
+          docker run -d --name sense -e OPENROUTER_API_KEY=dummy -p 8080:80 sense-style:ci
+          for i in $(seq 1 20); do
+            if curl -fsS http://localhost:8080/healthz >/dev/null 2>&1; then
+              echo "healthz OK"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "контейнер не ответил — логи:"
+          docker logs sense
+          exit 1
+      - name: Статика попала в образ (лендинг и квиз)
+        run: |
+          docker run --rm sense-style:ci sh -c \
+            'test -f web/index.html && test -f web/identity-scan-quiz.html && test -f data/rag/chunks.json' \
+          && echo "статика и RAG-индекс на месте"

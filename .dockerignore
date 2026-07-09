@@ -1,15 +1,39 @@
+# Контекст сборки — только то, что нужно рантайму.
+
+# бизнес-контекст, планы, инструменты разработки
 .business/
 .claude/
 .agents/
 .git/
+.github/
 plans/
 idea/
-*.jpeg
-*.png
-*.pdf
+architecture/cases/
+statejnik/
+
+# не исполняется в проде
+tests/
+evaluation/
+content/
+ab-output/
+user-photos/
+voice-samples/
+
+# окружение и мусор
 __pycache__/
 *.pyc
 .env
 .venv/
 venv/
 .playwright-mcp/
+
+# тяжёлые PDF кейсов (~32 МБ) — рантайму не нужны
+*.pdf
+
+# черновые/резервные страницы (в проде отдаётся index.html и identity-scan-quiz.html)
+web/*-backup.html
+web/*-preview.html
+
+# ВАЖНО: *.png / *.jpg НЕ исключаем — они нужны сайту:
+# web/photos/styles (карточки стилей в анкете), hero, blog, фоны.
+# Раньше глобальное `*.png` выкидывало их из образа, и сайт оставался без картинок.
