@@ -7,6 +7,14 @@ ab-output/
 # чтобы можно было вернуть RAG-индекс в трекинг (он часть продукта)
 data/*
 !data/rag/
+# каталог реальных вещей (публичные данные брендов, не ПДн) — нужен кабинету/конструктору,
+# иначе визуальная капсула вырождается в текст. Только рантайм-файлы; тяжёлые capsules.json /
+# capsule-showcase.md (офлайн-скрипты) не коммитим.
+!data/fashion-base/
+data/fashion-base/*
+!data/fashion-base/products_ushatava.csv
+!data/fashion-base/products_lichi.csv
+!data/fashion-base/brands.csv
 
 # Python
 __pycache__/

@@ -19,6 +19,8 @@ COPY architecture/reference/ ./architecture/reference/
 COPY web/ ./web/
 # RAG-индекс: chunks.json нужен и без fastembed (фолбэк на теги), vectors.npz — для семантики
 COPY data/rag/ ./data/rag/
+# каталог реальных вещей: без него конструктор гардероба вырождается в текст вместо фото
+COPY data/fashion-base/ ./data/fashion-base/
 
 # OPENROUTER_API_KEY задаётся переменной окружения на хосте (не в образ)
 ENV SENSE_MODE=dev
