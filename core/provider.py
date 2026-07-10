@@ -49,6 +49,31 @@ def encode_image(path: str | Path, max_side: int = 1024) -> str:
     return f"data:image/jpeg;base64,{b64}"
 
 
+def head_crop(path: str | Path, max_side: int = 1024) -> str | None:
+    """Кроп головы/плеч крупным планом — второй референс личности для identity-preserving рендера.
+
+    На фото в полный рост лицо ~150px даже после сжатия — модель «додумывает» чужое.
+    Даём ей отдельный крупный кадр головы: для вертикального ростового/3-4 фото лицо в верхней
+    части, поэтому берём верхнюю полосу во всю ширину и апскейлим. Без детекции лиц (нет opencv):
+    эвристика по пропорции кадра. Возвращает data-URL или None (если фото не читается).
+    """
+    try:
+        img = Image.open(path).convert("RGB")
+    except Exception:  # noqa: BLE001 — кроп не должен ронять рендер
+        return None
+    w, h = img.size
+    # доля высоты, где ожидаем голову+плечи: ростовое/3-4 (высокое) → верх; иначе — почти весь кадр
+    frac = 0.45 if h >= 1.25 * w else 0.72
+    crop = img.crop((0, 0, w, round(h * frac)))
+    cw, ch = crop.size
+    scale = max(1.0, max_side / max(cw, ch))  # апскейлим мелкое лицо, не уменьшаем
+    if scale != 1.0:
+        crop = crop.resize((round(cw * scale), round(ch * scale)))
+    buf = io.BytesIO()
+    crop.save(buf, format="JPEG", quality=90)
+    return "data:image/jpeg;base64," + base64.standard_b64encode(buf.getvalue()).decode()
+
+
 def text_block(text: str) -> dict:
     return {"type": "text", "text": text}
 

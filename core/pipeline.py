@@ -511,26 +511,30 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
     look_prompt — это look-generator.looks[].image_generation_prompt. Возвращает data-URL.
     """
     instruction = (
-        "Photo editing task: dress the SAME real woman from the reference photo in a new outfit. "
-        "The reference photo is the GROUND TRUTH for her identity — study her face carefully and "
+        "Photo editing task: dress the SAME real woman from the reference photos in a new outfit. "
+        "You are given TWO reference images of the SAME woman: the FIRST is a close-up of her "
+        "head and face, the SECOND is a wider shot for her body and figure. "
+        "The close-up is the GROUND TRUTH for her identity — study her face there carefully and "
         "reproduce it precisely so she is instantly recognizable as the exact same person. "
-        "If the reference is a full-body shot with a small face, zoom into the face region to capture "
-        "her exact features — do NOT replace her with a generic model.\n"
-        "- Face: keep the SAME face — face shape, eyes (shape and colour), nose, lips, eyebrows, "
-        "skin tone and complexion, freckles and age. Do NOT beautify, slim, or alter any feature.\n"
+        "Do NOT replace her with a generic or idealised model.\n"
+        "- Face: copy the SAME face from the close-up — face shape, eyes (shape and colour), nose, "
+        "lips, eyebrows, skin tone and complexion, freckles and age. Do NOT beautify or alter it.\n"
         "- Hair: keep the same colour, length and texture.\n"
-        "- Body: keep the same height, build, weight and body proportions (figure type). "
-        "Do NOT slim, lengthen, or idealise her body — keep her real silhouette.\n"
+        "- Body: keep the same height, build, weight and body proportions (figure type) from the "
+        "wider shot. Do NOT slim, lengthen, or idealise her body — keep her real silhouette.\n"
         "Change ONLY her clothing and the background. "
         "Place her in a new location that fits the outfit's setting (do not reuse the reference background). "
         "Outfit and scene: " + look_prompt
         + " Full-body head to toe, photorealistic, natural light, vertical 3:4 ratio."
     )
     model = config.MODELS["image"]["dressing"]
-    # референс личности — в ВЫСОКОМ разрешении (иначе в фото в полный рост лицо ~1024/8 ≈ мелкое,
-    # модель «додумывает» чужое лицо). data-URL пропускается провайдером без пересжатия до 1024.
-    ref = ref_image or provider.encode_image(client_photo, max_side=1536)
-    return provider.generate_image(instruction, model=model, ref_images=[ref])[0]
+    # ДВА референса личности: (1) крупный кадр головы — чтобы лицо было в высоком разрешении и
+    # модель не «додумывала» чужое (на ростовом фото лицо ~150px, этого мало); (2) фигура целиком
+    # в 1536px. Если explicit ref_image передан — используем его как раньше (обратная совместимость).
+    body = ref_image or provider.encode_image(client_photo, max_side=1536)
+    face = provider.head_crop(client_photo, max_side=1024) if ref_image is None else None
+    refs = [face, body] if face else [body]
+    return provider.generate_image(instruction, model=model, ref_images=refs)[0]
 
 
 def render_capsule_on_client(client_photo: str, look_prompts: list[str]) -> list[str]:
