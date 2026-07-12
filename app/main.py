@@ -6,9 +6,11 @@
 ВНИМАНИЕ: каждый сабмит реально вызывает OpenRouter (платно). Рендерим 2 образа.
 """
 from __future__ import annotations
+import base64
 import concurrent.futures
 import hashlib
 import io
+import requests
 import json
 import os
 import re
@@ -575,6 +577,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .capdot{flex:none;width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.12);margin-top:3px}
  .capitem b{font-size:14.5px;font-weight:normal} .captag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--wine);border-radius:6px;padding:1px 6px;vertical-align:middle}
  .capwhy{font-size:12.5px;color:#7a7064}
+ .capcard{text-decoration:none;color:inherit}
+ .capthumb{flex:none;width:64px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#f4f1ec}
+ .capmeta{min-width:0}
+ .capbrand{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--wine);margin-top:3px}
+ .capprice{font-size:12.5px;color:#7a7064;margin-top:2px}
  .capslot{margin:18px 0 8px} .capslotname{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine)}
  .shop{display:flex;flex-direction:column;gap:10px} .shopitem{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px}
  .shopname{font-size:16px;color:#2a2620} .shopwhy{font-size:13.5px;color:#5a5246;margin:3px 0 6px}
@@ -674,11 +681,21 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div>{% endif %}
 
 <!-- ═══════ БЛОК 5 · ТВОЙ ГАРДЕРОБ ═══════ -->
-{% if c.base_capsule %}
+{% if c.visual_capsule or c.base_capsule %}
 <div class=blocklead><b>05</b>Твой гардероб</div>
 <h2>Базовая капсула — ядро гардероба</h2>
 <p class=meta>Эти вещи — основа, всё остальное собирается вокруг них{% if c.combination_count %}: из них получается около {{ c.combination_count }} рабочих образов{% endif %}.</p>
-{% if c.capsule_board %}
+{% if c.visual_capsule %}
+ {% for grp in c.visual_capsule %}
+ <div class=capslot><span class=capslotname>{{ grp.slot }}</span></div>
+ <div class=caps>
+  {% for it in grp['items'] %}{% if it.url %}<a class="capitem capcard" href="{{ it.url }}" target=_blank rel=noopener>{% else %}<div class="capitem capcard">{% endif %}
+   {% if it.image %}<img class=capthumb src="{{ it.image }}" alt="{{ it.name }}">{% endif %}
+   <div class=capmeta><b>{{ it.name }}</b>{% if it.brand %}<div class=capbrand>{{ it.brand }}</div>{% endif %}{% if it.price %}<div class=capprice>{{ '{:,}'.format(it.price).replace(',',' ') }} ₽</div>{% endif %}</div>
+  {% if it.url %}</a>{% else %}</div>{% endif %}{% endfor %}
+ </div>
+ {% endfor %}
+{% elif c.capsule_board %}
  {% for grp in c.capsule_board %}
  <div class=capslot><span class=capslotname>{{ grp.slot }}</span></div>
  <div class=caps>
@@ -1284,6 +1301,36 @@ def _visual_capsule(card: dict, diag: dict, n: int) -> list:
     return [{"slot": s, "items": groups[s]} for s in order if groups.get(s)]
 
 
+def _inline_capsule_images(board: list, max_side: int = 640, timeout: float = 4.0) -> list:
+    """Скачать фото вещей и вшить как data-URL. Нужно для Карты/PDF: html2pdf не тянет внешние
+    CDN брендов (CORS) → в PDF были бы пустые рамки. Параллельно, с таймаутом; при сбое вещь
+    остаётся без фото (шаблон покажет её текстом). Мутирует board на месте и возвращает его."""
+    items = [it for grp in board for it in grp.get("items", [])]
+
+    def _fetch(it: dict) -> None:
+        url = it.get("image") or ""
+        if not url.startswith("http"):
+            return
+        try:
+            r = requests.get(url, timeout=timeout)
+            r.raise_for_status()
+            img = Image.open(io.BytesIO(r.content)).convert("RGB")
+            w, h = img.size
+            scale = min(1.0, max_side / max(w, h))
+            if scale < 1.0:
+                img = img.resize((round(w * scale), round(h * scale)))
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=80)
+            it["image"] = "data:image/jpeg;base64," + base64.standard_b64encode(buf.getvalue()).decode()
+        except Exception:  # noqa: BLE001 — фото не тянется → вещь остаётся текстом
+            it["image"] = None
+
+    if items:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(8, len(items))) as ex:
+            list(ex.map(_fetch, items))
+    return board
+
+
 CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Мой гардероб</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1597,6 +1644,10 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         # базовая капсула (ядро) — вещи, из которых собираются все образы
         "base_capsule": [it for it in cap_items if isinstance(it, dict) and it.get("name")][:14],
         "capsule_board": _capsule_board([it for it in cap_items if isinstance(it, dict) and it.get("name")][:14]),
+        # визуальная капсула: реальные вещи каталога с ФОТО (вшиты в data-URL, чтобы жили и в PDF).
+        # фолбэк на текстовую капсулу выше, если каталог пуст/фото не тянутся.
+        "visual_capsule": _inline_capsule_images(
+            _visual_capsule({"palette": palette.get("palette") or [], "stop_list": stop_list_full}, diag, 10)),
         "combination_count": (capsule.get("capsule") or {}).get("combination_count"),
         "looks": looks,
         "styling": styling,  # {base_item, idea, looks:[…x2]} — рендерятся в воркере
