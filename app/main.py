@@ -1629,6 +1629,9 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         except Exception:  # noqa: BLE001 — портрет не должен ронять карту
             personality = {}
     protos = diag.get("prototypes") or []
+    # полный стоп-лист = табу метода (vf) + личные табу из анкеты (без дублей).
+    # нужен и для отсечения вещей в визуальной капсуле, и для блока «Стоп-лист» Карты.
+    stop_list_full = (vf.get("stop_list") or []) + [t for t in taboo_items if t not in (vf.get("stop_list") or [])]
     return {
         "formula": diag.get("style_formula"),
         "gap": diag.get("gap_percentage"),
@@ -1655,7 +1658,7 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         "budget": shopping.get("budget_estimate") or {},
         "style_reference": protos[0] if protos else None,
         # личные табу из анкеты добавляем в стоп-лист (без дублей)
-        "stop_list": (vf.get("stop_list") or []) + [t for t in taboo_items if t not in (vf.get("stop_list") or [])],
+        "stop_list": stop_list_full,
         "emphasize": deep.get("adv"),  # достоинство — показываем в Карте «что подчёркиваем»
         "personality": personality,  # {portrait, style_implications} или {}
         "substyle_rationale": substyle_rationale,  # «почему этот подстиль из твоей натуры» (шаг 4)
