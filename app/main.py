@@ -1293,11 +1293,11 @@ def _visual_capsule(card: dict, diag: dict, n: int) -> list:
     picked = match_products(profile, products, k=n)
     groups: dict[str, list] = {}
     for p in picked:
-        slot = _capsule_slot(p.category or p.name)
+        slot = _capsule_slot(p.category, p.name)  # категория общая («одежда») → решает имя
         groups.setdefault(slot, []).append({
             "name": p.name, "image": p.image, "url": p.url,
             "brand": p.brand, "price": int(p.price) if p.price else None})
-    order = [s for s, _ in _CAPSULE_SLOTS] + ["База и прочее"]
+    order = [s for s, _ in _CAPSULE_SLOTS] + [_SLOT_OTHER]
     return [{"slot": s, "items": groups[s]} for s in order if groups.get(s)]
 
 
@@ -2369,22 +2369,32 @@ _CAPSULE_SLOTS = [
     ("Низ", ("брюки", "джинс", "юбка", "шорты", "палаццо", "легинс", "чинос", "кюлот")),
     ("Обувь", ("туфли", "лодочки", "ботинки", "ботильон", "челси", "сапог", "кроссовк", "кед",
                "босоножк", "лофер", "балетк", "сандал", "мюли", "слипон", "угги")),
-    ("Аксессуары", ("сумк", "ремень", "пояс", "шарф", "платок", "очки", "шляп", "берет", "кепк",
-                    "серьг", "браслет", "колье", "цепочк", "часы", "перчатк", "клатч", "шопер")),
+    ("Аксессуары", ("сумк", "ремень", "пояс", "шарф", "платок", "косынк", "очки", "шляп", "берет",
+                    "кепк", "серьг", "браслет", "колье", "цепочк", "часы", "перчатк", "клатч",
+                    "шопер", "аксессуар")),
 ]
 
+_SLOT_OTHER = "Прочее"
 
-def _capsule_slot(name: str) -> str:
-    n = (name or "").lower()
-    for slot, keys in _CAPSULE_SLOTS:
-        if any(k in n for k in keys):
-            return slot
-    return "База и прочее"
+
+def _capsule_slot(*names: str) -> str:
+    """Слот вещи по первому распознанному признаку. Пробуем по очереди все переданные строки
+    (категория, затем имя): категории фида часто общие — «одежда», «комплект», «трикотаж» — и
+    ничего не говорят о слоте, тогда решает имя («Топ из вискозы» → Верх, «Косынка» → Аксессуары).
+    Раньше имя бралось только при ПУСТОЙ категории, и половина каталога падала в мусорный слот."""
+    for raw in names:
+        n = (raw or "").lower()
+        if not n:
+            continue
+        for slot, keys in _CAPSULE_SLOTS:
+            if any(k in n for k in keys):
+                return slot
+    return _SLOT_OTHER
 
 
 def _capsule_board(items: list) -> list:
     """Группировка вещей капсулы по слотам гардероба (для визуального борда). Порядок — как в _CAPSULE_SLOTS."""
-    order = [s for s, _ in _CAPSULE_SLOTS] + ["База и прочее"]
+    order = [s for s, _ in _CAPSULE_SLOTS] + [_SLOT_OTHER]
     groups: dict[str, list] = {}
     for it in items:
         if isinstance(it, dict) and it.get("name"):

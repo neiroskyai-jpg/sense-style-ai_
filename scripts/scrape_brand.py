@@ -19,6 +19,8 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 
+from scripts.packshot import pick_packshot
+
 ROOT = Path(__file__).resolve().parent.parent
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                     "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
@@ -127,6 +129,26 @@ def first_image(card, base: str) -> str:
     return base + val if val.startswith("/") else val
 
 
+_GALLERY_IMG = re.compile(r"""["'](/upload/[^\s"'<>\\]+?\.(?:jpg|jpeg|png|webp))""", re.I)
+
+
+def product_gallery(url: str, base: str) -> list[str]:
+    """Галерея товара со страницы (Bitrix-сайты вроде Ushatava): оригиналы `/upload/iblock/...`.
+    Отбрасываем `resize_cache` — это те же кадры в других размерах, дублировали бы галерею."""
+    try:
+        html = fetch(url)
+    except Exception:  # noqa: BLE001 — страница не открылась → останется фото из листинга
+        return []
+    seen: list[str] = []
+    for path in _GALLERY_IMG.findall(html):
+        if "resize_cache" in path.lower():
+            continue
+        full = base + path
+        if full not in seen:
+            seen.append(full)
+    return seen
+
+
 def _scrape_html(cfg, cat, path, rows, limit, per_cat) -> int:
     base = cfg["base"]
     soup = BeautifulSoup(fetch(base + path), "html.parser")
@@ -140,12 +162,16 @@ def _scrape_html(cfg, cat, path, rows, limit, per_cat) -> int:
         href = card.get("href") or (card.select_one("a[href]") or {}).get("href", "")
         pid = card.get("data-product-id") or card.get("data-element-id") or href
         price_el = card.select_one(cfg["price"])
+        url = (base + href) if href.startswith("/") else href
+        # предметный кадр (вещь без модели) — из галереи товара; в листинге всегда съёмка на модели
+        gallery = product_gallery(url, base) if url else []
+        img = pick_packshot(gallery)[0] if gallery else first_image(card, base)
         rows.append(dict(
             id=str(pid).strip(), name=name_el.get_text(strip=True), brand=cfg["brand"],
             category=cat, price=price_num(price_el.get_text() if price_el else ""),
             old_price="", currency="RUB", color=color_from(card, cfg), sizes="",
-            gender=cfg["gender"], url=(base + href) if href.startswith("/") else href,
-            image=first_image(card, base), in_stock="true", parsed_at=date.today().isoformat(),
+            gender=cfg["gender"], url=url,
+            image=img, in_stock="true", parsed_at=date.today().isoformat(),
         ))
         got += 1
     return got
@@ -166,7 +192,11 @@ def _scrape_next_json(cfg, cat, path, rows, limit, per_cat) -> int:
         cur = colors.get("current") or {}
         color = cur.get("name") or (hex_to_name(cur["value"]) if cur.get("value") else "")
         photos = p.get("photos") or []
-        img = (photos[0].get("big") if photos and isinstance(photos[0], dict) else "") or ""
+        # берём ПРЕДМЕТНЫЙ кадр (вещь без модели), а не первый: первый у Lichi — всегда съёмка
+        # на модели, а в капсуле нужна сама вещь. Нет предметного (бывает у аксессуаров) —
+        # остаётся кадр на модели.
+        gallery = [x.get("big") for x in photos if isinstance(x, dict) and x.get("big")]
+        img, _is_packshot = pick_packshot(gallery)
         sizes = p.get("sizes") or {}
         size_names = [s.get("name") for s in sizes.values() if isinstance(s, dict) and s.get("name")]
         rows.append(dict(
