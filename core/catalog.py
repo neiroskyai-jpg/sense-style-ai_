@@ -30,6 +30,7 @@ class Product:
     image: str = ""
     in_stock: bool = True
     style_fields: str = ""  # стилевые поля метода (classic/natural/drama/romance), напр. из бренда
+    image_kind: str = ""    # packshot (вещь без модели) | model (съёмка на модели)
 
     def as_dict(self) -> dict:
         return {
@@ -38,6 +39,7 @@ class Product:
             "currency": self.currency, "color": self.color, "sizes": self.sizes,
             "gender": self.gender, "url": self.url, "image": self.image,
             "in_stock": self.in_stock, "style_fields": self.style_fields,
+            "image_kind": self.image_kind,
         }
 
 
@@ -109,6 +111,7 @@ def parse_csv(source: str | Path) -> list[Product]:
             url=(r.get("url") or r.get("link") or "").strip(),
             image=(r.get("image") or r.get("image_url") or "").strip(),
             in_stock=in_stock,
+            image_kind=(r.get("image_kind") or "").strip(),
         ))
     return products
 

@@ -130,23 +130,35 @@ def first_image(card, base: str) -> str:
 
 
 _GALLERY_IMG = re.compile(r"""["'](/upload/[^\s"'<>\\]+?\.(?:jpg|jpeg|png|webp))""", re.I)
+_IBLOCK_DIR = re.compile(r"/iblock/([0-9a-z]+/[0-9a-z]+)/", re.I)
+_RESIZE_W = re.compile(r"/(\d{3,4})_\d{3,4}_")
 
 
 def product_gallery(url: str, base: str) -> list[str]:
-    """Галерея товара со страницы (Bitrix-сайты вроде Ushatava): оригиналы `/upload/iblock/...`.
-    Отбрасываем `resize_cache` — это те же кадры в других размерах, дублировали бы галерею."""
+    """Галерея товара со страницы (Bitrix-сайты вроде Ushatava).
+
+    Один кадр лежит на сайте в нескольких размерах: оригинал `/upload/iblock/<dir>/x.jpg` и его
+    ресайзы `/upload/resize_cache/iblock/<dir>/960_1273_x.jpg`. Группируем по `<dir>` (это и есть
+    кадр) и берём САМЫЙ МЕЛКИЙ доступный размер: оригиналы тут 1920×2547, качать их только чтобы
+    понять «есть ли в кадре модель» — минуты на ровном месте. Мелкий кадр и для оценки быстрее,
+    и на витрине легче (а в PDF вшивается меньшим data-URL).
+    """
     try:
         html = fetch(url)
     except Exception:  # noqa: BLE001 — страница не открылась → останется фото из листинга
         return []
-    seen: list[str] = []
+
+    frames: dict[str, tuple[int, str]] = {}  # кадр (iblock-dir) → (ширина, url)
     for path in _GALLERY_IMG.findall(html):
-        if "resize_cache" in path.lower():
+        m = _IBLOCK_DIR.search(path)
+        if not m:
             continue
-        full = base + path
-        if full not in seen:
-            seen.append(full)
-    return seen
+        frame = m.group(1).lower()
+        w = _RESIZE_W.search(path)
+        width = int(w.group(1)) if w else 99999  # без ресайза = оригинал, самый крупный
+        if frame not in frames or width < frames[frame][0]:
+            frames[frame] = (width, base + path)
+    return [url_ for _w, url_ in frames.values()]
 
 
 def _scrape_html(cfg, cat, path, rows, limit, per_cat) -> int:
@@ -165,13 +177,17 @@ def _scrape_html(cfg, cat, path, rows, limit, per_cat) -> int:
         url = (base + href) if href.startswith("/") else href
         # предметный кадр (вещь без модели) — из галереи товара; в листинге всегда съёмка на модели
         gallery = product_gallery(url, base) if url else []
-        img = pick_packshot(gallery)[0] if gallery else first_image(card, base)
+        if gallery:
+            img, is_pack = pick_packshot(gallery)
+        else:
+            img, is_pack = first_image(card, base), False
         rows.append(dict(
             id=str(pid).strip(), name=name_el.get_text(strip=True), brand=cfg["brand"],
             category=cat, price=price_num(price_el.get_text() if price_el else ""),
             old_price="", currency="RUB", color=color_from(card, cfg), sizes="",
             gender=cfg["gender"], url=url,
-            image=img, in_stock="true", parsed_at=date.today().isoformat(),
+            image=img, image_kind="packshot" if is_pack else "model",
+            in_stock="true", parsed_at=date.today().isoformat(),
         ))
         got += 1
     return got
@@ -196,7 +212,7 @@ def _scrape_next_json(cfg, cat, path, rows, limit, per_cat) -> int:
         # на модели, а в капсуле нужна сама вещь. Нет предметного (бывает у аксессуаров) —
         # остаётся кадр на модели.
         gallery = [x.get("big") for x in photos if isinstance(x, dict) and x.get("big")]
-        img, _is_packshot = pick_packshot(gallery)
+        img, is_pack = pick_packshot(gallery)
         sizes = p.get("sizes") or {}
         size_names = [s.get("name") for s in sizes.values() if isinstance(s, dict) and s.get("name")]
         rows.append(dict(
@@ -204,6 +220,7 @@ def _scrape_next_json(cfg, cat, path, rows, limit, per_cat) -> int:
             price=p.get("price") or 0, old_price=(p.get("original_price") or ""),
             currency=p.get("currency") or "RUB", color=color, sizes=";".join(size_names),
             gender=cfg["gender"], url=p.get("url", ""), image=img,
+            image_kind="packshot" if is_pack else "model",
             in_stock="true" if p.get("available") else "false", parsed_at=date.today().isoformat(),
         ))
         got += 1
@@ -244,7 +261,7 @@ def main():
     out = Path(a.out) if a.out else ROOT / "data" / "fashion-base" / f"products_{a.brand}.csv"
     out.parent.mkdir(parents=True, exist_ok=True)
     cols = ["id", "name", "brand", "category", "price", "old_price", "currency",
-            "color", "sizes", "gender", "url", "image", "in_stock", "parsed_at"]
+            "color", "sizes", "gender", "url", "image", "image_kind", "in_stock", "parsed_at"]
     with out.open("w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()

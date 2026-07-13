@@ -18,6 +18,7 @@ from PIL import Image
 
 _UA = {"User-Agent": "Mozilla/5.0"}
 _SKIN_MAX = 0.04   # >4% пикселей кожи → в кадре есть модель
+_BG_MAX = 8.0      # разброс яркости фона: у предметной съёмки почти 0, у студийного кадра 50–100
 _SAMPLE = 160      # ресайз для анализа: считать по мелкой картинке достаточно и быстро
 
 
@@ -62,13 +63,15 @@ def score_frame(url: str, timeout: float = 20.0) -> tuple[float, float] | None:
 def pick_packshot(urls: list[str], timeout: float = 20.0) -> tuple[str, bool]:
     """Из галереи выбрать предметный кадр. Возвращает (url, это_packshot).
 
-    Если предметного кадра нет — (первый кадр, False): показываем на модели, но честно знаем об этом.
+    Предметный кадр = мало кожи И плоский фон. Одной «кожи» мало: студийный кадр тёмной вещи на
+    модели без головы (Ushatava так снимает) даёт почти нулевую кожу и притворяется packshot —
+    ловим его по фону, который у живой съёмки неровный.
+
+    Предметного кадра нет — (первый кадр, False): вещь всё равно видно, просто на модели.
     """
     urls = [u for u in urls if u]
     if not urls:
         return "", False
-    if len(urls) == 1:
-        return urls[0], False
 
     scored = []
     for u in urls:
@@ -78,6 +81,8 @@ def pick_packshot(urls: list[str], timeout: float = 20.0) -> tuple[str, bool]:
     if not scored:
         return urls[0], False
 
-    scored.sort(key=lambda t: (t[0], t[1]))  # меньше кожи → ровнее фон
-    skin, _bg, best = scored[0]
-    return best, skin <= _SKIN_MAX
+    packshots = [t for t in scored if t[0] <= _SKIN_MAX and t[1] <= _BG_MAX]
+    if packshots:
+        packshots.sort(key=lambda t: (t[0], t[1]))  # меньше кожи, ровнее фон
+        return packshots[0][2], True
+    return urls[0], False

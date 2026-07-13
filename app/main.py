@@ -1290,7 +1290,13 @@ def _visual_capsule(card: dict, diag: dict, n: int) -> list:
         "styles": styles,
         "gender": "женский",
     }
-    picked = match_products(profile, products, k=n)
+    # Берём кандидатов с запасом и ставим вперёд вещи с ПРЕДМЕТНЫМ фото (вещь без модели):
+    # в капсуле нужна сама вещь, «пиджак = пиджак». Сортировка устойчивая → внутри каждой группы
+    # сохраняется порядок релевантности от match_products. Если предметных мало, добираем
+    # модельными, а не оставляем слот пустым.
+    picked = match_products(profile, products, k=n * 3)
+    picked.sort(key=lambda p: 0 if (p.image_kind or "") == "packshot" else 1)
+    picked = picked[:n]
     groups: dict[str, list] = {}
     for p in picked:
         slot = _capsule_slot(p.category, p.name)  # категория общая («одежда») → решает имя
