@@ -668,12 +668,17 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if c.colortype %}<h2>Твой цветотип — {{ c.colortype }}</h2>
 <p class=meta>{% if c.contrast %}Контраст {{ c.contrast }}. {% endif %}На нём построена палитра ниже.</p>{% endif %}
 <h2>Палитра — 30 цветов</h2>
+<p class=meta>База — основа гардероба, на ней строится всё. Основные — цветные вещи, спокойно сочетаются с базой. Акценты — точечно: один на образ, не больше.</p>
 {% for grp, title in [('base','База и нейтрали'),('main','Основные'),('accent','Акценты')] %}
  {% set items = c.palette|selectattr('group','equalto',grp)|list %}
  {% if items %}<div class=sw-group>{{ title }}</div><div class=swatches>
   {% for p in items %}<div class=sw><div class=chip style="background:{{ p.hex }}"></div><div class=nm>{{ p.name }}</div></div>{% endfor %}
  </div>{% endif %}
 {% endfor %}
+{% set rest = c.palette|rejectattr('group','in',['base','main','accent'])|list %}
+{% if rest %}<div class=sw-group>Ещё в палитре</div><div class=swatches>
+ {% for p in rest %}<div class=sw><div class=chip style="background:{{ p.hex }}"></div><div class=nm>{{ p.name }}</div></div>{% endfor %}
+</div>{% endif %}
 
 {% if c.stop_colors %}<h2>Стоп-цвета — что тебя гасит</h2>
 <div class="swatches stopcolors">
@@ -1377,8 +1382,10 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .ctrls{display:flex;gap:10px;align-items:center;margin-top:12px}
  .ctrls button{font:inherit;font-size:14px;padding:9px 15px;border-radius:9px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--wine)}
  .ctrls .cnt{color:var(--muted);font-size:13px}
- .pal{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}
+ .pal{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 2px}
  .pal .c{width:34px;height:34px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
+ .palgrp{margin:14px 0 0;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--wine)}
+ .palhint{display:block;text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--muted);margin-top:2px}
  .shop{display:flex;flex-direction:column;gap:10px;margin-top:6px} .shopitem{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 15px}
  .shopname{font-size:15.5px} .shopwhy{font-size:13px;color:var(--muted);margin:2px 0 0}
  .empty{color:var(--muted);font-size:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
@@ -1418,8 +1425,30 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% endfor %}
   <div class=ctrls><button type=button onclick=clearOutfit()>Очистить</button><span class=cnt>вещей в луке: <b id=count>0</b></span></div>
   {% if palette %}
-  <div class=slotname style="margin:16px 0 6px">Твоя палитра — сочетается между собой</div>
-  <div class=pal>{% for p in palette %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>
+  <div class=slotname style="margin:16px 0 6px">Твоя палитра</div>
+  {% set grouped = palette|selectattr('group')|list %}
+  {% if grouped %}
+   {# цвета разложены по роли: обещать «всё сочетается со всем» нельзя — акценты работают точечно #}
+   {% for grp, title, hint in [
+       ('base','База и нейтрали','основа гардероба — на них строится всё остальное'),
+       ('main','Основные','цветные вещи, спокойно сочетаются с базой'),
+       ('accent','Акценты','точечно: один акцент на образ, не больше')] %}
+    {% set items = palette|selectattr('group','equalto',grp)|list %}
+    {% if items %}
+    <div class=palgrp>{{ title }}<span class=palhint>{{ hint }}</span></div>
+    <div class=pal>{% for p in items %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>
+    {% endif %}
+   {% endfor %}
+   {# цвет с неожиданной ролью не должен молча исчезнуть с экрана #}
+   {% set rest = palette|rejectattr('group','in',['base','main','accent'])|list %}
+   {% if rest %}
+   <div class=palgrp>Ещё в палитре</div>
+   <div class=pal>{% for p in rest %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>
+   {% endif %}
+  {% else %}
+   {# старая Карта без ролей цветов — показываем как есть, без обещаний про сочетаемость #}
+   <div class=pal>{% for p in palette %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>
+  {% endif %}
   {% endif %}
  </div>
 </div>
