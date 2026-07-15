@@ -2641,10 +2641,10 @@ td,th{text-align:left;padding:8px 6px;border-bottom:1px solid #e3dccf;vertical-a
 {% else %}
  <p style="margin:0 0 6px">Статус: <b style="color:#9b3030">НЕ настроена ✕</b> — письма не уходят. Нужны ОБЕ переменные ниже.</p>
 {% endif %}
+ <p style="margin:0 0 6px;font-size:14px">Активный способ отправки: <b>{{ 'SMTP (' + smtp_host + ')' if has_smtp else ('UniSender GO' if has_key and has_from else '— не настроен —') }}</b></p>
  <ul style="margin:0 0 10px;padding-left:18px;font-size:14px">
-  <li><code>UNISENDER_API_KEY</code>: {{ 'задан ✓' if has_key else 'НЕ задан ✕' }}</li>
-  <li><code>UNISENDER_FROM_EMAIL</code>: {{ 'задан ✓' if has_from else 'НЕ задан ✕' }}</li>
-  <li>Отправка идёт на сервер: <b>{{ api_host }}</b> {% if api_host != 'go1.unisender.ru' %}(переопределён){% else %}(по умолчанию){% endif %} — он должен совпадать с сервером твоего аккаунта Unisender GO (go1/go2). Если у тебя <b>go2</b> — задай <code>UNISENDER_API_URL</code> = <code>https://go2.unisender.ru/ru/transactional/api/v1/email/send.json</code></li>
+  <li><b>Способ 1 — SMTP (проще, свой ящик):</b> <code>SMTP_USER</code>: {{ 'задан ✓' if has_smtp_user else '✕' }}, <code>SMTP_PASSWORD</code>: {{ 'задан ✓' if has_smtp_pass else '✕' }} (для Яндекса — пароль приложения; хост по умолч. smtp.yandex.ru:465)</li>
+  <li><b>Способ 2 — UniSender GO:</b> <code>UNISENDER_API_KEY</code>: {{ 'задан ✓' if has_key else '✕' }}, <code>UNISENDER_FROM_EMAIL</code>: {{ 'задан ✓' if has_from else '✕' }}, сервер <b>{{ api_host }}</b> (для go2 задай <code>UNISENDER_API_URL</code>)</li>
  </ul>
  <form method=post action="/metrics/test-email" style="margin:0">
   <input type=hidden name=key value="{{ keyq[5:] }}">
@@ -2719,6 +2719,9 @@ def metrics_page():
         METRICS_PAGE, f=funnel(), g=gap_summary(), fb=feedback_list(), leads=leads(),
         chat=chat_log(), keyq=keyq, email_ok=email_configured(),
         has_key=bool(os.getenv("UNISENDER_API_KEY")), has_from=bool(os.getenv("UNISENDER_FROM_EMAIL")),
+        has_smtp_user=bool(os.getenv("SMTP_USER")), has_smtp_pass=bool(os.getenv("SMTP_PASSWORD")),
+        has_smtp=bool(os.getenv("SMTP_USER") and os.getenv("SMTP_PASSWORD")),
+        smtp_host=os.getenv("SMTP_HOST", "smtp.yandex.ru"),
         api_host=(urlparse(api_url).hostname or api_url),
         mail_test=({"ok": "Отправлено — проверь свою почту.",
                     "fail": "Не удалось. Проверь ключи Unisender, сервер (go1/go2) и подтверждённого отправителя."}.get(mt)),

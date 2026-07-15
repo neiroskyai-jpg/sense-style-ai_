@@ -40,14 +40,69 @@ def read_token(token: str, max_age: int = MAGIC_MAX_AGE) -> str | None:
         return None
 
 
-def email_configured() -> bool:
+def smtp_configured() -> bool:
+    """SMTP задан (напр. Яндекс.Почта): нужны логин и пароль приложения."""
+    return bool(os.getenv("SMTP_USER") and os.getenv("SMTP_PASSWORD"))
+
+
+def unisender_configured() -> bool:
     return bool(os.getenv("UNISENDER_API_KEY") and os.getenv("UNISENDER_FROM_EMAIL"))
+
+
+def email_configured() -> bool:
+    """Почта настроена, если задан хотя бы один способ отправки: SMTP или UniSender Go."""
+    return smtp_configured() or unisender_configured()
+
+
+def _subject_and_html(link: str) -> tuple[str, str]:
+    return ("Вход в Чувство стиля",
+            f"<p>Привет. Чтобы войти, перейди по ссылке (действует 15 минут):</p>"
+            f'<p><a href="{link}">Войти в Чувство стиля</a></p>'
+            f"<p>Если ты не запрашивала вход — просто проигнорируй письмо.</p>")
+
+
+def _send_smtp(email: str, link: str) -> bool:
+    """Отправка через SMTP (по умолчанию Яндекс: smtp.yandex.ru:465 SSL). From = SMTP_USER —
+    Яндекс требует, чтобы отправитель совпадал с авторизованным ящиком. Пароль — «пароль
+    приложения» из Яндекс ID (обычный пароль для SMTP не подойдёт)."""
+    import smtplib
+    import ssl
+    from email.mime.text import MIMEText
+    from email.utils import formataddr
+
+    host = os.getenv("SMTP_HOST", "smtp.yandex.ru")
+    port = int(os.getenv("SMTP_PORT", "465"))
+    user = os.getenv("SMTP_USER")
+    password = os.getenv("SMTP_PASSWORD")
+    from_name = os.getenv("SMTP_FROM_NAME", "Чувство стиля")
+    subject, html = _subject_and_html(link)
+    msg = MIMEText(html, "html", "utf-8")
+    msg["Subject"] = subject
+    msg["From"] = formataddr((from_name, user))
+    msg["To"] = email
+    try:
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=20) as s:
+                s.login(user, password)
+                s.sendmail(user, [email], msg.as_string())
+        else:  # 587 — STARTTLS
+            with smtplib.SMTP(host, port, timeout=20) as s:
+                s.starttls(context=ssl.create_default_context())
+                s.login(user, password)
+                s.sendmail(user, [email], msg.as_string())
+        return True
+    except Exception as e:  # noqa: BLE001 — не роняем вход; вызывающий покажет ссылку админу
+        print(f"[SMTP error] {e}")
+        return False
 
 
 def send_magic_link(email: str, link: str) -> bool:
     """Отправить письмо со ссылкой входа. True — отправлено реально; False — dev-фолбэк
-    (ключ не задан): печатаем в лог, вызывающий покажет ссылку на экране."""
-    if not email_configured():
+    (ничего не настроено): печатаем в лог, вызывающий покажет ссылку на экране.
+    Приоритет: SMTP (проще всего — свой ящик) → UniSender Go → dev-фолбэк."""
+    if smtp_configured():
+        return _send_smtp(email, link)
+    if not unisender_configured():
         print(f"[DEV magic-link] {email} -> {link}")
         return False
     api_key = os.getenv("UNISENDER_API_KEY")
