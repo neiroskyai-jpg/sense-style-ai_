@@ -225,6 +225,9 @@ _PALETTE_SYSTEM = """Ты — колорист Sense Style. На вход — ц
 Правила:
 - 30 цветов делятся: ~10 базовых/нейтралей, ~14 основных, ~6 акцентных.
 - Каждый цвет — реальный, носибельный оттенок под её подтон/светлоту/контраст, с корректным hex.
+- ЗАПРЕЩЕНЫ чистые спектральные и неоновые цвета: #0000FF, #FF00FF, #00FFFF, #FFFF00, #00FF00 \
+и любые кислотные. Таких тканей не существует. Даже яркий цвет у Зимы — это плотный текстильный \
+оттенок (королевский синий #2B4C9B, фуксия #A83A6B, изумруд #0B6E4F), а не спектр из палитры Paint.
 - НЕ включай табу-цвета и цвета вне её цветотипа — они идут в stop_colors с короткой причиной.
 - Названия по-русски, тёплым языком (например «тёплый графит», «пыльная роза», «сливочный»).
 
@@ -241,10 +244,38 @@ _PALETTE_SYSTEM = """Ты — колорист Sense Style. На вход — ц
 }"""
 
 
+def _wearable_hex(hex_str: str) -> str:
+    """Приглушить спектральный/неоновый цвет до носибельного текстильного оттенка, сохранив тон.
+
+    Модель, добивая палитру до 30 цветов, скатывается в чистый спектр (#0000FF, #FF00FF, #00FFFF,
+    лайм, кислотный жёлтый) — таких тканей не бывает, и палитра выглядит как из Paint. Промпт это
+    запрещает, но не гарантирует, поэтому режем на выходе: срезаем экстремальную насыщенность
+    и яркость. Тон (hue) не трогаем — цветотип не уезжает.
+    """
+    import colorsys
+    s = (hex_str or "").strip().lstrip("#")
+    if len(s) != 6:
+        return hex_str
+    try:
+        r, g, b = (int(s[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    except ValueError:
+        return hex_str
+    h, sat, val = colorsys.rgb_to_hsv(r, g, b)
+    # кислотность = высокая насыщенность ВМЕСТЕ со светлотой. Тёмные плотные цвета (изумруд, бордо,
+    # бутылочный) насыщены не меньше, но носибельны — их не трогаем.
+    if sat > 0.85 and val > 0.6:
+        sat = 0.75
+    if val > 0.95 and sat > 0.55:   # «светится» → приглушаем светлоту
+        val = 0.88
+    r, g, b = colorsys.hsv_to_rgb(h, sat, val)
+    return "#{:02X}{:02X}{:02X}".format(round(r * 255), round(g * 255), round(b * 255))
+
+
 def generate_card_palette(diagnosis: dict, mode: str | None = None) -> dict:
     """Палитра 30 цветов + стоп-цвета под цветотип (для продукта «Карта стиля»).
 
     Один текстовый вызов, grounded в цветотипе/тоне. Возвращает {palette[], stop_colors[]}.
+    Спектральные hex приглушаются до носибельных (_wearable_hex).
     """
     vf = diagnosis.get("visual_formula") or {}
     payload = {
@@ -255,10 +286,15 @@ def generate_card_palette(diagnosis: dict, mode: str | None = None) -> dict:
     }
     # max_tokens большой: pro («думающая») тратит часть на reasoning — при низком лимите
     # обрезает JSON (вернёт <30 цветов). 8000 хватает и pro, и flash.
-    return provider.chat_json(
+    result = provider.chat_json(
         config.model_for("text", mode), _PALETTE_SYSTEM,
         json.dumps(payload, ensure_ascii=False), max_tokens=8000,
     )
+    for key in ("palette", "stop_colors"):
+        for c in (result.get(key) or []):
+            if isinstance(c, dict) and c.get("hex"):
+                c["hex"] = _wearable_hex(c["hex"])
+    return result
 
 
 _STYLE_RU = {"classic": "Классика", "drama": "Драма", "romantic": "Романтика", "natural": "Натуральный"}
@@ -279,7 +315,20 @@ _CAPSULE_QUALITY_RULES = (
     "держи структуру, чёткие линии, собранность; НЕ сводить образ к мягкому уюту по умолчанию.\n"
     "5. МЕТАЛЛ по цветотипу: тёплый → золото/латунь; холодный → серебро/белое золото. Украшения и фурнитура — в тон.\n"
     "6. АКСЕССУАРЫ и завершённость: добавляй завершающие детали (пояс-акцент, украшение, сумка), "
-    "чтобы образ выглядел собранным стилистом, а не «свитер + брюки»."
+    "чтобы образ выглядел собранным стилистом, а не «свитер + брюки».\n"
+    "7. СТРУКТУРА КАПСУЛЫ (канон «Алгоритмы имиджа»): верхов БОЛЬШЕ, чем низов (2–3 низа на 4–5 верхов) — "
+    "капсула богатеет за счёт верхов. Низы и верхи максимально РАЗНОПЛАНОВЫЕ по крою, фактуре, длине, "
+    "регистру: два похожих низа — потерянный слот. Каждая вещь миксуется минимум с 3 другими; вещь, "
+    "которая ни с чем не встаёт («вещь-сиротка»), в капсулу не входит.\n"
+    "8. БАЗА vs ТРЕНД: 70–80% капсулы — база (простой крой, воздух: прямой / лёгкий оверсайз / "
+    "полуприлегающий; посадка высокая или средняя), 20–30% — 1–2 трендовых акцента. Верхняя одежда — "
+    "структурная, формодержащая, с воздухом под многослойность; длина ниже самой широкой части бедра "
+    "или миди/макси. Талию в шубе и пуховике создаём поясом, а не кроем.\n"
+    "9. НЕ ПРЕДЛАГАТЬ УСТАРЕВШЕЕ: рукав 3/4, длинные угги и дутики, рюкзаки и мини-сумки в городе, "
+    "дешёвая меховая опушка, пуховик со встроенной талией, деним с потёртостями, стразами, бахромой "
+    "и жёлтой/выбеленной варкой.\n"
+    "10. БАЗА НЕ ЗНАЧИТ БЕЖЕВО-СЕРАЯ: бери 2–3 ярких цвета из палитры как основу, остальное — нейтрали. "
+    "Капсула целиком в приглушённых тонах — брак."
 )
 
 
@@ -324,7 +373,9 @@ _STYLING_SYSTEM = (
     "носибельно для реальной жизни, под фигуру.\n"
     "Описания — на русском, на «ты», через психологию запроса, без восклицательных знаков и штампов.\n"
     "image_generation_prompt — на АНГЛИЙСКОМ, конкретный (вещи, цвета, силуэт, обувь, сценарий), "
-    "для фотореалистичного рендера в полный рост.\n"
+    "для фотореалистичного рендера в полный рост. Только АКТУАЛЬНЫЙ крой: рукав полноразмерный "
+    "(не 3/4), актуальные длины, структурная верхняя одежда; без устаревшего (скинни с грубыми "
+    "ботинками, дешёвый мех, мини-рюкзак).\n"
     "Верни СТРОГО JSON: {\"base_item\":\"<вещь>\", \"idea\":\"<1 фраза: как одна вещь даёт два образа>\", "
     "\"looks\":[{\"title\":\"<коротко>\",\"scenario\":\"<сценарий>\",\"items\":[\"<вещь>\"],"
     "\"description\":\"<2-3 фразы>\",\"image_generation_prompt\":\"<english>\"}]} — РОВНО 2 образа в looks."
@@ -503,12 +554,35 @@ def _garment_input(d: dict) -> dict:
     return {k: d.get(k) for k in keys if d.get(k) is not None}
 
 
+# Фото-финиш (анти-пластик, по курсу ART AI — см. [[art-ai-nonplastic-photos]] и
+# scripts/gen_editorial_image.py). Даёт редакционную «плёночную» реалистичность БЕЗ смены личности:
+# все фразы усиливают «не бьютить, реальная кожа», что совпадает с задачей identity-preserving.
+# Палитру НЕ фиксируем здесь — цвета приходят из промпта образа под цветотип клиентки.
+_PHOTO_FINISH = (
+    " Editorial fashion photograph shot on Kodak Portra 400 film, 85mm lens, shallow depth of field, "
+    "authentic film grain, natural soft contrast, true-to-life colors. "
+    "Real unretouched skin with visible texture, pores and fine lines, no beauty retouching, "
+    "no skin smoothing, matte natural complexion, candid documentary feel. "
+    "Not plastic, not waxy, not glossy, not airbrushed, not CGI, not a 3D render, not over-saturated. "
+    "No text, no logos, no watermark."
+)
+
+# Правила капсулы в рендере (по канону «Алгоритмы имиджа», см. base-vs-trend.md) — страховка на случай,
+# если image-модель «сдрейфует» в устаревший силуэт. Держим актуальный крой в самой картинке.
+_LOOK_CANON = (
+    " The outfit must read current and wearable: clean modern cut, full-length sleeves (never 3/4), "
+    "structured outerwear with room for layers, well-proportioned silhouette. "
+    "No dated styling: no skinny jeans with chunky boots, no cheap fur trim, no bulky mini-backpack."
+)
+
+
 def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | None = None) -> str:
     """Identity-preserving рендер: фото клиентки + промпт образа → она в этом образе.
 
     Gemini 3 Pro image-to-image: держит лицо/волосы/фигуру, меняет только одежду.
     (GPT image отпал — OpenAI отказывается воссоздавать реальные лица.)
     look_prompt — это look-generator.looks[].image_generation_prompt. Возвращает data-URL.
+    Фото-финиш (плёнка/текстура кожи) + канон капсулы (актуальный крой) вшиты в инструкцию.
     """
     instruction = (
         "Photo editing task: dress the SAME real woman from the reference photos in a new outfit. "
@@ -524,8 +598,8 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
         "wider shot. Do NOT slim, lengthen, or idealise her body — keep her real silhouette.\n"
         "Change ONLY her clothing and the background. "
         "Place her in a new location that fits the outfit's setting (do not reuse the reference background). "
-        "Outfit and scene: " + look_prompt
-        + " Full-body head to toe, photorealistic, natural light, vertical 3:4 ratio."
+        "Outfit and scene: " + look_prompt + _LOOK_CANON
+        + " Full-body head to toe, vertical 3:4 ratio." + _PHOTO_FINISH
     )
     model = config.MODELS["image"]["dressing"]
     # ДВА референса личности: (1) крупный кадр головы — чтобы лицо было в высоком разрешении и

@@ -71,7 +71,7 @@ Sense Style AI/
 - **База данных:** Supabase (PostgreSQL + Auth magic-link + Storage + Edge Functions).
 - **AI:** Claude Vision API для анализа фото вещей, `claude-sonnet-4-6` для генерации капсул и шопинг-листов. Один запрос = фото + полный Gap-профиль клиентки.
 - **Платежи:** ЮKassa — основной эквайринг для РФ. Stripe — для зарубежных клиенток через нерезидентское юрлицо или агрегатор.
-- **Email:** Resend (транзакционные).
+- **Email:** UniSender transactional API (вход по magic-link) — `core/auth.py`, нужны env `UNISENDER_API_KEY` + `UNISENDER_FROM_EMAIL`; без них — dev-фолбэк (ссылка в лог). Маркетинговая рассылка НЕ автоматизирована: согласие + выгрузка `/metrics/unisender.csv` → серию настраивать в UniSender вручную.
 - **Аналитика:** GA4 + GTM + Meta Pixel.
 - **Погода:** OpenWeatherMap API (для Daily Style в P2).
 - **Хостинг:** Vercel (free tier до ~100К запросов/мес).

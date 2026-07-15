@@ -9,7 +9,49 @@ import os
 
 os.environ.setdefault("OPENROUTER_API_KEY", "dummy")  # импорт app.main не должен падать
 
-from app.main import _SLOT_OTHER, _capsule_slot  # noqa: E402
+from app.main import _SLOT_OTHER, _capsule_slot, _visual_capsule  # noqa: E402
+from core.pipeline import _wearable_hex  # noqa: E402
+
+
+def _board(n):
+    """Капсула на реальном каталоге под типовой профиль. [] если каталога нет в окружении."""
+    card = {"palette": [{"name": "чёрный", "hex": "#000000"}], "stop_list": []}
+    diag = {"figure_type": "rectangle", "base_style": "classic",
+            "semantic_field_distribution": {"classic": 60, "drama": 40}}
+    return _visual_capsule(card, diag, n)
+
+
+def test_verhov_bolshe_chem_nizov():
+    """Канон капсулы: верхов всегда больше, чем низов — капсула богатеет за счёт верхов.
+    Без квот отбор шёл по релевантности и давал 4 жакета и 3 платья на 2 верха."""
+    for n in (6, 12):
+        board = _board(n)
+        if not board:
+            return  # каталога нет в окружении
+        by = {g["slot"]: len(g["items"]) for g in board}
+        assert by.get("Верх", 0) > by.get("Низ", 0), f"n={n}: верхов не больше, чем низов: {by}"
+        assert by.get("Верхний слой", 0) <= 2, f"n={n}: верхний слой раздут: {by}"
+        assert sum(by.values()) == n, f"n={n}: собрано {sum(by.values())} вещей"
+
+
+def test_v_kapsule_net_dublei_i_belya():
+    """Фиды отдают один товар несколько раз («Расклешенные брюки» ×3) и подмешивают бельё
+    («Подъюбник», «Топ-бра»). Ни того, ни другого в ядре капсулы быть не может."""
+    board = _board(12)
+    if not board:
+        return
+    names = [it["name"] for g in board for it in g["items"]]
+    assert len(names) == len(set(names)), f"дубли в капсуле: {names}"
+    assert not [n for n in names if "подъюбник" in n.lower() or "пижам" in n.lower()], names
+
+
+def test_kislotnye_cveta_priglushayutsya():
+    """Модель, добивая палитру до 30 цветов, скатывается в спектр — таких тканей не бывает."""
+    for neon in ("#0000FF", "#FF00FF", "#00FFFF", "#FFFF00"):
+        assert _wearable_hex(neon) != neon, f"{neon} остался кислотным"
+    # носибельные цвета не трогаем: изумруд, бордо, королевский синий, ахроматы
+    for ok in ("#0B6E4F", "#7F1734", "#2B4C9B", "#000000", "#FFFFFF"):
+        assert _wearable_hex(ok) == ok, f"{ok} испорчен без нужды"
 
 
 def test_obshaya_kategoriya_reshaetsya_po_imeni():

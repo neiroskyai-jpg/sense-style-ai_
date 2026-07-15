@@ -112,6 +112,9 @@ def parse_csv(source: str | Path) -> list[Product]:
             image=(r.get("image") or r.get("image_url") or "").strip(),
             in_stock=in_stock,
             image_kind=(r.get("image_kind") or "").strip(),
+            # стилевые поля метода: у WB-фида проставляет парсер (у бренда их может не быть
+            # в brands.csv). Без этого вещь не участвует в скоринге по подстилю.
+            style_fields=(r.get("style_fields") or "").strip(),
         ))
     return products
 

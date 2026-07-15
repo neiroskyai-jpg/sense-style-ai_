@@ -41,6 +41,11 @@ def _conn(db_path: Path) -> sqlite3.Connection:
             client TEXT, ts TEXT NOT NULL, rating INTEGER, text TEXT
         )"""
     )
+    # approved: 0 — не модерирован, 1 — одобрен к публичному показу на лендинге. Миграция для старых БД.
+    try:
+        c.execute("ALTER TABLE feedback ADD COLUMN approved INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass  # колонка уже есть
     c.execute(
         """CREATE TABLE IF NOT EXISTS chat (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -203,10 +208,27 @@ def _ev_count(name: str, db_path: Path = DB_PATH) -> int:
 def feedback_list(limit: int = 50, db_path: Path = DB_PATH) -> list[dict]:
     with _conn(db_path) as c:
         rows = c.execute(
-            "SELECT ts, client, rating, text FROM feedback ORDER BY ts DESC, id DESC LIMIT ?",
+            "SELECT id, ts, client, rating, text, approved FROM feedback ORDER BY ts DESC, id DESC LIMIT ?",
             (limit,),
         ).fetchall()
-    return [{"ts": r[0], "client": r[1], "rating": r[2], "text": r[3]} for r in rows]
+    return [{"id": r[0], "ts": r[1], "client": r[2], "rating": r[3],
+             "text": r[4], "approved": bool(r[5])} for r in rows]
+
+
+def set_feedback_approved(fid: int, approved: bool, db_path: Path = DB_PATH) -> None:
+    """Модерация: одобрить/снять отзыв для публичного показа на лендинге."""
+    with _conn(db_path) as c:
+        c.execute("UPDATE feedback SET approved=? WHERE id=?", (int(bool(approved)), fid))
+
+
+def approved_feedback(limit: int = 12, db_path: Path = DB_PATH) -> list[dict]:
+    """Одобренные отзывы С ТЕКСТОМ — для публичного блока на лендинге. Без email (приватность)."""
+    with _conn(db_path) as c:
+        rows = c.execute(
+            "SELECT ts, rating, text FROM feedback WHERE approved=1 AND text IS NOT NULL AND text!='' "
+            "ORDER BY ts DESC, id DESC LIMIT ?", (limit,),
+        ).fetchall()
+    return [{"ts": r[0], "rating": r[1], "text": r[2]} for r in rows]
 
 
 def gap_summary(db_path: Path = DB_PATH) -> dict:

@@ -31,11 +31,11 @@ from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_shopping_list, generate_styling_pair,
                            refine_colortype_subtype, refine_substyle,
                            render_look_on_client)
-from core.tracking import (chat_log, count_generations, count_today, feedback_list,
-                           funnel, gap_progress, gap_summary, leads, progress, record_call,
-                           record_chat, record_consent, record_event, record_feedback,
-                           record_session)
-from core.auth import make_token, read_token, send_magic_link
+from core.tracking import (approved_feedback, chat_log, count_generations, count_today,
+                           feedback_list, funnel, gap_progress, gap_summary, leads, progress,
+                           record_call, record_chat, record_consent, record_event, record_feedback,
+                           record_session, set_feedback_approved)
+from core.auth import email_configured, make_token, read_token, send_magic_link
 from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
 from core.catalog import match_products, parse_csv
@@ -149,7 +149,7 @@ RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <p class=meta>Это короткое превью — 2 образа. Полная Карта стиля собирает палитру из 30 цветов, силуэты, стоп-лист и 6 образов под твои сценарии, с PDF к шкафу.</p>
 <div class=looks>
  {% for lk in looks %}
- <div class=look><img src="{{ lk.img }}"><p class=desc>{{ lk.desc }}</p></div>
+ <div class=look>{% if lk.img %}<img src="{{ lk.img }}" alt="Образ">{% endif %}<p class=desc>{{ lk.desc }}</p></div>
  {% endfor %}
 </div>
 <div style="margin-top:34px;padding-top:22px;border-top:1px solid #d9d2c7">
@@ -463,7 +463,7 @@ LOGIN_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% else %}
  <form method=post action="/login" class=card>
   <input type=hidden name=next value="{{ next or '' }}">
-  <label>Email</label><input type=email name=email required placeholder="anna@example.com" value="{{ email or '' }}">
+  <label>Почта</label><input type=email name=email required placeholder="anna@example.com" value="{{ email or '' }}">
   <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:#6b645c;font-weight:normal;margin:12px 0 4px;line-height:1.4"><input type=checkbox name=marketing value=1 style="width:auto;margin-top:3px"> Хочу получать письма о стиле, разборах и новинках (по желанию)</label>
   <button>Получить ссылку для входа</button>
  </form>
@@ -760,23 +760,35 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
+// Ждём загрузку шрифтов и ДЕКОДИРОВАНИЕ всех картинок до снимка html2canvas. Без этого частая
+// беда PDF: заголовки в запасном шрифте и пустые прямоугольники вместо фото (снимок сделан раньше,
+// чем картинки декодировались). Все фото Карты — data-URL, но крупные всё равно требуют decode.
+function _ready(){
+  var waits=[];
+  if(document.fonts && document.fonts.ready){ waits.push(document.fonts.ready); }
+  var imgs=Array.prototype.slice.call(document.querySelectorAll('.wrap img'));
+  imgs.forEach(function(img){
+    var dec=function(){ return img.decode ? img.decode().catch(function(){}) : Promise.resolve(); };
+    if(img.complete && img.naturalWidth>0){ waits.push(dec()); }
+    else { waits.push(new Promise(function(res){ img.onload=function(){ dec().then(res); }; img.onerror=res; })); }
+  });
+  return Promise.all(waits);
+}
 function downloadPdf(){
   var btn=document.getElementById('pdfbtn'); var bar=document.querySelector('.bar');
   var fb=document.getElementById('fbblock');
+  var restore=function(){ if(bar) bar.style.visibility='visible'; btn.style.visibility='visible';
+    if(fb) fb.style.display=''; btn.textContent='Скачать PDF к шкафу'; btn.disabled=false; };
   btn.textContent='Готовлю файл…'; btn.disabled=true;
   if(bar) bar.style.visibility='hidden'; btn.style.visibility='hidden'; if(fb) fb.style.display='none';
   var opt={margin:[12,12,14,12], filename:'Карта-стиля.pdf', image:{type:'jpeg',quality:0.96},
-    html2canvas:{scale:2,useCORS:true,backgroundColor:'#F5EFE3',windowWidth:820},
+    html2canvas:{scale:2,useCORS:true,backgroundColor:'#F5EFE3',windowWidth:820,imageTimeout:15000},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
     // css — уважать break-before блоков; avoid-all — не резать карточки. legacy убран: плодил пустые листы
     pagebreak:{mode:['css','avoid-all']}};
-  html2pdf().set(opt).from(document.querySelector('.wrap')).save().then(function(){
-    if(bar) bar.style.visibility='visible'; btn.style.visibility='visible'; if(fb) fb.style.display='';
-    btn.textContent='Скачать PDF к шкафу'; btn.disabled=false;
-  }).catch(function(){
-    if(bar) bar.style.visibility='visible'; btn.style.visibility='visible'; if(fb) fb.style.display='';
-    btn.textContent='Скачать PDF к шкафу'; btn.disabled=false;
-  });
+  _ready().then(function(){
+    return html2pdf().set(opt).from(document.querySelector('.wrap')).save();
+  }).then(restore).catch(restore);
 }
 </script>
 </body></html>"""
@@ -1175,9 +1187,13 @@ def login_send():
         record_event("marketing_optin", email.lower())
     link = request.url_root.rstrip("/") + "/auth?token=" + make_token(email)
     sent = send_magic_link(email, link)
-    # если почта не настроена (dev) — показываем ссылку прямо на странице, чтобы можно было войти
+    # БЕЗОПАСНОСТЬ: ссылка входа = рабочий токен. НЕ показываем её на экране для произвольной почты
+    # (иначе любой ввёл бы чужой email и вошёл в её аккаунт — захват аккаунта). Показываем ТОЛЬКО:
+    # админу (самотест фаундера) или в локальном dev по флагу SENSE_DEV_LINK. На публичном проде без
+    # настроенной почты вход не сработает — это сигнал задать UNISENDER_API_KEY/FROM, а не дыра.
+    dev_ok = email.lower() in _ADMIN_EMAILS or os.getenv("SENSE_DEV_LINK") == "1"
     return render_template_string(LOGIN_PAGE, error=None, sent=True, email=email,
-                                  dev_link=None if sent else link, next=nxt or "")
+                                  dev_link=(None if sent else (link if dev_ok else None)), next=nxt or "")
 
 
 @app.get("/auth")
@@ -1263,7 +1279,10 @@ def _catalog_products() -> list:
     base = Path(__file__).resolve().parent.parent / "data" / "fashion-base"
     brand_styles = _brand_styles()
     prods: list = []
-    for fname in ("products_ushatava.csv", "products_lichi.csv"):
+    # products_wb.csv — обувь, сумки и верхняя одежда (у Lichi/Ushatava их нет вовсе, слот «Обувь»
+    # в капсуле пустовал). Файл собирается scripts/scrape_wb.py; если его нет — каталог работает
+    # на том, что есть.
+    for fname in ("products_ushatava.csv", "products_lichi.csv", "products_wb.csv"):
         fp = base / fname
         if fp.exists():
             try:
@@ -1277,9 +1296,79 @@ def _catalog_products() -> list:
     return prods
 
 
+# Вещи, которых не может быть в ядре капсулы: бельё, домашнее, пляжное, «расходники». Фиды брендов
+# отдают их вперемешку с одеждой, и в капсулу прилетали «Подъюбник из вискозы» в слот Низ и «Топ-бра»
+# в слот Верх. По канону расходники в счёт вещей капсулы не входят.
+_CAPSULE_EXCLUDE = ("подъюбник", "пижам", "бра", "бюстгальтер", "трус", "бельё", "белье",
+                    "купальник", "плавк", "чулк", "носки", "колготк", "халат", "сорочка ночная")
+
+
+def _is_capsule_worthy(name: str) -> bool:
+    n = (name or "").lower()
+    return not any(k in n for k in _CAPSULE_EXCLUDE)
+
+
+# Русификация названий вещей каталога для показа клиентке. Фиды брендов зовут фасоны по-английски
+# («Bootcut», «Baggy», «Grandpa Fit», «Dropped Shoulder»), а имена коллекций («Nixie», «Dachi»)
+# клиентке ничего не говорят. Переводим фасоны, вычищаем коллекции. Ссылку на покупку НЕ трогаем —
+# в магазине товар остаётся под своим именем.
+_NAME_GLOSS = [
+    ("dropped shoulder", "со спущенным плечом"), ("grandpa fit", "свободного кроя"),
+    ("wide leg", "широкие"), ("a-line", "а-силуэт"), ("boot cut", "клёш от колена"),
+    ("bootcut", "клёш от колена"), ("baggy", "свободные"), ("straight", "прямые"),
+    ("regular", "прямые"), ("skinny", "узкие"), ("slim", "зауженные"),
+    ("oversized", "объёмный"), ("oversize", "объёмный"), ("cropped", "укороченный"),
+    ("crop", "укороченный"), ("flared", "клёш"), ("flare", "клёш"), ("palazzo", "палаццо"),
+    ("mom", "мом"), ("total", "тотал"), ("basic", "базовый"),
+    ("midi", "миди"), ("maxi", "макси"), ("mini", "мини"),
+]
+
+
+def _ru_item_name(name: str) -> str:
+    """EN-фасоны → русский; имена коллекций (латиница без перевода) вычищаем. Для показа, не для ссылки."""
+    import re
+    s = name or ""
+    for en, ru in _NAME_GLOSS:
+        s = re.sub(r"(?i)\b" + re.escape(en) + r"\b", ru, s)
+    stripped = re.sub(r"\s*\b[A-Za-z][A-Za-z'’\d]*\b\s*", " ", s)  # оставшаяся латиница = коллекция
+    if re.search(r"[А-Яа-я]", stripped):  # но не опустошаем имя целиком
+        s = stripped
+    s = re.sub(r"\s+", " ", s).strip(" -,")
+    return (s[0].upper() + s[1:]) if s else (name or "")
+
+
+def _capsule_quota(n: int) -> dict:
+    """Сколько вещей брать в каждый слот. Канон «Алгоритмы имиджа»: верхов ВСЕГДА больше, чем низов
+    (капсула богатеет за счёт верхов), верхний слой — 1-2, платье — не ядро капсулы (низкая
+    комбинаторика). Без квот отбор шёл просто по релевантности и выдавал 4 жакета и 3 платья
+    на 2 верха — набор вещей, а не капсула."""
+    if n <= 6:
+        return {"Верхний слой": 1, "Верх": 2, "Низ": 1, "Обувь": 1, "Аксессуары": 1}
+    return {"Верхний слой": 1, "Верх": 4, "Низ": 3, "Платья и комбинезоны": 1,
+            "Обувь": 2, "Аксессуары": 1}
+
+
+def _dedup_products(items: list) -> list:
+    """Убрать повторы одной и той же вещи. В фидах брендов один товар приходит несколько раз
+    (разные цвета/строки): «Приталенный однобортный жакет» ×3, «Расклешенные брюки» ×3 — и все
+    они попадали в капсулу как разные вещи. Ключ — нормализованное имя; среди дублей побеждает
+    packshot (предметное фото), а не съёмка на модели."""
+    best: dict[str, object] = {}
+    for p in items:
+        key = " ".join((p.name or "").lower().split())
+        if not key:
+            continue
+        cur = best.get(key)
+        if cur is None or ((p.image_kind or "") == "packshot"
+                           and (getattr(cur, "image_kind", "") or "") != "packshot"):
+            best[key] = p
+    return list(best.values())
+
+
 def _visual_capsule(card: dict, diag: dict, n: int) -> list:
     """Визуальная капсула для конструктора: реальные вещи каталога, подобранные под Формулу
-    (палитра/табу/фигура), сгруппированные по слотам. Каждая вещь — с фото и ссылкой купить."""
+    (палитра/табу/фигура), сгруппированные по слотам. Каждая вещь — с фото и ссылкой купить.
+    Структура капсулы — по квотам слотов (см. _capsule_quota), а не «топ-N по релевантности»."""
     products = _catalog_products()
     if not products:
         return []
@@ -1295,21 +1384,35 @@ def _visual_capsule(card: dict, diag: dict, n: int) -> list:
         "styles": styles,
         "gender": "женский",
     }
-    # Берём кандидатов с запасом и ставим вперёд вещи с ПРЕДМЕТНЫМ фото (вещь без модели):
-    # в капсуле нужна сама вещь, «пиджак = пиджак». Сортировка устойчивая → внутри каждой группы
-    # сохраняется порядок релевантности от match_products. Если предметных мало, добираем
-    # модельными, а не оставляем слот пустым.
-    picked = match_products(profile, products, k=n * 3)
-    picked.sort(key=lambda p: 0 if (p.image_kind or "") == "packshot" else 1)
-    picked = picked[:n]
-    groups: dict[str, list] = {}
-    for p in picked:
-        slot = _capsule_slot(p.category, p.name)  # категория общая («одежда») → решает имя
-        groups.setdefault(slot, []).append({
-            "name": p.name, "image": p.image, "url": p.url,
-            "brand": p.brand, "price": int(p.price) if p.price else None})
+    # Ранжируем ВЕСЬ каталог под профиль, чтобы в каждом слоте был выбор, и раскладываем по слотам
+    # (порядок внутри слота = релевантность). Предметное фото вперёд: в капсуле нужна сама вещь.
+    ranked = _dedup_products(match_products(profile, products, k=len(products)))
+    ranked = [p for p in ranked if _is_capsule_worthy(p.name)]
+    by_slot: dict[str, list] = {}
+    for p in ranked:
+        by_slot.setdefault(_capsule_slot(p.category, p.name), []).append(p)
+    for slot in by_slot:
+        by_slot[slot].sort(key=lambda p: 0 if (p.image_kind or "") == "packshot" else 1)
+
+    quota = _capsule_quota(n)
+    picked: dict[str, list] = {s: by_slot.get(s, [])[:q] for s, q in quota.items() if by_slot.get(s)}
+    # Слот оказался беднее квоты (маленький каталог) → добираем верхами и низами, но НЕ ломая
+    # правило «верхов больше, чем низов».
+    total = sum(len(v) for v in picked.values())
+    for slot in ("Верх", "Низ", "Верхний слой", "Аксессуары"):
+        while total < n:
+            rest = [p for p in by_slot.get(slot, []) if p not in picked.get(slot, [])]
+            if not rest:
+                break
+            if slot == "Низ" and len(picked.get("Низ", [])) + 1 >= len(picked.get("Верх", [])):
+                break
+            picked.setdefault(slot, []).append(rest[0])
+            total += 1
+
     order = [s for s, _ in _CAPSULE_SLOTS] + [_SLOT_OTHER]
-    return [{"slot": s, "items": groups[s]} for s in order if groups.get(s)]
+    return [{"slot": s, "items": [{"name": _ru_item_name(p.name), "image": p.image, "url": p.url, "brand": p.brand,
+                                   "price": int(p.price) if p.price else None} for p in picked[s]]}
+            for s in order if picked.get(s)]
 
 
 def _inline_capsule_images(board: list, max_side: int = 640, timeout: float = 4.0) -> list:
@@ -1389,17 +1492,195 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .shop{display:flex;flex-direction:column;gap:10px;margin-top:6px} .shopitem{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 15px}
  .shopname{font-size:15.5px} .shopwhy{font-size:13px;color:var(--muted);margin:2px 0 0}
  .empty{color:var(--muted);font-size:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+ /* ── дашборд-хиро: сводка сверху (KPI + кольцо разрыва + трекер) ── */
+ .dash{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;background:#fff;
+  border:1px solid var(--line);border-radius:20px;padding:22px 24px;margin:18px 0 4px}
+ .ring{position:relative;width:132px;height:132px;flex:0 0 auto}
+ .ring svg{transform:rotate(-90deg)} .ring circle{transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)}
+ .ring .rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+ .ring .rn{font-family:'Cormorant Garamond',serif;font-size:40px;line-height:1;color:var(--wine);font-weight:600}
+ .ring .rl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+ .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+ .kpi{background:#fbf8f1;border:1px solid var(--line);border-radius:14px;padding:13px 15px}
+ .kpi .kn{font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+ .kpi .kl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:6px;line-height:1.3}
+ .kpi.wide{grid-column:1/-1;background:#fff}
+ .kpi.wide .kn{font-size:20px}
+ .delta{display:inline-block;background:#eef6ee;color:#3a5a3a;font-size:11.5px;padding:3px 9px;border-radius:999px;margin-left:8px;vertical-align:middle}
+ .trk{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px 22px;margin:12px 0 4px}
+ .trk .th{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+ .trk h2{margin:0} .trk .ts{color:var(--muted);font-style:italic;font-size:14px}
+ .trow{display:flex;align-items:center;gap:12px;margin:11px 0;font-size:13px}
+ .tdate{flex:0 0 132px;color:var(--muted)} .tdate b{color:var(--wine);font-weight:normal}
+ .tbar{flex:1;height:12px;background:#efe8db;border-radius:999px;overflow:hidden}
+ .tfill{display:block;height:100%;background:linear-gradient(90deg,var(--wine),#8a3346);border-radius:999px;
+  width:0;transition:width 1s cubic-bezier(.22,1,.36,1)}
+ .tval{flex:0 0 42px;text-align:right;font-variant-numeric:tabular-nums;color:var(--wine)}
+ .tnote{font-size:13px;color:var(--muted);margin:10px 0 0;line-height:1.5}
+ @media(max-width:680px){.dash{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .kpis{grid-template-columns:1fr 1fr;width:100%} .tdate{flex-basis:96px}}
+ @media(prefers-reduced-motion:reduce){.ring circle,.tfill{transition:none}}
+ /* ── профиль-идентичность («стилевая ДНК») ── */
+ .prof{display:flex;gap:18px;align-items:center;background:linear-gradient(135deg,#fff,#fbf6ec);
+  border:1px solid var(--line);border-radius:20px;padding:20px 22px;margin:6px 0 2px}
+ .ava{flex:0 0 auto;width:64px;height:64px;border-radius:50%;background:var(--wine);color:#fff;
+  font-family:'Cormorant Garamond',serif;font-size:30px;display:flex;align-items:center;justify-content:center}
+ .profmain{flex:1;min-width:0}
+ .profform{font-family:'Cormorant Garamond',serif;font-size:24px;line-height:1.1;color:var(--ink)}
+ .profchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+ .pc{font-size:12px;padding:4px 11px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:#fff}
+ .pc b{color:var(--wine);font-weight:500}
+ .want{font-size:13.5px;color:var(--muted);margin-top:10px;font-style:italic}
+ .want b{color:var(--ink);font-style:normal}
+ .nudge{display:flex;gap:12px;align-items:center;background:#fbf3e8;border:1px solid #e8d9c2;
+  border-radius:14px;padding:12px 16px;margin:12px 0 2px;font-size:13.5px;color:#7a5b32}
+ .nudge a{margin-left:auto;white-space:nowrap;background:var(--wine);color:#fff;text-decoration:none;
+  padding:8px 14px;border-radius:9px;font-size:13px;flex:0 0 auto}
+ @media(max-width:680px){.prof{flex-direction:column;text-align:center}.profchips{justify-content:center}}
+ /* ── отзыв клиентки ── */
+ .fb{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-top:14px}
+ .fb h2{margin:0 0 4px} .fb p.h{color:var(--muted);font-size:14px;margin:0 0 14px}
+ .stars{display:flex;gap:6px;margin-bottom:12px;flex-direction:row-reverse;justify-content:flex-end}
+ .stars input{position:absolute;opacity:0;width:0;height:0}
+ .stars label{font-size:26px;color:#d9cfbf;cursor:pointer;line-height:1;transition:color .12s}
+ .stars label:hover,.stars label:hover~label,.stars input:checked~label{color:#c8a24a}
+ .fb textarea{width:100%;padding:11px 13px;border:1px solid #d9d2c7;border-radius:10px;font:inherit;font-size:15px;resize:vertical}
+ .fb button{margin-top:12px;padding:12px 24px;background:var(--wine);color:#fff;border:0;border-radius:10px;font:inherit;font-size:15px;cursor:pointer}
+ .fb .done{margin:0;font-size:16px;color:var(--ink)}
+ /* ── роли недели ── */
+ .roles3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 2px}
+ .role3{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 16px;display:flex;flex-direction:column}
+ .role3 .rb{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine)}
+ .role3 .rn{font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.15;margin:5px 0 8px;color:var(--ink)}
+ .role3 ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+ .role3 li{font-size:12.5px;color:var(--muted);line-height:1.3}
+ .role3 li::before{content:"— ";color:var(--wine)}
+ @media(max-width:680px){.roles3{grid-template-columns:1fr}}
+ /* ── прогресс-вехи ── */
+ .miles{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 2px}
+ .mile{flex:1;min-width:120px;background:#fbf8f1;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+ .mile .mn{font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+ .mile .mn.win{color:#3a5a3a} .mile .ml{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:5px}
+ /* ── липкая навигация по секциям (как таб-бар приложения) ── */
+ .cabnav{position:sticky;top:0;z-index:20;background:rgba(245,239,227,.92);backdrop-filter:blur(8px);
+  margin:0 -22px 8px;padding:10px 22px;border-bottom:1px solid var(--line);display:flex;gap:8px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch}
+ .cabnav a{flex:0 0 auto;font-size:13px;color:var(--muted);text-decoration:none;padding:6px 13px;
+  border-radius:999px;border:1px solid transparent;white-space:nowrap;transition:all .12s}
+ .cabnav a:hover{color:var(--wine);border-color:var(--line);background:#fff}
+ .sechead{scroll-margin-top:64px}
+ /* ── карточка «Брать / не брать» ── */
+ .checkc{display:flex;gap:18px;align-items:center;background:linear-gradient(135deg,#fff,#f7efe0);
+  border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-top:6px}
+ .checkc .ico{flex:0 0 auto;width:56px;height:56px;border-radius:16px;background:var(--wine);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:26px}
+ .checkc .ct{flex:1;min-width:0}
+ .checkc .ctt{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);line-height:1.1}
+ .checkc .cts{font-size:14px;color:var(--muted);margin-top:5px}
+ .checkc .verd{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+ .checkc .vt{font-size:11.5px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+ .checkc a.go{flex:0 0 auto;background:var(--wine);color:#fff;text-decoration:none;padding:12px 20px;
+  border-radius:10px;font-size:14px;white-space:nowrap}
+ @media(max-width:680px){.checkc{flex-direction:column;text-align:center}.checkc a.go{width:100%;text-align:center}}
 </style></head><body><div class=wrap>
-<div class=top><span class=logo>Чувство стиля</span><span><a href="/me">профиль</a><a href="/card">Карта</a><a href="/logout">выйти</a></span></div>
+<div class=top><span class=logo>Чувство стиля</span><span><a href="/stylebook">Style Book</a><a href="/me">профиль</a><a href="/card">Карта</a><a href="/logout">выйти</a></span></div>
 <h1>Мой гардероб</h1>
-<p class=sub>{{ formula }}{% if gap is not none %} · разрыв <span class=gap>{{ gap }}%</span>{% endif %}{% if season_label %} · {{ season_label }}{% endif %}</p>
 
+{# ── профиль-идентичность: кто ты по стилю (наша «стилевая ДНК») ── #}
+<div class=prof>
+ <div class=ava>{{ email[0]|upper }}</div>
+ <div class=profmain>
+  <div class=profform>{{ formula }}</div>
+  <div class=profchips>
+   {% if colortype %}<span class=pc>Цветотип · <b>{{ colortype }}</b></span>{% endif %}
+   {% if figure %}<span class=pc>Силуэт · <b>{{ figure }}</b></span>{% endif %}
+   {% if season_label %}<span class=pc>Сезон · <b>{{ season_label }}</b></span>{% endif %}
+  </div>
+  {% if want_traits %}<div class=want>Ты хочешь считываться как <b>{{ want_traits|join(', ') }}</b> — на это работает вся капсула ниже.</div>{% endif %}
+ </div>
+</div>
+
+{# ── навигация по секциям кабинета ── #}
+<nav class=cabnav>
+ <a href="#dash">Обзор</a>
+ {% if track %}<a href="#track">Трекер</a>{% endif %}
+ {% if roles %}<a href="#roles">Роли недели</a>{% endif %}
+ <a href="#wardrobe">Гардероб</a>
+ <a href="#check">Брать / не брать</a>
+ <a href="#shopping">Покупки</a>
+ <a href="#review">Отзыв</a>
+</nav>
+
+{# ── дашборд: сводка одним взглядом ── #}
+<div class=dash id=dash>
+ <div class=ring>
+  <svg width=132 height=132 viewBox="0 0 132 132" aria-hidden=true>
+   <circle cx=66 cy=66 r=52 fill=none stroke="#efe8db" stroke-width=11></circle>
+   <circle id=gapRing cx=66 cy=66 r=52 fill=none stroke="var(--wine)" stroke-width=11
+     stroke-linecap=round stroke-dasharray=327
+     stroke-dashoffset="{{ 327 if gap_now is none else (327 * (1 - gap_now / 100.0))|round(1) }}"></circle>
+  </svg>
+  <div class=rc><span class=rn>{% if gap_now is not none %}{{ gap_now }}%{% else %}—{% endif %}</span><span class=rl>разрыв сейчас</span></div>
+ </div>
+ <div class=kpis>
+  <div class="kpi wide"><div class=kn>{{ formula }}</div><div class=kl>твоя формула стиля</div></div>
+  <div class=kpi><div class=kn>{{ n_items }}</div><div class=kl>вещей в капсуле</div></div>
+  <div class=kpi><div class=kn>{{ combos_label }}</div><div class=kl>образов из капсулы</div></div>
+  <div class=kpi><div class=kn>{% if track %}{{ track.measurements }}{% else %}1{% endif %}{% if track and track.delta and track.delta > 0 %}<span class=delta>−{{ track.delta }} п.п.</span>{% endif %}</div><div class=kl>{% if track and track.measurements > 1 %}замера разрыва{% else %}точка отсчёта{% endif %}</div></div>
+ </div>
+</div>
+
+{% if track %}
+<div class=trk id=track>
+ <div class=th><h2 class=sechead>Как закрывается разрыв</h2><span class=ts>измеримая трансформация</span></div>
+ {% if milestones %}
+ <div class=miles>
+  <div class=mile><div class=mn>{{ milestones.start }}%</div><div class=ml>старт</div></div>
+  <div class=mile><div class=mn>{{ milestones.now }}%</div><div class=ml>сейчас</div></div>
+  {% if milestones.delta > 0 %}<div class=mile><div class="mn win">−{{ milestones.delta }}</div><div class=ml>п.п. закрыто</div></div>{% endif %}
+  <div class=mile><div class=mn>{{ milestones.count }}</div><div class=ml>{% if milestones.count > 1 %}замера{% else %}замер{% endif %}</div></div>
+ </div>
+ {% endif %}
+ {% for p in track.points %}
+ <div class=trow>
+  <span class=tdate>{{ p.date }}{% if loop.first %} · <b>старт</b>{% endif %}</span>
+  <span class=tbar><span class=tfill data-w="{{ p.gap }}"></span></span>
+  <span class=tval>{{ p.gap }}%</span>
+ </div>
+ {% endfor %}
+ {% if track.measurements < 2 %}
+ <p class=tnote>Это точка отсчёта. Сделай пере-замер через время — увидишь, как разрыв закрывается. Он двигается только от настоящего замера: новых фото того, как ты одеваешься сейчас.</p>
+ {% else %}
+ <p class=tnote>Разрыв закрывается — и это видно. Двигается он только от реального пере-замера, поэтому цифре можно верить.</p>
+ {% endif %}
+</div>
+{% endif %}
+
+{% if days_since is not none and days_since >= 30 %}
+<div class=nudge><span>С последнего замера прошло {{ days_since }} дней. Пере-замер покажет, как разрыв закрылся за это время.</span><a href="/identity-scan-quiz.html?fresh=1">Сделать пере-замер</a></div>
+{% endif %}
+
+{% if roles %}
+<h2 class=sechead id=roles>Роли твоей недели</h2>
+<p class=hint>Одна капсула — разные роли твоего дня. Так формула работает под каждую жизненную ситуацию.</p>
+<div class=roles3>
+ {% for r in roles %}
+ <div class=role3>
+  <div class=rb>{{ r.bucket }}</div>
+  <div class=rn>{% if r.name %}{{ r.name }}{% else %}{{ r.scenario }}{% endif %}</div>
+  {% if r.pieces %}<ul>{% for it in r.pieces %}<li>{{ it }}</li>{% endfor %}</ul>{% endif %}
+ </div>
+ {% endfor %}
+</div>
+{% endif %}
+
+<h2 class=sechead id=wardrobe>Твой капсульный гардероб</h2>
+<p class=hint>Реальные вещи под твою Формулу и сезон — каждую можно купить. Ниже собери из них лук.</p>
 {% if season_tabs %}
 <div class=seasons>
  {% for s in season_tabs %}<a href="/cabinet?season={{ s.code }}" class="{{ 'on' if s.on else '' }}">{{ s.label }}</a>{% endfor %}
 </div>
 {% endif %}
-
 <h2>Конструктор образа</h2>
 <p class=hint>Собери лук из своей капсулы: перетащи или нажми вещь в каждый слот. Цвета берёшь из своей палитры — они выверены и сочетаются между собой. Вещи настоящие — каждую можно купить.</p>
 <div class=itemtoggle>
@@ -1453,13 +1734,42 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  </div>
 </div>
 
-<h2>Лист покупок</h2>
+<h2 class=sechead id=check>Брать или не брать?</h2>
+<p class=hint>Стоишь в магазине с вещью в руках — сфотографируй, и я скажу, работает ли она на твою Формулу.</p>
+<div class=checkc>
+ <div class=ico>✓</div>
+ <div class=ct>
+  <div class=ctt>Проверка вещи по фото</div>
+  <div class=cts>Оценю по твоему цветотипу, линиям фигуры и ядру стиля — до того, как ты потратишь деньги.</div>
+  <div class=verd><span class=vt>✓ Брать</span><span class=vt>↺ Подумай</span><span class=vt>✕ Оставь в магазине</span></div>
+ </div>
+ <a class=go href="/garment">Проверить вещь →</a>
+</div>
+
+<h2 class=sechead id=shopping>Лист покупок</h2>
 <p class=hint>Что докупить, чтобы закрыть разрыв — вещи под твою Формулу и сезон.</p>
 {% if shopping %}
 <div class=shop>
  {% for it in shopping %}<div class=shopitem><div class=shopname>{{ it.name }}</div>{% if it.closes_gap %}<div class=shopwhy>{{ it.closes_gap }}</div>{% endif %}</div>{% endfor %}
 </div>
 {% else %}<p class=empty>Лист покупок появится вместе с собранной Картой.</p>{% endif %}
+
+<div class=fb id=review>
+{% if thanks %}
+ <p class=done>Спасибо. Твой отзыв записан — он помогает нам делать сервис точнее.</p>
+{% else %}
+ <h2 class=sechead>Как тебе твой гардероб?</h2>
+ <p class=h>Оцени и напиши пару слов — что откликнулось, чего не хватило. Это помогает нам и другим клиенткам.</p>
+ <form method=post action="/card/feedback">
+  <input type=hidden name=next value="/cabinet{% if sel_season %}?season={{ sel_season }}{% endif %}">
+  <div class=stars>
+   {% for n in [5,4,3,2,1] %}<input type=radio name=rating id="st{{ n }}" value="{{ n }}"><label for="st{{ n }}" title="{{ n }}">★</label>{% endfor %}
+  </div>
+  <textarea name=text rows=3 placeholder="Что откликнулось, чего не хватило?"></textarea>
+  <button type=submit>Отправить отзыв</button>
+ </form>
+{% endif %}
+</div>
 
 <script>
 var outfit={}, byKey={};
@@ -1503,6 +1813,18 @@ document.querySelectorAll('[data-cell]').forEach(function(c){
  c.addEventListener('drop',function(e){ e.preventDefault(); c.classList.remove('drop');
   var key=e.dataTransfer.getData('text')||''; if(key.split('|')[0]===c.getAttribute('data-cell')) pickKey(key); });
 });
+// трекер и кольцо разрыва: анимируем от нуля к значению при загрузке. Значения уже проставлены
+// в разметке (корректны без JS) — стартуем с пустого и возвращаем к финалу, transition доигрывает.
+(function(){
+ var ring=document.getElementById('gapRing'), fills=document.querySelectorAll('.tfill');
+ var finalOff=ring?ring.style.strokeDashoffset:null;
+ if(ring) ring.style.strokeDashoffset=327;               // пусто
+ fills.forEach(function(b){ b.style.width='0%'; });
+ requestAnimationFrame(function(){ requestAnimationFrame(function(){
+  if(ring) ring.style.strokeDashoffset=finalOff;         // → к значению
+  fills.forEach(function(b){ b.style.width=(b.getAttribute('data-w')||0)+'%'; });
+ }); });
+})();
 </script>
 </div></body></html>"""
 
@@ -1536,12 +1858,242 @@ def cabinet():
     season_tabs = [{"code": s, "label": _CARD_SEASONS[s]["label"], "on": s == sel}
                    for s in _SEASON_ORDER if s in seasons]
     palette = [p for p in (card.get("palette") or []) if p.get("hex")]
+    # трекер разрыва прямо в дашборде (раньше жил только в /me): точки-замеры + дельта при ≥2
+    track = gap_progress(email)
+    days_since = None
+    if track:
+        for p in track["points"]:
+            p["date"] = _ru_date(p["ts"])
+        last_ts = track["points"][-1].get("ts")
+        try:  # сколько дней прошло с последнего замера → мягкий призыв к пере-замеру
+            from datetime import datetime, timezone
+            dt = datetime.fromisoformat(str(last_ts).replace("Z", "+00:00"))
+            days_since = (datetime.now(timezone.utc) - dt).days
+        except Exception:  # noqa: BLE001 — битый ts не должен ронять кабинет
+            days_since = None
+    # KPI капсулы: вещей и оценка числа образов (комбинаторика низ×верх + платья как отд. образы)
+    def _slot_n(name: str) -> int:
+        return sum(len(g["items"]) for g in board if g["slot"] == name)
+    n_items = sum(len(g["items"]) for g in board)
+    tops, bottoms = _slot_n("Верх"), _slot_n("Низ")
+    dresses = _slot_n("Платья и комбинезоны")
+    combos = tops * bottoms + dresses
+    combos_label = f"{combos}+" if combos >= 12 else (str(combos) if combos else "—")
+    gap_now = card.get("gap")
+    if track and track.get("points"):
+        gap_now = track["points"][-1]["gap"]
+    want3 = (diag.get("want_traits_top3") or [])[:3]
+    # «Роли твоей недели»: по одному образу на жизненную капсулу (Работа/Повседневное/Выход)
+    roles = []
+    seen_buckets = set()
+    for lk in (card.get("looks") or []):
+        b = lk.get("bucket") or "Повседневное"
+        if b in seen_buckets:
+            continue
+        seen_buckets.add(b)
+        roles.append({"bucket": b, "scenario": lk.get("scenario") or b,
+                      "name": lk.get("name"), "pieces": (lk.get("items") or [])[:4]})
+    roles.sort(key=lambda r: ["Работа", "Повседневное", "Выход"].index(r["bucket"])
+               if r["bucket"] in ("Работа", "Повседневное", "Выход") else 9)
+    # «Прогресс-вехи»: старт, текущий, лучший разрыв, суммарная дельта (из трекера)
+    milestones = None
+    if track and track.get("points"):
+        gaps = [p["gap"] for p in track["points"]]
+        milestones = {"start": gaps[0], "now": gaps[-1], "best": min(gaps),
+                      "delta": (gaps[0] - gaps[-1]) if len(gaps) > 1 else 0,
+                      "count": track.get("measurements", len(gaps))}
     return render_template_string(
-        CABINET_PAGE, email=email,
+        CABINET_PAGE, email=email, roles=roles, milestones=milestones,
         formula=card.get("formula") or diag.get("style_formula"),
-        gap=card.get("gap"), season_label=card.get("season_label"),
+        colortype=_colortype_label(diag.get("colortype")), figure=_figure_label(diag.get("figure_type")),
+        want_traits=want3, days_since=days_since, thanks=(request.args.get("fb") == "1"),
+        gap=card.get("gap"), gap_now=gap_now, track=track, season_label=card.get("season_label"),
+        n_items=n_items, combos_label=combos_label, items_n=items_n,
         board=board, palette=palette, shopping=card.get("shopping") or [],
-        season_tabs=season_tabs, sel_season=sel, items_n=items_n)
+        season_tabs=season_tabs, sel_season=sel)
+
+
+STYLEBOOK_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Персональный Style Book</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+ :root{--paper:#F5EFE3;--ink:#221f1d;--soft:#4c463f;--muted:#7a7168;--wine:#5D2230;--line:#e2dacd}
+ *{box-sizing:border-box}body{font-family:Onest,-apple-system,sans-serif;background:var(--paper);color:var(--ink);margin:0;line-height:1.62}
+ .wrap{max-width:820px;margin:0 auto;padding:0 26px 60px}
+ .serif{font-family:'Cormorant Garamond',serif}
+ h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:600;margin:0}
+ .bar{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;
+  padding:12px 0;background:rgba(245,239,227,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+ .bar .logo{font-family:'Cormorant Garamond',serif;font-size:20px}
+ .bar button{font:inherit;font-size:14px;background:var(--wine);color:#fff;border:0;border-radius:9px;padding:10px 18px;cursor:pointer}
+ .cover{padding:64px 0 40px;border-bottom:1px solid var(--line)}
+ .cover .k{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted)}
+ .cover h1{font-size:clamp(40px,8vw,72px);line-height:1.02;margin:16px 0 0}
+ .cover .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+ .chip{font-size:13px;padding:5px 13px;border:1px solid var(--line);border-radius:999px;color:var(--soft);background:#fff}
+ .chip b{color:var(--wine);font-weight:500}
+ section{padding:46px 0;border-bottom:1px solid var(--line)}
+ .snum{font-family:'Cormorant Garamond',serif;color:var(--wine);font-size:15px}
+ .st{font-size:clamp(24px,4vw,34px);margin:4px 0 20px}
+ .lead{font-size:18px;color:var(--soft)}
+ .gaprow{display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+ .ring{position:relative;width:130px;height:130px;flex:0 0 auto}.ring svg{transform:rotate(-90deg)}
+ .ring .v{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+ .ring .n{font-family:'Cormorant Garamond',serif;font-size:38px;color:var(--wine);font-weight:600}
+ .ring .l{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+ .palgrp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 0 9px}
+ .sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+ .swatch{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+ .swatch .c{height:52px}.swatch .nm{font-size:11.5px;padding:6px 8px 7px;line-height:1.2}
+ .stop .c{position:relative}.stop .c::after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,transparent 46%,rgba(255,255,255,.85) 47%,rgba(255,255,255,.85) 53%,transparent 54%)}
+ .sil{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px}.sil li{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 15px;font-size:14px}
+ .capg{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:6px}
+ .cap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+ .cap img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#efe8db}
+ .cap .nm{font-size:12px;padding:8px 9px;line-height:1.25}
+ .combos{font-family:'Cormorant Garamond',serif;font-size:40px;color:var(--wine)}
+ .looks{display:flex;flex-direction:column;gap:26px;margin-top:8px}
+ .look{display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:start}
+ .look img{width:100%;border-radius:12px;display:block;background:#efe8db}
+ .look .rb{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine)}
+ .look .rn{font-family:'Cormorant Garamond',serif;font-size:23px;margin:5px 0 8px}
+ .look .rd{font-size:15px;color:var(--soft)}
+ .look .ri{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+ .look .ri li{font-size:12.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:#fff}
+ .closing{text-align:center;padding:64px 0}.closing .q{font-family:'Cormorant Garamond',serif;font-size:clamp(22px,4vw,32px);max-width:24ch;margin:0 auto;line-height:1.25}
+ @media(max-width:640px){.look{grid-template-columns:1fr}}
+ @media print{.bar{display:none}section,.look,.cap{break-inside:avoid;page-break-inside:avoid}body{background:#fff}}
+</style></head><body>
+<div class=wrap>
+<div class=bar><span class=logo>Чувство стиля · Style Book</span><button onclick="window.print()">Скачать PDF</button></div>
+
+<div class=cover>
+ <div class=k>Персональный Style Book</div>
+ <h1>{{ formula }}</h1>
+ <div class=chips>
+  {% if colortype %}<span class=chip>Цветотип · <b>{{ colortype }}</b></span>{% endif %}
+  {% if figure %}<span class=chip>Силуэт · <b>{{ figure }}</b></span>{% endif %}
+  {% if gap is not none %}<span class=chip>Разрыв · <b>{{ gap }}%</b></span>{% endif %}
+  {% if season_label %}<span class=chip>Сезон · <b>{{ season_label }}</b></span>{% endif %}
+ </div>
+</div>
+
+{% if dna or gap is not none %}
+<section>
+ <div class=snum>01</div><h2 class=st>Где ты сейчас и куда идёшь</h2>
+ <div class=gaprow>
+  {% if gap is not none %}<div class=ring><svg width=130 height=130 viewBox="0 0 130 130">
+   <circle cx=65 cy=65 r=52 fill=none stroke="#efe8db" stroke-width=11></circle>
+   <circle cx=65 cy=65 r=52 fill=none stroke="var(--wine)" stroke-width=11 stroke-linecap=round stroke-dasharray=327 stroke-dashoffset="{{ (327*(1-gap/100.0))|round(1) }}"></circle>
+  </svg><div class=v><span class=n>{{ gap }}%</span><span class=l>разрыв · до</span></div></div>{% endif %}
+  <p class=lead style="flex:1;min-width:260px">{{ dna or 'Твой образ догоняет то, кем ты становишься. Разрыв замеряется до и после — это ядро работы.' }}</p>
+ </div>
+</section>
+{% endif %}
+
+{% if palette %}
+<section>
+ <div class=snum>02</div><h2 class=st>Твоя палитра</h2>
+ {% for grp, title in [('base','База и нейтрали'),('main','Основные'),('accent','Акценты')] %}
+  {% set items = palette|selectattr('group','equalto',grp)|list %}
+  {% if items %}<div class=palgrp>{{ title }}</div><div class=sw>{% for p in items %}<div class=swatch><div class=c style="background:{{ p.hex }}"></div><div class=nm>{{ p.name }}</div></div>{% endfor %}</div>{% endif %}
+ {% endfor %}
+ {% if stop_colors %}<div class="palgrp">Не работает на тебя</div><div class="sw stop">{% for p in stop_colors %}<div class=swatch><div class=c style="background:{{ p.hex }}"></div><div class=nm>{{ p.name }}</div></div>{% endfor %}</div>{% endif %}
+</section>
+{% endif %}
+
+{% if silhouettes %}
+<section>
+ <div class=snum>03</div><h2 class=st>Твои силуэты</h2>
+ <ul class=sil>{% for s in silhouettes %}<li>{{ s }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+{% if board %}
+<section>
+ <div class=snum>04</div><h2 class=st>Твоя капсула</h2>
+ <p class=lead>Реальные вещи под твою Формулу — ядро, из которого собираются все образы.</p>
+ <div class=capg>
+  {% for grp in board %}{% for it in grp['items'] %}<div class=cap>{% if it.image %}<img src="{{ it.image }}" alt="{{ it.name }}">{% endif %}<div class=nm>{{ it.name }}</div></div>{% endfor %}{% endfor %}
+ </div>
+ {% if combos %}<p style="margin-top:16px"><span class=combos>{{ combos }}+</span> <span class=lead>образов из этих вещей</span></p>{% endif %}
+</section>
+{% endif %}
+
+{% if looks %}
+<section>
+ <div class=snum>05</div><h2 class=st>Твои образы</h2>
+ <div class=looks>
+  {% for lk in looks %}
+  <div class=look>
+   <img src="{{ lk.img }}" alt="Образ">
+   <div>
+    <div class=rb>{{ lk.bucket or lk.scenario or 'Образ' }}</div>
+    <div class=rn>{{ lk.name or lk.scenario or 'Готовый образ' }}</div>
+    <div class=rd>{{ lk.description or lk.desc or '' }}</div>
+    {% if lk['items'] %}<ul class=ri>{% for it in lk['items'] %}<li>{{ it }}</li>{% endfor %}</ul>{% endif %}
+   </div>
+  </div>
+  {% endfor %}
+ </div>
+</section>
+{% endif %}
+
+<div class=closing>
+ <p class=q>Твоя сила — не в одной вещи, а в системе: формула, цвет и силуэт, которые работают на то, кем ты становишься.</p>
+</div>
+</div></body></html>"""
+
+
+STYLEBOOK_UPSELL = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Персональный Style Book</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Onest:wght@300;400;500&display=swap" rel="stylesheet">
+<style>:root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
+body{font-family:Onest,-apple-system,sans-serif;background:var(--cream);color:var(--ink);margin:0;line-height:1.6}
+.wrap{max-width:640px;margin:0 auto;padding:60px 22px}h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:40px;margin:0 0 10px}
+.sub{color:var(--muted);font-size:17px}ul{list-style:none;padding:0;margin:26px 0}li{padding:10px 0 10px 28px;position:relative;border-bottom:1px solid var(--line)}
+li::before{content:"✓";position:absolute;left:0;color:var(--wine)}
+.btn{display:inline-block;background:var(--wine);color:#fff;text-decoration:none;padding:15px 30px;border-radius:10px;margin-top:12px}
+a.back{color:var(--muted);font-size:14px;text-decoration:none;display:inline-block;margin-top:20px}</style></head><body><div class=wrap>
+<h1>Твой персональный Style Book</h1>
+<p class=sub>Книга с твоими образами на фото — часть пакета «Преображение».</p>
+<ul>
+ <li>Все образы капсулы — на фото, это ты, а не абстрактная модель</li>
+ <li>Формула, палитра, силуэты и капсула в одном премиальном документе</li>
+ <li>4 роли твоей недели с готовым составом образа</li>
+ <li>PDF к печати — держишь в руках, показываешь в шкафу</li>
+</ul>
+<a class=btn href="/premium.html">Узнать о «Преображении» →</a><br>
+<a class=back href="/cabinet">← Вернуться в кабинет</a>
+</div></body></html>"""
+
+
+@app.get("/stylebook")
+def stylebook():
+    """Фото-Style Book (пакет «Преображение»): книга из данных Карты с ФОТО образов на клиентке.
+    Собирается из готовых выходов движка (палитра/капсула/образы) — без новых генераций.
+    За гейтом оплаты (пока — админ / premium-флаг; upsell для остальных)."""
+    email = session.get("email")
+    if not email:
+        return redirect("/login?next=/stylebook")
+    prof = get_profile(email)
+    card = prof.get("card") or {}
+    diag = prof.get("diagnosis") or {}
+    if not card.get("formula"):
+        return redirect("/card")
+    if not _stylebook_access(email):
+        return render_template_string(STYLEBOOK_UPSELL)
+    looks = [lk for lk in (card.get("looks") or []) if lk.get("img")]  # только образы с фото
+    board = card.get("visual_capsule") or card.get("capsule_board") or []
+    palette = [p for p in (card.get("palette") or []) if p.get("hex")]
+    return render_template_string(
+        STYLEBOOK_PAGE, email=email,
+        formula=card.get("formula"), gap=card.get("gap"),
+        colortype=_colortype_label(diag.get("colortype")), figure=_figure_label(diag.get("figure_type")),
+        dna=card.get("dna") or "", silhouettes=card.get("silhouettes") or [],
+        palette=palette, stop_colors=card.get("stop_colors") or [],
+        board=board, combos=card.get("combination_count"), looks=looks,
+        season_label=card.get("season_label"))
 
 
 @app.get("/stylist")
@@ -2024,7 +2576,13 @@ def card_feedback():
         rating = None
     record_feedback(email, rating, request.form.get("text"))
     record_event("feedback_left", email, meta=str(rating or ""))
-    return redirect("/card?fb=1")
+    # откуда пришли (Карта или кабинет) — возвращаем туда же. Только внутренний путь: защита от
+    # открытого редиректа (без схемы и без «//», чтобы не увели на чужой домен).
+    nxt = (request.form.get("next") or "").strip()
+    if not (nxt.startswith("/") and not nxt.startswith("//")):
+        nxt = "/card"
+    sep = "&" if "?" in nxt else "?"
+    return redirect(f"{nxt}{sep}fb=1")
 
 
 # приборная панель метрик для конкурса — доступ по email основателя ИЛИ ?key=SENSE_METRICS_KEY
@@ -2037,6 +2595,18 @@ def _is_admin() -> bool:
         return True
     key = os.getenv("SENSE_METRICS_KEY")
     return bool(key) and request.args.get("key") == key
+
+
+def _stylebook_access(email: str) -> bool:
+    """Гейт фото-стайлбука: он входит в платный пакет «Преображение». Пока оплаты (ЮKassa) нет —
+    доступ у админа и у профилей с флагом premium (ставит фаундер вручную / позже — после оплаты).
+    Список премиум-почт можно задать через env SENSE_PREMIUM_EMAILS (через запятую)."""
+    if _is_admin():
+        return True
+    em = (email or "").lower()
+    if em and em in {e.strip().lower() for e in os.getenv("SENSE_PREMIUM_EMAILS", "").split(",") if e.strip()}:
+        return True
+    return bool((get_profile(email) or {}).get("premium"))
 
 
 # Лимит бесплатных генераций на email (защита от слива токенов). Админ — без лимита.
@@ -2063,6 +2633,22 @@ table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
 td,th{text-align:left;padding:8px 6px;border-bottom:1px solid #e3dccf;vertical-align:top}
 .star{color:#5D2230}</style></head><body>
 <h1>Метрики продукта</h1>
+
+<h2>Почта (вход по ссылке)</h2>
+<div style="background:#fff;border:1px solid #e3dccf;border-radius:12px;padding:16px 18px">
+{% if email_ok %}
+ <p style="margin:0 0 10px">Статус: <b style="color:#3b7a4b">настроена ✓</b> — клиентки получают ссылку входа на почту.</p>
+{% else %}
+ <p style="margin:0 0 10px">Статус: <b style="color:#9b3030">НЕ настроена ✕</b> — письма не уходят, обычные клиентки войти не смогут.
+ Задай на Amvera env <code>UNISENDER_API_KEY</code> и <code>UNISENDER_FROM_EMAIL</code> (отправитель должен быть подтверждён в Unisender Go).</p>
+{% endif %}
+ <form method=post action="/metrics/test-email" style="margin:0">
+  <input type=hidden name=key value="{{ keyq[5:] }}">
+  <button type=submit style="font:inherit;font-size:14px;padding:9px 16px;border-radius:8px;cursor:pointer;border:1px solid #5D2230;background:#fff;color:#5D2230">Отправить тестовое письмо себе</button>
+  {% if mail_test %}<span style="margin-left:12px;color:{{ '#3b7a4b' if mail_test_ok else '#9b3030' }}">{{ mail_test }}</span>{% endif %}
+ </form>
+</div>
+
 <h2>Воронка</h2>
 <div class=grid>
  <div class=kpi><b>{{ f.quiz_done }}</b><span>прошли квиз (диагностик)</span></div>
@@ -2084,10 +2670,15 @@ td,th{text-align:left;padding:8px 6px;border-bottom:1px solid #e3dccf;vertical-a
 {% for l in leads %}<tr><td>{{ l.email }}</td><td>{{ '✓' if l.marketing else '' }}</td><td>{{ l.first }}</td><td>{{ l.last }}</td><td>{{ l.formula or '' }}</td><td>{{ l.colortype or '' }}</td><td>{{ l.gap if l.gap is not none else '' }}</td><td>{{ l.feedback or '' }}</td></tr>{% endfor %}
 {% if not leads %}<tr><td colspan=8 style="color:#6b645c">Пока нет почт.</td></tr>{% endif %}
 </table>
-<h2>Отзывы и комментарии ({{ f.feedback }}{% if f.avg_rating %}, средняя {{ f.avg_rating }}★{% endif %}) &nbsp;<a href="/metrics/feedback.csv{{ keyq }}">скачать CSV</a></h2>
-<table><tr><th>Когда</th><th>Клиентка</th><th>Оценка</th><th>Текст</th></tr>
-{% for r in fb %}<tr><td>{{ r.ts }}</td><td>{{ r.client }}</td><td class=star>{{ r.rating or '' }}</td><td>{{ r.text or '' }}</td></tr>{% endfor %}
-{% if not fb %}<tr><td colspan=4 style="color:#6b645c">Пока нет отзывов.</td></tr>{% endif %}
+<h2 id=reviews>Отзывы и комментарии ({{ f.feedback }}{% if f.avg_rating %}, средняя {{ f.avg_rating }}★{% endif %}) &nbsp;<a href="/metrics/feedback.csv{{ keyq }}">скачать CSV</a></h2>
+<p style="color:#6b645c;font-size:13px">«Показать на сайте» — отзыв появится в блоке на лендинге. Публикуй только с согласия клиентки.</p>
+<table><tr><th>Когда</th><th>Клиентка</th><th>Оценка</th><th>Текст</th><th>На сайте</th></tr>
+{% for r in fb %}<tr><td>{{ r.ts }}</td><td>{{ r.client }}</td><td class=star>{{ r.rating or '' }}</td><td>{{ r.text or '' }}</td>
+<td>{% if r.text %}<form method=post action="/metrics/feedback/approve" style="margin:0">
+ <input type=hidden name=id value="{{ r.id }}"><input type=hidden name=approved value="{{ '0' if r.approved else '1' }}"><input type=hidden name=key value="{{ keyq[5:] }}">
+ <button type=submit style="font:inherit;font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer;border:1px solid {{ '#3b7a4b' if r.approved else '#d9d2c7' }};background:{{ '#eef6ee' if r.approved else '#fff' }};color:{{ '#3b7a4b' if r.approved else '#6b645c' }}">{{ 'показан ✓' if r.approved else 'показать на сайте' }}</button>
+</form>{% else %}<span style="color:#c4bdb0">нет текста</span>{% endif %}</td></tr>{% endfor %}
+{% if not fb %}<tr><td colspan=5 style="color:#6b645c">Пока нет отзывов.</td></tr>{% endif %}
 </table>
 <h2>Чат «Спросить стилиста» ({{ chat|length }}) &nbsp;<a href="/metrics/chat.csv{{ keyq }}">скачать CSV</a></h2>
 <table><tr><th>Когда</th><th>Кто</th><th>Роль</th><th>Сообщение</th></tr>
@@ -2116,8 +2707,50 @@ def metrics_page():
         return redirect("/login?next=/metrics")
     key = request.args.get("key")
     keyq = ("?key=" + key) if key else ""
-    return render_template_string(METRICS_PAGE, f=funnel(), g=gap_summary(),
-                                  fb=feedback_list(), leads=leads(), chat=chat_log(), keyq=keyq)
+    mt = request.args.get("mail_test")  # результат тестовой отправки (?mail_test=ok|fail)
+    return render_template_string(
+        METRICS_PAGE, f=funnel(), g=gap_summary(), fb=feedback_list(), leads=leads(),
+        chat=chat_log(), keyq=keyq, email_ok=email_configured(),
+        mail_test=({"ok": "Отправлено — проверь свою почту.",
+                    "fail": "Не удалось. Проверь ключи Unisender и подтверждённого отправителя."}.get(mt)),
+        mail_test_ok=(mt == "ok"))
+
+
+@app.post("/metrics/test-email")
+def metrics_test_email():
+    """Админ: отправить тестовую ссылку входа на свою же почту — проверить настройку почты на проде."""
+    if not _is_admin():
+        return redirect("/login?next=/metrics")
+    email = session.get("email") or ""
+    key = request.form.get("key") or ""
+    keyq = ("?key=" + key) if key else ""
+    if not email:
+        return redirect("/metrics" + keyq)
+    link = request.url_root.rstrip("/") + "/auth?token=" + make_token(email)
+    ok = send_magic_link(email, link)
+    sep = "&" if keyq else "?"
+    return redirect("/metrics" + keyq + sep + "mail_test=" + ("ok" if ok else "fail"))
+
+
+@app.get("/api/reviews")
+def api_reviews():
+    """Публичные ОДОБРЕННЫЕ отзывы для блока на лендинге. Без email (приватность)."""
+    return jsonify({"reviews": approved_feedback(limit=12)})
+
+
+@app.post("/metrics/feedback/approve")
+def metrics_feedback_approve():
+    """Модерация отзыва (админ): одобрить/снять для публичного показа. Возврат на /metrics."""
+    if not _is_admin():
+        return redirect("/login?next=/metrics")
+    try:
+        fid = int(request.form.get("id") or 0)
+    except ValueError:
+        fid = 0
+    if fid:
+        set_feedback_approved(fid, request.form.get("approved") == "1")
+    key = request.form.get("key") or request.args.get("key")
+    return redirect("/metrics" + (("?key=" + key) if key else "") + "#reviews")
 
 
 @app.get("/metrics/leads.csv")
