@@ -2637,11 +2637,15 @@ td,th{text-align:left;padding:8px 6px;border-bottom:1px solid #e3dccf;vertical-a
 <h2>Почта (вход по ссылке)</h2>
 <div style="background:#fff;border:1px solid #e3dccf;border-radius:12px;padding:16px 18px">
 {% if email_ok %}
- <p style="margin:0 0 10px">Статус: <b style="color:#3b7a4b">настроена ✓</b> — клиентки получают ссылку входа на почту.</p>
+ <p style="margin:0 0 6px">Статус: <b style="color:#3b7a4b">настроена ✓</b> — клиентки получают ссылку входа на почту.</p>
 {% else %}
- <p style="margin:0 0 10px">Статус: <b style="color:#9b3030">НЕ настроена ✕</b> — письма не уходят, обычные клиентки войти не смогут.
- Задай на Amvera env <code>UNISENDER_API_KEY</code> и <code>UNISENDER_FROM_EMAIL</code> (отправитель должен быть подтверждён в Unisender Go).</p>
+ <p style="margin:0 0 6px">Статус: <b style="color:#9b3030">НЕ настроена ✕</b> — письма не уходят. Нужны ОБЕ переменные ниже.</p>
 {% endif %}
+ <ul style="margin:0 0 10px;padding-left:18px;font-size:14px">
+  <li><code>UNISENDER_API_KEY</code>: {{ 'задан ✓' if has_key else 'НЕ задан ✕' }}</li>
+  <li><code>UNISENDER_FROM_EMAIL</code>: {{ 'задан ✓' if has_from else 'НЕ задан ✕' }}</li>
+  <li>Отправка идёт на сервер: <b>{{ api_host }}</b> {% if api_host != 'go1.unisender.ru' %}(переопределён){% else %}(по умолчанию){% endif %} — он должен совпадать с сервером твоего аккаунта Unisender GO (go1/go2). Если у тебя <b>go2</b> — задай <code>UNISENDER_API_URL</code> = <code>https://go2.unisender.ru/ru/transactional/api/v1/email/send.json</code></li>
+ </ul>
  <form method=post action="/metrics/test-email" style="margin:0">
   <input type=hidden name=key value="{{ keyq[5:] }}">
   <button type=submit style="font:inherit;font-size:14px;padding:9px 16px;border-radius:8px;cursor:pointer;border:1px solid #5D2230;background:#fff;color:#5D2230">Отправить тестовое письмо себе</button>
@@ -2708,11 +2712,16 @@ def metrics_page():
     key = request.args.get("key")
     keyq = ("?key=" + key) if key else ""
     mt = request.args.get("mail_test")  # результат тестовой отправки (?mail_test=ok|fail)
+    from urllib.parse import urlparse
+    api_url = os.getenv("UNISENDER_API_URL",
+                        "https://go1.unisender.ru/ru/transactional/api/v1/email/send.json")
     return render_template_string(
         METRICS_PAGE, f=funnel(), g=gap_summary(), fb=feedback_list(), leads=leads(),
         chat=chat_log(), keyq=keyq, email_ok=email_configured(),
+        has_key=bool(os.getenv("UNISENDER_API_KEY")), has_from=bool(os.getenv("UNISENDER_FROM_EMAIL")),
+        api_host=(urlparse(api_url).hostname or api_url),
         mail_test=({"ok": "Отправлено — проверь свою почту.",
-                    "fail": "Не удалось. Проверь ключи Unisender и подтверждённого отправителя."}.get(mt)),
+                    "fail": "Не удалось. Проверь ключи Unisender, сервер (go1/go2) и подтверждённого отправителя."}.get(mt)),
         mail_test_ok=(mt == "ok"))
 
 
