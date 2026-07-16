@@ -89,9 +89,37 @@ def _notes(slide, text):
     slide.notes_slide.notes_text_frame.text = text
 
 
-def _bullets(slide, items, top=2.3, size=17, gap=0.62):
+# Кадры «до/после» с лендинга: те же, что уже опубликованы на сайте (фаундер, согласие есть).
+# Эмоциональный якорь презентации — по заметкам к контенту повторяются на титуле и в результатах.
+PHOTO_BEFORE = ROOT / "web" / "photos" / "hero" / "01-do.jpg"
+PHOTO_AFTER = ROOT / "web" / "photos" / "hero" / "02-posle.jpg"
+
+
+def _pair_photos(slide, left, top, height, caption_size=11, slide_w=13.333):
+    """Два кадра «до/после» рядом + подписи. Кадры вертикальные 3:4 — ширину считаем от высоты.
+
+    Высоту ужимаем, если пара не влезает в остаток слайда: два вертикальных кадра съедают ширины
+    больше, чем кажется (h=4.9" → 2×3.68" + зазор = 7.5"), и молча уезжают за край.
+    """
+    gap = 0.18
+    avail = slide_w - left - 0.35          # правое поле
+    width = height * 0.75
+    if 2 * width + gap > avail:
+        width = (avail - gap) / 2
+        height = width / 0.75
+    for i, (path, cap) in enumerate([(PHOTO_BEFORE, "до"), (PHOTO_AFTER, "после")]):
+        if not path.exists():
+            continue
+        x = left + i * (width + gap)
+        slide.shapes.add_picture(str(path), Inches(x), Inches(top),
+                                 width=Inches(width), height=Inches(height))
+        _text(slide, x, top + height + 0.04, width, 0.3, cap.upper(), caption_size, SANS,
+              WINE if cap == "после" else MUTED, bold=True, align=PP_ALIGN.CENTER)
+
+
+def _bullets(slide, items, top=2.3, size=17, gap=0.62, width=11.0):
     for i, it in enumerate(items):
-        _text(slide, 1.15, top + i * gap, 11, 0.55, "— " + it, size, SANS, INK)
+        _text(slide, 1.15, top + i * gap, width, 0.55, "— " + it, size, SANS, INK)
 
 
 def build(prs: Presentation) -> None:
@@ -100,16 +128,18 @@ def build(prs: Presentation) -> None:
     # ── 1. Титул ───────────────────────────────────────────────────────────────
     s = prs.slides.add_slide(blank)
     _bg(s, prs)
-    _text(s, 0.9, 2.1, 11.5, 1.2, "Sense Style AI", 54, SERIF, INK)
-    _rule(s, 0.9, 3.35, 4.2)
-    _text(s, 0.9, 3.6, 11, 0.8, "Персональный стилист на основе психологии моды", 22, SERIF, WINE, italic=True)
-    _text(s, 0.9, 4.5, 11, 1.2,
+    _text(s, 0.9, 2.0, 7.4, 1.2, "Sense Style AI", 54, SERIF, INK)
+    _rule(s, 0.9, 3.25, 4.2)
+    _text(s, 0.9, 3.5, 7.4, 0.9, "Персональный стилист\nна основе психологии моды", 22, SERIF, WINE, italic=True)
+    _text(s, 0.9, 4.75, 7.4, 1.2,
           "Измеряем разрыв между тем, какой женщину видят сейчас,\nи тем, какой она хочет быть — и закрываем его гардеробом.",
           15, SANS, MUTED)
-    _text(s, 0.9, 6.3, 11, 0.5, "Ксения Колупаева  ·  ИИ-стартап  ·  Junior ML Contest ИТМО, 2026", 13, SANS, MUTED)
+    _text(s, 0.9, 6.4, 7.4, 0.5, "Ксения Колупаева  ·  ИИ-стартап  ·  Junior ML Contest ИТМО, 2026", 13, SANS, MUTED)
+    _pair_photos(s, left=7.5, top=1.6, height=4.4)
     _notes(s, "0:00–0:20\n\n«Sense Style AI измеряет разрыв между тем, какой женщину видят сейчас, "
               "и тем, какой она хочет быть, — и собирает гардероб, который этот разрыв закрывает.»\n\n"
-              "ВИЗУАЛ: сюда — сильный кадр «до/после» на клиентке (эмоциональный якорь, повторить на слайде 7).")
+              "ВИЗУАЛ: кадры «до/после» — те же, что на лендинге. Эмоциональный якорь, повторяется "
+              "на слайде 7. Можно заменить на кадр клиентки, если будет согласие.")
 
     # ── 2. Проблема ────────────────────────────────────────────────────────────
     s = prs.slides.add_slide(blank)
@@ -259,22 +289,23 @@ def build(prs: Presentation) -> None:
     s = prs.slides.add_slide(blank)
     _bg(s, prs)
     _eyebrow(s, "06 · Результаты и импакт")
-    _text(s, 0.9, 1.15, 11.5, 0.9, "MVP работает end-to-end — на реальных клиентках", 32, SERIF, INK)
+    _text(s, 0.9, 1.15, 8.6, 0.9, "MVP работает end-to-end —\nна реальных клиентках", 30, SERIF, INK)
     kpis = [("83.3%", "конверсия\nквиз → Карта"), ("12", "замеров\nIdentity Gap"),
             ("66 с", "полная Карта\nс образами"), ("88", "тестов,\nCI зелёный")]
     x = 0.9
     for val, sub in kpis:
-        _text(s, x, 2.4, 2.7, 0.9, val, 44, SERIF, WINE)
-        _text(s, x, 3.5, 2.7, 0.8, sub, 13, SANS, MUTED)
-        x += 2.95
+        _text(s, x, 2.55, 2.0, 0.8, val, 36, SERIF, WINE)
+        _text(s, x, 3.45, 2.0, 0.8, sub, 12, SANS, MUTED)
+        x += 2.15
     _bullets(s, [
         "Публичный репозиторий, Docker, CI со сборкой образа и smoke-тестом",
-        "Приборная панель метрик: воронка, Gap, отзывы — данные, а не ощущения",
-        "Разброс Gap 50–78%: шкала различает состояния, а не выдаёт константу",
-    ], top=4.5, size=16, gap=0.5)
-    _text(s, 0.9, 6.15, 11.5, 0.7,
-          "Ценность меряем не «понравилось», а процентом закрытия Identity Gap. Лонгитюд «до/после» — набираем: эффект от ношения требует недель.",
-          13, SERIF, WINE, italic=True)
+        "Панель метрик: воронка, Gap, отзывы — данные, а не ощущения",
+        "Разброс Gap 50–78%: шкала различает состояния, а не константа",
+    ], top=4.5, size=14, gap=0.45, width=7.4)
+    _text(s, 0.9, 6.15, 7.9, 0.9,
+          "Ценность меряем не «понравилось», а процентом закрытия Identity Gap.\nЛонгитюд «до/после» набираем: эффект от ношения требует недель.",
+          12, SERIF, WINE, italic=True)
+    _pair_photos(s, left=8.9, top=1.9, height=4.0, caption_size=10)
     _notes(s, "4:00–4:40\n\n«MVP работает end-to-end: полная Карта за минуту. Инженерия закрыта — публичный "
               "репозиторий, Docker, CI со сборкой образа и smoke-тестом, 88 тестов. Ценность измеряем не "
               "«понравилось», а процентом закрытия Identity Gap.»\n\n"
