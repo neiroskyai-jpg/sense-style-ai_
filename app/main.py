@@ -2215,7 +2215,7 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
             personality = generate_personality_portrait(deep["big5"], diag, mode="dev")
         except Exception:  # noqa: BLE001 — портрет не должен ронять карту
             personality = {}
-    protos = diag.get("prototypes") or []
+    protos = _clean_prototypes(diag.get("prototypes") or [])
     # полный стоп-лист = табу метода (vf) + личные табу из анкеты (без дублей).
     # нужен и для отсечения вещей в визуальной капсуле, и для блока «Стоп-лист» Карты.
     stop_list_full = (vf.get("stop_list") or []) + [t for t in taboo_items if t not in (vf.get("stop_list") or [])]
@@ -2595,6 +2595,24 @@ def _is_admin() -> bool:
         return True
     key = os.getenv("SENSE_METRICS_KEY")
     return bool(key) and request.args.get("key") == key
+
+
+# Кого нельзя показывать клиентке как «стилевой ориентир». Реальный баг (кейс Марины, 16.07.2026):
+# модель видит имя автора в правилах Tone of Voice («тексты звучат как Ксения Колупаева») и
+# подставляет её клиентке как персону-прототип. Автор методологии — это голос текстов, а не ориентир.
+# Промпт это уже запрещает, но страхуемся в коде: модель может сдрейфовать снова.
+_PROTOTYPE_BANNED = ("колупаева", "ксения колупаева", "kolupaeva", "sense style", "чувство стиля")
+
+
+def _clean_prototypes(protos: list) -> list:
+    """Убрать из прототипов автора/сервис. Пустой список честнее подстановки автора."""
+    out = []
+    for p in protos:
+        name = (p.get("name") if isinstance(p, dict) else str(p)) or ""
+        if any(b in name.lower() for b in _PROTOTYPE_BANNED):
+            continue
+        out.append(p)
+    return out
 
 
 def _stylebook_access(email: str) -> bool:
