@@ -14,6 +14,7 @@ data/*
 data/fashion-base/*
 !data/fashion-base/products_ushatava.csv
 !data/fashion-base/products_lichi.csv
+!data/fashion-base/products_wb.csv
 !data/fashion-base/brands.csv
 
 # Python

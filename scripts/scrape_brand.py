@@ -50,14 +50,32 @@ SITES = {
         color=".product-colors .color",   # цвет как style="--product-color:#hex"
         gender="женский",
     ),
-    # Lichi (Next.js) — товары в __NEXT_DATA__ → catalogData.aProduct. Проверено вживую 2026-07-01.
+    # Lichi (Next.js) — товары в __NEXT_DATA__ → catalogData.aProduct. Проверено вживую 2026-07-16.
+    # Категории — всё дерево сайта (pageProps.categoriesData), кроме купальников: слота в капсуле
+    # у них нет. Страница отдаёт 12 товаров (iLimit) и пагинация живёт в приватном API — поэтому
+    # ширину берём числом категорий, а не глубиной листинга. Это и полезнее: закрывает слоты
+    # (юбки/брюки/жакеты/верхняя), а не приносит 60 платьев.
     "lichi": dict(
         mode="next_json", base="https://lichi.com", brand="Lichi", gender="женский",
+        # Порядок значим: одна вещь лежит у Lichi в нескольких разделах (жакет от костюма — и в
+        # «жакет», и в «комплект», и в «одежда»). Дедуп в main() оставляет ПЕРВУЮ встреченную
+        # категорию, поэтому конкретные идут раньше общих: жакету нужна категория «жакет», иначе
+        # match_products не найдёт его по слоту. «комплект» — только то, что продаётся целиком,
+        # «одежда» — остаток, не попавший ни в один конкретный раздел.
         categories={
-            "платье":   "/ru/ru/category/dresses",
-            "комплект": "/ru/ru/category/sets",
-            "одежда":   "/ru/ru/category/clothes",
-            "аксессуар":"/ru/ru/category/accessory",
+            "платье":     "/ru/ru/category/dresses",
+            "блуза":      "/ru/ru/category/blouses_tops",
+            "брюки":      "/ru/ru/category/trousers_jeans",
+            "юбка":       "/ru/ru/category/skirts",
+            "трикотаж":   "/ru/ru/category/sweaters_sweatshirts",
+            "джинсы":     "/ru/ru/category/denim",
+            "жакет":      "/ru/ru/category/jackets",
+            "пальто":     "/ru/ru/category/outerwear",
+            "шорты":      "/ru/ru/category/shorts",
+            "комбинезон": "/ru/ru/category/overalls",
+            "аксессуар":  "/ru/ru/category/accessory",
+            "комплект":   "/ru/ru/category/sets",
+            "одежда":     "/ru/ru/category/clothes",
         },
     ),
     # Charmstore — из этой среды не резолвился; заготовка, уточнить селекторы у себя.
@@ -215,10 +233,14 @@ def _scrape_next_json(cfg, cat, path, rows, limit, per_cat) -> int:
         img, is_pack = pick_packshot(gallery)
         sizes = p.get("sizes") or {}
         size_names = [s.get("name") for s in sizes.values() if isinstance(s, dict) and s.get("name")]
+        # Lichi отдаёт currency объектом оформления цены ({prefix, postfix: 'руб.', ...}), а не кодом
+        # валюты — без проверки типа в CSV уезжал repr словаря вместо RUB.
+        cur = p.get("currency")
         rows.append(dict(
             id=str(p.get("id", "")), name=p.get("name", ""), brand=cfg["brand"], category=cat,
             price=p.get("price") or 0, old_price=(p.get("original_price") or ""),
-            currency=p.get("currency") or "RUB", color=color, sizes=";".join(size_names),
+            currency=cur.strip() if isinstance(cur, str) and cur.strip() else "RUB",
+            color=color, sizes=";".join(size_names),
             gender=cfg["gender"], url=p.get("url", ""), image=img,
             image_kind="packshot" if is_pack else "model",
             in_stock="true" if p.get("available") else "false", parsed_at=date.today().isoformat(),
@@ -231,7 +253,7 @@ def scrape(brand_key: str, limit: int) -> list[dict]:
     cfg = SITES[brand_key]
     rows: list[dict] = []
     if not cfg["categories"]:
-        print(f"⚠ Для {brand_key} категории не заданы — заполни SITES['{brand_key}'].")
+        print(f"! Для {brand_key} категории не заданы — заполни SITES['{brand_key}'].")
         return rows
     handler = _scrape_next_json if cfg.get("mode") == "next_json" else _scrape_html
     per_cat = max(1, limit // len(cfg["categories"])) + 1
@@ -241,7 +263,7 @@ def scrape(brand_key: str, limit: int) -> list[dict]:
         try:
             got = handler(cfg, cat, path, rows, limit, per_cat)
         except Exception as e:
-            print(f"✗ {cat} ({path}): {type(e).__name__} {str(e)[:80]}")
+            print(f"x {cat} ({path}): {type(e).__name__} {str(e)[:80]}")
             continue
         print(f"  {cat}: +{got} (всего {len(rows)})")
         time.sleep(0.6)
@@ -258,6 +280,15 @@ def main():
     if not rows:
         print("Ничего не собрано.")
         return
+    # Один товар приходит из нескольких разделов сайта → схлопываем по id, оставляя первую
+    # (самую конкретную — см. порядок categories) категорию.
+    uniq: dict[str, dict] = {}
+    for r in rows:
+        uniq.setdefault(r["id"], r)
+    dropped = len(rows) - len(uniq)
+    rows = list(uniq.values())
+    if dropped:
+        print(f"  дублей схлопнуто: {dropped}")
     out = Path(a.out) if a.out else ROOT / "data" / "fashion-base" / f"products_{a.brand}.csv"
     out.parent.mkdir(parents=True, exist_ok=True)
     cols = ["id", "name", "brand", "category", "price", "old_price", "currency",
@@ -266,7 +297,9 @@ def main():
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()
         w.writerows(rows)
-    print(f"\n✓ {len(rows)} товаров → {out.relative_to(ROOT)}")
+    # Маркеры — ASCII: консоль Windows живёт в cp1251, и «✓»/«→» роняют финальную печать
+    # UnicodeEncodeError уже ПОСЛЕ записи файла — прогон выглядит упавшим, хотя данные собраны.
+    print(f"\nOK: {len(rows)} товаров -> {out.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

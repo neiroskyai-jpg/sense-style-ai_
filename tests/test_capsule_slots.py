@@ -77,13 +77,26 @@ def test_nerazpoznannoe_padaet_v_prochee():
     assert _SLOT_OTHER == "Прочее", "мусорный слот не должен называться «базой»"
 
 
+def test_polosku_ne_putaem_s_polo():
+    """«В полоску» — это расцветка, а не рубашка-поло.
+
+    Ключ «поло» подстрокой попадал внутрь «полоску» и утаскивал брюки/юбки в слот «Верх»
+    (вылезало на вещах, у которых категория общая — «комплект»). Настоящее поло при этом
+    обязано остаться Верхом.
+    """
+    assert _capsule_slot("комплект", "Свободные брюки из костюмной ткани в полоску") == "Низ"
+    assert _capsule_slot("", "Юбка мини в полоску с декором") == "Низ"
+    assert _capsule_slot("", "Поло из хлопка с воротником") == "Верх"
+    assert _capsule_slot("", "Хлопковое поло") == "Верх"
+
+
 def test_realnyy_katalog_ne_svalivaetsya_v_prochee():
-    """Боевой фид (Lichi + Ushatava) раскладывается по слотам, мусорный слот пуст."""
+    """Боевой фид (Lichi + Ushatava + WB) раскладывается по слотам, мусорный слот пуст."""
     import csv
     import pathlib
 
     rows = []
-    for name in ("products_lichi.csv", "products_ushatava.csv"):
+    for name in ("products_lichi.csv", "products_ushatava.csv", "products_wb.csv"):
         path = pathlib.Path("data/fashion-base") / name
         if path.exists():
             rows += list(csv.DictReader(path.open(encoding="utf-8-sig")))

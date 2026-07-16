@@ -160,8 +160,9 @@ def main() -> int:
             print(f"  ! нет файла: submission/{name}", file=sys.stderr)
             continue
         dest = build(name)
-        print(f"✓ {name} → {dest.relative_to(ROOT)}")
-    print("\nОткрой HTML в браузере и Ctrl/Cmd+P → «Сохранить как PDF».")
+        # ASCII: «✓»/«→» роняют печать в cp1251-консоли Windows уже после записи файла.
+        print(f"OK: {name} -> {dest.relative_to(ROOT)}")
+    print("\nОткрой HTML в браузере и Ctrl/Cmd+P -> «Сохранить как PDF».")
     return 0
 
 

@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import io
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from PIL import Image
@@ -73,11 +74,12 @@ def pick_packshot(urls: list[str], timeout: float = 20.0) -> tuple[str, bool]:
     if not urls:
         return "", False
 
-    scored = []
-    for u in urls:
-        s = score_frame(u, timeout)
-        if s:
-            scored.append((s[0], s[1], u))
+    # Кадры галереи качаем параллельно: последовательный проход на полном каталоге (сотни товаров
+    # × 5–8 кадров) упирается в сеть на десятки минут. Порядок pool.map сохраняет — фолбэк
+    # «первый кадр» остаётся первым кадром галереи.
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(lambda u: score_frame(u, timeout), urls))
+    scored = [(s[0], s[1], u) for u, s in zip(urls, results) if s]
     if not scored:
         return urls[0], False
 

@@ -9,6 +9,11 @@
     python scripts/build_submission_docx.py            # 01-описание + 02-презентация
     python scripts/build_submission_docx.py --all      # все .md из submission/
     python scripts/build_submission_docx.py 04-cv.md   # конкретный файл
+    python scripts/build_submission_docx.py --all --force   # пересобрать, ЗАТЕРЕВ правки в Word
+
+ВАЖНО: .docx правится вручную в Word (CV и мотивационное заполняются личными фактами), а .md —
+источник. Поэтому файл, который правили в Word ПОСЛЕ сборки, по умолчанию не трогаем: пересборка
+молча стёрла бы ручную работу. Такой файл пропускается с предупреждением; перезаписать — `--force`.
 """
 from __future__ import annotations
 import argparse
@@ -110,10 +115,41 @@ def build(name: str):
     return dest
 
 
+def _docx_text(path: Path) -> str:
+    """Текст .docx (абзацы + таблицы) — для сверки «правили ли файл руками»."""
+    from docx import Document
+    doc = Document(str(path))
+    parts = [p.text for p in doc.paragraphs]
+    for t in doc.tables:
+        parts += [c.text for row in t.rows for c in row.cells]
+    return "\n".join(parts).strip()
+
+
+def _edited_by_hand(name: str, dest: Path) -> bool:
+    """Отличается ли существующий .docx от того, что даст сборка из .md.
+
+    По дате судить нельзя: .docx всегда новее своего .md (его же собирают ПОСЛЕ правки исходника).
+    Поэтому собираем во временный файл и сравниваем текст — сборка детерминирована, значит любое
+    расхождение = правки, внесённые в Word (личные факты в CV и мотивационном).
+    """
+    import tempfile, shutil
+    with tempfile.TemporaryDirectory() as tmp:
+        keep = Path(tmp) / "keep.docx"
+        shutil.copy2(dest, keep)          # бережём оригинал: build() пишет по фиксированному пути
+        try:
+            build(name)                   # временно перезаписывает dest
+            fresh = _docx_text(dest)
+        finally:
+            shutil.copy2(keep, dest)      # возвращаем как было — решение принимает вызывающий
+        return fresh != _docx_text(keep)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("files", nargs="*")
     ap.add_argument("--all", action="store_true")
+    ap.add_argument("--force", action="store_true",
+                    help="пересобрать даже то, что правили в Word (затрёт ручные правки)")
     args = ap.parse_args()
     try:
         import docx  # noqa: F401
@@ -122,13 +158,26 @@ def main() -> int:
         return 1
 
     targets = sorted(p.name for p in SRC.glob("*.md")) if args.all else (args.files or DEFAULT)
+    skipped = []
     for name in targets:
-        if not (SRC / name).exists():
+        src = SRC / name
+        if not src.exists():
             print(f"  ! нет файла: submission/{name}", file=sys.stderr)
             continue
+        # Правки, внесённые в Word (личные факты в CV), молча пересобрать = стереть их за день
+        # до подачи. Поэтому трогаем только то, что совпадает со сборкой из .md.
+        dest_guess = OUT / (Path(name).stem + ".docx")
+        if not args.force and dest_guess.exists() and _edited_by_hand(name, dest_guess):
+            skipped.append(name)
+            print(f"  ~ пропуск (правился в Word): {dest_guess.relative_to(ROOT)}")
+            continue
         dest = build(name)
-        print(f"✓ {name} → {dest.relative_to(ROOT)}")
+        # Маркеры ASCII: консоль Windows в cp1251 роняет «✓»/«→» UnicodeEncodeError — сборка
+        # умирала на первом же файле, хотя это ПЕРВЫЙ шаг инструкции подачи.
+        print(f"OK: {name} -> {dest.relative_to(ROOT)}")
     print("\nГотовые .docx — в submission/docx/. Открой в Word, проверь и загрузи в кабинет ИТМО.")
+    if skipped:
+        print(f"Не тронуты (правились в Word): {', '.join(skipped)}. Пересобрать поверх — --force.")
     return 0
 
 

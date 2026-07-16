@@ -14,6 +14,7 @@ import requests
 import json
 import os
 import re
+import sys
 import threading
 import uuid
 from datetime import datetime
@@ -929,9 +930,14 @@ var jid="{{ job_id }}";
 function poll(){
   fetch('/card/status/'+jid).then(function(r){return r.json();}).then(function(d){
     if(d.status==='done'){ location.href='/card'; }
+    else if(d.status==='stale'){
+      // генерация не прошла, но готовая Карта есть — предлагаем её, не выдавая за свежую
+      document.getElementById('sp').style.display='none';
+      document.getElementById('msg').innerHTML=(d.error||'Сборка не завершилась')+'<br><br>Твоя предыдущая Карта на месте.<br><br><a href="/card">Открыть последнюю Карту</a> &nbsp; <a href="/card?rebuild=1">Собрать заново</a>';
+    }
     else if(d.status==='error'||d.status==='unknown'){
       document.getElementById('sp').style.display='none';
-      document.getElementById('msg').innerHTML='<span class=err>Не удалось собрать: '+(d.error||'ошибка')+'</span><br><br><a href="/card?rebuild=1">Попробовать снова</a>';
+      document.getElementById('msg').innerHTML='<span class=err>'+(d.error||'Сборка не завершилась')+'</span><br><br><a href="/card?rebuild=1">Попробовать снова</a>';
     } else { setTimeout(poll, 4000); }
   }).catch(function(){ setTimeout(poll, 4000); });
 }
@@ -2400,6 +2406,23 @@ def _ensure_n_looks(looks: list, scenarios: list, capsule: dict, diag: dict) -> 
     return out
 
 
+def _friendly_gen_error(e: Exception) -> str:
+    """Человеческая причина вместо сырого ответа провайдера.
+
+    Раньше на экран уезжало `OpenRouter 402: {"error":{"message":"Insufficient credits"...}}` —
+    клиентке это ничего не говорит, а на сцене выглядит как упавший продукт. Полный текст пишем
+    в лог сервера, наружу отдаём причину.
+    """
+    s = str(e).lower()
+    if "402" in s or "insufficient" in s or "credit" in s:
+        return "Генерация сейчас недоступна — у AI-провайдера закончился лимит."
+    if "timeout" in s or "timed out" in s or "read timed out" in s:
+        return "AI отвечает дольше обычного."
+    if "401" in s or "403" in s or "api key" in s:
+        return "Не получилось обратиться к AI-провайдеру."
+    return "Сборка не завершилась."
+
+
 def _card_look_prompt(lk: dict, diag: dict) -> str:
     """Промпт для рендера образа карты на клиентке: промпт из капсулы или досборка."""
     base = (lk.get("image_generation_prompt") or "").strip()
@@ -2447,7 +2470,12 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
             save_diagnosis(email, d2)
         _JOBS[job_id] = {"status": "done"}
     except Exception as e:  # noqa: BLE001
-        _JOBS[job_id] = {"status": "error", "error": str(e)}
+        # Живое демо на сцене: падение генерации не должно выглядеть падением продукта. Если готовая
+        # Карта уже есть — предлагаем открыть её (честно, «прошлая», не выдаём за свежую).
+        print(f"[card_build] {type(e).__name__}: {e}", file=sys.stderr)  # полный текст — в лог
+        has_card = bool((get_profile(email) or {}).get("card"))
+        _JOBS[job_id] = {"status": "stale" if has_card else "error",
+                         "error": _friendly_gen_error(e)}
     finally:
         try:
             Path(photo_path).unlink()  # фото не храним (Политика)
@@ -3060,13 +3088,18 @@ def _figure_label(code):
 # капсула по одежде: раскладываем вещи по слотам гардероба для наглядного борда
 _CAPSULE_SLOTS = [
     ("Верхний слой", ("пальто", "тренч", "жакет", "пиджак", "куртка", "косуха", "кардиган",
-                       "плащ", "шуба", "дублёнка", "бомбер", "джинсовк")),
+                       "плащ", "шуба", "дублёнка", "дубленка", "бомбер", "джинсовк", "труакар",
+                       "пуховик", "жилет")),
     ("Платья и комбинезоны", ("платье", "комбинезон", "сарафан")),
     ("Верх", ("рубашка", "блуз", "топ", "футболк", "водолазк", "свитер", "джемпер", "худи",
-              "свитшот", "боди", "лонгслив", "майка", "поло", "тельняшк", "корсет", "бюстье", "кроп")),
+              # «=поло» — точное слово: иначе «поло» ловит «в полоску» и брюки уезжают в Верх
+              "свитшот", "боди", "лонгслив", "майка", "=поло", "тельняшк", "корсет", "бюстье", "кроп")),
     ("Низ", ("брюки", "джинс", "юбка", "шорты", "палаццо", "легинс", "чинос", "кюлот")),
+    # WB кладёт обувь в общую категорию «одежда» — слот вытягиваем из имени, поэтому список
+    # должен знать и разговорные названия (ботфорты, сабо, дутики), иначе вещь падает в «Прочее».
     ("Обувь", ("туфли", "лодочки", "ботинки", "ботильон", "челси", "сапог", "кроссовк", "кед",
-               "босоножк", "лофер", "балетк", "сандал", "мюли", "слипон", "угги")),
+               "босоножк", "лофер", "балетк", "сандал", "мюли", "слипон", "угги", "ботфорт",
+               "мокасин", "сабо", "дутик", "шлепанц", "сланц", "эспадрил", "броги", "оксфорд")),
     ("Аксессуары", ("сумк", "ремень", "пояс", "шарф", "платок", "косынк", "очки", "шляп", "берет",
                     "кепк", "серьг", "браслет", "колье", "цепочк", "часы", "перчатк", "клатч",
                     "шопер", "аксессуар")),
@@ -3085,8 +3118,15 @@ def _capsule_slot(*names: str) -> str:
         if not n:
             continue
         for slot, keys in _CAPSULE_SLOTS:
-            if any(k in n for k in keys):
-                return slot
+            for k in keys:
+                # ключ с «=» — только целым словом. Остальные ключи намеренно усечены под
+                # морфологию («блуз» ловит блузу и блузку), но короткие вроде «поло» так
+                # попадают внутрь чужих слов («в полоску») и утаскивают вещь в чужой слот.
+                if k.startswith("="):
+                    if re.search(rf"\b{re.escape(k[1:])}\b", n):
+                        return slot
+                elif k in n:
+                    return slot
     return _SLOT_OTHER
 
 

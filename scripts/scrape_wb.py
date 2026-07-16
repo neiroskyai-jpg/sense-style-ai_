@@ -35,6 +35,12 @@ import requests
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUT = ROOT / "data" / "fashion-base" / "products_wb.csv"
 
+# При штатном запуске (`python scripts/scrape_wb.py`) в sys.path попадает scripts/, а не корень —
+# `from scripts.packshot import ...` падает ModuleNotFoundError. Раньше его глотал широкий except,
+# и детекция packshot тихо не работала: весь каталог уходил без image_kind.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 # Категории под слоты капсулы. Запросы — «носибельные» формулировки канона (base-vs-trend.md):
 # лаконичный крой, устойчивый каблук; без страз/потёртостей — их отсекает _CANON_STOP.
 CATEGORIES = [
@@ -60,8 +66,10 @@ CATEGORIES = [
 ]
 
 # Бренды quiet-luxury (память wb-brands-quiet-luxury). style — стилевой тег метода для скоринга.
+# Lime убран (2026-07-16): бренда одежды на WB нет — по запросу приходят бытовая химия «LIME»
+# (капсулы для стирки), сок лайма и «Lime Auto». Свой сайт закрыт robots.txt + антиботом;
+# законный канал — партнёрский фид. В бренд-матрице остаётся как рекомендация без SKU.
 BRANDS = [
-    {"query": "Lime",           "brand": "Lime",          "style": "classic"},
     {"query": "Mollis",         "brand": "Mollis",        "style": "classic"},
     {"query": "Studio 29",      "brand": "Studio 29",     "style": "classic natural"},
     {"query": "To Be Blossom",  "brand": "To Be Blossom", "style": "natural romance"},
@@ -116,10 +124,14 @@ MIN_PRICE = 1500       # ниже — почти всегда синтетика
 # категории метода из ключевых слов названия (нужно для _capsule_slot и match_products)
 _CAT_KW = [
     ("обувь",     ["ботильон", "лофер", "сапог", "туфли", "лодочк", "кроссовк", "кед", "челси",
-                   "ботинк", "балетк", "мюли", "босоножк", "угги", "слипон", "броги"]),
+                   "ботинк", "балетк", "мюли", "босоножк", "угги", "слипон", "броги",
+                   # разговорные названия: без них обувь уезжала в общую «одежду», а оттуда
+                   # в капсуле — в слот «Прочее»
+                   "ботфорт", "мокасин", "сабо", "дутик", "шлепанц", "сланц", "эспадрил", "оксфорд"]),
     ("аксессуар", ["сумка", "сумочка", "шоппер", "шопер", "клатч", "ремень", "пояс", "платок",
                    "шарф", "очки", "перчатки"]),
-    ("пальто",    ["пальто", "тренч", "шуба", "дублёнка", "дубленка", "пуховик", "куртка", "плащ"]),
+    ("пальто",    ["пальто", "тренч", "шуба", "дублёнка", "дубленка", "пуховик", "куртка", "плащ",
+                   "труакар"]),
     ("пиджак",    ["жакет", "блейзер", "пиджак", "блэйзер"]),
     ("платье",    ["платье", "сарафан"]),
     ("юбка",      ["юбка"]),
@@ -144,25 +156,58 @@ def _canon_ok(name: str) -> bool:
     return not any(s in low for s in _CANON_STOP)
 
 
-def _basket_host(nm: int) -> str:
-    """basket-хост картинки WB по номенклатуре. Таблица периодически расширяется —
-    при 404 на новых nm добавить диапазон (последний else — самый свежий)."""
-    vol = nm // 100000
-    ranges = [(143, "01"), (287, "02"), (431, "03"), (719, "04"), (1007, "05"), (1061, "06"),
-              (1115, "07"), (1169, "08"), (1313, "09"), (1601, "10"), (1655, "11"), (1919, "12"),
-              (2045, "13"), (2189, "14"), (2405, "15"), (2621, "16"), (2837, "17"), (3053, "18"),
-              (3269, "19"), (3485, "20"), (3701, "21"), (3917, "22"), (4133, "23"), (4349, "24"),
-              (4565, "25"), (4877, "26"), (5189, "27"), (5501, "28"), (5813, "29")]
-    for hi, host in ranges:
+_HOST_RANGES = [(143, "01"), (287, "02"), (431, "03"), (719, "04"), (1007, "05"), (1061, "06"),
+                (1115, "07"), (1169, "08"), (1313, "09"), (1601, "10"), (1655, "11"), (1919, "12"),
+                (2045, "13"), (2189, "14"), (2405, "15"), (2621, "16"), (2837, "17"), (3053, "18"),
+                (3269, "19"), (3485, "20"), (3701, "21"), (3917, "22"), (4133, "23"), (4349, "24"),
+                (4565, "25"), (4877, "26"), (5189, "27"), (5501, "28"), (5813, "29"), (6125, "30"),
+                (6437, "31"), (6749, "32"), (7061, "33"), (7373, "34"), (7685, "35"), (7997, "36"),
+                (8309, "37"), (8621, "38"), (8933, "39"), (9245, "40")]
+_HOST_FALLBACK = "41"
+_HOST_CACHE: dict[int, str] = {}   # vol → рабочий хост (одна проверка на vol, не на товар)
+
+
+def _host_guess(vol: int) -> str:
+    for hi, host in _HOST_RANGES:
         if vol <= hi:
             return host
-    return "30"  # свежие товары — самый новый basket; проверить вживую
+    return _HOST_FALLBACK
+
+
+def _frame_url(nm: int, host: str) -> str:
+    vol, part = nm // 100000, nm // 1000
+    return f"https://basket-{host}.wbbasket.ru/vol{vol}/part{part}/{nm}/images/big/1.webp"
+
+
+def _basket_host(nm: int) -> str:
+    """basket-хост картинки WB по номенклатуре — с проверкой, а не на веру.
+
+    Раскладка vol→basket у WB не формула, а факт: шаг 312 сходится до vol~9245 и уже врёт на 10290
+    (предсказывает 43, реально 41). Любая захардкоженная таблица протухает при следующем переезде и
+    тихо отдаёт 404 — то есть каталог с битыми фото, чего в капсуле на сцене видеть не хочется.
+    Поэтому догадку проверяем и при промахе перебираем соседей; результат кэшируем по vol.
+    """
+    vol = nm // 100000
+    if vol in _HOST_CACHE:
+        return _HOST_CACHE[vol]
+    guess = _host_guess(vol)
+    n = int(guess)
+    # сначала догадка, потом соседи вокруг неё (WB сдвигает границы на 1–2 хоста)
+    candidates = [guess] + [f"{i:02d}" for d in range(1, 7) for i in (n + d, n - d) if 1 <= i <= 60]
+    for host in candidates:
+        try:
+            if requests.head(_frame_url(nm, host), headers=_HEADERS,
+                             timeout=8).status_code == 200:
+                _HOST_CACHE[vol] = host
+                return host
+        except Exception:  # noqa: BLE001 — сеть моргнула: пробуем следующего кандидата
+            continue
+    _HOST_CACHE[vol] = guess   # не нашли — отдаём догадку, фото просто не откроется
+    return guess
 
 
 def _image_url(nm: int) -> str:
-    vol = nm // 100000
-    part = nm // 1000
-    return f"https://basket-{_basket_host(nm)}.wbbasket.ru/vol{vol}/part{part}/{nm}/images/big/1.webp"
+    return _frame_url(nm, _basket_host(nm))
 
 
 def _price(p: dict) -> float:
@@ -178,7 +223,14 @@ def _price(p: dict) -> float:
 
 
 def _in_stock(p: dict) -> bool:
-    """Есть ли хоть один размер в наличии — иначе вещь нельзя купить, и в капсуле ей не место."""
+    """Есть ли вещь в наличии — иначе её нельзя купить, и в капсуле ей не место.
+
+    WB выпилил `stocks` из `sizes` и отдаёт остаток в `totalQuantity` — старая проверка объявляла
+    отсутствующим ВЕСЬ каталог (965 отсевов на прогоне, 0 товаров на выходе). Старую форму держим
+    фолбэком: поле может вернуться или жить в другой версии API.
+    """
+    if p.get("totalQuantity") is not None:
+        return (p.get("totalQuantity") or 0) > 0
     for s in (p.get("sizes") or []):
         if s.get("stocks"):
             return True
@@ -200,7 +252,10 @@ def _get(query: str, retries: int = 4) -> list[dict]:
                 r = requests.get(url, params={**_SEARCH_PARAMS, "query": query},
                                  headers=_HEADERS, timeout=30)
                 if r.status_code == 200 and r.text.lstrip().startswith("{"):
-                    return (r.json().get("data") or {}).get("products") or []
+                    d = r.json()
+                    # WB переехал: товары лежат в корне ответа. Старую форму (data.products)
+                    # оставляем фолбэком — v5 и старые версии отвечают ещё по-старому.
+                    return d.get("products") or (d.get("data") or {}).get("products") or []
             except Exception:  # noqa: BLE001 — сеть/JSON: пробуем следующий url/попытку
                 pass
         time.sleep(2 * (attempt + 1))  # backoff: WB отпускает через несколько секунд
@@ -215,7 +270,9 @@ def _detect_kind(rows: list[dict], workers: int = 8) -> None:
         from scripts.packshot import _skin_fraction  # переиспользуем детектор
         from PIL import Image
         import io
-    except Exception:  # noqa: BLE001 — нет Pillow → оставляем kind пустым, капсула всё равно соберётся
+    except Exception as e:  # noqa: BLE001 — нет Pillow → kind пустой, капсула всё равно соберётся
+        # но молчать нельзя: раньше так терялся ВЕСЬ packshot-слой и это было видно только по CSV
+        print(f"  ! детекция packshot выключена: {type(e).__name__} {e}", file=sys.stderr)
         return
 
     def one(row: dict) -> None:
@@ -294,10 +351,12 @@ def fetch_category(cfg: dict, limit: int) -> list[dict]:
 
 
 def fetch_brand(cfg: dict, limit: int) -> list[dict]:
-    rows, want = [], cfg["brand"].lower()
+    """Товары целевого бренда. Сверка ТОЧНАЯ: подстрока цепляет чужие марки с тем же словом —
+    по «Lime» прилетали «Fior di Lime», «Lime Auto» и бытовая химия «LIME» (капсулы для стирки)."""
+    rows, want = [], cfg["brand"].strip().lower()
     for p in _get(cfg["query"]):
-        if want not in (p.get("brand") or "").lower():
-            continue  # WB подмешивает смежные бренды — оставляем только целевой
+        if (p.get("brand") or "").strip().lower() != want:
+            continue
         row = _row(p, cfg["style"], brand_override=cfg["brand"])
         if row:
             rows.append(row)
