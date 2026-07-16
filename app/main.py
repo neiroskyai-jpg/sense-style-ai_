@@ -2712,7 +2712,7 @@ td,th{text-align:left;padding:8px 6px;border-bottom:1px solid #e3dccf;vertical-a
  </form>
 </div>
 
-<h2>Воронка</h2>
+<h2>Воронка <span style="font-weight:normal;font-size:12px;color:#6b645c">— только живые клиентки</span></h2>
 <div class=grid>
  <div class=kpi><b>{{ f.quiz_done }}</b><span>прошли квиз (диагностик)</span></div>
  <div class=kpi><b>{{ f.unique_clients }}</b><span>уникальных клиенток</span></div>
@@ -2721,11 +2721,18 @@ td,th{text-align:left;padding:8px 6px;border-bottom:1px solid #e3dccf;vertical-a
  <div class=kpi><b>{{ f.quiz_to_card_pct }}%</b><span>квиз → Карта</span></div>
  <div class=kpi><b>{{ f.looks_generated }}</b><span>прогонов генерации образов</span></div>
 </div>
+{% if f.excluded_technical %}
+<p class=hint style="color:#6b645c;font-size:13px;margin:8px 0 0">
+ Из воронки исключено <b>{{ f.excluded_technical }}</b> технических прохождений (smoke-тесты,
+ самотесты автора, анонимы). Считаем спрос, а не свою же работу — иначе цифры для жюри врут.
+</p>
+{% endif %}
 <h2>Identity Gap</h2>
 <div class=grid>
  <div class=kpi><b>{{ g.clients_measured }}</b><span>замерено клиенток</span></div>
  <div class=kpi><b>{{ g.avg_first_gap if g.avg_first_gap is not none else '—' }}%</b><span>средний Gap (старт)</span></div>
  <div class=kpi><b>{{ g.clients_with_progress }}</b><span>с повторным замером</span></div>
+ <div class=kpi><b>{{ g.same_day_repeats }}</b><span>из них повтор в тот же день (шум)</span></div>
  <div class=kpi><b>{{ g.avg_gap_reduction if g.avg_gap_reduction is not none else '—' }}</b><span>среднее снижение Gap, п.п.</span></div>
 </div>
 <h2>Почты клиенток ({{ leads|length }}) &nbsp;<a href="/metrics/leads.csv{{ keyq }}">скачать все CSV</a> &nbsp;·&nbsp; <a href="/metrics/unisender.csv{{ keyq }}">для UniSender (согласившиеся)</a></h2>

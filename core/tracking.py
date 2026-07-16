@@ -13,6 +13,30 @@ from .config import data_dir
 # на Amvera это persistent-том (/data); определяется автоматически (см. config.data_dir)
 DB_PATH = data_dir() / "tracking.db"  # локально data/ в .gitignore
 
+# ── Кто НЕ клиентка ────────────────────────────────────────────────────────────────────────────
+# Метрики продукта должны считать живых пользовательниц. Раньше в воронку попадали смоук-тесты и
+# самотесты автора: из 12 «прохождений квиза» три были smoke-*@test.local, а средний стартовый Gap
+# 69.8% был раздут ими (у смоук-прогонов 76–78%). На защите такую цифру разбирают первым же
+# вопросом — честные 8 прохождений дороже раздутых 12.
+_TEST_PATTERNS = ("smoke-%", "%@test.local", "%@example.com", "test@%", "lead@test.ru", "leadtest_%")
+_NON_CLIENT = ("anonymous", "")
+
+
+def _real_client_sql(col: str = "client") -> str:
+    """SQL-условие «это живая клиентка»: не тест, не аноним, не автор проекта.
+
+    Автора (SENSE_ADMIN_EMAILS) исключаем из воронки: её самотесты — валидация алгоритма, а не
+    пользовательский спрос. Данные при этом не удаляются, их видно отдельной строкой в /metrics.
+    """
+    import os
+    admins = [e.strip().lower() for e in
+              os.getenv("SENSE_ADMIN_EMAILS", "neiroskyai@gmail.com").split(",") if e.strip()]
+    parts = [f"LOWER({col}) NOT LIKE '{p}'" for p in _TEST_PATTERNS]
+    parts += [f"LOWER({col}) != '{n}'" for n in _NON_CLIENT]
+    parts += [f"LOWER({col}) != '{a}'" for a in admins]
+    parts.append(f"{col} IS NOT NULL")
+    return " AND ".join(parts)
+
 
 def _conn(db_path: Path) -> sqlite3.Connection:
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
@@ -190,21 +214,33 @@ def leads(db_path: Path = DB_PATH) -> list[dict]:
 
 
 def funnel(db_path: Path = DB_PATH) -> dict:
-    """Числа воронки для приборной панели/конкурса."""
+    """Числа воронки для приборной панели/конкурса — только по живым клиенткам.
+
+    Смоук-тесты и самотесты автора исключены (см. _real_client_sql): иначе воронка меряет нашу же
+    работу, а не спрос. Сколько отфильтровано — отдаём отдельно (`excluded_technical`), чтобы
+    цифра была проверяемой, а не «мы что-то там убрали».
+    """
+    real = _real_client_sql()
     with _conn(db_path) as c:
         def ev(name):
-            return c.execute("SELECT COUNT(*) FROM events WHERE name=?", (name,)).fetchone()[0]
-        quiz_done = c.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
-        uniq_clients = c.execute("SELECT COUNT(DISTINCT client) FROM sessions").fetchone()[0]
+            return c.execute(
+                f"SELECT COUNT(*) FROM events WHERE name=? AND {real}", (name,)).fetchone()[0]
+        quiz_done = c.execute(f"SELECT COUNT(*) FROM sessions WHERE {real}").fetchone()[0]
+        uniq_clients = c.execute(f"SELECT COUNT(DISTINCT client) FROM sessions WHERE {real}").fetchone()[0]
+        total_sessions = c.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
         cards = ev("card_built")
-        fb = c.execute("SELECT COUNT(*) FROM feedback").fetchone()[0]
-        avg_rating = c.execute("SELECT AVG(rating) FROM feedback WHERE rating IS NOT NULL").fetchone()[0]
+        fb = c.execute(f"SELECT COUNT(*) FROM feedback WHERE {real}").fetchone()[0]
+        avg_rating = c.execute(
+            f"SELECT AVG(rating) FROM feedback WHERE rating IS NOT NULL AND {real}").fetchone()[0]
+        forms = c.execute(f"SELECT COUNT(*) FROM events WHERE name='card_form_view' AND {real}").fetchone()[0]
+        looks = c.execute(f"SELECT COUNT(*) FROM events WHERE name='look_generated' AND {real}").fetchone()[0]
     conv = round(100.0 * cards / quiz_done, 1) if quiz_done else 0.0
     return {"quiz_done": quiz_done, "unique_clients": uniq_clients,
-            "card_form_view": _ev_count("card_form_view", db_path), "card_built": cards,
-            "looks_generated": _ev_count("look_generated", db_path),
+            "card_form_view": forms, "card_built": cards,
+            "looks_generated": looks,
             "feedback": fb, "avg_rating": round(avg_rating, 2) if avg_rating else None,
-            "quiz_to_card_pct": conv}
+            "quiz_to_card_pct": conv,
+            "excluded_technical": total_sessions - quiz_done}
 
 
 def _ev_count(name: str, db_path: Path = DB_PATH) -> int:
@@ -239,21 +275,31 @@ def approved_feedback(limit: int = 12, db_path: Path = DB_PATH) -> list[dict]:
 
 
 def gap_summary(db_path: Path = DB_PATH) -> dict:
-    """Средний Identity Gap и динамика «до/после» по клиенткам с ≥2 замерами."""
+    """Средний Identity Gap и динамика «до/после» — только по живым клиенткам.
+
+    Смоук-прогоны раздували среднее (у них Gap 76–78%), самотесты автора — тоже. Плюс отдаём
+    `same_day_repeats`: повторный замер в тот же день — не «до/после», а шум (между замерами
+    ничего не произошло), и выдавать его за трансформацию нельзя.
+    """
+    real = _real_client_sql()
     with _conn(db_path) as c:
         rows = c.execute(
-            "SELECT client, gap_percentage FROM sessions WHERE gap_percentage IS NOT NULL ORDER BY client, ts, id"
+            f"SELECT client, gap_percentage, ts FROM sessions"
+            f" WHERE gap_percentage IS NOT NULL AND {real} ORDER BY client, ts, id"
         ).fetchall()
-    by_client: dict[str, list[int]] = {}
-    for client, gap in rows:
-        by_client.setdefault(client, []).append(gap)
-    all_first = [v[0] for v in by_client.values()]
-    deltas = [v[0] - v[-1] for v in by_client.values() if len(v) >= 2]
+    by_client: dict[str, list[tuple]] = {}
+    for client, gap, ts in rows:
+        by_client.setdefault(client, []).append((gap, ts))
+    all_first = [v[0][0] for v in by_client.values()]
+    repeats = [v for v in by_client.values() if len(v) >= 2]
+    deltas = [v[0][0] - v[-1][0] for v in repeats]
+    same_day = sum(1 for v in repeats if str(v[0][1])[:10] == str(v[-1][1])[:10])
     return {
         "clients_measured": len(by_client),
         "avg_first_gap": round(sum(all_first) / len(all_first), 1) if all_first else None,
         "clients_with_progress": len(deltas),
         "avg_gap_reduction": round(sum(deltas) / len(deltas), 1) if deltas else None,
+        "same_day_repeats": same_day,   # столько «повторов» — шум одного дня, не лонгитюд
     }
 
 
