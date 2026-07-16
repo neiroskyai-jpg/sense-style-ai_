@@ -133,13 +133,20 @@ def chat_log(limit: int = 500, db_path: Path = DB_PATH) -> list[dict]:
 
 
 def count_generations(client: str, names: tuple = ("card_built",), db_path: Path = DB_PATH) -> int:
-    """Сколько раз этот email уже запускал дорогую генерацию (по событиям). Для лимита бесплатных прогонов."""
+    """Сколько раз этот email уже запускал ДОРОГУЮ генерацию (с образами). Для лимита бесплатных.
+
+    Текстовая Карта (`meta='text'`) сюда НЕ считается: она не рендерит образы и почти ничего не
+    стоит. Раньше считалась — и клиентка, нажавшая «собрать пока без образов», сжигала на тексте
+    свою единственную бесплатную генерацию: вернуться за образами было уже нельзя. Ровно об этом
+    два отзыва («нет генерации образов, только текст», «не хватило визуальных примеров»).
+    """
     if not client:
         return 0
     placeholders = ",".join("?" for _ in names)
     with _conn(db_path) as c:
         return c.execute(
-            f"SELECT COUNT(*) FROM events WHERE client=? AND name IN ({placeholders})",
+            f"SELECT COUNT(*) FROM events WHERE client=? AND name IN ({placeholders})"
+            " AND COALESCE(meta, '') != 'text'",
             (client, *names),
         ).fetchone()[0]
 

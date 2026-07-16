@@ -570,6 +570,9 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .look .ds{font-size:14px;color:#5a5246}
  .cap-h{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine);margin:18px 0 8px;font-weight:normal}
  .blocklead{font-family:Arial,sans-serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--wine);margin:46px 0 -4px;padding-top:22px;border-top:2px solid var(--wine)}
+ .noimg{background:#fff;border:1px solid #e3dccf;border-left:3px solid var(--wine);border-radius:10px;padding:16px 18px;margin:18px 0}
+ .noimg p{color:var(--muted);font-size:14px;margin:6px 0 12px}
+ .noimg a{display:inline-block;background:var(--wine);color:#fff;text-decoration:none;padding:11px 20px;border-radius:6px;font-size:15px}
  .blocklead b{opacity:.5;font-weight:normal;margin-right:8px}
  .meta{font-size:15px;color:var(--muted);margin:0 0 10px}
  .caps{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
@@ -637,6 +640,16 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=blocklead><b>02</b>Твои образы</div>
 <h2>Образы под твою жизнь</h2>
 <p class=meta>Ты в своей Формуле — видно, как одни и те же базовые вещи работают в разных ситуациях.</p>
+{# Ни одного отрисованного образа (текстовая версия или все рендеры не удались) — зовём догенерить.
+   Без этого клиентка оставалась с текстом и не знала, что образы ещё можно получить: два отзыва
+   «нет генерации образов, только текст» / «не хватило визуальных примеров» — про это. #}
+{% if not c.looks|selectattr('img')|list %}
+<div class=noimg>
+ <b>Здесь пока только текст — без образов на тебе.</b>
+ <p>Загрузи фото — соберём эти же образы на тебе. Бесплатная генерация ещё не использована.</p>
+ <a href="/card?rebuild=1">Добавить образы →</a>
+</div>
+{% endif %}
 {% set ns = namespace(shown=0) %}
 {% for bucket in ['Работа','Повседневное','Выход'] %}
  {% set bl = c.looks|selectattr('bucket','equalto',bucket)|list %}
@@ -907,7 +920,7 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label class=consent style="font-weight:normal"><input type=checkbox name=consent_transfer required> Согласна на передачу фото в ИИ-сервис для генерации образов.</label>
 </div>
  <button>Собрать Карту стиля →</button>
- <p class=hint>Фото нужно только для генерации образов и <b>удаляется сразу после сборки</b> — храним лишь готовые образы. <a href="/card?text=1">Собрать пока без образов (только текст)</a></p>
+ <p class=hint>Фото нужно только для генерации образов и <b>удаляется сразу после сборки</b> — храним лишь готовые образы. Нет фото под рукой? <a href="/card?text=1">Собрать пока текстовую версию</a> — образы добавишь потом, бесплатная генерация останется за тобой.</p>
 </form></div></body></html>"""
 
 
