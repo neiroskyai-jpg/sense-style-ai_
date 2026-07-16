@@ -74,5 +74,5 @@ def tag_product(name, description, category, image_url_or_path):
 ## Валидация
 
 - Прогнать на 10–15 вещах пилота (Lichi/Ushatava), сверить `style_field`/`best_for_figures`/`capsule_role` глазами Ксении.
-- Особое внимание: не уводить всё в `natural`/`база` (риск монотонности — см. кейс Ани `cases/2026-06-09-anna-oveshkova.md`). Драма/структура должны опознаваться.
+- Особое внимание: не уводить всё в `natural`/`база` (риск монотонности — см. кейс Ани `cases/2026-06-09-client-anna.md`). Драма/структура должны опознаваться.
 - После валидации — пакетный прогон и дозапись колонок в `products_*.csv`, затем подстановка в слоты капсул (`data/fashion-base/capsules.json`).

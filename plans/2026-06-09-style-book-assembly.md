@@ -22,7 +22,7 @@
 ## Фазы
 
 ### [x] Фаза 1. Эталонный Style Book — Мишель
-- `architecture/cases/2026-06-09-mishel-style-book.md` — собран из всех 4 баз, в tone of voice Ксении.
+- `architecture/cases/2026-06-09-client-mishel-style-book.md` — собран из всех 4 баз, в tone of voice Ксении.
 
 ### [x] Фаза 2. Шаблон-промпт сборки
 - `architecture/prompts/style-book.md` v1.0 — берёт выходы `formula-diagnostic` + `look-generator` и 4 базы, собирает 9 разделов в tone of voice, возвращает JSON. Строка в `prompts/README.md`.

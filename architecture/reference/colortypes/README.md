@@ -21,4 +21,4 @@
 
 ## Эталон для валидации
 
-Натуральная зима — Мария Ухина (`architecture/cases/2026-05-03-mariya-uhina.md`).
+Натуральная зима — Мария (`architecture/cases/2026-05-03-client-mariya.md`).
