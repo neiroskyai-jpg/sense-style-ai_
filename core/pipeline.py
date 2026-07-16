@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 import json
+import sys
 from urllib.parse import quote_plus
 
 from . import config, provider
@@ -66,6 +67,62 @@ def analyze_photos(image_paths, height_cm: int | None = None, mode: str | None =
     return provider.chat_json(config.model_for("vision", mode), system, content, max_tokens=2048)
 
 
+_GAP_FIELDS = ("natural", "romance", "drama", "classic")
+_EXPRESSION_STEPS = (0, 15, 25)   # надбавка за невыраженность образа (formula-diagnostic.md)
+
+
+def _recompute_gap(diag: dict) -> dict:
+    """Пересчитать Identity Gap в коде из распределений, которые дала модель.
+
+    Разделяем роли: модель КЛАССИФИЦИРУЕТ черты по семантическим полям (языковая задача — её
+    сильная сторона), а арифметику считаем мы. Раньше LLM сама складывала, делила и округляла —
+    а Gap это вся метрика продукта: на нём стоит «измеримая трансформация», слайд для жюри и
+    обещание клиентке. Держать основание измерительного инструмента на вероятностной модели
+    нельзя, даже если она обычно не ошибается.
+
+    Формула (architecture/prompts/formula-diagnostic.md, v1.1 field-aware):
+        field_gap = Σ|want − now| / 2      по 4 полям
+        gap       = min(99, round(field_gap + expression_gap))
+
+    Расхождение с числом модели пишем в `gap_llm_mismatch` — это метрика её надёжности, а не
+    просто отладка. Если распределений нет (старый ответ/сбой) — оставляем как было.
+    """
+    now = diag.get("now_field_distribution")
+    want = diag.get("semantic_field_distribution")
+    if not isinstance(now, dict) or not isinstance(want, dict):
+        return diag
+
+    def _num(d: dict, k: str) -> float:
+        v = d.get(k)
+        return float(v) if isinstance(v, (int, float)) else 0.0
+
+    # распределения должны быть долями по 100; кривую сумму не «чиним» молча — она сама сигнал
+    now_sum = sum(_num(now, k) for k in _GAP_FIELDS)
+    want_sum = sum(_num(want, k) for k in _GAP_FIELDS)
+    if not (90 <= now_sum <= 110 and 90 <= want_sum <= 110):
+        diag["gap_distribution_broken"] = {"now_sum": round(now_sum), "want_sum": round(want_sum)}
+        return diag
+
+    field_gap = sum(abs(_num(want, k) - _num(now, k)) for k in _GAP_FIELDS) / 2
+    breakdown = diag.get("gap_breakdown") if isinstance(diag.get("gap_breakdown"), dict) else {}
+    expression = breakdown.get("expression_gap")
+    if expression not in _EXPRESSION_STEPS:      # модель обязана выбрать одну из трёх ступеней
+        expression = 0
+    gap = min(99, round(field_gap + expression))
+
+    llm_gap = diag.get("gap_percentage")
+    if isinstance(llm_gap, (int, float)) and round(llm_gap) != gap:
+        diag["gap_llm_mismatch"] = {"llm": round(llm_gap), "computed": gap,
+                                    "field_gap": round(field_gap, 1), "expression_gap": expression}
+        # в лог сервера: иначе мы никогда не узнаем, врёт ли модель в арифметике и как часто
+        print(f"[gap] модель посчитала {round(llm_gap)}, код — {gap} "
+              f"(field_gap={round(field_gap, 1)} + expression={expression}). Берём расчёт кода.",
+              file=sys.stderr)
+    diag["gap_percentage"] = gap
+    diag["gap_breakdown"] = {"field_gap": round(field_gap, 1), "expression_gap": expression}
+    return diag
+
+
 def diagnose(quiz_answers: dict, vision_result: dict, mode: str | None = None) -> dict:
     """Шаг 2. Диагностика: ответы квиза + выход vision → Формула стиля + Identity Gap.
 
@@ -89,6 +146,8 @@ def diagnose(quiz_answers: dict, vision_result: dict, mode: str | None = None) -
         config.model_for("text", mode), system,
         json.dumps(payload, ensure_ascii=False), max_tokens=8000,
     )
+
+    result = _recompute_gap(result)   # арифметику Gap не доверяем модели — считаем сами
 
     final_rules = _rag_retrieve(_diag_to_profile(result)) or pre_rules
     if final_rules:
