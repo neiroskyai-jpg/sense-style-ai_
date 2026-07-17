@@ -1499,22 +1499,24 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .seasons a{padding:8px 15px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--ink);text-decoration:none;background:#fff}
  .seasons a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
  .seasons a.notbuilt:not(.on){color:var(--muted);border-style:dashed}
- .build{display:grid;grid-template-columns:1.15fr 1fr;gap:20px;margin-top:10px}
- @media(max-width:680px){.build{grid-template-columns:1fr}}
- /* Слоты «Твоего лука» — сеткой в 2 колонки: собирать образ горизонтальной раскладкой, а не
-    длинным вертикальным списком (было узко и неудобно вести лук). */
- .cells{display:grid;grid-template-columns:1fr 1fr;gap:10px}
- @media(max-width:520px){.cells{grid-template-columns:1fr}}
- .panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
- .slot{margin:0 0 14px} .slotname{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine);margin:0 0 7px}
+ .build{margin-top:10px}
+ /* По-слотная раскладка: целевая ячейка лука и вещи ЭТОГО слота на одной строке. Раньше вещи и
+    ячейки были в разных колонках — обувь внизу списка, а её слот вверху: тащить через всю
+    страницу. Теперь вещь и её слот рядом, перенос короткий. */
+ .lookrows{background:#fff;border:1px solid var(--line);border-radius:16px;padding:6px 18px}
+ .lookrow{display:grid;grid-template-columns:210px 1fr;gap:16px;align-items:start;padding:14px 0;border-bottom:1px solid var(--line)}
+ .lookrow:last-child{border-bottom:0}
+ @media(max-width:640px){.lookrow{grid-template-columns:1fr;gap:10px}}
+ .slotname{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine);margin:0 0 7px}
  .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:8px}
  .pitem{cursor:grab;border:1px solid #e3dccf;border-radius:10px;background:#fff;padding:5px;text-align:center;user-select:none;transition:all .12s}
  .pitem:hover{border-color:var(--wine)} .pitem.on{border-color:var(--wine);box-shadow:0 0 0 2px var(--wine)}
  .pitem img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;display:block;background:#f2ede3}
  .pitem .ph{width:100%;aspect-ratio:3/4;border-radius:6px;background:#efe8db}
  .pitem .pname{display:block;font-size:10.5px;color:#4a443c;margin-top:5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- .canvas{position:sticky;top:14px}
- .cell{display:flex;align-items:center;gap:10px;border:1px dashed #cdbfa6;border-radius:12px;padding:9px 12px;margin:0 0 9px;background:#fbf8f1;transition:all .12s;min-height:56px}
+ .canvas{margin-top:16px}
+ /* целевая ячейка слота — слева в строке; сюда клик/дроп вещи этого слота */
+ .cell{display:flex;flex-direction:column;gap:6px;border:1.5px dashed #cdbfa6;border-radius:12px;padding:12px 14px;background:#fbf8f1;transition:all .12s;min-height:96px;position:sticky;top:14px}
  .cell.filled{border-style:solid;border-color:var(--wine);background:#fff}
  .cell.drop{border-color:var(--wine);background:#fdeee2}
  .cellslot{flex:0 0 96px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
@@ -1730,10 +1732,10 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <a href="/cabinet?items=12{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 12 else '' }}">Расширенная 12</a>
 </div>
 <div class=build>
- <div class=panel>
+ <div class=lookrows>
   {% for grp in board %}
-  <div class=slot>
-   <div class=slotname>{{ grp.slot }}</div>
+  <div class=lookrow>
+   <div class=cell data-cell="{{ grp.slot }}"><span class=cellslot>{{ grp.slot }}</span><span class=cellbody><span class=cellval>—</span></span></div>
    <div class=items>
     {% for it in grp['items'] %}<span class=pitem data-slot="{{ grp.slot }}" data-name="{{ it.name }}" data-img="{{ it.image or '' }}" data-url="{{ it.url or '' }}">{% if it.image %}<img src="{{ it.image }}" alt="" loading=lazy>{% else %}<span class=ph></span>{% endif %}<span class=pname>{{ it.name }}</span></span>{% endfor %}
    </div>
@@ -1742,13 +1744,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% if not board %}<p class=empty>Капсула ещё не собрана. <a href="/card">Собери Карту стиля</a> — вещи появятся здесь.</p>{% endif %}
  </div>
  <div class=panel canvas>
-  <div class=slotname style="margin-bottom:10px">Твой лук</div>
-  <div class=cells>
-  {% for grp in board %}
-  <div class=cell data-cell="{{ grp.slot }}"><span class=cellslot>{{ grp.slot }}</span><span class=cellbody><span class=cellval>—</span></span></div>
-  {% endfor %}
-  </div>
-  <div class=ctrls><button type=button onclick=clearOutfit()>Очистить</button><span class=cnt>вещей в луке: <b id=count>0</b></span></div>
+  <div class=ctrls><button type=button onclick=clearOutfit()>Очистить лук</button><span class=cnt>вещей в луке: <b id=count>0</b></span></div>
   {% if palette %}
   <div class=slotname style="margin:16px 0 6px">Твоя палитра</div>
   {% set grouped = palette|selectattr('group')|list %}
