@@ -1124,9 +1124,22 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 }
 .tier-icon-circle svg { width: 22px; height: 22px; }
 
+/* роль-подпись над названием тарифа: сразу видно, ЧТО это за продукт */
+.tier-role {
+  font-family: var(--sans); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--red); margin-bottom: 8px;
+}
 .tier-product {
   font-family: var(--serif); font-size: 26px;
   color: var(--ink); margin-bottom: 10px; font-weight: 500; line-height: 1.2;
+}
+/* ценностная цитата клиентки под списком — что она получает своими словами */
+.tier-value {
+  font-family: var(--serif); font-style: italic; font-size: 14.5px;
+  color: var(--red-deep); line-height: 1.4;
+  margin: 16px 0 20px; padding-left: 14px;
+  border-left: 2px solid var(--rose, #d8b4bc);
 }
 .tier-price {
   font-size: 16px; color: var(--red);
@@ -1964,20 +1977,22 @@ footer {
             <path d="M5 13h22M10 19h6"/>
           </svg>
         </div>
+        <div class="tier-role">Разовый стайлбук</div>
         <div class="tier-product">Карта стиля</div>
         <div class="tier-price">3 900 ₽</div>
         <div class="tier-price-meta">стартовая цена на запуске</div>
-        <div class="tier-promise">Формула, по которой ты одеваешься без стилиста</div>
+        <div class="tier-promise">Понять свою формулу — что тебе идёт и что покупать</div>
         <div class="tier-includes"><strong>Всё из «Точки отсчёта»</strong>, плюс:</div>
         <ul class="tier-features">
           <li>Полная формула стиля — точный подстиль из 25</li>
+          <li>Почему именно эта формула — объяснимый разбор</li>
           <li>Выверенная палитра: база, основные, акценты + стоп-цвета</li>
-          <li>Силуэты под твою фигуру</li>
-          <li>Базовая капсула — ядро, из которого собирается всё</li>
-          <li>Капсулы под реальную жизнь: работа, повседневное, выход</li>
-          <li>Стилизация: одна вещь — два образа на твоём фото</li>
-          <li>Именной PDF к шкафу</li>
+          <li>Силуэты под твою фигуру и стоп-лист «что не носить»</li>
+          <li>Образы под жизнь: работа, свидание, выход, путешествие</li>
+          <li>Стартовая капсула — 9 вещей, из них 18–24 образа</li>
+          <li>Именной PDF-стайлбук к шкафу</li>
         </ul>
+        <p class="tier-value">«Я получаю свою формулу и понимаю, как не ошибаться в одежде»</p>
         <a href="/card" class="tier-btn">Получить карту</a>
       </div>
 
@@ -1988,18 +2003,21 @@ footer {
             <path d="M12 16l3 3 5-6"/>
           </svg>
         </div>
+        <div class="tier-role">Живой AI-кабинет</div>
         <div class="tier-product">Стиль каждый день</div>
         <div class="tier-price">Бесплатно</div>
         <div class="tier-price-meta">открытая бета</div>
-        <div class="tier-promise">Живой кабинет и AI-помощник — формула работает каждый день</div>
+        <div class="tier-promise">Применять формулу каждый день — не покупать лишнее, видеть прогресс</div>
         <div class="tier-includes"><strong>Продолжение «Карты стиля»</strong>:</div>
         <ul class="tier-features">
-          <li>Капсульный гардероб по сезонам — реальные вещи с фото</li>
-          <li>Конструктор образов и планировщик недели</li>
+          <li>Образ дня — что надеть под роль, погоду и расписание</li>
+          <li>Планировщик недели: образ на каждый день из капсулы</li>
+          <li>Конструктор капсулы с оценкой качества и комбинаторики</li>
           <li>«Брать / не брать» — оценка вещи по фото прямо в магазине</li>
-          <li>Трекер стилевого разрыва во времени</li>
-          <li>Лист покупок под твою формулу</li>
+          <li>Трекер стилевого разрыва: видно, как стиль меняется</li>
+          <li>Приоритетный лист покупок под твою формулу</li>
         </ul>
+        <p class="tier-value">«Стилист в кармане: собирает образы, проверяет покупки, ведёт к цельному стилю»</p>
         <a href="/cabinet" class="tier-btn">Попробовать кабинет</a>
       </div>
 
