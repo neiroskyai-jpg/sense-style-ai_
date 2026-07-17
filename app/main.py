@@ -772,50 +772,24 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% endif %}
 </div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
-// Ждём загрузку шрифтов и ДЕКОДИРОВАНИЕ всех картинок до снимка html2canvas. Без этого частая
-// беда PDF: заголовки в запасном шрифте и пустые прямоугольники вместо фото (снимок сделан раньше,
-// чем картинки декодировались). Все фото Карты — data-URL, но крупные всё равно требуют decode.
-function _ready(){
-  var waits=[];
-  if(document.fonts && document.fonts.ready){ waits.push(document.fonts.ready); }
-  var imgs=Array.prototype.slice.call(document.querySelectorAll('.wrap img'));
-  imgs.forEach(function(img){
-    var dec=function(){ return img.decode ? img.decode().catch(function(){}) : Promise.resolve(); };
-    if(img.complete && img.naturalWidth>0){ waits.push(dec()); }
-    else { waits.push(new Promise(function(res){ img.onload=function(){ dec().then(res); }; img.onerror=res; })); }
-  });
-  return Promise.all(waits);
-}
+// (html2pdf убран — печатаем через браузер, см. downloadPdf ниже)
 function downloadPdf(){
-  var btn=document.getElementById('pdfbtn'); var bar=document.querySelector('.bar');
-  var fb=document.getElementById('fbblock');
-  var restore=function(){ if(bar) bar.style.visibility='visible'; btn.style.visibility='visible';
-    if(fb) fb.style.display=''; btn.textContent='Скачать PDF к шкафу'; btn.disabled=false; };
-  btn.textContent='Готовлю файл…'; btn.disabled=true;
-  if(bar) bar.style.visibility='hidden'; btn.style.visibility='hidden'; if(fb) fb.style.display='none';
-  var wrap=document.querySelector('.wrap');
-  // Масштаб — не константа. html2canvas рисует ВСЮ Карту одним полотном: при scale=2 и 8 образах
-  // это 1640×14334 ≈ 23 млн пикселей (~94 МБ). Мобильные ограничивают canvas примерно 16.7 млн и
-  // при превышении молча отдают ПУСТОЕ полотно — клиентка скачивала PDF из пустых кремовых страниц.
-  // Считаем максимальный scale под бюджет пикселей: длинная Карта — мельче, короткая — чётче.
-  var W=820, H=wrap? wrap.scrollHeight : 2000, BUDGET=12e6;
-  var scale=Math.max(1, Math.min(2, Math.sqrt(BUDGET/(W*H))));
-  var opt={margin:[12,12,14,12], filename:'Карта-стиля.pdf', image:{type:'jpeg',quality:0.94},
-    html2canvas:{scale:scale,useCORS:true,backgroundColor:'#F5EFE3',windowWidth:W,imageTimeout:15000},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-    // css — уважать break-before блоков; avoid-all — не резать карточки. legacy убран: плодил пустые листы
-    pagebreak:{mode:['css','avoid-all']}};
-  _ready().then(function(){
-    return html2pdf().set(opt).from(wrap).save();
-  }).then(restore).catch(function(e){
-    // не молчим: пустой файл хуже честной ошибки — предлагаем печать браузера как запасной путь
-    restore();
-    if(confirm('Не получилось собрать PDF на этом устройстве. Открыть печать — оттуда можно сохранить в PDF?')){
-      window.print();
-    }
+  // Печать браузера вместо html2canvas. html2canvas снимал всю Карту в ОДНУ картинку: на
+  // мобильных переполнял canvas и отдавал пустые кремовые страницы (то, что скачивала клиентка),
+  // а где работал — текст был растровый, нечёткий, невыделяемый. Браузерная печать даёт
+  // НАСТОЯЩИЙ PDF: векторный текст, стабильно на любом устройстве. @media print скрывает
+  // навигацию/кнопки/форму отзыва. Клиентка выбирает «Сохранить как PDF» в диалоге печати.
+  // Ждём декодирования крупных фото-образов (data-URL), иначе часть не попадёт в печать.
+  var imgs=Array.prototype.slice.call(document.querySelectorAll('.wrap img'));
+  var waits=imgs.map(function(img){
+    if(img.complete && img.naturalWidth>0) return img.decode?img.decode().catch(function(){}):Promise.resolve();
+    return new Promise(function(res){ img.onload=function(){ (img.decode?img.decode().catch(function(){}):Promise.resolve()).then(res); }; img.onerror=res; });
   });
+  var go=function(){ window.print(); };
+  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(function(){
+    Promise.all(waits).then(go, go);
+  }, go);
 }
 </script>
 </body></html>"""
