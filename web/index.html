@@ -1065,8 +1065,29 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   #tiers::before, #tiers::after { display: none; }
 }
 .tiers-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
 }
+/* Подписка «что дальше» — вынесена из лестницы 3 тарифов, лежит широкой полосой под ней */
+.tier-next {
+  margin-top: 26px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(31, 22, 20, 0.05);
+}
+.tier-next-label {
+  background: var(--red-deep); color: #fff;
+  font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+  padding: 8px 26px; font-weight: 600;
+}
+.tier-next-body { padding: 24px 26px 28px; }
+.tier-next-head {
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px;
+}
+.tier-next-promise { color: var(--ink-muted); margin: 4px 0 14px; max-width: 640px; }
+.tier-next-features { columns: 2; column-gap: 30px; margin-bottom: 18px; }
+@media (max-width: 620px) { .tier-next-features { columns: 1; } }
 .tier-card {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -1909,8 +1930,8 @@ footer {
     <div class="section-label-wrap">
       <p class="section-label">Тарифы</p>
     </div>
-    <h2 class="section-title">Четыре уровня — <em>каждый решает свою задачу</em></h2>
-    <p class="section-sub">Ты выбираешь, насколько глубоко включаешься сейчас.</p>
+    <h2 class="section-title">Три уровня — <em>каждый следующий включает предыдущий</em></h2>
+    <p class="section-sub">От бесплатной диагностики до полного преображения. Ты выбираешь, насколько глубоко включаешься сейчас.</p>
     <div class="tiers-grid">
 
       <div class="tier-card">
@@ -1926,8 +1947,8 @@ footer {
         <div class="tier-promise">Узнай, совпадает ли образ с тем, кем ты стала</div>
         <ul class="tier-features">
           <li>Индекс стилевого разрыва в %</li>
-          <li>Твоя базовая формула стиля</li>
-          <li>2 референса под формулу</li>
+          <li>Направление твоей формулы — гипотеза стиля</li>
+          <li>2 референса под направление</li>
           <li>14 вопросов, 5 минут</li>
           <li>Без регистрации</li>
         </ul>
@@ -1945,9 +1966,10 @@ footer {
         <div class="tier-price">3 900 ₽</div>
         <div class="tier-price-meta">стартовая цена на запуске</div>
         <div class="tier-promise">Формула, по которой ты одеваешься без стилиста</div>
+        <div class="tier-includes"><strong>Всё из «Точки отсчёта»</strong>, плюс:</div>
         <ul class="tier-features">
-          <li>Персональная формула стиля</li>
-          <li>Палитра под тебя: 30 цветов + стоп-цвета</li>
+          <li>Полная формула стиля — точный подстиль из 25</li>
+          <li>Выверенная палитра: база, основные, акценты + стоп-цвета</li>
           <li>Силуэты под твою фигуру</li>
           <li>Базовая капсула — ядро, из которого собирается всё</li>
           <li>Капсулы под реальную жизнь: работа, повседневное, выход</li>
@@ -1980,26 +2002,25 @@ footer {
         <a href="premium.html" class="tier-btn">Забронировать</a>
       </div>
 
-      <div class="tier-card">
-        <div class="tier-icon-circle">
-          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="6" width="22" height="20" rx="2"/>
-            <path d="M5 12h22M11 6v20"/>
-          </svg>
+    </div>
+
+    <!-- Подписка вынесена из лестницы 3 тарифов: это не следующая ступень цены, а «что дальше» —
+         способ жить с результатом. Иначе повторяла лист покупок Преображения и ломала лестницу. -->
+    <div class="tier-next">
+      <div class="tier-next-label">Что дальше</div>
+      <div class="tier-next-body">
+        <div class="tier-next-head">
+          <div class="tier-product">Стиль каждый день</div>
+          <div class="tier-price-meta">Бесплатно · открытая бета</div>
         </div>
-        <div class="tier-product">Стиль каждый день</div>
-        <div class="tier-price">Бесплатно</div>
-        <div class="tier-price-meta">открытая бета</div>
-        <div class="tier-promise">Формула, которая растёт вместе с тобой</div>
-        <ul class="tier-features">
+        <p class="tier-next-promise">Формула не заканчивается на Карте. Кабинет ведёт её дальше: капсула живёт по сезонам, а покупки проверяются до кассы.</p>
+        <ul class="tier-features tier-next-features">
           <li>Капсульный гардероб по сезонам — реальные вещи с фото</li>
           <li>Конструктор образов: собираешь лук из вещей капсулы</li>
-          <li>«Брать / не брать» — оценка вещи по фото в магазине</li>
-          <li>Лист покупок с прямыми ссылками</li>
+          <li>«Брать / не брать» — оценка вещи по фото прямо в магазине</li>
         </ul>
-        <a href="/cabinet" class="tier-btn">Попробовать кабинет</a>
+        <a href="/cabinet" class="tier-btn tier-btn-outline">Попробовать кабинет</a>
       </div>
-
     </div>
   </div>
 </section>
