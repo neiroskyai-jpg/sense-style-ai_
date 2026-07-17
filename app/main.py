@@ -795,14 +795,27 @@ function downloadPdf(){
     if(fb) fb.style.display=''; btn.textContent='Скачать PDF к шкафу'; btn.disabled=false; };
   btn.textContent='Готовлю файл…'; btn.disabled=true;
   if(bar) bar.style.visibility='hidden'; btn.style.visibility='hidden'; if(fb) fb.style.display='none';
-  var opt={margin:[12,12,14,12], filename:'Карта-стиля.pdf', image:{type:'jpeg',quality:0.96},
-    html2canvas:{scale:2,useCORS:true,backgroundColor:'#F5EFE3',windowWidth:820,imageTimeout:15000},
+  var wrap=document.querySelector('.wrap');
+  // Масштаб — не константа. html2canvas рисует ВСЮ Карту одним полотном: при scale=2 и 8 образах
+  // это 1640×14334 ≈ 23 млн пикселей (~94 МБ). Мобильные ограничивают canvas примерно 16.7 млн и
+  // при превышении молча отдают ПУСТОЕ полотно — клиентка скачивала PDF из пустых кремовых страниц.
+  // Считаем максимальный scale под бюджет пикселей: длинная Карта — мельче, короткая — чётче.
+  var W=820, H=wrap? wrap.scrollHeight : 2000, BUDGET=12e6;
+  var scale=Math.max(1, Math.min(2, Math.sqrt(BUDGET/(W*H))));
+  var opt={margin:[12,12,14,12], filename:'Карта-стиля.pdf', image:{type:'jpeg',quality:0.94},
+    html2canvas:{scale:scale,useCORS:true,backgroundColor:'#F5EFE3',windowWidth:W,imageTimeout:15000},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
     // css — уважать break-before блоков; avoid-all — не резать карточки. legacy убран: плодил пустые листы
     pagebreak:{mode:['css','avoid-all']}};
   _ready().then(function(){
-    return html2pdf().set(opt).from(document.querySelector('.wrap')).save();
-  }).then(restore).catch(restore);
+    return html2pdf().set(opt).from(wrap).save();
+  }).then(restore).catch(function(e){
+    // не молчим: пустой файл хуже честной ошибки — предлагаем печать браузера как запасной путь
+    restore();
+    if(confirm('Не получилось собрать PDF на этом устройстве. Открыть печать — оттуда можно сохранить в PDF?')){
+      window.print();
+    }
+  });
 }
 </script>
 </body></html>"""
