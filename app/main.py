@@ -1499,6 +1499,16 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .seasons a{padding:8px 15px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--ink);text-decoration:none;background:#fff}
  .seasons a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
  .seasons a.notbuilt:not(.on){color:var(--muted);border-style:dashed}
+ /* Планировщик недели: собери образ на каждый день, он сохраняется в браузере. Точка на кнопке —
+    день с собранным образом. */
+ .weekplan{margin:6px 0 4px}
+ .wplabel{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+ .weekdays{display:flex;flex-wrap:wrap;gap:8px}
+ .wd{position:relative;width:46px;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-size:14px;cursor:pointer;transition:all .12s}
+ .wd:hover{border-color:var(--wine)}
+ .wd.on{background:var(--wine);color:#fff;border-color:var(--wine)}
+ .wd.filled::after{content:'';position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--wine)}
+ .wd.on.filled::after{background:#fff}
  .build{margin-top:10px}
  /* По-слотная раскладка: целевая ячейка лука и вещи ЭТОГО слота на одной строке. Раньше вещи и
     ячейки были в разных колонках — обувь внизу списка, а её слот вверху: тащить через всю
@@ -1734,6 +1744,18 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <a href="/cabinet?items=6{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 6 else '' }}">Капсула 6 вещей</a>
  <a href="/cabinet?items=12{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 12 else '' }}">Расширенная 12</a>
 </div>
+<div class=weekplan>
+ <span class=wplabel>Собери образ на день недели:</span>
+ <div class=weekdays>
+  <button type=button class=wd data-day=mon>Пн</button>
+  <button type=button class=wd data-day=tue>Вт</button>
+  <button type=button class=wd data-day=wed>Ср</button>
+  <button type=button class=wd data-day=thu>Чт</button>
+  <button type=button class=wd data-day=fri>Пт</button>
+  <button type=button class=wd data-day=sat>Сб</button>
+  <button type=button class=wd data-day=sun>Вс</button>
+ </div>
+</div>
 <div class=build>
  <div class=lookrows>
   {% for grp in board %}
@@ -1815,12 +1837,26 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div>
 
 <script>
-var outfit={}, byKey={};
+// Планировщик недели (мини): образ хранится ПО ДНЯМ в браузере (localStorage), без сервера.
+// outfit — всегда образ ТЕКУЩЕГО дня; переключение дня меняет, какой образ показан/редактируется.
+var byKey={}, week={}, curDay='mon';
+try { week = JSON.parse(localStorage.getItem('senseWeek') || '{}') || {}; } catch(e) { week={}; }
+function saveWeek(){ try { localStorage.setItem('senseWeek', JSON.stringify(week)); } catch(e){} }
+function dayOutfit(){ if(!week[curDay]) week[curDay]={}; return week[curDay]; }
+var outfit;  // ссылка на образ текущего дня, обновляется в setDay
 document.querySelectorAll('.pitem').forEach(function(i){
  byKey[i.getAttribute('data-slot')+'|'+i.getAttribute('data-name')]={
   slot:i.getAttribute('data-slot'), name:i.getAttribute('data-name'),
   img:i.getAttribute('data-img'), url:i.getAttribute('data-url')};
 });
+function markDays(){
+ document.querySelectorAll('.wd').forEach(function(b){
+  var d=b.getAttribute('data-day');
+  b.classList.toggle('on', d===curDay);
+  b.classList.toggle('filled', week[d] && Object.keys(week[d]).length>0);
+ });
+}
+function setDay(d){ curDay=d; outfit=dayOutfit(); markDays(); render(); }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function cellHtml(o){
  var h='';
@@ -1842,14 +1878,19 @@ function render(){
  document.getElementById('count').textContent=Object.keys(outfit).length;
 }
 function pickKey(key){ var o=byKey[key]; if(!o) return;
- if(outfit[o.slot] && outfit[o.slot].name===o.name){ delete outfit[o.slot]; } else { outfit[o.slot]=o; } render(); }
-function clearOutfit(){ outfit={}; render(); }
+ if(outfit[o.slot] && outfit[o.slot].name===o.name){ delete outfit[o.slot]; } else { outfit[o.slot]=o; }
+ saveWeek(); markDays(); render();); }
+function clearOutfit(){ week[curDay]={}; outfit=week[curDay]; saveWeek(); markDays(); render(); }
 document.querySelectorAll('.pitem').forEach(function(i){
  var key=i.getAttribute('data-slot')+'|'+i.getAttribute('data-name');
  i.setAttribute('draggable','true');
  i.addEventListener('click',function(){ pickKey(key); });
  i.addEventListener('dragstart',function(e){ e.dataTransfer.setData('text', key); });
 });
+document.querySelectorAll('.wd').forEach(function(b){
+ b.addEventListener('click',function(){ setDay(b.getAttribute('data-day')); });
+});
+setDay(curDay);  // показать образ понедельника (или сохранённый) при загрузке
 document.querySelectorAll('[data-cell]').forEach(function(c){
  c.addEventListener('dragover',function(e){ e.preventDefault(); c.classList.add('drop'); });
  c.addEventListener('dragleave',function(){ c.classList.remove('drop'); });
