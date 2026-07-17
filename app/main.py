@@ -1522,8 +1522,9 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .cellslot{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
  .cellbody{display:flex;align-items:center;gap:9px;min-height:52px}
  .cellbody .thumb{width:38px;aspect-ratio:3/4;object-fit:cover;border-radius:5px;background:#f2ede3;flex:0 0 auto}
- /* название выбранной вещи — максимум 2 строки, дальше многоточие (не ломается в столбик по слову) */
- .cellval{font-size:12.5px;line-height:1.3;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1 1 auto}
+ /* название выбранной вещи — ОДНА строка с многоточием: в узкой ячейке 2 строки ломались в
+    столбик по слову. min-width:0 обязателен, иначе flex не даёт ellipsis сработать. */
+ .cellval{font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0}
  .cell.filled .cellval{font-weight:500}
  .cellbody .buy{font-size:11.5px;color:var(--wine);text-decoration:none;white-space:nowrap;flex:0 0 auto;align-self:flex-start}
  .itemtoggle{display:flex;gap:8px;margin:0 0 12px} .itemtoggle a{font-size:13px;padding:6px 13px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--ink);background:#fff}
