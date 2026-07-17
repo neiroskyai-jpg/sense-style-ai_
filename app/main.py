@@ -147,7 +147,7 @@ RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <p>{{ dna }}</p>
 <p class=meta>Цветотип: {{ colortype }} · Фигура: {{ figure }} · В капсуле {{ items }} вещей.</p>
 <h2>Ты в новых образах</h2>
-<p class=meta>Это короткое превью — 2 образа. Полная Карта стиля собирает палитру из 30 цветов, силуэты, стоп-лист и 6 образов под твои сценарии, с PDF к шкафу.</p>
+<p class=meta>Это короткое превью — 2 образа. Полная Карта стиля собирает выверенную палитру, силуэты, стоп-лист и 6 образов под твои сценарии, с PDF к шкафу.</p>
 <div class=looks>
  {% for lk in looks %}
  <div class=look>{% if lk.img %}<img src="{{ lk.img }}" alt="Образ">{% endif %}<p class=desc>{{ lk.desc }}</p></div>
@@ -681,7 +681,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=blocklead><b>04</b>Твои цвета</div>
 {% if c.colortype %}<h2>Твой цветотип — {{ c.colortype }}</h2>
 <p class=meta>{% if c.contrast %}Контраст {{ c.contrast }}. {% endif %}На нём построена палитра ниже.</p>{% endif %}
-<h2>Палитра — 30 цветов</h2>
+<h2>Твоя палитра</h2>
 <p class=meta>База — основа гардероба, на ней строится всё. Основные — цветные вещи, спокойно сочетаются с базой. Акценты — точечно: один на образ, не больше.</p>
 {% for grp, title in [('base','База и нейтрали'),('main','Основные'),('accent','Акценты')] %}
  {% set items = c.palette|selectattr('group','equalto',grp)|list %}
@@ -1498,6 +1498,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .seasons{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
  .seasons a{padding:8px 15px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--ink);text-decoration:none;background:#fff}
  .seasons a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
+ .seasons a.notbuilt:not(.on){color:var(--muted);border-style:dashed}
  .build{display:grid;grid-template-columns:1.15fr 1fr;gap:20px;margin-top:10px}
  @media(max-width:680px){.build{grid-template-columns:1fr}}
  /* Слоты «Твоего лука» — сеткой в 2 колонки: собирать образ горизонтальной раскладкой, а не
@@ -1719,7 +1720,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <p class=hint>Реальные вещи под твою Формулу и сезон — каждую можно купить. Ниже собери из них лук.</p>
 {% if season_tabs %}
 <div class=seasons>
- {% for s in season_tabs %}<a href="/cabinet?season={{ s.code }}" class="{{ 'on' if s.on else '' }}">{{ s.label }}</a>{% endfor %}
+ {% for s in season_tabs %}<a href="/cabinet?season={{ s.code }}" class="{{ 'on' if s.on else '' }}{{ ' notbuilt' if not s.built else '' }}" title="{{ 'капсула собрана' if s.built else 'подберётся из каталога' }}">{{ s.label }}</a>{% endfor %}
 </div>
 {% endif %}
 <h2>Конструктор образа</h2>
@@ -1885,21 +1886,23 @@ def cabinet():
     by_season = current_card_by_season(email)  # {код_сезона: карта} — последняя версия на сезон
     card = prof.get("card") or {}
     sel = (request.args.get("season") or "").strip()
-    if sel in by_season:               # выбран сезон с собранной капсулой
+    if sel in by_season:               # выбран сезон с собранной капсулой — показываем её
         card = by_season[sel]
+    elif sel in _CARD_SEASONS:         # сезон валиден, но капсула на него ещё не собрана:
+        sel = sel                      # оставляем выбор, визуальная капсула подберётся из каталога
     else:
-        sel = card.get("season") or ""
+        sel = card.get("season") or _DEFAULT_SEASON
     if not card:
         return redirect("/card")       # капсулы ещё нет — сначала собрать Карту
     items_n = 6 if request.args.get("items") == "6" else 12  # капсула 6 / расширенная 12
     # визуальная капсула из реального каталога (фото+ссылки); фолбэк — текстовый борд из Карты
     board = _visual_capsule(card, diag, items_n) or \
         card.get("capsule_board") or _capsule_board(card.get("base_capsule") or [])
-    seasons = [s for s in _SEASON_ORDER if s in by_season]
-    if sel in _CARD_SEASONS and sel not in seasons:
-        seasons.append(sel)
-    season_tabs = [{"code": s, "label": _CARD_SEASONS[s]["label"], "on": s == sel}
-                   for s in _SEASON_ORDER if s in seasons]
+    # Показываем ВСЕ 4 сезона (было — только собранные, у клиентки их 2). Несобранные помечаем
+    # флагом built=False: капсула на них подберётся из каталога под палитру/фигуру/стиль.
+    season_tabs = [{"code": s, "label": _CARD_SEASONS[s]["label"],
+                    "on": s == sel, "built": s in by_season}
+                   for s in _SEASON_ORDER]
     palette = [p for p in (card.get("palette") or []) if p.get("hex")]
     # трекер разрыва прямо в дашборде (раньше жил только в /me): точки-замеры + дельта при ≥2
     track = gap_progress(email)
@@ -1950,7 +1953,8 @@ def cabinet():
         formula=card.get("formula") or diag.get("style_formula"),
         colortype=_colortype_label(diag.get("colortype")), figure=_figure_label(diag.get("figure_type")),
         want_traits=want3, days_since=days_since, thanks=(request.args.get("fb") == "1"),
-        gap=card.get("gap"), gap_now=gap_now, track=track, season_label=card.get("season_label"),
+        gap=card.get("gap"), gap_now=gap_now, track=track,
+        season_label=(card.get("season_label") or (_CARD_SEASONS[sel]["label"] if sel in _CARD_SEASONS else None)),
         n_items=n_items, combos_label=combos_label, items_n=items_n,
         board=board, palette=palette, shopping=card.get("shopping") or [],
         season_tabs=season_tabs, sel_season=sel)
@@ -2203,7 +2207,7 @@ _DEFAULT_SEASON = "autumn"
 
 
 def build_style_card(diag: dict, season: str | None = None) -> dict:
-    """Собрать продукт «Карта стиля» из Формулы: палитра 30 цветов + 6 образов + секции.
+    """Собрать продукт «Карта стиля» из Формулы: выверенная палитра + 6 образов + секции.
     Два текстовых вызова (палитра + капсула), без рендера картинок. season — ss|fw (капсула
     собирается под сезон); по умолчанию осень-зима."""
     season = season if season in _CARD_SEASONS else _DEFAULT_SEASON
