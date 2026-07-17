@@ -2,9 +2,10 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# системные зависимости для Pillow
+# системные зависимости: Pillow (libjpeg/zlib) + OpenCV. opencv-python-headless на python:3.12-slim
+# падает при `import cv2` без libglib2.0-0 (libgthread) и libgomp1 (OpenMP) — контейнер не стартует.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libjpeg62-turbo zlib1g \
+    libjpeg62-turbo zlib1g libglib2.0-0 libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
