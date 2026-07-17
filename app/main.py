@@ -1519,11 +1519,13 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .cell{display:flex;flex-direction:column;gap:6px;border:1.5px dashed #cdbfa6;border-radius:12px;padding:12px 14px;background:#fbf8f1;transition:all .12s;min-height:96px;position:sticky;top:14px}
  .cell.filled{border-style:solid;border-color:var(--wine);background:#fff}
  .cell.drop{border-color:var(--wine);background:#fdeee2}
- .cellslot{flex:0 0 96px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
- .cellbody{flex:1;display:flex;align-items:center;gap:10px}
+ .cellslot{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+ .cellbody{display:flex;align-items:center;gap:9px;min-height:52px}
  .cellbody .thumb{width:38px;aspect-ratio:3/4;object-fit:cover;border-radius:5px;background:#f2ede3;flex:0 0 auto}
- .cellval{font-size:14px;color:var(--ink)} .cell.filled .cellval{font-weight:500}
- .cellbody .buy{margin-left:auto;font-size:12.5px;color:var(--wine);text-decoration:none;white-space:nowrap}
+ /* название выбранной вещи — максимум 2 строки, дальше многоточие (не ломается в столбик по слову) */
+ .cellval{font-size:12.5px;line-height:1.3;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1 1 auto}
+ .cell.filled .cellval{font-weight:500}
+ .cellbody .buy{font-size:11.5px;color:var(--wine);text-decoration:none;white-space:nowrap;flex:0 0 auto;align-self:flex-start}
  .itemtoggle{display:flex;gap:8px;margin:0 0 12px} .itemtoggle a{font-size:13px;padding:6px 13px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--ink);background:#fff}
  .itemtoggle a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
  .ctrls{display:flex;gap:10px;align-items:center;margin-top:12px}
