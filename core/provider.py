@@ -49,28 +49,109 @@ def encode_image(path: str | Path, max_side: int = 1024) -> str:
     return f"data:image/jpeg;base64,{b64}"
 
 
+_YUNET_PATH = Path(__file__).resolve().parent.parent / "data" / "models" / "face_detection_yunet_2023mar.onnx"
+_YUNET_READABLE: str | None = None
+
+
+def _yunet_path() -> str | None:
+    """Путь к модели, который сможет открыть OpenCV.
+
+    На Windows OpenCV не читает пути с не-ASCII символами («…\\Рабочий стол\\проекты\\…») — падает
+    «Can't read ONNX file». На проде (Linux) путь латиницей и проблемы нет, но локально детектор
+    молча отключался бы. Поэтому при кириллице в пути один раз копируем модель во временную папку.
+    """
+    global _YUNET_READABLE
+    if _YUNET_READABLE is not None:
+        return _YUNET_READABLE or None
+    if not _YUNET_PATH.exists():
+        _YUNET_READABLE = ""
+        return None
+    p = str(_YUNET_PATH)
+    try:
+        p.encode("ascii")
+    except UnicodeEncodeError:
+        import shutil
+        import tempfile
+        tmp = Path(tempfile.gettempdir()) / "sense_face_yunet.onnx"
+        try:
+            if not tmp.exists() or tmp.stat().st_size != _YUNET_PATH.stat().st_size:
+                shutil.copy2(_YUNET_PATH, tmp)
+            p = str(tmp)
+            p.encode("ascii")   # temp тоже может оказаться кириллическим — тогда сдаёмся
+        except (OSError, UnicodeEncodeError):
+            _YUNET_READABLE = ""
+            return None
+    _YUNET_READABLE = p
+    return p
+
+
+def _detect_face(img: Image.Image) -> tuple[int, int, int, int] | None:
+    """Рамка лица (x, y, w, h) детектором YuNet или None.
+
+    Haar-каскады тут не годятся: на фото клиентки у здания они находят «лица» в барельефах и
+    окнах (8 срабатываний на одном кадре). YuNet — DNN, даёт уверенность: на тех же фото ровно
+    одно лицо со score 0.93. OpenCV/модель опциональны — без них честно возвращаем None.
+    """
+    model = _yunet_path()
+    if not model:
+        return None
+    try:
+        import cv2
+        import numpy as np
+    except ImportError:  # noqa: BLE001 — среда без opencv: кроп деградирует до эвристики
+        return None
+    try:
+        arr = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        h, w = arr.shape[:2]
+        det = cv2.FaceDetectorYN.create(model, "", (w, h), score_threshold=0.6)
+        _, faces = det.detect(arr)
+        if faces is None or not len(faces):
+            return None
+        # самое крупное лицо — если в кадр попала подруга/прохожий, клиентка обычно ближе
+        x, y, fw, fh = (int(v) for v in max(faces, key=lambda f: f[2] * f[3])[:4])
+        return x, y, fw, fh
+    except Exception:  # noqa: BLE001 — детекция не должна ронять рендер
+        return None
+
+
 def head_crop(path: str | Path, max_side: int = 1024) -> str | None:
     """Кроп головы/плеч крупным планом — второй референс личности для identity-preserving рендера.
 
-    На фото в полный рост лицо ~150px даже после сжатия — модель «додумывает» чужое.
-    Даём ей отдельный крупный кадр головы: для вертикального ростового/3-4 фото лицо в верхней
-    части, поэтому берём верхнюю полосу во всю ширину и апскейлим. Без детекции лиц (нет opencv):
-    эвристика по пропорции кадра. Возвращает data-URL или None (если фото не читается).
+    Зачем: на ростовом фото лицо ~100–150px, модель «додумывает» чужое — клиентки жалуются, что
+    лицо не их. Даём отдельный кадр, где лицо занимает бОльшую часть.
+
+    Раньше кроп брал верхнюю полосу ВО ВСЮ ШИРИНУ и апскейлил её по длинной стороне — то есть
+    лицо оставалось теми же ~100px посреди неба и фасада, а «крупный кадр» был фикцией. Теперь
+    находим лицо детектором и кадрируем вокруг него; без детекции — старая эвристика как фолбэк.
     """
     try:
         img = Image.open(path).convert("RGB")
     except Exception:  # noqa: BLE001 — кроп не должен ронять рендер
         return None
     w, h = img.size
-    # доля высоты, где ожидаем голову+плечи: ростовое/3-4 (высокое) → верх; иначе — почти весь кадр
-    frac = 0.45 if h >= 1.25 * w else 0.72
-    crop = img.crop((0, 0, w, round(h * frac)))
+    face = _detect_face(img)
+    if face:
+        fx, fy, fw, fh = face
+        # рамка головы с плечами: шире лица втрое, выше — с запасом на волосы, ниже — на плечи
+        cx, cy = fx + fw / 2, fy + fh / 2
+        half_w = fw * 1.6
+        top = cy - fh * 1.6
+        bottom = cy + fh * 2.0
+        box = (max(0, round(cx - half_w)), max(0, round(top)),
+               min(w, round(cx + half_w)), min(h, round(bottom)))
+        crop = img.crop(box)
+    else:
+        # фолбэк: доля высоты, где ожидаем голову+плечи (ростовое/3-4 → верх)
+        frac = 0.45 if h >= 1.25 * w else 0.72
+        crop = img.crop((0, 0, w, round(h * frac)))
     cw, ch = crop.size
+    if not cw or not ch:
+        return None
     scale = max(1.0, max_side / max(cw, ch))  # апскейлим мелкое лицо, не уменьшаем
     if scale != 1.0:
-        crop = crop.resize((round(cw * scale), round(ch * scale)))
+        crop = crop.resize((round(cw * scale), round(ch * scale)), Image.LANCZOS)
     buf = io.BytesIO()
-    crop.save(buf, format="JPEG", quality=90)
+    crop.save(buf, format="JPEG", quality=92)
     return "data:image/jpeg;base64," + base64.standard_b64encode(buf.getvalue()).decode()
 
 

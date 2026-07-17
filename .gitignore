@@ -11,6 +11,9 @@ data/*
 # иначе визуальная капсула вырождается в текст. Только рантайм-файлы; тяжёлые capsules.json /
 # capsule-showcase.md (офлайн-скрипты) не коммитим.
 !data/fashion-base/
+# детектор лиц YuNet (227 КБ) — нужен рендеру образов, иначе лицо клиентки «додумывается»
+!data/models/
+!data/models/*.onnx
 data/fashion-base/*
 !data/fashion-base/products_ushatava.csv
 !data/fashion-base/products_lichi.csv

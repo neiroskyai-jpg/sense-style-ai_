@@ -13,3 +13,6 @@ markdown>=3.0
 #   pip install fastembed numpy   и пересобрать:  python -m scripts.build_rag_index
 # fastembed>=0.8
 # numpy>=2.0
+# детекция лица для identity-preserving рендера (YuNet). <5: в OpenCV 5 нет CascadeClassifier,
+# а нам важна стабильность API dnn/FaceDetectorYN
+opencv-python-headless<5
