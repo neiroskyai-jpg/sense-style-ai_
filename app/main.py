@@ -1218,6 +1218,11 @@ def login_send():
     if request.form.get("marketing"):  # согласие на рассылку → для выгрузки в UniSender
         record_event("marketing_optin", email.lower())
     link = request.url_root.rstrip("/") + "/auth?token=" + make_token(email)
+    # режим теста: не гоняем клиентку в почту — впускаем сразу, письмо шлём фоном (для возврата)
+    if _open_access():
+        session["email"] = email
+        threading.Thread(target=send_magic_link, args=(email, link), daemon=True).start()
+        return redirect(nxt or "/card")
     sent = send_magic_link(email, link)
     # БЕЗОПАСНОСТЬ: ссылка входа = рабочий токен. НЕ показываем её на экране для произвольной почты
     # (иначе любой ввёл бы чужой email и вошёл в её аккаунт — захват аккаунта). Показываем ТОЛЬКО:
@@ -2615,6 +2620,9 @@ def capture_lead():
     if data.get("marketing"):
         record_event("marketing_optin", email)
     record_event("lead_captured", email, meta="quiz")
+    # режим теста: почта введена → сразу впускаем, чтобы «Получить Карту» вело в Карту, а не на /login
+    if _open_access():
+        session["email"] = email
     return jsonify({"ok": True})
 
 
@@ -2642,6 +2650,18 @@ def card_feedback():
 # приборная панель метрик для конкурса — доступ по email основателя ИЛИ ?key=SENSE_METRICS_KEY
 _ADMIN_EMAILS = {e.strip().lower() for e in
                  os.getenv("SENSE_ADMIN_EMAILS", "neiroskyai@gmail.com").split(",") if e.strip()}
+
+
+def _open_access() -> bool:
+    """Режим тестирования: ввод почты сразу пускает в кабинет, без клика по письму.
+
+    Зачем: magic-link на телефоне рвёт сессию (клиентка уходит в почту и не возвращается), а пока
+    SMTP не починен — письма и вовсе не доходят. На время прогонов клиенток впускаем по вводу почты,
+    письмо шлём фоном для возврата потом. ВНИМАНИЕ: без подтверждения почты любой войдёт под чужим
+    адресом — это осознанный компромисс ТОЛЬКО для теста, на бесплатном lead-уровне (платного
+    контента и чужих ПДн там нет). Выключается снятием SENSE_OPEN_ACCESS. По умолчанию ВЫКЛ.
+    """
+    return os.getenv("SENSE_OPEN_ACCESS") == "1"
 
 
 def _is_admin() -> bool:
