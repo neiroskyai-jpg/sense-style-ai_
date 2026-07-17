@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 import json
+import re
 import sys
 from urllib.parse import quote_plus
 
@@ -391,6 +392,34 @@ _CAPSULE_QUALITY_RULES = (
 )
 
 
+_SUBSTYLES_CACHE: str | None = None
+
+
+def _substyles_reference() -> str:
+    """Раздел метода «25 уточняющих подстилей» — маркеры, эталон, прототипы каждого подстиля.
+
+    Берём именно из sense-style-method.md: reference/style-typology — это МАППИНГ стилей курса на
+    наши 4 поля, описаний вещей там нет. Тянем один раздел, а не файл целиком (34 КБ): промпт и так
+    ~10 тыс. токенов, а генератору нужны подстили, не манифест и не теория.
+    """
+    global _SUBSTYLES_CACHE
+    if _SUBSTYLES_CACHE is not None:
+        return _SUBSTYLES_CACHE
+    try:
+        text = load_reference("sense-style-method.md")
+    except FileNotFoundError:
+        _SUBSTYLES_CACHE = ""
+        return ""
+    m = re.search(r"\n## 5\. 25 уточняющих подстилей\n", text)
+    if not m:                      # метод переструктурировали — лучше отдать всё, чем ничего
+        _SUBSTYLES_CACHE = text
+        return text
+    start = m.start()
+    nxt = re.search(r"\n## 6\.", text[start:])
+    _SUBSTYLES_CACHE = text[start:start + nxt.start()] if nxt else text[start:]
+    return _SUBSTYLES_CACHE
+
+
 def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None = None) -> dict:
     """Шаг 3. Капсула: Формула стиля + запрос → капсула вещей + образы с промптами для генерации.
 
@@ -401,6 +430,13 @@ def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None
         load_system_prompt("look-generator")
         + "\n\n# БАЗА ЗНАНИЙ (style-library)\n\n"
         + load_knowledge("style-library")
+        # Без описаний подстилей модель видит только ЯРЛЫК и наполняет его как умеет: реальный
+        # случай (17.07.2026) — клиентке с формулой «Леди-лайк × Soft Classic» собран образ с
+        # фланелевой рубашкой в клетку. В style-library леди-лайк есть лишь в таблице
+        # соответствий («→ №17»), а что он значит (платья приталенного силуэта, миди, перчатки,
+        # эстетика 50-60-х, Одри Хепберн) — только в методе. Ярлык без содержания = стиль мимо.
+        + "\n\n# 25 ПОДСТИЛЕЙ — ЧТО КАЖДЫЙ ЗНАЧИТ (обязательно к соблюдению)\n\n"
+        + _substyles_reference()
     )
     # грунтуем подбор явными правилами посадки под фигуру (размеры/силуэты считываются при подборе)
     fit_prompt = fit_rules_prompt(diagnosis.get("figure_type"))
