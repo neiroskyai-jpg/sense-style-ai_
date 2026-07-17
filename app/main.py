@@ -1489,7 +1489,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <style>
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
  *{box-sizing:border-box} body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
- .wrap{max-width:860px;margin:0 auto;padding:30px 22px 80px}
+ .wrap{max-width:1120px;margin:0 auto;padding:30px 26px 80px}
  .top{display:flex;justify-content:space-between;align-items:center} .logo{font-family:'Cormorant Garamond',serif;font-size:22px} .top a{color:var(--muted);font-size:14px;text-decoration:none;margin-left:16px}
  h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:38px;margin:20px 0 2px}
  .sub{color:var(--muted);margin:0} .sub .gap{color:var(--wine);font-weight:600}
@@ -1498,8 +1498,12 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .seasons{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
  .seasons a{padding:8px 15px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--ink);text-decoration:none;background:#fff}
  .seasons a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
- .build{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:10px}
+ .build{display:grid;grid-template-columns:1.15fr 1fr;gap:20px;margin-top:10px}
  @media(max-width:680px){.build{grid-template-columns:1fr}}
+ /* Слоты «Твоего лука» — сеткой в 2 колонки: собирать образ горизонтальной раскладкой, а не
+    длинным вертикальным списком (было узко и неудобно вести лук). */
+ .cells{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+ @media(max-width:520px){.cells{grid-template-columns:1fr}}
  .panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
  .slot{margin:0 0 14px} .slotname{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine);margin:0 0 7px}
  .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:8px}
@@ -1738,9 +1742,11 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  </div>
  <div class=panel canvas>
   <div class=slotname style="margin-bottom:10px">Твой лук</div>
+  <div class=cells>
   {% for grp in board %}
   <div class=cell data-cell="{{ grp.slot }}"><span class=cellslot>{{ grp.slot }}</span><span class=cellbody><span class=cellval>—</span></span></div>
   {% endfor %}
+  </div>
   <div class=ctrls><button type=button onclick=clearOutfit()>Очистить</button><span class=cnt>вещей в луке: <b id=count>0</b></span></div>
   {% if palette %}
   <div class=slotname style="margin:16px 0 6px">Твоя палитра</div>
