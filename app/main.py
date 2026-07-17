@@ -1524,6 +1524,27 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .shopname{font-size:15.5px} .shopwhy{font-size:13px;color:var(--muted);margin:2px 0 0}
  .empty{color:var(--muted);font-size:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
  /* ── дашборд-хиро: сводка сверху (KPI + кольцо разрыва + трекер) ── */
+ /* Премиальный обзор в 3 карточки (по мокапу «Моя карта стиля») */
+ .ovgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0 4px}
+ @media(max-width:820px){.ovgrid{grid-template-columns:1fr}}
+ .ovcard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px;display:flex;flex-direction:column}
+ .ovhead{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:14px}
+ .ovring{display:flex;align-items:center;gap:16px;flex:1}
+ .ovring .ring{width:118px;height:118px}
+ .ovring .rn{font-size:34px}
+ .ovtext{font-size:13.5px;line-height:1.5;color:var(--muted);margin:0}
+ .ovlist{list-style:none;margin:0;padding:0;flex:1}
+ .ovlist li{position:relative;padding:0 0 10px 26px;font-size:14px;line-height:1.4;color:var(--ink)}
+ .ovlist li::before{content:'✓';position:absolute;left:0;top:0;color:var(--wine);font-weight:700}
+ .ovlink{color:var(--wine);text-decoration:none;font-size:14px;margin-top:auto}
+ .ovformula{flex:1;margin-bottom:12px}
+ .ovfrow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+ .ovfrow:last-child{border-bottom:0}
+ .ovfn{flex:0 0 26px;height:26px;border-radius:50%;background:#fbf1f1;color:var(--wine);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+ .ovfv{font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--ink)}
+ .ovchips{display:flex;flex-wrap:wrap;gap:6px}
+ .ovchips .pc{font-size:11.5px;color:var(--muted);background:#fbf8f1;border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+ .ovchips .pc b{color:var(--ink);font-weight:500}
  .dash{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;background:#fff;
   border:1px solid var(--line);border-radius:20px;padding:22px 24px;margin:18px 0 4px}
  .ring{position:relative;width:132px;height:132px;flex:0 0 auto}
@@ -1642,23 +1663,51 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <a href="#review">Отзыв</a>
 </nav>
 
-{# ── дашборд: сводка одним взглядом ── #}
-<div class=dash id=dash>
- <div class=ring>
-  <svg width=132 height=132 viewBox="0 0 132 132" aria-hidden=true>
-   <circle cx=66 cy=66 r=52 fill=none stroke="#efe8db" stroke-width=11></circle>
-   <circle id=gapRing cx=66 cy=66 r=52 fill=none stroke="var(--wine)" stroke-width=11
-     stroke-linecap=round stroke-dasharray=327
-     stroke-dashoffset="{{ 327 if gap_now is none else (327 * (1 - gap_now / 100.0))|round(1) }}"></circle>
-  </svg>
-  <div class=rc><span class=rn>{% if gap_now is not none %}{{ gap_now }}%{% else %}—{% endif %}</span><span class=rl>разрыв сейчас</span></div>
+{# ── дашборд: премиальный обзор в 3 карточки (по мокапу «Моя карта стиля») ── #}
+<div class=ovgrid id=dash>
+
+ {# карточка 1 — разрыв стиля с кольцом #}
+ <div class=ovcard>
+  <div class=ovhead>Разрыв стиля</div>
+  <div class=ovring>
+   <div class=ring>
+    <svg width=118 height=118 viewBox="0 0 132 132" aria-hidden=true>
+     <circle cx=66 cy=66 r=52 fill=none stroke="#efe8db" stroke-width=11></circle>
+     <circle id=gapRing cx=66 cy=66 r=52 fill=none stroke="var(--wine)" stroke-width=11
+       stroke-linecap=round stroke-dasharray=327
+       stroke-dashoffset="{{ 327 if gap_now is none else (327 * (1 - gap_now / 100.0))|round(1) }}"></circle>
+    </svg>
+    <div class=rc><span class=rn>{% if gap_now is not none %}{{ gap_now }}%{% else %}—{% endif %}</span><span class=rl>сейчас</span></div>
+   </div>
+   <p class=ovtext>{% if track and track.delta and track.delta > 0 %}Ты на правильном пути — разрыв сократился на {{ track.delta }} п.п. Ещё немного, и гардероб начнёт работать на тебя.{% else %}Здесь ты видишь, насколько образ совпадает с тем, как ты хочешь считываться. Ниже — что закрыть.{% endif %}</p>
+  </div>
  </div>
- <div class=kpis>
-  <div class="kpi wide"><div class=kn>{{ formula }}</div><div class=kl>твоя формула стиля</div></div>
-  <div class=kpi><div class=kn>{{ n_items }}</div><div class=kl>вещей в капсуле</div></div>
-  <div class=kpi><div class=kn>{{ combos_label }}</div><div class=kl>образов из капсулы</div></div>
-  <div class=kpi><div class=kn>{% if track %}{{ track.measurements }}{% else %}1{% endif %}{% if track and track.delta and track.delta > 0 %}<span class=delta>−{{ track.delta }} п.п.</span>{% endif %}</div><div class=kl>{% if track and track.measurements > 1 %}замера разрыва{% else %}точка отсчёта{% endif %}</div></div>
+
+ {# карточка 2 — что закрывает разрыв (принципы метода) #}
+ <div class=ovcard>
+  <div class=ovhead>Что закрывает разрыв</div>
+  <ul class=ovlist>
+   <li>Собери базу и ключевые вещи капсулы</li>
+   <li>Добавь акценты и фактуры из палитры</li>
+   <li>Держи силуэты под свою фигуру</li>
+   <li>Соблюдай цветовую гамму, избегай стоп-цветов</li>
+  </ul>
+  <a class=ovlink href="#wardrobe">Смотреть капсулу →</a>
  </div>
+
+ {# карточка 3 — разбор формулы на компоненты #}
+ <div class=ovcard>
+  <div class=ovhead>Твоя формула</div>
+  {% set parts = (formula or '').replace('×','|').split('|') %}
+  <div class=ovformula>
+   {% for p in parts %}{% if p.strip() %}<div class=ovfrow><span class=ovfn>{{ loop.index }}</span><span class=ovfv>{{ p.strip() }}</span></div>{% endif %}{% endfor %}
+  </div>
+  <div class=ovchips>
+   {% if colortype %}<span class=pc>Цветотип · <b>{{ colortype }}</b></span>{% endif %}
+   {% if season_label %}<span class=pc>Сезон · <b>{{ season_label }}</b></span>{% endif %}
+  </div>
+ </div>
+
 </div>
 
 {% if track %}
