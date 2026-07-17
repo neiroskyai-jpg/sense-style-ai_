@@ -478,7 +478,7 @@ ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <style>
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
  *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
- .wrap{max-width:560px;margin:0 auto;padding:34px 22px 70px}
+ .wrap{max-width:860px;margin:0 auto;padding:34px 26px 70px}
  .top{display:flex;justify-content:space-between;align-items:center} .logo{font-size:18px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
  h1{font-weight:normal;font-size:30px;margin:26px 0 4px} .email{color:var(--muted);margin:0 0 22px}
  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px}
