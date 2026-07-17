@@ -1879,7 +1879,7 @@ function render(){
 }
 function pickKey(key){ var o=byKey[key]; if(!o) return;
  if(outfit[o.slot] && outfit[o.slot].name===o.name){ delete outfit[o.slot]; } else { outfit[o.slot]=o; }
- saveWeek(); markDays(); render();); }
+ saveWeek(); markDays(); render(); }
 function clearOutfit(){ week[curDay]={}; outfit=week[curDay]; saveWeek(); markDays(); render(); }
 document.querySelectorAll('.pitem').forEach(function(i){
  var key=i.getAttribute('data-slot')+'|'+i.getAttribute('data-name');
