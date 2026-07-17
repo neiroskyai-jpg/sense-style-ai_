@@ -26,14 +26,20 @@ def client(monkeypatch, tmp_path):
     return m.app.test_client()
 
 
-def test_vyklyuchen_po_umolchaniyu(monkeypatch):
+def test_vklyuchen_po_umolchaniyu_na_vremya_testov(monkeypatch):
+    """По умолчанию ВКЛ (тест-период). Перед публичным постом выключается SENSE_OPEN_ACCESS=0."""
     monkeypatch.delenv("SENSE_OPEN_ACCESS", raising=False)
+    assert m._open_access() is True
+
+
+def test_yavno_vyklyuchaetsya_nulyom(monkeypatch):
+    monkeypatch.setenv("SENSE_OPEN_ACCESS", "0")
     assert m._open_access() is False
 
 
-def test_login_bez_otkrytogo_dostupa_ne_puskaet(client, monkeypatch):
-    """Обычный режим: /login не логинит в сессию — ждёт клик по письму."""
-    monkeypatch.delenv("SENSE_OPEN_ACCESS", raising=False)
+def test_login_pri_vyklyuchennom_dostupe_ne_puskaet(client, monkeypatch):
+    """Выключенный режим (=0): /login не логинит в сессию — ждёт клик по письму."""
+    monkeypatch.setenv("SENSE_OPEN_ACCESS", "0")
     r = client.post("/login", data={"email": "a@mail.ru"})
     with client.session_transaction() as s:
         assert "email" not in s
@@ -59,8 +65,8 @@ def test_lead_s_otkrytym_dostupom_loginit(client, monkeypatch):
         assert s.get("email") == "b@mail.ru"
 
 
-def test_lead_bez_dostupa_ne_loginit(client, monkeypatch):
-    monkeypatch.delenv("SENSE_OPEN_ACCESS", raising=False)
+def test_lead_pri_vyklyuchennom_ne_loginit(client, monkeypatch):
+    monkeypatch.setenv("SENSE_OPEN_ACCESS", "0")
     client.post("/lead", json={"email": "c@mail.ru", "job_id": None})
     with client.session_transaction() as s:
         assert "email" not in s
