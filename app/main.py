@@ -40,6 +40,7 @@ from core.auth import email_configured, make_token, read_token, send_magic_link
 from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
 from core.catalog import match_products, parse_csv, score_products
+from core.weather import configured as weather_configured, dress_advice, get_weather
 from core.profiles import (current_card_by_season, get_profile, save_card,
                            save_diagnosis, save_style_profile)
 
@@ -1649,6 +1650,16 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .pagecopy{font-size:15px;color:#4e473f;line-height:1.6}
  .pagechips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
  .pagechips span{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted)}
+ .weatherbox{margin-top:16px;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:#fff}
+ .weathernow{display:flex;align-items:baseline;gap:10px}
+ .weathernow b{font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--wine)}
+ .weathernow span{font-size:13px;color:var(--muted)}
+ .weatheradvice{margin:8px 0 0;font-size:14px;color:#4e473f;line-height:1.55}
+ .weatherlayer{margin-top:8px;font-size:13px;color:var(--muted)}
+ .weatherlayer b{color:var(--ink)}
+ .cityform{display:flex;gap:8px;margin-top:12px}
+ .cityform input{flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#fff}
+ .cityform button{padding:9px 16px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:inherit;font-size:13px;cursor:pointer}
  .pagefacts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
  .pagefact{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 15px}
  .pagefact-k{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
@@ -1862,6 +1873,29 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    <span>проверка по фото</span>
    <span>капсула по сезонам</span>
   </div>
+  {# Погода: совет «что надеть» бессмысленен без неё — в +25 и −10 капсула работает по-разному #}
+  {% if weather %}
+  <div class=weatherbox>
+   <div class=weathernow>
+    <b>{{ weather.temp }}°</b>
+    <span>{{ weather.city }} · {{ weather.description }}{% if weather.feels_like != weather.temp %} · ощущается {{ weather.feels_like }}°{% endif %}</span>
+   </div>
+   {% if dress %}<p class=weatheradvice>{{ dress.note }}</p>
+   <div class=weatherlayer>Сегодня поверх капсулы — <b>{{ dress.layer }}</b></div>{% endif %}
+   <form method=post action="/cabinet/city" class=cityform>
+    <input name=city value="{{ city }}" placeholder="Город" aria-label="Город">
+    <button type=submit>Обновить</button>
+   </form>
+  </div>
+  {% elif weather_on %}
+  <div class=weatherbox>
+   <p class=weatheradvice>Укажи город — и совет на день будет учитывать погоду: что надеть поверх капсулы и какую обувь взять.</p>
+   <form method=post action="/cabinet/city" class=cityform>
+    <input name=city value="{{ city }}" placeholder="Например: Санкт-Петербург" aria-label="Город">
+    <button type=submit>Сохранить</button>
+   </form>
+  </div>
+  {% endif %}
  </div>
  <div class=pagefacts>
   <div class=pagefact>
@@ -2437,6 +2471,11 @@ def cabinet():
                       "count": track.get("measurements", len(gaps))}
     advice = _daily_cabinet_advice(card, diag, track, board, card.get("shopping") or [])
     weekview = _daily_week_view(card, board)
+    # Погода: совет «что надеть сегодня» без неё одинаков в +25 и в −10. Город клиентка задаёт
+    # сама, он живёт в профиле. Нет города или ключа OpenWeatherMap — блок просто не показываем.
+    city = ((get_profile(email) or {}).get("style_profile") or {}).get("city") or ""
+    weather = get_weather(city) if city else None
+    dress = dress_advice(weather) if weather else {}
     return render_template_string(
         CABINET_PAGE, email=email, roles=roles, milestones=milestones,
         formula=card.get("formula") or diag.get("style_formula"),
@@ -2444,6 +2483,7 @@ def cabinet():
         want_traits=want3, days_since=days_since, thanks=(request.args.get("fb") == "1"),
         gap=card.get("gap"), gap_now=gap_now, track=track,
         advice=advice, weekview=weekview,
+        city=city, weather=weather, dress=dress, weather_on=weather_configured(),
         season_label=(card.get("season_label") or (_CARD_SEASONS[sel]["label"] if sel in _CARD_SEASONS else None)),
         n_items=n_items, combos_label=combos_label, items_n=items_n,
         board=board, palette=palette, shopping=card.get("shopping") or [],
@@ -2603,6 +2643,18 @@ a.back{color:var(--muted);font-size:14px;text-decoration:none;display:inline-blo
 <a class=btn href="/premium.html">Узнать о «Преображении» →</a><br>
 <a class=back href="/cabinet">← Вернуться в кабинет</a>
 </div></body></html>"""
+
+
+@app.post("/cabinet/city")
+def cabinet_city():
+    """Город клиентки для погоды. Живёт в профиле — задаётся один раз, дальше совет учитывает погоду."""
+    email = _current_user()
+    city = (request.form.get("city") or "").strip()[:80]
+    prof = get_profile(email) or {}
+    sp = dict(prof.get("style_profile") or {})
+    sp["city"] = city
+    save_style_profile(email, sp)
+    return redirect("/cabinet")
 
 
 @app.get("/stylebook")
