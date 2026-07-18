@@ -1702,6 +1702,13 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .cityform{display:flex;gap:8px;margin-top:12px}
  .cityform input{flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#fff}
  .cityform button{padding:9px 16px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:inherit;font-size:13px;cursor:pointer}
+ .todaylook{display:flex;gap:14px;margin:14px 0 4px}
+ .todaylook img{width:132px;height:176px;object-fit:cover;border-radius:14px;border:1px solid var(--line);flex:0 0 auto}
+ .todaylookmeta{display:flex;flex-direction:column;justify-content:center;gap:6px}
+ .todaylookscn{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--wine);text-transform:capitalize}
+ .todaylookdesc{margin:0;font-size:13px;color:#4e473f;line-height:1.5}
+ .todaylooklayer{font-size:12px;color:var(--muted)}
+ @media(max-width:520px){.todaylook{flex-direction:column}.todaylook img{width:100%;height:auto}}
  .pagefacts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
  .pagefact{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 15px}
  .pagefact-k{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
@@ -2082,6 +2089,17 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <div class=todaycard>
   <div class=tk>Стиль каждый день</div>
   <div class=tt>{{ weekview['today']['title'] }}</div>
+  {# Образ дня с ФОТО — берём готовый образ Карты, новую генерацию не запускаем #}
+  {% if look_today %}
+  <div class=todaylook>
+   <img src="{{ look_today.img }}" alt="Образ дня: {{ look_today.scenario }}">
+   <div class=todaylookmeta>
+    <div class=todaylookscn>{{ look_today.scenario }}</div>
+    {% if look_today.desc %}<p class=todaylookdesc>{{ look_today.desc }}</p>{% endif %}
+    {% if dress %}<div class=todaylooklayer>Поверх — {{ dress.layer }}</div>{% endif %}
+   </div>
+  </div>
+  {% endif %}
   <p class=tsub>{{ weekview['today']['body'] }}</p>
   {% if weekview['today']['items'] %}<div class=tchips>{% for item in weekview['today']['items'] %}<span>{{ item }}</span>{% endfor %}</div>{% endif %}
   <a class=tcta href="#wardrobe">{{ weekview['today']['cta'] }}</a>
@@ -2303,6 +2321,42 @@ document.querySelectorAll('[data-cell]').forEach(function(c){
 </div></body></html>"""
 
 
+def _look_of_the_day(card: dict, weather: dict | None = None) -> dict | None:
+    """«Образ дня» с фото — из уже сгенерированных образов Карты, без новой генерации.
+
+    Образы на клиентке стоят денег и минуты времени, поэтому не рендерим заново: берём готовые
+    из Карты и раскладываем по дням недели. Будни тянутся к деловым сценариям, выходные — к
+    свободным. В мороз и дождь открытые/лёгкие сценарии («свидание», «выход») уступают закрытым.
+    """
+    looks = [lk for lk in (card.get("looks") or []) if lk.get("img")]
+    if not looks:
+        return None
+    from datetime import date
+    wd = date.today().weekday()  # 0 — понедельник
+    workday = wd <= 4
+    prefer = (["деловая встреча", "презентация", "корпоратив"] if workday
+              else ["выходные", "путешествие", "свидание"])
+    cold = bool(weather) and weather.get("feels_like", 99) < 5
+    if cold:  # в мороз «свидание» с открытым платьем — плохой совет дня
+        prefer = [p for p in prefer if p != "свидание"] or prefer
+
+    def _rank(lk):
+        scn = (lk.get("scenario") or "").lower()
+        for i, p in enumerate(prefer):
+            if p in scn:
+                return i
+        return len(prefer)
+
+    # Ротация ТОЛЬКО среди одинаково подходящих: если брать по индексу дня из общего списка,
+    # приоритет ломается — в мороз выпадало «свидание», которое мы только что исключили.
+    best = min(_rank(lk) for lk in looks)
+    fit = [lk for lk in looks if _rank(lk) == best]
+    chosen = fit[wd % len(fit)]
+    return {"img": chosen.get("img"), "scenario": chosen.get("scenario") or "Образ дня",
+            "desc": chosen.get("desc") or chosen.get("description") or "",
+            "why": chosen.get("why") or ""}
+
+
 def _daily_cabinet_advice(card: dict, diag: dict, track: dict | None,
                           board: list[dict], shopping: list[dict]) -> dict | None:
     """Короткий совет недели для живого кабинета.
@@ -2522,6 +2576,7 @@ def cabinet():
     city = ((get_profile(email) or {}).get("style_profile") or {}).get("city") or ""
     weather = get_weather(city) if city else None
     dress = dress_advice(weather) if weather else {}
+    look_today = _look_of_the_day(card, weather)  # фото из уже готовых образов Карты
     return render_template_string(
         CABINET_PAGE, email=email, roles=roles, milestones=milestones,
         formula=card.get("formula") or diag.get("style_formula"),
@@ -2530,6 +2585,7 @@ def cabinet():
         gap=card.get("gap"), gap_now=gap_now, track=track,
         advice=advice, weekview=weekview,
         city=city, weather=weather, dress=dress, weather_on=weather_configured(),
+        look_today=look_today,
         season_label=(card.get("season_label") or (_CARD_SEASONS[sel]["label"] if sel in _CARD_SEASONS else None)),
         n_items=n_items, combos_label=combos_label, items_n=items_n,
         board=board, palette=palette, shopping=card.get("shopping") or [],
