@@ -1,0 +1,103 @@
+"""Проверки продуктового флоу тарифов: CTA ведут в свои сценарии, а не в квиз по кругу.
+
+Нам важно доказать две вещи:
+1. В landing тарифы разведены по своим ссылкам: диагностика -> квиз, Карта -> /card, кабинет -> /cabinet.
+2. Второй тариф не ломается без Карты: /cabinet отправляет в /card, а не назад в квиз.
+"""
+import os
+from pathlib import Path
+
+os.environ.setdefault("OPENROUTER_API_KEY", "dummy")
+
+import pytest  # noqa: E402
+
+from app import main as m  # noqa: E402
+
+EMAIL = "tiers@test.ru"
+
+
+def test_tariffs_html_has_separate_links_for_each_step():
+    html = Path("web/index.html").read_text(encoding="utf-8")
+    tiers = html.split('<section id="tiers">', 1)[1].split("</section>", 1)[0]
+
+    assert 'href="identity-scan-quiz.html"' in tiers
+    assert 'href="/card"' in tiers
+    assert 'href="/cabinet"' in tiers
+
+
+@pytest.fixture
+def client(monkeypatch):
+    m.app.config["TESTING"] = True
+    store: dict = {}
+
+    monkeypatch.setattr(m, "get_profile", lambda e: store.get(e, {}))
+    monkeypatch.setattr(m, "save_diagnosis", lambda e, d: store.setdefault(e, {}).__setitem__("diagnosis", d))
+    monkeypatch.setattr(m, "save_card", lambda e, c: store.setdefault(e, {}).__setitem__("card", c))
+    monkeypatch.setattr(m, "current_card_by_season", lambda e: {"fw": store.get(e, {}).get("card")} if store.get(e, {}).get("card") else {})
+    monkeypatch.setattr(m, "gap_progress", lambda e: None)
+    monkeypatch.setattr(m, "_visual_capsule", lambda *a, **k: [])
+    monkeypatch.setattr(m, "_capsule_board", lambda items: [{"slot": "Верх", "items": [{"name": "Жакет"}]}] if items else [])
+    monkeypatch.setattr(m, "record_event", lambda *a, **k: None)
+    monkeypatch.setattr(m, "record_call", lambda: None)
+    monkeypatch.setattr(m, "_quota_left", lambda: True)
+    monkeypatch.setattr(m, "_gen_allowed", lambda e: True)
+    monkeypatch.setattr(m, "build_style_card", lambda diag, season=None: {
+        "formula": diag.get("style_formula"), "gap": diag.get("gap_percentage"),
+        "palette": [], "base_capsule": [{"name": "Жакет"}], "looks": [],
+    })
+
+    with m.app.test_client() as c:
+        yield c, store
+
+
+def test_card_tariff_opens_card_builder_when_diagnosis_exists(client):
+    c, store = client
+    store[EMAIL] = {"diagnosis": {"style_formula": "Soft Classic", "gap_percentage": 44}}
+
+    with c.session_transaction() as s:
+        s["email"] = EMAIL
+
+    r = c.get("/card")
+
+    assert r.status_code == 200
+    assert "Покажем тебя в 6 образах" in r.get_data(as_text=True)
+
+
+def test_daily_tariff_without_card_routes_to_card_not_quiz(client):
+    c, store = client
+    store[EMAIL] = {"diagnosis": {"style_formula": "Soft Classic", "gap_percentage": 44}}
+
+    with c.session_transaction() as s:
+        s["email"] = EMAIL
+
+    r = c.get("/cabinet")
+
+    assert r.status_code == 302
+    assert r.headers["Location"].endswith("/card")
+
+
+def test_daily_tariff_with_existing_card_opens_cabinet(client):
+    c, store = client
+    store[EMAIL] = {
+        "diagnosis": {"style_formula": "Soft Classic", "gap_percentage": 44},
+        "card": {
+            "formula": "Soft Classic",
+            "gap": 44,
+            "palette": [],
+            "base_capsule": [{"name": "Жакет"}],
+            "looks": [{"scenario": "деловая встреча", "bucket": "Работа", "items": ["Жакет", "Брюки"]}],
+            "shopping": [],
+            "season": "fw",
+            "season_label": "Осень-зима",
+        },
+    }
+
+    with c.session_transaction() as s:
+        s["email"] = EMAIL
+
+    r = c.get("/cabinet")
+    html = r.get_data(as_text=True)
+
+    assert r.status_code == 200
+    assert "Мой гардероб" in html
+    assert "Стиль каждый день" in html

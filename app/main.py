@@ -553,6 +553,17 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  h2{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:30px;margin:46px 0 16px;border-bottom:1px solid var(--line);padding-bottom:8px;letter-spacing:-.01em}
  .formula{font-family:'Cormorant Garamond',Georgia,serif;font-size:31px;font-weight:600;line-height:1.15;margin:4px 0} .gap{color:var(--wine);font-weight:600}
  .dna{font-size:18px;line-height:1.7;color:#3a352e}
+ .hero-card{margin:26px 0 18px;background:linear-gradient(135deg,#fff,#fbf7ef);border:1px solid var(--line);border-radius:22px;padding:24px 26px 22px;box-shadow:0 12px 34px rgba(40,26,20,.04)}
+ .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:start}
+ .hero-note{font-size:14px;color:#4e473f;max-width:540px}
+ .hero-facts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+ .hero-fact{background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px 16px}
+ .hero-fact-k{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+ .hero-fact-v{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;line-height:1.05;color:var(--wine);margin-top:7px}
+ .hero-fact-s{font-size:13px;color:#5f564d;margin-top:4px;line-height:1.4}
+ .hero-pillrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+ .hero-pill{display:inline-flex;align-items:center;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:12px;color:#5e554c}
+ .hero-pill b{color:var(--wine);font-weight:500}
  .sw-group{font-size:13px;color:var(--muted);margin:14px 0 6px;letter-spacing:.04em;text-transform:uppercase}
  .swatches{display:flex;flex-wrap:wrap;gap:10px}
  .sw{width:84px} .sw .chip{height:54px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
@@ -563,11 +574,16 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .stop li:before{content:'✕';font-size:11px;color:#c07a6a}
  .looks{display:grid;grid-template-columns:1fr 1fr;gap:16px}
  @media(max-width:560px){.looks{grid-template-columns:1fr}}
- .look{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+ .look{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 18px 18px;box-shadow:0 10px 24px rgba(31,22,20,.035)}
  .look .scn{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--wine)}
  .look .nm{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:23px;margin:4px 0 8px;line-height:1.1}
- .look .it{font-size:13.5px;color:#4a443c;margin:0 0 8px}
+ .look .it{font-size:13px;color:#4a443c;margin:0 0 8px;line-height:1.45}
  .look .ds{font-size:14px;color:#5a5246}
+ .look .meta{font-size:13px;margin-top:10px}
+ .look-metrics{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 10px}
+ .look-chip{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:#fbf7f0;border:1px solid var(--line);font-size:11.5px;color:#655b52}
+ .look-chip strong{color:var(--wine);font-weight:500}
+ .look-items{padding-top:10px;border-top:1px solid rgba(93,34,48,.08)}
  .cap-h{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine);margin:18px 0 8px;font-weight:normal}
  .blocklead{font-family:Arial,sans-serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--wine);margin:46px 0 -4px;padding-top:22px;border-top:2px solid var(--wine)}
  .noimg{background:#fff;border:1px solid #e3dccf;border-left:3px solid var(--wine);border-radius:10px;padding:16px 18px;margin:18px 0}
@@ -594,12 +610,13 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .refname{font-size:20px;color:var(--wine)} .refline{font-size:14px;color:#5a5246;margin:6px 0 0}
  .print{display:block;margin:30px auto 0;background:var(--wine);color:#fff;border:0;border-radius:10px;padding:14px 26px;font:inherit;font-size:16px;cursor:pointer}
  /* блок «что дальше» — переход из Карты в кабинет «Стиль каждый день» */
- .nextstep{margin:40px 0 10px;background:#fff;border:1px solid var(--line,#e3dccf);border-left:3px solid var(--wine);border-radius:14px;overflow:hidden}
- .nsbody{padding:24px 26px}
+ .nextstep{margin:44px 0 10px;background:linear-gradient(135deg,#fff,#fbf6ed);border:1px solid var(--line,#e3dccf);border-radius:22px;overflow:hidden;box-shadow:0 14px 34px rgba(31,22,20,.045)}
+ .nsbody{padding:26px 28px}
  .nseyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine);margin-bottom:6px}
- .nstitle{font-size:26px;color:var(--ink,#1f1d1b);margin-bottom:8px}
- .nstext{color:var(--muted,#6b645c);font-size:15px;line-height:1.5;margin:0 0 16px;max-width:560px}
- .nsbtn{display:inline-block;background:var(--wine);color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:15px}
+ .nstitle{font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;color:var(--ink,#1f1d1b);margin-bottom:8px;line-height:1.04}
+ .nstext{color:var(--muted,#6b645c);font-size:15px;line-height:1.6;margin:0 0 16px;max-width:560px}
+ .nsbtn{display:inline-block;background:var(--wine);color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-size:14px;letter-spacing:.06em}
+ @media(max-width:720px){.hero-grid{grid-template-columns:1fr}.hero-facts{grid-template-columns:1fr 1fr}}
  @media print{.nextstep{display:none!important}}
  @media print{
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -626,12 +643,49 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if c.season_label %}<p class=who style="margin:0 0 4px">Капсула на сезон: {{ c.season_label }}</p>{% endif %}
 {% if c.gap is not none %}<p>Identity Gap: <span class=gap>{{ c.gap }}%</span> — тот самый разрыв с твоей диагностики. Здесь ты видишь, чем именно его закрыть.</p>{% endif %}
 {% if c.dna %}<p class=dna>{{ c.dna }}</p>{% endif %}
+<div class=hero-card>
+ <div class=hero-grid>
+  <div>
+   <div class=eyebrow>Персональный стайлбук</div>
+   <p class=hero-note>Здесь собрана не просто красивая подборка, а твоя личная система: что тебя усиливает, на каких вещах держится образ и как не терять направление при покупках.</p>
+   <div class=hero-pillrow>
+    {% if c.season_label %}<span class=hero-pill>Сезон · <b>{{ c.season_label }}</b></span>{% endif %}
+    {% if c.colortype %}<span class=hero-pill>Цветотип · <b>{{ c.colortype }}</b></span>{% endif %}
+    {% if c.figure %}<span class=hero-pill>Фигура · <b>{{ c.figure }}</b></span>{% endif %}
+   </div>
+  </div>
+  <div class=hero-facts>
+   <div class=hero-fact>
+    <div class=hero-fact-k>Образы</div>
+    <div class=hero-fact-v>{{ c.looks|length if c.looks else 0 }}</div>
+    <div class=hero-fact-s>сценариев на тебе под жизнь и роли</div>
+   </div>
+   <div class=hero-fact>
+    <div class=hero-fact-k>Капсула</div>
+    <div class=hero-fact-v>{{ c.starter_capsule_count or (c.base_capsule|length if c.base_capsule else 0) }}</div>
+    <div class=hero-fact-s>стартовых вещей в первом опорном гардеробе</div>
+   </div>
+   <div class=hero-fact>
+    <div class=hero-fact-k>Покупки</div>
+    <div class=hero-fact-v>{{ c.shopping|length if c.shopping else 0 }}</div>
+    <div class=hero-fact-s>приоритетов, которые усиливают Формулу</div>
+   </div>
+   <div class=hero-fact>
+    <div class=hero-fact-k>Сочетания</div>
+    <div class=hero-fact-v>{{ c.combination_count or '—' }}</div>
+    <div class=hero-fact-s>рабочих комплектов из стартовой капсулы</div>
+   </div>
+  </div>
+ </div>
+</div>
 {% macro lookcard(lk) %}<div class=look>
   {% if lk.img %}<img src="{{ lk.img }}" alt="Образ" style="width:100%;border-radius:10px;margin-bottom:10px;display:block">{% endif %}
   {% if lk.scenario %}<div class=scn>{{ lk.scenario }}</div>{% endif %}
   {% if lk.title %}<div class=nm>{{ lk.title }}</div>{% elif lk.name %}<div class=nm>{{ lk.name }}</div>{% endif %}
-  {% if lk['items'] %}<p class=it>{{ lk['items']|join(' · ') }}</p>{% endif %}
-  {% if lk.description %}<p class=ds>{{ lk.description }}</p>{% endif %}
+  {% if lk.formula_match or lk.effect %}<div class=look-metrics>{% if lk.formula_match %}<span class=look-chip>Совпадение · <strong>{{ lk.formula_match }}%</strong></span>{% endif %}{% if lk.effect %}<span class=look-chip>{{ lk.effect }}</span>{% endif %}</div>{% endif %}
+  {% if lk.why_it_works %}<p class=ds>{{ lk.why_it_works }}</p>{% elif lk.description %}<p class=ds>{{ lk.description }}</p>{% endif %}
+  {% if lk['items'] %}<div class=look-items><p class=it>{{ lk['items']|join(' · ') }}</p></div>{% endif %}
+  {% if lk.missing_items %}<p class=meta>Если докупить: {{ lk.missing_items|join(' · ') }}</p>{% endif %}
  </div>{% endmacro %}
 
 <!-- ═══════ БЛОК 1 · КТО ТЫ ═══════ -->
@@ -711,7 +765,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if c.visual_capsule or c.base_capsule %}
 <div class=blocklead><b>05</b>Твой гардероб</div>
 <h2>Базовая капсула — ядро гардероба</h2>
-<p class=meta>Эти вещи — основа, всё остальное собирается вокруг них{% if c.combination_count %}: из них получается около {{ c.combination_count }} рабочих образов{% endif %}.</p>
+<p class=meta>Это стартовая капсула{% if c.starter_capsule_count %} на {{ c.starter_capsule_count }} вещей{% endif %}: с неё удобно начать гардероб, а дальше докупать только то, что усиливает твою Формулу{% if c.combination_count %}. Из неё получается около {{ c.combination_count }} рабочих образов{% endif %}.</p>
 {% if c.visual_capsule %}
  {% for grp in c.visual_capsule %}
  <div class=capslot><span class=capslotname>{{ grp.slot }}</span></div>
@@ -948,6 +1002,10 @@ var jid="{{ job_id }}";
 function poll(){
   fetch('/card/status/'+jid).then(function(r){return r.json();}).then(function(d){
     if(d.status==='done'){ location.href='/card'; }
+    else if(d.status==='retry'){
+      document.getElementById('sp').style.display='none';
+      document.getElementById('msg').innerHTML=(d.error||'Образы пока не собрались')+'<br><br><a href="/card">Открыть сохранённую Карту</a> &nbsp; <a href="/card?rebuild=1">Повторить генерацию</a>';
+    }
     else if(d.status==='stale'){
       // генерация не прошла, но готовая Карта есть — предлагаем её, не выдавая за свежую
       document.getElementById('sp').style.display='none';
@@ -1485,6 +1543,18 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .top{display:flex;justify-content:space-between;align-items:center} .logo{font-family:'Cormorant Garamond',serif;font-size:22px} .top a{color:var(--muted);font-size:14px;text-decoration:none;margin-left:16px}
  h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:38px;margin:20px 0 2px}
  .sub{color:var(--muted);margin:0} .sub .gap{color:var(--wine);font-weight:600}
+ .pageintro{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin:18px 0 18px}
+ .pagecard{background:linear-gradient(135deg,#fff,#fbf6ec);border:1px solid var(--line);border-radius:22px;padding:22px 24px;box-shadow:0 12px 30px rgba(31,22,20,.04)}
+ .pageeyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine)}
+ .pagetitle{font-family:'Cormorant Garamond',serif;font-size:32px;line-height:1.04;margin:8px 0 10px;color:var(--ink)}
+ .pagecopy{font-size:15px;color:#4e473f;line-height:1.6}
+ .pagechips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+ .pagechips span{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted)}
+ .pagefacts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+ .pagefact{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 15px}
+ .pagefact-k{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+ .pagefact-v{font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.02;color:var(--wine);margin-top:7px}
+ .pagefact-s{font-size:13px;color:#5f564d;margin-top:4px;line-height:1.4}
  h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:26px;margin:34px 0 4px}
  .hint{color:var(--muted);font-size:14px;margin:2px 0 14px}
  .seasons{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
@@ -1602,11 +1672,33 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .pc b{color:var(--wine);font-weight:500}
  .want{font-size:13.5px;color:var(--muted);margin-top:10px;font-style:italic}
  .want b{color:var(--ink);font-style:normal}
- .nudge{display:flex;gap:12px;align-items:center;background:#fbf3e8;border:1px solid #e8d9c2;
-  border-radius:14px;padding:12px 16px;margin:12px 0 2px;font-size:13.5px;color:#7a5b32}
- .nudge a{margin-left:auto;white-space:nowrap;background:var(--wine);color:#fff;text-decoration:none;
+.nudge{display:flex;gap:12px;align-items:center;background:#fbf3e8;border:1px solid #e8d9c2;
+ border-radius:14px;padding:12px 16px;margin:12px 0 2px;font-size:13.5px;color:#7a5b32}
+.nudge a{margin-left:auto;white-space:nowrap;background:var(--wine);color:#fff;text-decoration:none;
   padding:8px 14px;border-radius:9px;font-size:13px;flex:0 0 auto}
- @media(max-width:680px){.prof{flex-direction:column;text-align:center}.profchips{justify-content:center}}
+@media(max-width:680px){.prof{flex-direction:column;text-align:center}.profchips{justify-content:center}}
+ .advice{background:linear-gradient(135deg,#fff,#fbf6ec);border:1px solid var(--line);border-radius:22px;padding:22px 24px;margin:16px 0 4px;box-shadow:0 12px 30px rgba(31,22,20,.04)}
+ .advice .ae{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine)}
+ .advice .at{font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.05;margin:8px 0 10px}
+ .advice .ab{font-size:15px;color:#4a443c;max-width:760px}
+ .advice .ac{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+ .advice .ac span{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted)}
+ .advice .aa{display:inline-block;margin-top:16px;background:var(--wine);color:#fff;text-decoration:none;padding:11px 18px;border-radius:10px;font-size:14px}
+ .todaygrid{display:grid;grid-template-columns:1.2fr .9fr;gap:16px;margin:16px 0 6px}
+ .todaycard,.weekcard{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px 24px;box-shadow:0 10px 28px rgba(31,22,20,.035)}
+ .tk{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine)}
+ .tt{font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1.05;margin:8px 0 10px}
+ .tsub{font-size:14px;color:#5a5246}
+ .tchips,.wkchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+ .tchips span,.wkchips span{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:#fbf8f1;color:var(--muted)}
+ .tcta{display:inline-block;margin-top:16px;background:var(--wine);color:#fff;text-decoration:none;padding:11px 18px;border-radius:10px;font-size:14px}
+ .weeklist{display:grid;gap:10px}
+ .wrow{display:grid;grid-template-columns:58px 1fr;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+ .wrow:last-child{border-bottom:0;padding-bottom:0}
+ .wday{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--wine);padding-top:2px}
+ .wrole{font-size:15px;color:var(--ink)}
+ .wtext{font-size:13px;color:var(--muted);margin-top:2px;line-height:1.45}
+ @media(max-width:820px){.todaygrid{grid-template-columns:1fr}}
  /* ── отзыв клиентки ── */
  .fb{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-top:14px}
  .fb h2{margin:0 0 4px} .fb p.h{color:var(--muted);font-size:14px;margin:0 0 14px}
@@ -1619,7 +1711,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .fb .done{margin:0;font-size:16px;color:var(--ink)}
  /* ── роли недели ── */
  .roles3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 2px}
- .role3{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+ .role3{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 26px rgba(31,22,20,.03)}
  /* фото сгенерированного образа на клиентке — вау-верх карточки роли (по мокапу) */
  .roleimg{aspect-ratio:4/5;overflow:hidden;background:#f2ede3}
  .roleimg img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1629,7 +1721,8 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .role3 ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
  .role3 li{font-size:12.5px;color:var(--muted);line-height:1.3}
  .role3 li::before{content:"— ";color:var(--wine)}
- @media(max-width:680px){.roles3{grid-template-columns:1fr}}
+ @media(max-width:820px){.pageintro{grid-template-columns:1fr}.pagefacts{grid-template-columns:1fr 1fr}}
+ @media(max-width:680px){.roles3{grid-template-columns:1fr}.pagefacts{grid-template-columns:1fr}}
  /* ── прогресс-вехи ── */
  .miles{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 2px}
  .mile{flex:1;min-width:120px;background:#fbf8f1;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
@@ -1659,6 +1752,41 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </style></head><body><div class=wrap>
 <div class=top><span class=logo>Чувство стиля</span><span><a href="/stylebook">Style Book</a><a href="/me">профиль</a><a href="/card">Карта</a><a href="/logout">выйти</a></span></div>
 <h1>Мой гардероб</h1>
+<div class=pageintro>
+ <div class=pagecard>
+  <div class=pageeyebrow>Стиль каждый день</div>
+  <div class=pagetitle>Формула уже собрана — теперь она должна работать в обычной жизни.</div>
+  <p class=pagecopy>Этот кабинет не объясняет стиль заново, а помогает проживать его каждый день: утром, в магазине, по ходу недели и сезона.</p>
+  <div class=pagechips>
+   <span>образ дня</span>
+   <span>ритм недели</span>
+   <span>проверка по фото</span>
+   <span>капсула по сезонам</span>
+  </div>
+ </div>
+ <div class=pagefacts>
+  <div class=pagefact>
+   <div class=pagefact-k>Формула</div>
+   <div class=pagefact-v>{{ formula }}</div>
+   <div class=pagefact-s>не новая диагностика, а твоя уже собранная основа</div>
+  </div>
+  <div class=pagefact>
+   <div class=pagefact-k>Капсула</div>
+   <div class=pagefact-v>{{ n_items }}</div>
+   <div class=pagefact-s>реальных вещей в активном сезоне</div>
+  </div>
+  <div class=pagefact>
+   <div class=pagefact-k>Покупки</div>
+   <div class=pagefact-v>{{ shopping|length if shopping else 0 }}</div>
+   <div class=pagefact-s>следующих шагов без случайных трат</div>
+  </div>
+  <div class=pagefact>
+   <div class=pagefact-k>Разрыв</div>
+   <div class=pagefact-v>{% if gap_now is not none %}{{ gap_now }}%{% else %}—{% endif %}</div>
+   <div class=pagefact-s>можно отслеживать не разово, а в динамике</div>
+  </div>
+ </div>
+</div>
 
 {# ── профиль-идентичность: кто ты по стилю (наша «стилевая ДНК») ── #}
 <div class=prof>
@@ -1678,6 +1806,8 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <nav class=cabnav>
  <a href="#dash">Обзор</a>
  {% if track %}<a href="#track">Трекер</a>{% endif %}
+ {% if advice %}<a href="#advice">Совет недели</a>{% endif %}
+ {% if weekview %}<a href="#today">Сегодня</a>{% endif %}
  {% if roles %}<a href="#roles">Роли недели</a>{% endif %}
  <a href="#wardrobe">Гардероб</a>
  <a href="#check">Брать / не брать</a>
@@ -1760,6 +1890,43 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 {% if days_since is not none and days_since >= 30 %}
 <div class=nudge><span>С последнего замера прошло {{ days_since }} дней. Пере-замер покажет, как разрыв закрылся за это время.</span><a href="/identity-scan-quiz.html?fresh=1">Сделать пере-замер</a></div>
+{% endif %}
+
+{% if advice %}
+<div class=advice id=advice>
+ <div class=ae>Стиль каждый день</div>
+ <div class=at>{{ advice.title }}</div>
+ <p class=ab>{{ advice.body }}</p>
+ {% if advice.chips %}<div class=ac>{% for chip in advice.chips %}<span>{{ chip }}</span>{% endfor %}</div>{% endif %}
+ <a class=aa href="{{ advice.cta_href }}">{{ advice.cta_label }}</a>
+</div>
+{% endif %}
+
+{% if weekview %}
+<div class=todaygrid id=today>
+ <div class=todaycard>
+  <div class=tk>Стиль каждый день</div>
+  <div class=tt>{{ weekview['today']['title'] }}</div>
+  <p class=tsub>{{ weekview['today']['body'] }}</p>
+  {% if weekview['today']['items'] %}<div class=tchips>{% for item in weekview['today']['items'] %}<span>{{ item }}</span>{% endfor %}</div>{% endif %}
+  <a class=tcta href="#wardrobe">{{ weekview['today']['cta'] }}</a>
+ </div>
+ <div class=weekcard>
+  <div class=tk>Ритм недели</div>
+  <div class=weeklist>
+   {% for row in weekview['week'] %}
+   <div class=wrow>
+    <div class=wday>{{ row['day'] }}</div>
+    <div>
+     <div class=wrole>{{ row['title'] }}</div>
+     <div class=wtext>{{ row['text'] }}</div>
+     {% if row['tags'] %}<div class=wkchips>{% for tag in row['tags'] %}<span>{{ tag }}</span>{% endfor %}</div>{% endif %}
+    </div>
+   </div>
+   {% endfor %}
+  </div>
+ </div>
+</div>
 {% endif %}
 
 {% if roles %}
@@ -1961,6 +2128,133 @@ document.querySelectorAll('[data-cell]').forEach(function(c){
 </div></body></html>"""
 
 
+def _daily_cabinet_advice(card: dict, diag: dict, track: dict | None,
+                          board: list[dict], shopping: list[dict]) -> dict | None:
+    """Короткий совет недели для живого кабинета.
+
+    Это не новая диагностика и не новая формула, а практический next step поверх уже собранной
+    Карты: что именно сделать на этой неделе, чтобы формула жила в обычной жизни.
+    """
+    formula = card.get("formula") or diag.get("style_formula")
+    if not formula:
+        return None
+    gap_now = ((track or {}).get("points") or [{}])[-1].get("gap", card.get("gap"))
+    delta = (track or {}).get("delta")
+    first_role = next((lk.get("scenario") for lk in (card.get("looks") or []) if lk.get("scenario")), None)
+    first_buy = next((it.get("name") for it in shopping if it.get("name")), None)
+
+    anchors = []
+    for grp in board:
+        picked = [it.get("name") for it in (grp.get("items") or [])[:1] if it.get("name")]
+        if picked:
+            anchors.extend(picked)
+        if len(anchors) >= 2:
+            break
+    anchors = anchors[:2]
+
+    if delta and delta > 0:
+        title = "Закрепи прогресс в обычной неделе"
+        body = (
+            f"Разрыв уже сокращается, поэтому сейчас важно не искать новый стиль, а повторять "
+            f"рабочую Формулу «{formula}» в привычных сценариях. Собери 2-3 спокойных образа "
+            f"из своей капсулы и проверь новые покупки только через фильтр совместимости."
+        )
+    elif gap_now is not None and gap_now >= 55:
+        title = "Неделя на базу, а не на случайные покупки"
+        body = (
+            f"Сейчас лучший ход — опереться на уже собранную Формулу «{formula}» и довести до "
+            f"автоматизма базовые сочетания. Не расширяй гардероб хаотично: сначала носи капсулу "
+            f"в реальных днях, потом докупай только то, чего ей действительно не хватает."
+        )
+    else:
+        title = "Переводи Формулу в повседневные решения"
+        body = (
+            f"Формула уже собрана, и задача недели — сделать её привычкой. Начинай день с капсулы, "
+            f"а не с случайного выбора: так стиль становится повторяемым и начинает экономить время."
+        )
+
+    chips = []
+    if first_role:
+        chips.append(f"фокус недели: {first_role}")
+    if anchors:
+        chips.append("якорные вещи: " + ", ".join(anchors))
+    if first_buy:
+        chips.append(f"следующая покупка: {first_buy}")
+
+    return {
+        "title": title,
+        "body": body,
+        "chips": chips,
+        "cta_href": "/garment",
+        "cta_label": "Проверить вещь перед покупкой",
+    }
+
+
+def _daily_week_view(card: dict, board: list[dict], weekday: int | None = None) -> dict | None:
+    """Практический слой кабинета: что надеть сегодня и как выглядит ритм недели."""
+    looks = [lk for lk in (card.get("looks") or []) if lk.get("scenario") or lk.get("name")]
+    if not looks and not board:
+        return None
+
+    weekday = datetime.now().weekday() if weekday is None else weekday
+    day_labels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+    day_long = ["понедельник", "вторник", "среду", "четверг", "пятницу", "субботу", "воскресенье"]
+    bucket_priority = {
+        "Работа": [lk for lk in looks if lk.get("bucket") == "Работа"],
+        "Повседневное": [lk for lk in looks if lk.get("bucket") == "Повседневное"],
+        "Выход": [lk for lk in looks if lk.get("bucket") == "Выход"],
+    }
+    bucket_cycle = ["Работа", "Работа", "Повседневное", "Работа", "Выход", "Повседневное", "Повседневное"]
+
+    fallback_items = []
+    for grp in board:
+        for it in (grp.get("items") or [])[:1]:
+            if it.get("name"):
+                fallback_items.append(it["name"])
+        if len(fallback_items) >= 3:
+            break
+    fallback_items = fallback_items[:3]
+
+    def _pick(bucket: str, used: set[int]) -> dict | None:
+        for idx, lk in enumerate(looks):
+            if idx in used:
+                continue
+            if lk.get("bucket") == bucket:
+                used.add(idx)
+                return lk
+        for idx, lk in enumerate(looks):
+            if idx in used:
+                continue
+            used.add(idx)
+            return lk
+        return None
+
+    used: set[int] = set()
+    week = []
+    for i, day in enumerate(day_labels):
+        lk = _pick(bucket_cycle[i], used)
+        title = (lk or {}).get("scenario") or (lk or {}).get("name") or bucket_cycle[i]
+        pieces = ((lk or {}).get("items") or fallback_items)[:3]
+        text = (lk or {}).get("why_it_works") or (
+            f"Опора на {bucket_cycle[i].lower()} сценарий: собери день из уже согласованных вещей капсулы."
+        )
+        week.append({"day": day, "title": title.capitalize(), "text": text, "tags": pieces})
+
+    today_row = week[weekday % 7]
+    return {
+        "today": {
+            "title": f"Сегодня — {today_row['title'].lower()}",
+            "body": (
+                f"Не начинай {day_long[weekday % 7]} с случайного выбора. Возьми уже согласованный "
+                f"сценарий и собери день из вещей, которые поддерживают твою Формулу."
+            ),
+            "items": today_row["tags"],
+            "cta": "Собрать образ из капсулы",
+        },
+        "week": week,
+    }
+
+
 @app.get("/cabinet")
 def cabinet():
     """Кабинет: капсульный гардероб по сезонам + конструктор образов (верх/низ/обувь) + лист покупок."""
@@ -2044,12 +2338,15 @@ def cabinet():
         milestones = {"start": gaps[0], "now": gaps[-1], "best": min(gaps),
                       "delta": (gaps[0] - gaps[-1]) if len(gaps) > 1 else 0,
                       "count": track.get("measurements", len(gaps))}
+    advice = _daily_cabinet_advice(card, diag, track, board, card.get("shopping") or [])
+    weekview = _daily_week_view(card, board)
     return render_template_string(
         CABINET_PAGE, email=email, roles=roles, milestones=milestones,
         formula=card.get("formula") or diag.get("style_formula"),
         colortype=_colortype_label(diag.get("colortype")), figure=_figure_label(diag.get("figure_type")),
         want_traits=want3, days_since=days_since, thanks=(request.args.get("fb") == "1"),
         gap=card.get("gap"), gap_now=gap_now, track=track,
+        advice=advice, weekview=weekview,
         season_label=(card.get("season_label") or (_CARD_SEASONS[sel]["label"] if sel in _CARD_SEASONS else None)),
         n_items=n_items, combos_label=combos_label, items_n=items_n,
         board=board, palette=palette, shopping=card.get("shopping") or [],
@@ -2301,6 +2598,185 @@ _CARD_SEASONS = {
 _SEASON_ORDER = ["spring", "summer", "autumn", "winter"]
 _DEFAULT_SEASON = "autumn"
 
+# Канонические сценарии продукта «Карта стиля». Генератор может назвать их шире/иначе, поэтому
+# после LLM всегда приводим к одной продуктовой шестерке — чтобы клиентка видела стабильный
+# результат: деловая встреча, свидание, выходные, презентация, корпоратив, путешествие.
+_CARD_SCENARIOS = [
+    "деловая встреча", "свидание", "выходные",
+    "презентация", "корпоратив", "путешествие",
+]
+_SCENARIO_ALIASES = {
+    "деловая встреча": ["работа", "офис", "встреча", "meeting", "business"],
+    "свидание": ["свидание", "date", "romantic"],
+    "выходные": ["повседневное", "выходные", "weekend", "casual"],
+    "презентация": ["презентация", "presentation", "выступление"],
+    "корпоратив": ["событие и выход", "вечер", "event", "корпоратив", "выход"],
+    "путешествие": ["путешествие", "travel", "trip", "поездка"],
+}
+_SCENARIO_EFFECT = {
+    "деловая встреча": "собранно и уверенно",
+    "свидание": "мягко и притягательно",
+    "выходные": "легко и без случайности",
+    "презентация": "ясно и статусно",
+    "корпоратив": "заметно и уместно",
+    "путешествие": "продуманно и комфортно",
+}
+_SCENARIO_BUCKET = {
+    "деловая встреча": "Работа",
+    "презентация": "Работа",
+    "выходные": "Повседневное",
+    "путешествие": "Повседневное",
+    "свидание": "Выход",
+    "корпоратив": "Выход",
+}
+
+
+def _scenario_match(raw_scenario: str, target: str) -> bool:
+    """Сопоставить имя сценария LLM с каноническим продуктовым сценарием."""
+    raw = (raw_scenario or "").strip().lower()
+    tgt = (target or "").strip().lower()
+    if not raw or not tgt:
+        return False
+    if raw == tgt or raw in tgt or tgt in raw:
+        return True
+    return any(k in raw for k in _SCENARIO_ALIASES.get(target, []))
+
+
+def _scenario_tokens(scenario: str) -> list[str]:
+    return [scenario] + _SCENARIO_ALIASES.get(scenario, [])
+
+
+def _scenario_formula_match(look: dict, diag: dict, scenario: str) -> int:
+    """Грубая explainable-оценка совпадения образа с формулой.
+
+    Не заменяет LLM, а честно объясняет результат клиентке детерминированным числом:
+    учитываем формулу, сценарий, силуэт и наличие предметов в образе.
+    """
+    score = 54
+    hay = " ".join([
+        (look.get("name") or ""),
+        (look.get("description") or ""),
+        " ".join(look.get("items") or []),
+    ]).lower()
+    formula = (diag.get("style_formula") or "").lower()
+    vf = diag.get("visual_formula") or {}
+    if any(tok.strip() and tok.strip().lower() in hay for tok in re.split(r"[×,/]| и ", formula) if tok.strip()):
+        score += 12
+    if any(tok in hay for tok in _scenario_tokens(scenario)):
+        score += 10
+    if any((sil or "").lower() in hay for sil in (vf.get("silhouettes") or [])[:3]):
+        score += 8
+    items = look.get("items") or []
+    score += min(12, len(items) * 2)
+    if diag.get("colortype"):
+        score += 4
+    return max(60, min(96, score))
+
+
+def _scenario_missing_items(look: dict) -> list[str]:
+    """Каких блоков не хватает до полного комплекта."""
+    items = [str(x).lower() for x in (look.get("items") or [])]
+
+    def _has(*parts: str) -> bool:
+        return any(p in it for it in items for p in parts)
+
+    missing = []
+    if not (_has("жакет", "пиджак", "блейзер", "кардиган", "тренч", "пальто")
+            or _has("плать", "комбинезон")):
+        missing.append("верхний слой")
+    if not (_has("юбк", "брюк", "джин", "плать", "комбинезон", "шорт")):
+        missing.append("низ или платье")
+    if not _has("туф", "бот", "лофер", "крос", "балет", "мюл", "сап", "босон"):
+        missing.append("обувь")
+    if not _has("сум", "клатч", "шоппер", "тоут"):
+        missing.append("сумка")
+    return missing
+
+
+def _scenario_why_it_works(look: dict, diag: dict, scenario: str) -> str:
+    """Короткое explainable-объяснение без повторения длинного описания."""
+    vf = diag.get("visual_formula") or {}
+    sil = ((vf.get("silhouettes") or [])[:1] or ["твою фигуру"])[0]
+    effect = _SCENARIO_EFFECT.get(scenario, "работает на твою Формулу")
+    return f"Под {scenario} образ работает {effect}: держит {sil} и собирает впечатление через твою Формулу."
+
+
+def _enrich_card_looks(looks: list[dict], diag: dict) -> list[dict]:
+    """Добавить к образам Карты explainable-слой и стабильные продуктовые поля."""
+    out = []
+    for lk in looks:
+        scenario = lk.get("scenario") or ""
+        item_names = [it for it in (lk.get("items") or []) if it]
+        enriched = dict(lk)
+        enriched["scenario"] = scenario
+        enriched["bucket"] = _SCENARIO_BUCKET.get(scenario, "Повседневное")
+        enriched["effect"] = _SCENARIO_EFFECT.get(scenario, "собранно и уместно")
+        enriched["formula_match"] = _scenario_formula_match(enriched, diag, scenario)
+        enriched["why_it_works"] = _scenario_why_it_works(enriched, diag, scenario)
+        missing = _scenario_missing_items(enriched)
+        if missing:
+            enriched["missing_items"] = missing
+        enriched["title"] = enriched.get("title") or enriched.get("name") or scenario.capitalize()
+        enriched["items"] = item_names
+        out.append(enriched)
+    return out
+
+
+def _starter_capsule_from_board(board: list[dict]) -> tuple[list[dict], int]:
+    """Стартовая капсула 9 вещей из реального board каталога.
+
+    Берём вещи слотами, а не «первые 9 подряд»: тогда в капсуле есть структура ядра гардероба,
+    а не случайная пачка предметов одной категории.
+    """
+    if not board:
+        return [], 0
+    per_slot = {grp.get("slot"): list(grp.get("items") or []) for grp in board}
+    order = [
+        ("Верхний слой", 1, "core"),
+        ("Верх", 3, "core"),
+        ("Низ", 2, "core"),
+        ("Платья и комбинезоны", 1, "accent"),
+        ("Обувь", 1, "core"),
+        ("Аксессуары", 1, "accent"),
+    ]
+    picked = []
+    for slot, need, role in order:
+        for it in per_slot.get(slot, [])[:need]:
+            piece = dict(it)
+            piece["slot"] = slot
+            piece["capsule_role"] = role
+            piece["outfits_count"] = 3 if role == "core" else 2
+            piece["why"] = (
+                "Собирает базу капсулы и держит формулу."
+                if role == "core" else
+                "Добавляет характер и расширяет сочетания."
+            )
+            picked.append(piece)
+    # Если какой-то слот бедный, добираем из оставшегося board лучшими вещами.
+    if len(picked) < 9:
+        seen = {(p.get("name"), p.get("slot")) for p in picked}
+        for grp in board:
+            for it in grp.get("items") or []:
+                key = (it.get("name"), grp.get("slot"))
+                if key in seen:
+                    continue
+                piece = dict(it)
+                piece["slot"] = grp.get("slot")
+                piece["capsule_role"] = "optional"
+                piece["outfits_count"] = 2
+                piece["why"] = "Дозакрывает сценарии, которых не хватило в ядре."
+                picked.append(piece)
+                seen.add(key)
+                if len(picked) >= 9:
+                    break
+            if len(picked) >= 9:
+                break
+    bottoms = sum(1 for p in picked if p.get("slot") == "Низ")
+    tops = sum(1 for p in picked if p.get("slot") == "Верх")
+    dresses = sum(1 for p in picked if p.get("slot") == "Платья и комбинезоны")
+    combos = max(18, min(24, tops * max(1, bottoms) * 2 + dresses * 2))
+    return picked[:9], combos
+
 
 def build_style_card(diag: dict, season: str | None = None) -> dict:
     """Собрать продукт «Карта стиля» из Формулы: выверенная палитра + 6 образов + секции.
@@ -2328,8 +2804,7 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
     # Палитра и капсула — на flash (dev): надёжно и быстро. pro@final в проде отдаёт
     # finish_reason=error (нестабилен), поэтому для продукта НЕ используем (2026-06-29).
     palette = generate_card_palette(diag, mode="dev")
-    scenarios = ["работа", "деловая встреча", "повседневное",
-                 "событие и выход", "свидание", "путешествие"]
+    scenarios = list(_CARD_SCENARIOS)
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": seas["gen"],
                "scenarios": scenarios, "n_looks": 6, "price_segment": price_segment,
                "taboos": taboo_items,  # что точно не носит → не предлагаем
@@ -2349,9 +2824,7 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         styling = generate_styling_pair(diag, cap_items, mode="dev")
     except Exception:  # noqa: BLE001
         styling = {}
-    looks = _ensure_n_looks(capsule.get("looks") or [], scenarios, capsule, diag)
-    for lk in looks:  # жизненная капсула: группируем сценарии в Работа/Повседневное/Выход
-        lk["bucket"] = _LIFE_BUCKET.get((lk.get("scenario") or "").strip().lower(), "Повседневное")
+    looks = _enrich_card_looks(_ensure_n_looks(capsule.get("looks") or [], scenarios, capsule, diag), diag)
     personality = {}
     if deep.get("big5"):  # личность Big Five → живой портрет (не архетип-ярлык)
         try:
@@ -2362,6 +2835,10 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
     # полный стоп-лист = табу метода (vf) + личные табу из анкеты (без дублей).
     # нужен и для отсечения вещей в визуальной капсуле, и для блока «Стоп-лист» Карты.
     stop_list_full = (vf.get("stop_list") or []) + [t for t in taboo_items if t not in (vf.get("stop_list") or [])]
+    visual_capsule = _inline_capsule_images(
+        _visual_capsule({"palette": palette.get("palette") or [], "stop_list": stop_list_full}, diag, 9)
+    )
+    starter_capsule, starter_combos = _starter_capsule_from_board(visual_capsule)
     return {
         "formula": diag.get("style_formula"),
         "gap": diag.get("gap_percentage"),
@@ -2375,13 +2852,14 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         "stop_colors": palette.get("stop_colors") or [],
         "silhouettes": vf.get("silhouettes") or [],
         # базовая капсула (ядро) — вещи, из которых собираются все образы
-        "base_capsule": [it for it in cap_items if isinstance(it, dict) and it.get("name")][:14],
+        "base_capsule": [it for it in cap_items if isinstance(it, dict) and it.get("name")][:9],
         "capsule_board": _capsule_board([it for it in cap_items if isinstance(it, dict) and it.get("name")][:14]),
         # визуальная капсула: реальные вещи каталога с ФОТО (вшиты в data-URL, чтобы жили и в PDF).
-        # фолбэк на текстовую капсулу выше, если каталог пуст/фото не тянутся.
-        "visual_capsule": _inline_capsule_images(
-            _visual_capsule({"palette": palette.get("palette") or [], "stop_list": stop_list_full}, diag, 10)),
-        "combination_count": (capsule.get("capsule") or {}).get("combination_count"),
+        # Берём 9 вещей как честную стартовую капсулу для продукта «Карта стиля».
+        "visual_capsule": visual_capsule,
+        "starter_capsule": starter_capsule,
+        "starter_capsule_count": len(starter_capsule),
+        "combination_count": starter_combos or (capsule.get("capsule") or {}).get("combination_count"),
         "looks": looks,
         "styling": styling,  # {base_item, idea, looks:[…x2]} — рендерятся в воркере
         "shopping": (shopping.get("shopping_items") or [])[:5],
@@ -2497,14 +2975,6 @@ def _save_deep_intake(email: str, form) -> None:
     save_diagnosis(email, diag)
 
 
-# Группировка 6 сценариев в 3 жизненные капсулы (Карта стиля)
-_LIFE_BUCKET = {
-    "работа": "Работа", "деловая встреча": "Работа",
-    "повседневное": "Повседневное", "путешествие": "Повседневное",
-    "событие и выход": "Выход", "свидание": "Выход",
-}
-
-
 def _ensure_n_looks(looks: list, scenarios: list, capsule: dict, diag: dict) -> list:
     """Гарантия ровно по одному образу на каждый сценарий (LLM иногда отдаёт меньше).
     Переиспользуем образы LLM, лишние переназначаем на пустые сценарии, недостающие
@@ -2515,7 +2985,7 @@ def _ensure_n_looks(looks: list, scenarios: list, capsule: dict, diag: dict) -> 
     by_scn, extras = {}, []
     for lk in looks:
         scn = _norm(lk.get("scenario"))
-        match = next((s for s in scenarios if _norm(s) in scn or scn in _norm(s)), None)
+        match = next((s for s in scenarios if _scenario_match(scn, s)), None)
         if match and match not in by_scn:
             by_scn[match] = lk
         else:
@@ -2539,7 +3009,8 @@ def _ensure_n_looks(looks: list, scenarios: list, capsule: dict, diag: dict) -> 
                                  f"собран из ключевых вещей твоей капсулы."}
         out.append({"scenario": s, "name": lk.get("name"),
                     "items": lk.get("items"), "description": lk.get("description", ""),
-                    "image_generation_prompt": lk.get("image_generation_prompt", "")})
+                    "image_generation_prompt": lk.get("image_generation_prompt", ""),
+                    "title": lk.get("title"), "img": lk.get("img")})
     return out
 
 
@@ -2581,7 +3052,9 @@ def _card_look_prompt(lk: dict, diag: dict) -> str:
 def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | None = None) -> None:
     """Фоновая сборка карты + рендер 6 образов на клиентке. Фото удаляем после."""
     try:
-        diag = (get_profile(email) or {}).get("diagnosis") or {}
+        prof = get_profile(email) or {}
+        diag = prof.get("diagnosis") or {}
+        had_card = bool(prof.get("card"))
         card = build_style_card(diag, season=season)
         # рендерим 6 образов карты + 2 образа стилизации (одна вещь → два образа)
         targets = list(card.get("looks") or []) + list((card.get("styling") or {}).get("looks") or [])
@@ -2597,14 +3070,32 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
         for lk, img in zip(targets, imgs):
             if img:
                 lk["img"] = img
-        save_card(email, card)  # храним готовые образы, не исходное фото
-        record_event("card_built", email)
-        record_event("look_generated", email, meta=str(sum(1 for i in imgs if i)))
+        ok_imgs = sum(1 for i in imgs if i)
         port = (card.get("personality") or {}).get("portrait")
         if port:  # портрет личности — в профиль, чтобы видел чат-стилист
             d2 = (get_profile(email) or {}).get("diagnosis") or {}
             d2["personality_portrait"] = port
             save_diagnosis(email, d2)
+        if ok_imgs == 0:
+            record_event("card_build_no_images", email, meta="stale" if had_card else "retry")
+            if had_card:
+                _JOBS[job_id] = {
+                    "status": "stale",
+                    "error": ("Новые образы пока не собрались. Последняя Карта сохранена, "
+                              "а бесплатная попытка не списана.")
+                }
+                return
+            save_card(email, card)  # сохраняем текстовую базу, чтобы клиентка не теряла результат
+            _JOBS[job_id] = {
+                "status": "retry",
+                "error": ("Образы пока не собрались, но текстовая Карта уже сохранена. "
+                          "Можно открыть её сейчас или повторить генерацию позже — "
+                          "бесплатная попытка не списана.")
+            }
+            return
+        save_card(email, card)  # храним готовые образы, не исходное фото
+        record_event("card_built", email)
+        record_event("look_generated", email, meta=str(ok_imgs))
         _JOBS[job_id] = {"status": "done"}
     except Exception as e:  # noqa: BLE001
         # Живое демо на сцене: падение генерации не должно выглядеть падением продукта. Если готовая
