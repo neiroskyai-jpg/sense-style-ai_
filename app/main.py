@@ -92,6 +92,25 @@ def _current_user() -> str:
     return anon
 
 
+def _attach_quiz_diagnosis(user: str) -> None:
+    """Привязать к пользователю диагноз, посчитанный квизом.
+
+    Квиз считает диагностику анонимно и кладёт её под `job_id` (в памяти и на диске), а не под
+    пользователем. Без этой привязки человек с готовой Формулой упирается в «сначала диагностика»:
+    так было в /card/build, куда клиентка приходит из формы сборки Карты.
+
+    from_job — из CTA квиза; last_job — из сессии, страховка для тарифных кнопок, которые ведут
+    на /card без ?from_job=.
+    """
+    job = request.args.get("from_job") or session.get("last_job")
+    if not job:
+        return
+    # из памяти (быстро) или с диска (переживает рестарт сервера)
+    job_diag = (_JOBS.get(job) or {}).get("diag") or _load_pending_diag(job)
+    if job_diag:
+        save_diagnosis(user, job_diag)
+
+
 def _is_anon(user: str) -> bool:
     return (user or "").startswith("anon-")
 
@@ -3455,15 +3474,7 @@ def style_card():
     """Карта стиля. Готовая (кэш) → показываем; иначе форма загрузки фото для сборки.
     ?text=1 — собрать без образов (только текст, синхронно); ?rebuild=1 — пересобрать."""
     email = _current_user()  # почта не обязательна: аноним идёт дальше под своим id
-    # привязка диагностики из квиза. from_job — из главной CTA; last_job — из сессии (страховка для
-    # тарифных кнопок, которые ведут на /card БЕЗ ?from_job=: иначе анонимный диагноз терялся и
-    # клиентку кидало обратно на квиз по кругу).
-    from_job = request.args.get("from_job") or session.get("last_job")
-    if from_job:
-        # из памяти (быстро) или с диска (переживает рестарт сервера) — иначе была петля на квиз
-        job_diag = (_JOBS.get(from_job) or {}).get("diag") or _load_pending_diag(from_job)
-        if job_diag:
-            save_diagnosis(email, job_diag)
+    _attach_quiz_diagnosis(email)
     prof = get_profile(email)
     diag = prof.get("diagnosis") or {}
     if not diag.get("style_formula"):
@@ -3512,6 +3523,7 @@ def style_card():
 def card_build():
     """Старт асинхронной сборки карты с образами на клиентке (фото → рендер → удаление)."""
     email = _current_user()
+    _attach_quiz_diagnosis(email)   # диагноз квиза живёт под job_id, а не под пользователем
     prof = get_profile(email) or {}
     diag = prof.get("diagnosis") or {}
     if not diag.get("style_formula"):
