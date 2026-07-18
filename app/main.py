@@ -4360,7 +4360,10 @@ def api_result(job_id):
 
 @app.get("/healthz")
 def healthz():
-    return {"status": "ok", "calls_today": count_today(), "limit": DEMO_DAILY_LIMIT}
+    # Флаги настройки внешних сервисов — чтобы проверять прод, не проходя весь путь до кабинета.
+    # Секретов не раскрываем: только «задан / не задан».
+    return {"status": "ok", "calls_today": count_today(), "limit": DEMO_DAILY_LIMIT,
+            "weather": weather_configured(), "email": email_configured()}
 
 
 if __name__ == "__main__":
