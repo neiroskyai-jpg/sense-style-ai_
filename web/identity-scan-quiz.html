@@ -1326,6 +1326,18 @@ body {
   </div>
 </div>
 
+<!-- ======= СБОЙ ДИАГНОСТИКИ =======
+     Раньше при ошибке сервера квиз молча рисовал результат, посчитанный на клиенте. Выглядело
+     как успех, но диагностика на сервере не сохранялась — и «Карта стиля» возвращала человека
+     обратно в квиз. Петля без единого слова о том, что произошло. Теперь говорим честно. -->
+<div class="screen" id="s-genfail">
+  <div class="processing-wrap">
+    <div class="processing-title">Не удалось собрать диагностику</div>
+    <p class="processing-text" id="genfail-text">Твои ответы сохранились, а вот анализ фото не завершился — сервис перегружен или временно недоступен. Попробуй ещё раз: обычно со второй попытки проходит.</p>
+    <button class="btn-cta" type="button" style="max-width:320px;margin:22px auto 0" onclick="retryGeneration()">Попробовать снова</button>
+  </div>
+</div>
+
 <!-- ======= RESULT ======= -->
 <div class="screen" id="s-result">
 
@@ -2402,9 +2414,13 @@ function collectTraits() {
   };
 }
 
+// Последнее загруженное фото — чтобы «Попробовать снова» не заставляло выбирать его заново.
+let lastUploadedFile = null;
+
 function generateLooks(file) {
   aiLooks = null;
   aiResult = null;
+  lastUploadedFile = file;   // для повтора после сбоя — не просим фото заново
   const fd = new FormData();
   fd.append('photo', file);
   fd.append('consent_processing', 'on');
@@ -2417,18 +2433,37 @@ function generateLooks(file) {
     .then(r => r.json())
     .then(d => {
       if (d && d.job_id) { currentJobId = d.job_id; persistJob({ status: 'pending', jobId: d.job_id, answers }); pollResult(d.job_id, 0); }
-      else buildResult();
+      else showGenFail(d && d.error === 'daily_limit'
+        ? 'Сегодня сервис уже собрал максимум диагностик. Попробуй завтра — или напиши нам, откроем доступ.'
+        : null);
     })
-    .catch(() => buildResult());
+    .catch(() => showGenFail());
 }
+
+function showGenFail(msg) {
+  const el = document.getElementById('genfail-text');
+  if (el && msg) el.textContent = msg;
+  show('s-genfail');
+}
+
+function retryGeneration() {
+  if (lastUploadedFile) { show('s-processing'); generateLooks(lastUploadedFile); }
+  else show('s-upload');
+}
+
 // Асинхронный опрос результата (генерация идёт в фоне на сервере)
 function pollResult(jobId, tries) {
-  if (tries > 90) { buildResult(); return; }   // ~7.5 минут максимум
+  if (tries > 90) {                                   // ~7.5 минут максимум
+    showGenFail('Анализ занял слишком долго и был прерван. Попробуй ещё раз.');
+    return;
+  }
   fetch('/api/result/' + jobId)
     .then(r => r.json())
     .then(d => {
       if (d.status === 'done') { if (d.result) { aiResult = d.result; aiLooks = d.result.looks; } buildResult(); }
-      else if (d.status === 'error' || d.status === 'unknown') { buildResult(); }
+      // Ошибка сервера — НЕ показываем клиентский результат как настоящий: диагностики на сервере
+      // нет, и «Карта стиля» всё равно вернёт человека в квиз.
+      else if (d.status === 'error' || d.status === 'unknown') { showGenFail(); }
       else { setTimeout(() => pollResult(jobId, tries + 1), 5000); }
     })
     .catch(() => setTimeout(() => pollResult(jobId, tries + 1), 5000));
