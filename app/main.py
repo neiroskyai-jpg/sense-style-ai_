@@ -593,6 +593,14 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .ref{background:#fbf8f3;border:1px solid var(--line);border-radius:14px;padding:16px 20px}
  .refname{font-size:20px;color:var(--wine)} .refline{font-size:14px;color:#5a5246;margin:6px 0 0}
  .print{display:block;margin:30px auto 0;background:var(--wine);color:#fff;border:0;border-radius:10px;padding:14px 26px;font:inherit;font-size:16px;cursor:pointer}
+ /* блок «что дальше» — переход из Карты в кабинет «Стиль каждый день» */
+ .nextstep{margin:40px 0 10px;background:#fff;border:1px solid var(--line,#e3dccf);border-left:3px solid var(--wine);border-radius:14px;overflow:hidden}
+ .nsbody{padding:24px 26px}
+ .nseyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine);margin-bottom:6px}
+ .nstitle{font-size:26px;color:var(--ink,#1f1d1b);margin-bottom:8px}
+ .nstext{color:var(--muted,#6b645c);font-size:15px;line-height:1.5;margin:0 0 16px;max-width:560px}
+ .nsbtn{display:inline-block;background:var(--wine);color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:15px}
+ @media print{.nextstep{display:none!important}}
  @media print{
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .bar,.print,#fbblock{display:none!important}
@@ -755,6 +763,16 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <ul class="clean stop">{% for s in c.stop_list %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
 
 <button class=print id=pdfbtn onclick="downloadPdf()">Скачать PDF к шкафу</button>
+
+{# Следующий шаг: из разовой Карты — в живой кабинет «Стиль каждый день» #}
+<div class=nextstep>
+ <div class=nsbody>
+  <div class=nseyebrow>Что дальше</div>
+  <div class=nstitle>Стиль каждый день</div>
+  <p class=nstext>Формула не заканчивается на Карте. В кабинете капсула живёт по сезонам, собираешь образ на каждый день недели и проверяешь покупки по фото — «брать / не брать».</p>
+  <a class=nsbtn href="/cabinet">Перейти в «Стиль каждый день» →</a>
+ </div>
+</div>
 
 <div id=fbblock style="margin-top:38px;padding:22px;border:1px solid var(--line,#e3dccf);border-radius:14px;background:#fff">
 {% if thanks %}

@@ -1064,10 +1064,395 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 @media (max-width: 1100px) {
   #tiers::before, #tiers::after { display: none; }
 }
-.tiers-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+.tiers-ladder {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
 }
-/* Подписка «что дальше» — вынесена из лестницы 3 тарифов, лежит широкой полосой под ней */
+.tiers-rail {
+  background: rgba(245, 239, 227, 0.9);
+  border: 1px solid rgba(132, 112, 98, 0.16);
+  border-radius: calc(var(--r-card) + 4px);
+  box-shadow: 0 10px 30px rgba(31, 22, 20, 0.05);
+  padding: 18px;
+  position: sticky;
+  top: 110px;
+}
+.tiers-rail-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+.tiers-rail-step {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 22px;
+  padding: 16px 18px;
+  border: 1px solid transparent;
+  transition: border-color 0.25s, transform 0.25s, background 0.25s;
+}
+.tiers-rail-step + .tiers-rail-step { margin-top: 10px; }
+.tiers-rail-step:hover {
+  transform: translateY(-1px);
+  border-color: rgba(122, 28, 46, 0.18);
+  background: rgba(255, 255, 255, 0.58);
+}
+.tiers-rail-step.active {
+  border-color: rgba(122, 28, 46, 0.34);
+  background: linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(252,247,241,0.96) 100%);
+  box-shadow: inset 0 0 0 1px rgba(122, 28, 46, 0.05), 0 12px 28px rgba(31, 22, 20, 0.06);
+}
+.tiers-rail-kicker {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--red);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.tiers-rail-title {
+  font-family: var(--serif);
+  font-size: 28px;
+  line-height: 1.08;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.tiers-rail-meta {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+.tiers-rail-price {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--red-deep);
+  font-weight: 600;
+}
+.tiers-main { min-width: 0; }
+.tiers-free {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  padding: 26px 28px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(132, 112, 98, 0.16);
+  border-radius: calc(var(--r-card) + 4px);
+  box-shadow: 0 10px 26px rgba(31, 22, 20, 0.04);
+  margin-bottom: 18px;
+}
+.tiers-free-copy { max-width: 700px; }
+.tiers-free-kicker {
+  font-size: 10px;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: var(--red);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.tiers-free-title {
+  font-family: var(--serif);
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.08;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.tiers-free-text {
+  font-size: 15px;
+  line-height: 1.72;
+  color: var(--ink-muted);
+}
+.tiers-free-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 14px;
+}
+.tiers-free-points span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.tiers-free-points span::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(122, 28, 46, 0.7);
+}
+.tiers-wow {
+  position: relative;
+  background: rgba(245, 239, 227, 0.86);
+  border: 1px solid rgba(132, 112, 98, 0.18);
+  border-radius: calc(var(--r-card) + 6px);
+  box-shadow: 0 16px 42px rgba(31, 22, 20, 0.06);
+  padding: 22px;
+}
+.tiers-wow-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.tiers-wow-tab {
+  appearance: none;
+  border: 1px solid rgba(122, 28, 46, 0.16);
+  background: rgba(255,255,255,0.6);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 11px 18px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s, border-color 0.25s, transform 0.25s;
+}
+.tiers-wow-tab:hover { transform: translateY(-1px); }
+.tiers-wow-tab.active {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red);
+}
+.tier-panel {
+  display: none;
+  animation: tierFade 0.28s ease;
+}
+.tier-panel.active { display: block; }
+@keyframes tierFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tier-panel-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(290px, 0.9fr);
+  gap: 22px;
+}
+.tier-panel-main,
+.tier-panel-side {
+  background: rgba(255,255,255,0.76);
+  border: 1px solid rgba(132, 112, 98, 0.15);
+  border-radius: 28px;
+  padding: 26px;
+}
+.tier-panel-side {
+  background:
+    radial-gradient(circle at top right, rgba(122, 28, 46, 0.08), transparent 38%),
+    rgba(255,255,255,0.82);
+}
+.tier-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: rgba(122, 28, 46, 0.08);
+  color: var(--red);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.tier-badge.tier-badge-accent {
+  background: linear-gradient(135deg, var(--red) 0%, var(--red-deep) 100%);
+  color: #fff;
+}
+.tier-panel-kicker {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.tier-panel-title {
+  font-family: var(--serif);
+  font-size: clamp(42px, 5vw, 62px);
+  line-height: 0.98;
+  color: #3c111e;
+  margin-bottom: 14px;
+}
+.tier-panel-price {
+  font-family: var(--serif);
+  font-size: clamp(26px, 3vw, 38px);
+  line-height: 1;
+  color: var(--red-deep);
+  margin-bottom: 4px;
+}
+.tier-panel-price-meta {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-bottom: 22px;
+}
+.tier-panel-text {
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--ink);
+  padding: 0 0 18px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(132, 112, 98, 0.18);
+}
+.tier-panel-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 22px;
+  display: grid;
+  gap: 10px;
+}
+.tier-panel-list li {
+  position: relative;
+  padding-left: 42px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.tier-panel-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(122, 28, 46, 0.08);
+  color: var(--red);
+  font-size: 15px;
+  font-weight: 600;
+}
+.tier-panel-note {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-muted);
+  margin-bottom: 22px;
+}
+.tier-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.tier-panel-actions .tier-btn {
+  margin-top: 0;
+  min-width: 240px;
+  min-height: 62px;
+  padding: 14px 28px;
+}
+.tier-link-soft {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--red);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.tier-link-soft:hover { opacity: 0.76; }
+.tier-side-title {
+  font-family: var(--serif);
+  font-size: 28px;
+  line-height: 1.15;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.tier-side-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-muted);
+  margin-bottom: 18px;
+}
+.tier-snapshot {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.tier-metric {
+  padding: 16px 16px 14px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.86);
+  border: 1px solid rgba(132, 112, 98, 0.12);
+}
+.tier-metric-label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+}
+.tier-metric-value {
+  font-family: var(--serif);
+  font-size: 34px;
+  line-height: 1;
+  color: var(--red-deep);
+  margin-bottom: 6px;
+}
+.tier-metric-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+.tier-mini-board {
+  display: grid;
+  gap: 12px;
+}
+.tier-mini-card {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.88);
+  border: 1px solid rgba(132, 112, 98, 0.12);
+}
+.tier-mini-card h4 {
+  font-family: var(--serif);
+  font-size: 21px;
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.tier-mini-card p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
+}
+.tier-token-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tier-token {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(122, 28, 46, 0.06);
+  color: var(--ink);
+  font-size: 12px;
+}
+/* Подписка «что дальше» — вынесена из лестницы AI-тарифов, лежит широкой полосой под ней */
 .tier-next {
   margin-top: 26px;
   background: var(--paper);
@@ -1090,57 +1475,6 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 .tier-next-promise { color: var(--ink-muted); margin: 4px 0 14px; max-width: 640px; }
 .tier-next-features { columns: 2; column-gap: 30px; margin-bottom: 18px; }
 @media (max-width: 620px) { .tier-next-features { columns: 1; } }
-.tier-card {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  padding: 30px 26px;
-  display: flex; flex-direction: column;
-  box-shadow: 0 6px 20px rgba(31, 22, 20, 0.05);
-  transition: all 0.3s;
-  position: relative;
-}
-.tier-card.featured {
-  border-color: rgba(122, 28, 46, 0.45);
-  box-shadow: 0 20px 50px rgba(156, 26, 34, 0.10);
-}
-.tier-card:hover {
-  border-color: var(--red);
-  transform: translateY(-3px);
-  box-shadow: 0 20px 50px rgba(31, 22, 20, 0.08);
-}
-.tier-card.featured:hover {
-  box-shadow: 0 24px 56px rgba(156, 26, 34, 0.16);
-}
-
-.tier-icon-circle {
-  width: 46px; height: 46px;
-  border-radius: 50%;
-  background: var(--rose-soft);
-  border: 1px solid rgba(122, 28, 46, 0.15);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 22px;
-  color: var(--red);
-}
-.tier-icon-circle svg { width: 22px; height: 22px; }
-
-/* роль-подпись над названием тарифа: сразу видно, ЧТО это за продукт */
-.tier-role {
-  font-family: var(--sans); font-size: 10.5px; font-weight: 600;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--red); margin-bottom: 8px;
-}
-.tier-product {
-  font-family: var(--serif); font-size: 26px;
-  color: var(--ink); margin-bottom: 10px; font-weight: 500; line-height: 1.2;
-}
-/* ценностная цитата клиентки под списком — что она получает своими словами */
-.tier-value {
-  font-family: var(--serif); font-style: italic; font-size: 14.5px;
-  color: var(--red-deep); line-height: 1.4;
-  margin: 16px 0 20px; padding-left: 14px;
-  border-left: 2px solid var(--rose, #d8b4bc);
-}
 .tier-price {
   font-size: 16px; color: var(--red);
   margin-bottom: 4px; font-weight: 500; line-height: 1.3;
@@ -1517,7 +1851,9 @@ footer {
 @media (max-width: 1024px) {
   .audience-grid { grid-template-columns: 1fr; gap: 18px; }
   .steps-grid { grid-template-columns: repeat(2, 1fr); }
-  .tiers-grid { grid-template-columns: repeat(2, 1fr); }
+  .tiers-ladder { grid-template-columns: 1fr; }
+  .tiers-rail { position: static; }
+  .tier-panel-shell { grid-template-columns: 1fr; }
   .features-grid { grid-template-columns: repeat(2, 1fr); }
   .features-header { grid-template-columns: 1fr; gap: 20px; }
   .case-block, .author-grid { grid-template-columns: 1fr; gap: 36px; }
@@ -1590,7 +1926,6 @@ footer {
 
   /* Карточки в одну колонку */
   .features-grid { grid-template-columns: 1fr; gap: 14px; }
-  .tiers-grid { grid-template-columns: 1fr; gap: 14px; }
   .audience-grid { grid-template-columns: 1fr; gap: 14px; }
   .gallery-strip { grid-template-columns: 1fr; gap: 24px; }
   .why-grid { grid-template-columns: 1fr; gap: 18px; }
@@ -1624,6 +1959,22 @@ footer {
 
   /* Tiers — обрамляющие фото скрыть */
   #tiers::before, #tiers::after { display: none; }
+  .tiers-free {
+    grid-template-columns: 1fr;
+    padding: 22px 20px;
+  }
+  .tiers-rail { padding: 14px; }
+  .tiers-wow { padding: 16px; }
+  .tier-panel-main,
+  .tier-panel-side {
+    padding: 20px;
+    border-radius: 22px;
+  }
+  .tier-panel-title { font-size: 40px; }
+  .tier-panel-text { font-size: 16px; }
+  .tier-panel-list li { font-size: 15px; padding-left: 38px; }
+  .tier-panel-actions .tier-btn { min-width: 100%; }
+  .tier-snapshot { grid-template-columns: 1fr; }
   .tier-product { font-size: 22px; }
   .tier-price { font-size: 15px; }
 
@@ -1945,82 +2296,177 @@ footer {
     <div class="section-label-wrap">
       <p class="section-label">Тарифы</p>
     </div>
-    <h2 class="section-title">Три шага — <em>от диагностики к ежедневному стилю</em></h2>
-    <p class="section-sub">Сначала — ясность, что тебе идёт. Потом — формула работает в жизни каждый день. А если нужен личный взгляд эксперта — есть «Преображение».</p>
-    <div class="tiers-grid">
+    <h2 class="section-title">Два шага — <em>к твоему стилю</em></h2>
+    <p class="section-sub">Сначала — ясность, что тебе идёт. Потом — формула работает в жизни каждый день. Мы разводим разовый результат и живой кабинет, чтобы у каждого тарифа была своя роль.</p>
 
-      <div class="tier-card">
-        <div class="tier-icon-circle">
-          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 22c2-4 6-4 8 0s6 4 8 0 6-4 8 0"/>
-            <circle cx="16" cy="22" r="1" fill="currentColor"/>
-          </svg>
+    <div class="tiers-ladder">
+      <aside class="tiers-rail" aria-label="Ступени продукта">
+        <div class="tiers-rail-label">Два шага к стилю</div>
+        <a href="#tier-card-style" class="tiers-rail-step active" data-tier-switch="card">
+          <div class="tiers-rail-kicker">Для старта</div>
+          <div class="tiers-rail-title">Карта стиля</div>
+          <div class="tiers-rail-meta">Разовый стайлбук после диагностики: понять формулу, увидеть образы, получить стартовую капсулу.</div>
+          <span class="tiers-rail-price">3 900 ₽ · разовый результат</span>
+        </a>
+        <a href="#tier-daily-style" class="tiers-rail-step" data-tier-switch="daily">
+          <div class="tiers-rail-kicker">Вау-функции</div>
+          <div class="tiers-rail-title">Стиль каждый день</div>
+          <div class="tiers-rail-meta">Живой кабинет: образ дня, капсула недели, проверка вещей по фото и трекер прогресса.</div>
+          <span class="tiers-rail-price">бесплатная beta · после Карты</span>
+        </a>
+      </aside>
+
+      <div class="tiers-main">
+        <div class="tiers-free">
+          <div class="tiers-free-copy">
+            <div class="tiers-free-kicker">Шаг 0 · Точка отсчёта</div>
+            <div class="tiers-free-title">Бесплатная диагностика</div>
+            <p class="tiers-free-text">Диагностика — это первый шаг. Она даёт первое узнавание: индекс стилевого разрыва, направление формулы и понимание, совпадает ли образ с тем, кем ты стала.</p>
+            <div class="tiers-free-points">
+              <span>14 вопросов, 5 минут</span>
+              <span>без регистрации</span>
+              <span>индекс разрыва в %</span>
+              <span>гипотеза формулы</span>
+            </div>
+          </div>
+          <a href="identity-scan-quiz.html" class="tier-btn">Пройти диагностику</a>
         </div>
-        <div class="tier-product">Точка отсчёта</div>
-        <div class="tier-price">Бесплатно</div>
-        <div class="tier-price-meta">навсегда</div>
-        <div class="tier-promise">Узнай, совпадает ли образ с тем, кем ты стала</div>
-        <ul class="tier-features">
-          <li>Индекс стилевого разрыва в %</li>
-          <li>Направление твоей формулы — гипотеза стиля</li>
-          <li>2 референса под направление</li>
-          <li>14 вопросов, 5 минут</li>
-          <li>Без регистрации</li>
-        </ul>
-        <a href="identity-scan-quiz.html" class="tier-btn">Начать бесплатно</a>
-      </div>
 
-      <div class="tier-card featured">
-        <div class="tier-icon-circle">
-          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="8" width="22" height="16" rx="2"/>
-            <path d="M5 13h22M10 19h6"/>
-          </svg>
+        <div class="tiers-wow">
+          <div class="tiers-wow-tabs" role="tablist" aria-label="Тарифы Sense Style">
+            <button type="button" class="tiers-wow-tab active" role="tab" aria-selected="true" aria-controls="tier-card-style" id="tab-card-style" data-tier-switch="card">Карта стиля</button>
+            <button type="button" class="tiers-wow-tab" role="tab" aria-selected="false" aria-controls="tier-daily-style" id="tab-daily-style" data-tier-switch="daily">Стиль каждый день</button>
+          </div>
+
+          <article class="tier-panel active" id="tier-card-style" role="tabpanel" aria-labelledby="tab-card-style">
+            <div class="tier-panel-shell">
+              <div class="tier-panel-main">
+                <div class="tier-badge-row">
+                  <span class="tier-badge">Для старта</span>
+                  <span class="tier-badge">Разовый результат</span>
+                </div>
+                <div class="tier-panel-kicker">Стартовый пакет</div>
+                <h3 class="tier-panel-title">Карта стиля</h3>
+                <div class="tier-panel-price">3 900 ₽</div>
+                <div class="tier-panel-price-meta">после диагностики · персональный стайлбук</div>
+                <p class="tier-panel-text">Карта стиля даёт ясность: что тебе идёт, какие цвета и силуэты работают, какие образы под роли жизни собирать и с чего начать покупки.</p>
+                <ul class="tier-panel-list">
+                  <li>Полная формула стиля и точный подстиль из 25 — не гипотеза, а персональная настройка.</li>
+                  <li>Explainable AI: почему система выбрала именно эту формулу, на каких сигналах и зонах роста.</li>
+                  <li>Палитра, силуэты, стоп-цвета и визуальный стоп-лист — что усиливает тебя, а что уводит.</li>
+                  <li>Генерация образов капсулы: 6 AI-образов на тебе под работу, встречи, выход, поездки и другие сценарии жизни.</li>
+                  <li>Стартовая капсула: 9 вещей, 18–24 образа, топ покупок и PDF, с которым можно идти в шкаф и в магазин.</li>
+                </ul>
+                <p class="tier-panel-note">Важно: это не ежедневный кабинет. Карта — разовый ориентир и персональный стайлбук, чтобы понять формулу и перестать покупать случайно.</p>
+                <div class="tier-panel-actions">
+                  <a href="/card" class="tier-btn">Открыть Карту стиля</a>
+                  <a href="#tier-daily-style" class="tier-link-soft" data-tier-switch="daily">Посмотреть следующий уровень →</a>
+                </div>
+              </div>
+              <div class="tier-panel-side">
+                <h4 class="tier-side-title">Что будет внутри Карты</h4>
+                <p class="tier-side-text">Разовый продукт после диагностики: сначала понять формулу, затем увидеть её в образах, капсуле и покупках.</p>
+                <div class="tier-snapshot">
+                  <div class="tier-metric">
+                    <div class="tier-metric-label">Образы</div>
+                    <div class="tier-metric-value">6</div>
+                    <div class="tier-metric-desc">AI-сценариев на клиентке под жизнь и роли</div>
+                  </div>
+                  <div class="tier-metric">
+                    <div class="tier-metric-label">Капсула</div>
+                    <div class="tier-metric-value">9</div>
+                    <div class="tier-metric-desc">стартовых вещей, которые собираются друг с другом</div>
+                  </div>
+                </div>
+                <div class="tier-mini-board">
+                  <div class="tier-mini-card">
+                    <h4>Образы под жизнь</h4>
+                    <p>Деловая встреча, свидание, выходные, презентация, корпоратив, путешествие — не абстрактные референсы, а сцены под твою формулу.</p>
+                    <div class="tier-token-row">
+                      <span class="tier-token">работа</span>
+                      <span class="tier-token">выход</span>
+                      <span class="tier-token">путешествие</span>
+                    </div>
+                  </div>
+                  <div class="tier-mini-card">
+                    <h4>Стартовая капсула</h4>
+                    <p>База, акценты, покупки и PDF к шкафу. Каждая новая вещь должна помогать росту комбинаторики, а не становиться вещью-сироткой.</p>
+                    <div class="tier-token-row">
+                      <span class="tier-token">18–24 образа</span>
+                      <span class="tier-token">PDF</span>
+                      <span class="tier-token">топ покупок</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="tier-panel" id="tier-daily-style" role="tabpanel" aria-labelledby="tab-daily-style">
+            <div class="tier-panel-shell">
+              <div class="tier-panel-main">
+                <div class="tier-badge-row">
+                  <span class="tier-badge">Продолжение Карты</span>
+                  <span class="tier-badge tier-badge-accent">Вау-функции</span>
+                </div>
+                <div class="tier-panel-kicker">Живой кабинет</div>
+                <h3 class="tier-panel-title">Стиль каждый день</h3>
+                <div class="tier-panel-price">бесплатная beta</div>
+                <div class="tier-panel-price-meta">с продолжением · активируется после Карты</div>
+                <p class="tier-panel-text">Здесь формула начинает работать каждый день: утром, при сборе капсулы недели, в магазине и в момент, когда нужно решить, что покупать, а что оставить.</p>
+                <ul class="tier-panel-list">
+                  <li>Образ дня и план недели: сервис собирает образ не из воздуха, а из активной сезонной капсулы под роль, погоду и расписание.</li>
+                  <li>Конструктор капсулы: AI считает сочетаемость, роли недели, вещи-сиротки и комбинаторику новой вещи с уже выбранными.</li>
+                  <li>«Брать / не брать» по фото: загрузила вещь — получила вердикт, риск, с чем носить и сколько образов она соберёт.</li>
+                  <li>Трекер прогресса: видно, как уменьшается разрыв, какие роли закрыты и что станет следующим лучшим шагом.</li>
+                  <li>Лист покупок и персональный журнал: не просто идеи, а приоритеты под формулу и статьи, которые помогают применять её в жизни.</li>
+                </ul>
+                <p class="tier-panel-note">Важно: кабинет не заменяет Карту. Он продолжает её и использует уже собранную формулу, палитру и капсулу как источник для ежедневных решений.</p>
+                <div class="tier-panel-actions">
+                  <a href="/cabinet" class="tier-btn">Открыть кабинет</a>
+                  <a href="/card" class="tier-link-soft">Сначала посмотреть Карту →</a>
+                </div>
+              </div>
+              <div class="tier-panel-side">
+                <h4 class="tier-side-title">Что делает кабинет каждый день</h4>
+                <p class="tier-side-text">Это слой применения и возврата в сервис: меньше случайных покупок, больше образов из той же капсулы и видимый прогресс по ролям.</p>
+                <div class="tier-snapshot">
+                  <div class="tier-metric">
+                    <div class="tier-metric-label">Режим</div>
+                    <div class="tier-metric-value">7/7</div>
+                    <div class="tier-metric-desc">образ дня, план недели и проверка вещей в живом цикле</div>
+                  </div>
+                  <div class="tier-metric">
+                    <div class="tier-metric-label">Капсула</div>
+                    <div class="tier-metric-value">3–4</div>
+                    <div class="tier-metric-desc">сочетания минимум с 3–4 вещами как правило качества</div>
+                  </div>
+                </div>
+                <div class="tier-mini-board">
+                  <div class="tier-mini-card">
+                    <h4>Утро, магазин, неделя</h4>
+                    <p>Один тариф закрывает три боли: что надеть сегодня, что покупать и как собрать неделю без хаоса и лишних вещей.</p>
+                    <div class="tier-token-row">
+                      <span class="tier-token">образ дня</span>
+                      <span class="tier-token">план недели</span>
+                      <span class="tier-token">проверка по фото</span>
+                    </div>
+                  </div>
+                  <div class="tier-mini-card">
+                    <h4>Retention-функции</h4>
+                    <p>Возврат в сервис создают капсула недели, сезонная капсула, трекер разрыва, приоритетный лист покупок и персональный журнал.</p>
+                    <div class="tier-token-row">
+                      <span class="tier-token">трекер</span>
+                      <span class="tier-token">покупки</span>
+                      <span class="tier-token">журнал</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
         </div>
-        <div class="tier-role">Разовый стайлбук</div>
-        <div class="tier-product">Карта стиля</div>
-        <div class="tier-price">3 900 ₽</div>
-        <div class="tier-price-meta">стартовая цена на запуске</div>
-        <div class="tier-promise">Понять свою формулу — что тебе идёт и что покупать</div>
-        <div class="tier-includes"><strong>Всё из «Точки отсчёта»</strong>, плюс:</div>
-        <ul class="tier-features">
-          <li>Полная формула стиля — точный подстиль из 25</li>
-          <li>Почему именно эта формула — объяснимый разбор</li>
-          <li>Выверенная палитра: база, основные, акценты + стоп-цвета</li>
-          <li>Силуэты под твою фигуру и стоп-лист «что не носить»</li>
-          <li>Образы под жизнь: работа, свидание, выход, путешествие</li>
-          <li>Стартовая капсула — 9 вещей, из них 18–24 образа</li>
-          <li>Именной PDF-стайлбук к шкафу</li>
-        </ul>
-        <p class="tier-value">«Я получаю свою формулу и понимаю, как не ошибаться в одежде»</p>
-        <a href="/card" class="tier-btn">Получить карту</a>
       </div>
-
-      <div class="tier-card">
-        <div class="tier-icon-circle">
-          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 12l10-6 10 6v6c-2 4-6 8-10 8s-8-4-10-8z"/>
-            <path d="M12 16l3 3 5-6"/>
-          </svg>
-        </div>
-        <div class="tier-role">Живой AI-кабинет</div>
-        <div class="tier-product">Стиль каждый день</div>
-        <div class="tier-price">Бесплатно</div>
-        <div class="tier-price-meta">открытая бета</div>
-        <div class="tier-promise">Применять формулу каждый день — не покупать лишнее, видеть прогресс</div>
-        <div class="tier-includes"><strong>Продолжение «Карты стиля»</strong>:</div>
-        <ul class="tier-features">
-          <li>Образ дня — что надеть под роль, погоду и расписание</li>
-          <li>Планировщик недели: образ на каждый день из капсулы</li>
-          <li>Конструктор капсулы с оценкой качества и комбинаторики</li>
-          <li>«Брать / не брать» — оценка вещи по фото прямо в магазине</li>
-          <li>Трекер стилевого разрыва: видно, как стиль меняется</li>
-          <li>Приоритетный лист покупок под твою формулу</li>
-        </ul>
-        <p class="tier-value">«Стилист в кармане: собирает образы, проверяет покупки, ведёт к цельному стилю»</p>
-        <a href="/cabinet" class="tier-btn">Попробовать кабинет</a>
-      </div>
-
     </div>
 
     <!-- «Преображение» вынесено из лестницы AI-тарифов: это не ступень сервиса, а премиум-услуга
@@ -2323,6 +2769,48 @@ footer {
   }
   document.querySelectorAll('h1,h2,h3,h4,p,li,summary,.hero-meta,.gallery-card-sub,.tier-price-meta')
     .forEach(walk);
+})();
+</script>
+
+<script>
+// WOW-вкладки тарифов: сначала показываем сам продуктовый слой, а не уводим в скрытый роут
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-tier-switch]'));
+  var panels = {
+    card: document.getElementById('tier-card-style'),
+    daily: document.getElementById('tier-daily-style')
+  };
+  if (!tabs.length || !panels.card || !panels.daily) return;
+
+  function activate(name) {
+    var current = name === 'daily' ? 'daily' : 'card';
+    tabs.forEach(function (node) {
+      var on = node.getAttribute('data-tier-switch') === current;
+      node.classList.toggle('active', on);
+      if (node.matches('[role="tab"]')) {
+        node.setAttribute('aria-selected', on ? 'true' : 'false');
+      }
+      if (node.classList.contains('tiers-rail-step')) {
+        node.setAttribute('aria-current', on ? 'true' : 'false');
+      }
+    });
+    Object.keys(panels).forEach(function (key) {
+      panels[key].classList.toggle('active', key === current);
+    });
+  }
+
+  tabs.forEach(function (node) {
+    node.addEventListener('click', function (e) {
+      var name = node.getAttribute('data-tier-switch');
+      if (node.matches('a')) e.preventDefault();
+      activate(name);
+      if (node.matches('a') && node.getAttribute('href')) {
+        history.replaceState(null, '', node.getAttribute('href'));
+      }
+    });
+  });
+
+  if (location.hash === '#tier-daily-style') activate('daily');
 })();
 </script>
 
