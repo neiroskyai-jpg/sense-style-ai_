@@ -1066,18 +1066,20 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 }
 .tiers-ladder {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 248px minmax(0, 1fr);
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 .tiers-rail {
   background: rgba(245, 239, 227, 0.9);
   border: 1px solid rgba(132, 112, 98, 0.16);
   border-radius: calc(var(--r-card) + 4px);
   box-shadow: 0 10px 30px rgba(31, 22, 20, 0.05);
-  padding: 18px;
-  position: sticky;
-  top: 110px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100%;
 }
 .tiers-rail-label {
   font-size: 10px;
@@ -1091,12 +1093,17 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   display: block;
   text-decoration: none;
   color: inherit;
-  border-radius: 22px;
-  padding: 16px 18px;
+  border-radius: 20px;
+  padding: 15px 16px;
   border: 1px solid transparent;
   transition: border-color 0.25s, transform 0.25s, background 0.25s;
 }
 .tiers-rail-step + .tiers-rail-step { margin-top: 10px; }
+.tiers-rail-steps {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
 .tiers-rail-step:hover {
   transform: translateY(-1px);
   border-color: rgba(122, 28, 46, 0.18);
@@ -1115,16 +1122,32 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   font-weight: 600;
   margin-bottom: 8px;
 }
+.tiers-rail-step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+  background: rgba(122, 28, 46, 0.08);
+  color: var(--red-deep);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
 .tiers-rail-title {
   font-family: var(--serif);
-  font-size: 28px;
-  line-height: 1.08;
+  font-size: 23px;
+  line-height: 1.12;
   color: var(--ink);
   margin-bottom: 6px;
 }
 .tiers-rail-meta {
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 12.5px;
+  line-height: 1.6;
   color: var(--ink-muted);
 }
 .tiers-rail-price {
@@ -1142,7 +1165,7 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 20px;
   align-items: center;
-  padding: 26px 28px;
+  padding: 24px 26px;
   background: rgba(255,255,255,0.7);
   border: 1px solid rgba(132, 112, 98, 0.16);
   border-radius: calc(var(--r-card) + 4px);
@@ -1160,14 +1183,14 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 }
 .tiers-free-title {
   font-family: var(--serif);
-  font-size: clamp(28px, 3vw, 38px);
-  line-height: 1.08;
+  font-size: clamp(26px, 2.6vw, 34px);
+  line-height: 1.1;
   color: var(--ink);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 .tiers-free-text {
-  font-size: 15px;
-  line-height: 1.72;
+  font-size: 14px;
+  line-height: 1.75;
   color: var(--ink-muted);
 }
 .tiers-free-points {
@@ -1196,13 +1219,31 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   border: 1px solid rgba(132, 112, 98, 0.18);
   border-radius: calc(var(--r-card) + 6px);
   box-shadow: 0 16px 42px rgba(31, 22, 20, 0.06);
-  padding: 22px;
+  padding: 20px;
 }
 .tiers-wow-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
+}
+.tiers-wow-bridge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+.tiers-wow-bridge::before,
+.tiers-wow-bridge::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(132, 112, 98, 0.22);
 }
 .tiers-wow-tab {
   appearance: none;
@@ -1210,10 +1251,10 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   background: rgba(255,255,255,0.6);
   color: var(--ink);
   border-radius: 999px;
-  padding: 11px 18px;
+  padding: 10px 18px;
   font: inherit;
-  font-size: 12px;
-  letter-spacing: 0.14em;
+  font-size: 11px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
   transition: background 0.25s, color 0.25s, border-color 0.25s, transform 0.25s;
@@ -1235,15 +1276,15 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 }
 .tier-panel-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(290px, 0.9fr);
-  gap: 22px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.86fr);
+  gap: 18px;
 }
 .tier-panel-main,
 .tier-panel-side {
   background: rgba(255,255,255,0.76);
   border: 1px solid rgba(132, 112, 98, 0.15);
-  border-radius: 28px;
-  padding: 26px;
+  border-radius: 24px;
+  padding: 24px;
 }
 .tier-panel-side {
   background:
@@ -1253,20 +1294,21 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 .tier-badge-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 14px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .tier-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 34px;
-  padding: 0 16px;
+  min-height: 32px;
+  padding: 0 14px;
   border-radius: 999px;
   background: rgba(122, 28, 46, 0.08);
   color: var(--red);
-  font-size: 12px;
+  font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 600;
@@ -1276,38 +1318,43 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   color: #fff;
 }
 .tier-panel-kicker {
-  font-size: 11px;
-  letter-spacing: 0.18em;
+  font-size: 10px;
+  letter-spacing: 0.20em;
   text-transform: uppercase;
   color: var(--red);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-weight: 600;
 }
 .tier-panel-title {
   font-family: var(--serif);
-  font-size: clamp(42px, 5vw, 62px);
-  line-height: 0.98;
+  font-size: clamp(32px, 3.5vw, 46px);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
   color: #3c111e;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .tier-panel-price {
-  font-family: var(--serif);
-  font-size: clamp(26px, 3vw, 38px);
+  font-family: var(--sans);
+  font-size: clamp(20px, 2.2vw, 26px);
   line-height: 1;
   color: var(--red-deep);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 .tier-panel-price-meta {
-  font-size: 13px;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--ink-muted);
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 .tier-panel-text {
-  font-size: 18px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.72;
   color: var(--ink);
-  padding: 0 0 18px;
-  margin-bottom: 20px;
+  padding: 0 0 16px;
+  margin-bottom: 18px;
   border-bottom: 1px solid rgba(132, 112, 98, 0.18);
 }
 .tier-panel-list {
@@ -1319,9 +1366,9 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 }
 .tier-panel-list li {
   position: relative;
-  padding-left: 42px;
-  font-size: 16px;
-  line-height: 1.55;
+  padding-left: 38px;
+  font-size: 14.5px;
+  line-height: 1.65;
   color: var(--ink);
 }
 .tier-panel-list li::before {
@@ -1329,22 +1376,22 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   position: absolute;
   left: 0;
   top: -1px;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: rgba(122, 28, 46, 0.08);
   color: var(--red);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
 }
 .tier-panel-note {
-  font-size: 14px;
-  line-height: 1.65;
+  font-size: 13px;
+  line-height: 1.7;
   color: var(--ink-muted);
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 .tier-panel-actions {
   display: flex;
@@ -1355,8 +1402,8 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 .tier-panel-actions .tier-btn {
   margin-top: 0;
   min-width: 240px;
-  min-height: 62px;
-  padding: 14px 28px;
+  min-height: 52px;
+  padding: 12px 28px;
 }
 .tier-link-soft {
   display: inline-flex;
@@ -1364,24 +1411,24 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   gap: 8px;
   color: var(--red);
   text-decoration: none;
-  font-size: 13px;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 600;
 }
 .tier-link-soft:hover { opacity: 0.76; }
 .tier-side-title {
   font-family: var(--serif);
-  font-size: 28px;
-  line-height: 1.15;
+  font-size: 21px;
+  line-height: 1.2;
   color: var(--ink);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 .tier-side-text {
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 13px;
+  line-height: 1.72;
   color: var(--ink-muted);
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 .tier-snapshot {
   display: grid;
@@ -1390,8 +1437,8 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   margin-bottom: 18px;
 }
 .tier-metric {
-  padding: 16px 16px 14px;
-  border-radius: 20px;
+  padding: 14px 14px 12px;
+  border-radius: 18px;
   background: rgba(255,255,255,0.86);
   border: 1px solid rgba(132, 112, 98, 0.12);
 }
@@ -1403,15 +1450,16 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   margin-bottom: 8px;
 }
 .tier-metric-value {
-  font-family: var(--serif);
-  font-size: 34px;
+  font-family: var(--sans);
+  font-size: 26px;
   line-height: 1;
   color: var(--red-deep);
   margin-bottom: 6px;
+  font-weight: 600;
 }
 .tier-metric-desc {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.55;
   color: var(--ink-muted);
 }
 .tier-mini-board {
@@ -1419,21 +1467,21 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   gap: 12px;
 }
 .tier-mini-card {
-  padding: 18px;
-  border-radius: 22px;
+  padding: 16px;
+  border-radius: 18px;
   background: rgba(255,255,255,0.88);
   border: 1px solid rgba(132, 112, 98, 0.12);
 }
 .tier-mini-card h4 {
   font-family: var(--serif);
-  font-size: 21px;
+  font-size: 18px;
   line-height: 1.2;
   color: var(--ink);
   margin-bottom: 8px;
 }
 .tier-mini-card p {
-  font-size: 14px;
-  line-height: 1.65;
+  font-size: 13px;
+  line-height: 1.62;
   color: var(--ink-muted);
   margin-bottom: 12px;
 }
@@ -1445,12 +1493,12 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 .tier-token {
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 30px;
+  padding: 0 10px;
   border-radius: 999px;
   background: rgba(122, 28, 46, 0.06);
   color: var(--ink);
-  font-size: 12px;
+  font-size: 11px;
 }
 /* Подписка «что дальше» — вынесена из лестницы AI-тарифов, лежит широкой полосой под ней */
 .tier-next {
@@ -1853,6 +1901,14 @@ footer {
   .steps-grid { grid-template-columns: repeat(2, 1fr); }
   .tiers-ladder { grid-template-columns: 1fr; }
   .tiers-rail { position: static; }
+  .tiers-wow-bridge {
+    justify-content: flex-start;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-size: 13px;
+  }
+  .tiers-wow-bridge::before,
+  .tiers-wow-bridge::after { display: none; }
   .tier-panel-shell { grid-template-columns: 1fr; }
   .features-grid { grid-template-columns: repeat(2, 1fr); }
   .features-header { grid-template-columns: 1fr; gap: 20px; }
@@ -1964,7 +2020,15 @@ footer {
     padding: 22px 20px;
   }
   .tiers-rail { padding: 14px; }
+  .tiers-rail-step-index {
+    min-width: 52px;
+    font-size: 9.5px;
+  }
   .tiers-wow { padding: 16px; }
+  .tiers-wow-bridge {
+    margin-bottom: 16px;
+    font-size: 12px;
+  }
   .tier-panel-main,
   .tier-panel-side {
     padding: 20px;
@@ -2297,23 +2361,27 @@ footer {
       <p class="section-label">Тарифы</p>
     </div>
     <h2 class="section-title">Два шага — <em>к твоему стилю</em></h2>
-    <p class="section-sub">Сначала — ясность, что тебе идёт. Потом — формула работает в жизни каждый день. Мы разводим разовый результат и живой кабинет, чтобы у каждого тарифа была своя роль.</p>
+    <p class="section-sub">Сначала — понять свою формулу. Потом — применять её каждый день. Это не два похожих тарифа, а путь от ясности к практике.</p>
 
     <div class="tiers-ladder">
       <aside class="tiers-rail" aria-label="Ступени продукта">
         <div class="tiers-rail-label">Два шага к стилю</div>
-        <a href="#tier-card-style" class="tiers-rail-step active" data-tier-switch="card">
-          <div class="tiers-rail-kicker">Для старта</div>
-          <div class="tiers-rail-title">Карта стиля</div>
-          <div class="tiers-rail-meta">Разовый стайлбук после диагностики: понять формулу, увидеть образы, получить стартовую капсулу.</div>
-          <span class="tiers-rail-price">3 900 ₽ · разовый результат</span>
-        </a>
-        <a href="#tier-daily-style" class="tiers-rail-step" data-tier-switch="daily">
-          <div class="tiers-rail-kicker">Вау-функции</div>
-          <div class="tiers-rail-title">Стиль каждый день</div>
-          <div class="tiers-rail-meta">Живой кабинет: образ дня, капсула недели, проверка вещей по фото и трекер прогресса.</div>
-          <span class="tiers-rail-price">бесплатная beta · после Карты</span>
-        </a>
+        <div class="tiers-rail-steps">
+          <a href="#tier-card-style" class="tiers-rail-step active" data-tier-switch="card">
+            <div class="tiers-rail-step-index">Шаг 1</div>
+            <div class="tiers-rail-kicker">Стратегия</div>
+            <div class="tiers-rail-title">Карта стиля</div>
+            <div class="tiers-rail-meta">Разовый результат: формула, образы и первый план покупок.</div>
+            <span class="tiers-rail-price">3 900 ₽</span>
+          </a>
+          <a href="#tier-daily-style" class="tiers-rail-step" data-tier-switch="daily">
+            <div class="tiers-rail-step-index">Шаг 2</div>
+            <div class="tiers-rail-kicker">Практика</div>
+            <div class="tiers-rail-title">Стиль каждый день</div>
+            <div class="tiers-rail-meta">Живой кабинет для повседневных решений, образов и покупок.</div>
+            <span class="tiers-rail-price">бесплатная beta</span>
+          </a>
+        </div>
       </aside>
 
       <div class="tiers-main">
@@ -2337,23 +2405,24 @@ footer {
             <button type="button" class="tiers-wow-tab active" role="tab" aria-selected="true" aria-controls="tier-card-style" id="tab-card-style" data-tier-switch="card">Карта стиля</button>
             <button type="button" class="tiers-wow-tab" role="tab" aria-selected="false" aria-controls="tier-daily-style" id="tab-daily-style" data-tier-switch="daily">Стиль каждый день</button>
           </div>
+          <div class="tiers-wow-bridge">Сначала понять формулу → потом жить по ней каждый день</div>
 
           <article class="tier-panel active" id="tier-card-style" role="tabpanel" aria-labelledby="tab-card-style">
             <div class="tier-panel-shell">
               <div class="tier-panel-main">
                 <div class="tier-badge-row">
-                  <span class="tier-badge">Для старта</span>
+                  <span class="tier-badge">Шаг 1</span>
                   <span class="tier-badge">Разовый результат</span>
                 </div>
                 <div class="tier-panel-kicker">Стартовый пакет</div>
                 <h3 class="tier-panel-title">Карта стиля</h3>
                 <div class="tier-panel-price">3 900 ₽</div>
                 <div class="tier-panel-price-meta">после диагностики · персональный стайлбук</div>
-                <p class="tier-panel-text">Карта стиля даёт ясность: что тебе идёт, какие цвета и силуэты работают, какие образы под роли жизни собирать и с чего начать покупки.</p>
+                <p class="tier-panel-text">Разовый ориентир, чтобы быстро понять: что тебе идёт, на чём строить образы и с каких вещей начинать.</p>
                 <ul class="tier-panel-list">
                   <li>Полная формула стиля и точный подстиль из 25 — не гипотеза, а персональная настройка.</li>
                   <li>Explainable AI: почему система выбрала именно эту формулу, на каких сигналах и зонах роста.</li>
-                  <li>Палитра, силуэты, стоп-цвета и визуальный стоп-лист — что усиливает тебя, а что уводит.</li>
+                  <li>Палитра, силуэты и стоп-лист — чтобы быстрее отличать своё от случайного.</li>
                   <li>Генерация образов капсулы: 6 AI-образов на тебе под работу, встречи, выход, поездки и другие сценарии жизни.</li>
                   <li>Стартовая капсула: 9 вещей, 18–24 образа, топ покупок и PDF, с которым можно идти в шкаф и в магазин.</li>
                 </ul>
@@ -2365,7 +2434,7 @@ footer {
               </div>
               <div class="tier-panel-side">
                 <h4 class="tier-side-title">Что будет внутри Карты</h4>
-                <p class="tier-side-text">Разовый продукт после диагностики: сначала понять формулу, затем увидеть её в образах, капсуле и покупках.</p>
+                <p class="tier-side-text">Не теория, а готовый стартовый комплект: видно, сколько образов ты получаешь и какой будет первый опорный гардероб.</p>
                 <div class="tier-snapshot">
                   <div class="tier-metric">
                     <div class="tier-metric-label">Образы</div>
@@ -2380,8 +2449,8 @@ footer {
                 </div>
                 <div class="tier-mini-board">
                   <div class="tier-mini-card">
-                    <h4>Образы под жизнь</h4>
-                    <p>Деловая встреча, свидание, выходные, презентация, корпоратив, путешествие — не абстрактные референсы, а сцены под твою формулу.</p>
+                    <h4>Сцены под жизнь</h4>
+                    <p>Готовые образы под реальные роли, а не абстрактные референсы.</p>
                     <div class="tier-token-row">
                       <span class="tier-token">работа</span>
                       <span class="tier-token">выход</span>
@@ -2390,7 +2459,7 @@ footer {
                   </div>
                   <div class="tier-mini-card">
                     <h4>Стартовая капсула</h4>
-                    <p>База, акценты, покупки и PDF к шкафу. Каждая новая вещь должна помогать росту комбинаторики, а не становиться вещью-сироткой.</p>
+                    <p>Первые вещи, которые собираются друг с другом и дают базу для покупок.</p>
                     <div class="tier-token-row">
                       <span class="tier-token">18–24 образа</span>
                       <span class="tier-token">PDF</span>
@@ -2406,22 +2475,22 @@ footer {
             <div class="tier-panel-shell">
               <div class="tier-panel-main">
                 <div class="tier-badge-row">
+                  <span class="tier-badge">Шаг 2</span>
                   <span class="tier-badge">Продолжение Карты</span>
-                  <span class="tier-badge tier-badge-accent">Вау-функции</span>
                 </div>
                 <div class="tier-panel-kicker">Живой кабинет</div>
                 <h3 class="tier-panel-title">Стиль каждый день</h3>
                 <div class="tier-panel-price">бесплатная beta</div>
                 <div class="tier-panel-price-meta">с продолжением · активируется после Карты</div>
-                <p class="tier-panel-text">Здесь формула начинает работать каждый день: утром, при сборе капсулы недели, в магазине и в момент, когда нужно решить, что покупать, а что оставить.</p>
+                <p class="tier-panel-text">Живой слой применения: не новая диагностика, а ежедневные решения по уже собранной формуле.</p>
                 <ul class="tier-panel-list">
-                  <li>Образ дня и план недели: сервис собирает образ не из воздуха, а из активной сезонной капсулы под роль, погоду и расписание.</li>
-                  <li>Конструктор капсулы: AI считает сочетаемость, роли недели, вещи-сиротки и комбинаторику новой вещи с уже выбранными.</li>
-                  <li>«Брать / не брать» по фото: загрузила вещь — получила вердикт, риск, с чем носить и сколько образов она соберёт.</li>
-                  <li>Трекер прогресса: видно, как уменьшается разрыв, какие роли закрыты и что станет следующим лучшим шагом.</li>
-                  <li>Лист покупок и персональный журнал: не просто идеи, а приоритеты под формулу и статьи, которые помогают применять её в жизни.</li>
+                  <li>Образ дня и план недели — из активной капсулы, а не из случайных идей.</li>
+                  <li>Конструктор капсулы считает сочетаемость, роли недели и вещи-сиротки.</li>
+                  <li>«Брать / не брать» по фото даёт вердикт, риск и готовые сочетания.</li>
+                  <li>Трекер показывает прогресс и следующий лучший шаг.</li>
+                  <li>Лист покупок и журнал поддерживают формулу в обычной жизни, а не только в момент разбора.</li>
                 </ul>
-                <p class="tier-panel-note">Важно: кабинет не заменяет Карту. Он продолжает её и использует уже собранную формулу, палитру и капсулу как источник для ежедневных решений.</p>
+                <p class="tier-panel-note">Важно: кабинет продолжает Карту и опирается на уже собранную формулу, а не начинает всё заново.</p>
                 <div class="tier-panel-actions">
                   <a href="/cabinet" class="tier-btn">Открыть кабинет</a>
                   <a href="/card" class="tier-link-soft">Сначала посмотреть Карту →</a>
@@ -2429,7 +2498,7 @@ footer {
               </div>
               <div class="tier-panel-side">
                 <h4 class="tier-side-title">Что делает кабинет каждый день</h4>
-                <p class="tier-side-text">Это слой применения и возврата в сервис: меньше случайных покупок, больше образов из той же капсулы и видимый прогресс по ролям.</p>
+                <p class="tier-side-text">Кабинет нужен для повторяющихся бытовых решений: что надеть, что купить и как держать гардероб в рабочем ритме.</p>
                 <div class="tier-snapshot">
                   <div class="tier-metric">
                     <div class="tier-metric-label">Режим</div>
@@ -2445,7 +2514,7 @@ footer {
                 <div class="tier-mini-board">
                   <div class="tier-mini-card">
                     <h4>Утро, магазин, неделя</h4>
-                    <p>Один тариф закрывает три боли: что надеть сегодня, что покупать и как собрать неделю без хаоса и лишних вещей.</p>
+                    <p>Три частых сценария, где формула нужна не на словах, а в действии.</p>
                     <div class="tier-token-row">
                       <span class="tier-token">образ дня</span>
                       <span class="tier-token">план недели</span>
@@ -2453,8 +2522,8 @@ footer {
                     </div>
                   </div>
                   <div class="tier-mini-card">
-                    <h4>Retention-функции</h4>
-                    <p>Возврат в сервис создают капсула недели, сезонная капсула, трекер разрыва, приоритетный лист покупок и персональный журнал.</p>
+                    <h4>Ритм сервиса</h4>
+                    <p>Трекер, покупки и журнал возвращают тебя в сервис не разово, а по ходу сезона.</p>
                     <div class="tier-token-row">
                       <span class="tier-token">трекер</span>
                       <span class="tier-token">покупки</span>
