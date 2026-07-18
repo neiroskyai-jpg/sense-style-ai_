@@ -17,7 +17,7 @@ import re
 import sys
 import threading
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
@@ -32,10 +32,10 @@ from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_shopping_list, generate_styling_pair,
                            refine_colortype_subtype, refine_substyle,
                            render_look_on_client)
-from core.tracking import (approved_feedback, chat_log, count_generations, count_today,
-                           feedback_list, funnel, gap_progress, gap_summary, leads, progress,
-                           record_call, record_chat, record_consent, record_event, record_feedback,
-                           record_session, set_feedback_approved)
+from core.tracking import (approved_feedback, chat_log, count_generations, count_generations_ip,
+                           count_today, feedback_list, funnel, gap_progress, gap_summary, leads,
+                           progress, record_call, record_chat, record_consent, record_event,
+                           record_feedback, record_generation, record_session, set_feedback_approved)
 from core.auth import email_configured, make_token, read_token, send_magic_link
 from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
@@ -55,6 +55,49 @@ app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # лимит загрузк
 # секрет сессий/magic-link: env SENSE_SECRET_KEY или стабильный файл на постоянном томе
 from core.config import secret_key as _secret_key, data_dir as _data_dir  # noqa: E402
 app.secret_key = _secret_key()
+
+# ── Личность без регистрации ───────────────────────────────────────────────────────────────────
+# Клиентка проходит весь путь (квиз → Карта → кабинет) без почты. Раньше барьер стоял на /card:
+# после квиза её выбрасывало на /login, и путь обрывался — а на проде без ключей UniSender письмо
+# и вовсе не уходило. Идентичность держим в подписанной сессионной cookie: `anon-<hex>`. Ключ
+# профиля — произвольная строка (core/profiles.py), поэтому анонимный id ложится в хранилище
+# ровно как email, без миграции схемы. Почта остаётся опцией «сохранить результат».
+ANON_SESSION_DAYS = int(os.getenv("SENSE_ANON_SESSION_DAYS", "365"))
+app.permanent_session_lifetime = timedelta(days=ANON_SESSION_DAYS)
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,   # cookie сессии недоступна из JS
+    SESSION_COOKIE_SAMESITE="Lax",  # не уезжает на сторонние запросы
+    # На проде (Amvera — примонтирован /data) сессия только по HTTPS. Локально выключено,
+    # иначе cookie не встанет на http://127.0.0.1 и весь путь не проверить.
+    SESSION_COOKIE_SECURE=os.getenv("SENSE_COOKIE_SECURE", "1" if Path("/data").is_dir() else "0") == "1",
+)
+
+
+def _current_user() -> str:
+    """Кто сейчас на сайте: email (если вошла по ссылке) либо стабильный анонимный id.
+
+    Единая точка идентичности для пользовательских маршрутов. Никогда не пустая строка —
+    поэтому лимит бесплатных генераций считается и для анонима (см. `_gen_allowed`).
+    """
+    email = session.get("email")
+    if email:
+        return email
+    anon = session.get("anon")
+    if not anon:
+        anon = "anon-" + uuid.uuid4().hex
+        session["anon"] = anon
+    session.permanent = True  # переживает закрытие браузера — иначе Карта «теряется»
+    return anon
+
+
+def _is_anon(user: str) -> bool:
+    return (user or "").startswith("anon-")
+
+
+def _display_name(user: str) -> str:
+    """Как показать пользователя в интерфейсе. Технический `anon-<hex>` наружу не выносим:
+    в шаблонах он вылезал бы как «для anon-a1b2c3…». У анонима имени просто нет."""
+    return "" if _is_anon(user) else (user or "")
 
 
 @app.after_request
@@ -499,9 +542,10 @@ ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .tnote{font-size:13px;color:var(--muted);margin:10px 0 14px;line-height:1.5}
  .tdelta{background:#eef6ee;color:#3a5a3a;font-size:12px;padding:3px 10px;border-radius:999px;white-space:nowrap}
 </style></head><body><div class=wrap>
-<div class=top><span class=logo>Чувство стиля</span><a href="/logout">Выйти</a></div>
+<div class=top><span class=logo>Чувство стиля</span>{% if email %}<a href="/logout">Выйти</a>{% else %}<a href="/">← на главную</a>{% endif %}</div>
 <h1>Мой профиль</h1>
-<p class=email>{{ email }}</p>
+{% if email %}<p class=email>{{ email }}</p>
+{% else %}<p class=email>Результат сохранён на этом устройстве. Чтобы он не потерялся при смене браузера — <a href="/login">привяжи почту</a>.</p>{% endif %}
 <div class=card><h3>Формула стиля {% if has_diag %}<span class="badge yes">есть</span>{% else %}<span class="badge no">ещё нет</span>{% endif %}</h3>
  <p>{% if has_diag %}{{ formula }}{% else %}Пройди диагностику — Формула сохранится здесь.{% endif %}</p></div>
 {% if track %}
@@ -1316,9 +1360,7 @@ def _ru_date(ts: str) -> str:
 
 @app.get("/me")
 def me():
-    email = session.get("email")
-    if not email:
-        return redirect("/login")
+    email = _current_user()
     prof = get_profile(email)
     diag = prof.get("diagnosis") or {}
     track = gap_progress(email)  # трекер разрыва: точки-замеры + дельта только при ≥2 замерах
@@ -1326,7 +1368,7 @@ def me():
         for p in track["points"]:
             p["date"] = _ru_date(p["ts"])
     return render_template_string(
-        ME_PAGE, email=email, has_diag=bool(diag.get("style_formula")),
+        ME_PAGE, email=_display_name(email), has_diag=bool(diag.get("style_formula")),
         formula=diag.get("style_formula", ""),
         has_style=bool(prof.get("style_profile")), track=track,
     )
@@ -2258,9 +2300,7 @@ def _daily_week_view(card: dict, board: list[dict], weekday: int | None = None) 
 @app.get("/cabinet")
 def cabinet():
     """Кабинет: капсульный гардероб по сезонам + конструктор образов (верх/низ/обувь) + лист покупок."""
-    email = session.get("email")
-    if not email:
-        return redirect("/login?next=/cabinet")
+    email = _current_user()  # кабинет доступен без почты: путь после Карты не должен обрываться
     prof = get_profile(email)
     diag = prof.get("diagnosis") or {}
     if not diag.get("style_formula"):
@@ -2513,9 +2553,8 @@ def stylebook():
     """Фото-Style Book (пакет «Преображение»): книга из данных Карты с ФОТО образов на клиентке.
     Собирается из готовых выходов движка (палитра/капсула/образы) — без новых генераций.
     За гейтом оплаты (пока — админ / premium-флаг; upsell для остальных)."""
-    email = session.get("email")
-    if not email:
-        return redirect("/login?next=/stylebook")
+    # Стайлбук платный: анониму показываем не логин, а upsell (гейт ниже) — логин ничего не решает.
+    email = _current_user()
     prof = get_profile(email)
     card = prof.get("card") or {}
     diag = prof.get("diagnosis") or {}
@@ -2546,8 +2585,8 @@ def stylist_msg():
     """Один ход диалога со стилистом. Контекст — Формула вошедшей клиентки + RAG."""
     data = request.get_json(silent=True) or {}
     history = data.get("history") if isinstance(data.get("history"), list) else []
-    email = session.get("email")
-    profile = get_profile(email) if email else None
+    email = _current_user()
+    profile = get_profile(email) or None
     # сохраняем последнюю реплику пользователя (переписка со стилистом)
     if history and isinstance(history[-1], dict) and history[-1].get("role") == "user":
         last = history[-1].get("content") or history[-1].get("text") or ""
@@ -2930,7 +2969,7 @@ def _colortype_ctx():
     Vision ненадёжен по теплу/холоду (осень↔зима), поэтому даём клиентке поправить вручную."""
     cur = None
     try:
-        em = session.get("email")
+        em = _current_user()
         if em:
             cur = ((get_profile(em) or {}).get("diagnosis") or {}).get("colortype")
     except Exception:  # noqa: BLE001
@@ -3115,9 +3154,7 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
 def style_card():
     """Карта стиля. Готовая (кэш) → показываем; иначе форма загрузки фото для сборки.
     ?text=1 — собрать без образов (только текст, синхронно); ?rebuild=1 — пересобрать."""
-    email = session.get("email")
-    if not email:  # не вошла → на регистрацию, потом вернёмся сюда (с from_job)
-        return redirect("/login?next=" + quote(request.full_path))
+    email = _current_user()  # почта не обязательна: аноним идёт дальше под своим id
     # привязка диагностики из квиза. from_job — из главной CTA; last_job — из сессии (страховка для
     # тарифных кнопок, которые ведут на /card БЕЗ ?from_job=: иначе анонимный диагноз терялся и
     # клиентку кидало обратно на квиз по кругу).
@@ -3143,13 +3180,13 @@ def style_card():
         record_event("card_stale_rebuild_prompt", email)
         return render_template_string(CARD_BUILD_FORM, error=None, notice=notice)
     if card and not request.args.get("rebuild") and not request.args.get("text"):
-        return render_template_string(STYLE_CARD, c=card, name=email,
+        return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
                                       thanks=request.args.get("fb"), stale=False)
     # бесплатная генерация — один раз на email; пересборку/повтор блокируем (защита токенов).
     # Исключение: диагностика реально изменилась (новый квиз) — даём пересобрать Карту под неё.
     if (request.args.get("rebuild") or request.args.get("text")) and not _gen_allowed(email) and not stale:
         if card:
-            return render_template_string(STYLE_CARD, c=card, name=email, thanks=None)
+            return render_template_string(STYLE_CARD, c=card, name=_display_name(email), thanks=None)
         return render_template_string(CARD_BUILD_FORM, error=_GEN_LIMIT_MSG), 429
     if request.args.get("text"):  # текстовая карта без образов (синхронно)
         if not _quota_left():
@@ -3161,7 +3198,7 @@ def style_card():
             record_event("card_built", email, meta="text")
         except Exception as e:  # noqa: BLE001
             return render_template_string(CARD_BUILD_FORM, error=f"Не удалось собрать: {e}"), 500
-        return render_template_string(STYLE_CARD, c=card, name=email)
+        return render_template_string(STYLE_CARD, c=card, name=_display_name(email))
     record_event("card_form_view", email)
     return render_template_string(CARD_BUILD_FORM, error=None)
 
@@ -3169,9 +3206,7 @@ def style_card():
 @app.post("/card/build")
 def card_build():
     """Старт асинхронной сборки карты с образами на клиентке (фото → рендер → удаление)."""
-    email = session.get("email")
-    if not email:
-        return redirect("/login")
+    email = _current_user()
     prof = get_profile(email) or {}
     diag = prof.get("diagnosis") or {}
     if not diag.get("style_formula"):
@@ -3180,17 +3215,20 @@ def card_build():
     # (клиентка заново прошла квиз): разрешаем пересобрать под новую диагностику.
     if not _gen_allowed(email) and not _card_stale(prof):
         return render_template_string(CARD_BUILD_FORM, error=_GEN_LIMIT_MSG), 429
+    if not _ip_gen_allowed():  # cookie почистили — ловим по IP
+        return render_template_string(CARD_BUILD_FORM, error=_IP_LIMIT_MSG), 429
     if not _quota_left():
         return render_template_string(CARD_BUILD_FORM, error="Лимит на сегодня исчерпан."), 429
     if not _consent_ok(request.form):
         return render_template_string(CARD_BUILD_FORM, error="Нужно согласие на обработку и передачу фото."), 400
-    record_consent(email, request.remote_addr or "", True, True)
+    record_consent(email, _client_ip(), True, True)
     try:
         photo_path = _validate_and_save(request.files.get("photo"))
     except ValueError as e:
         return render_template_string(CARD_BUILD_FORM, error=str(e)), 400
     _save_deep_intake(email, request.form)  # тело+возражения из анкеты → в Формулу/стоп-лист/чат
     record_call()
+    record_generation(email, _client_ip())  # журнал для лимита по устройству и по IP
     season = (request.form.get("season") or "").strip() or None  # ss|fw — сезон капсулы
     job_id = uuid.uuid4().hex
     _JOBS[job_id] = {"status": "processing"}
@@ -3228,9 +3266,7 @@ def capture_lead():
 @app.post("/card/feedback")
 def card_feedback():
     """Отзыв клиентки о Карте (оценка + текст). Питает артефакт «обратная связь» конкурса."""
-    email = session.get("email")
-    if not email:
-        return redirect("/login")
+    email = _current_user()
     try:
         rating = int(request.form.get("rating") or 0) or None
     except ValueError:
@@ -3301,17 +3337,39 @@ def _stylebook_access(email: str) -> bool:
     return bool((get_profile(email) or {}).get("premium"))
 
 
-# Лимит бесплатных генераций на email (защита от слива токенов). Админ — без лимита.
+# Лимит бесплатных генераций (защита от слива токенов). Админ — без лимита.
+# Бесплатный тариф = диагностика по квизу + ОДНА генерация с образами. Текстовая Карта
+# (meta='text') попытку не сжигает — см. count_generations.
 FREE_GEN_LIMIT = int(os.getenv("SENSE_FREE_GEN_LIMIT", "1"))
-_GEN_LIMIT_MSG = ("Бесплатная генерация Карты уже использована по этой почте. "
+# Второй контур: сколько дорогих генераций допускаем с одного IP в сутки. Первый контур висит на
+# cookie, а её чистят — без этого анонимный доступ означал бы безлимитный расход ключа.
+# 15, а не 5: жюри конкурса и клиентки могут сидеть за общим NAT/корпоративным адресом, и на пятом
+# человеке путь бы оборвался. Сверху всё равно стоит DEMO_DAILY_LIMIT на весь сервис.
+IP_GEN_LIMIT = int(os.getenv("SENSE_IP_GEN_LIMIT", "15"))
+_GEN_LIMIT_MSG = ("Бесплатная генерация Карты уже использована. "
                   "Твоя Карта сохранена — открой её в разделе «Мой профиль».")
+_IP_LIMIT_MSG = ("С этого адреса сегодня уже собрали максимум бесплатных Карт. "
+                 "Попробуй завтра или напиши нам.")
+
+
+def _client_ip() -> str:
+    """IP клиентки. За обратным прокси (Amvera) реальный адрес — первый в X-Forwarded-For."""
+    fwd = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+    return fwd or (request.remote_addr or "")
 
 
 def _gen_allowed(email: str) -> bool:
-    """Можно ли этому email запускать генерацию Карты (в пределах бесплатного лимита)."""
+    """Можно ли этому пользователю запускать дорогую генерацию Карты (бесплатный лимит)."""
     if _is_admin():
         return True
     return count_generations(email) < FREE_GEN_LIMIT
+
+
+def _ip_gen_allowed() -> bool:
+    """Не исчерпан ли суточный лимит генераций с этого IP (страховка от чистки cookie)."""
+    if _is_admin():
+        return True
+    return count_generations_ip(_client_ip()) < IP_GEN_LIMIT
 
 
 METRICS_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
@@ -3526,7 +3584,7 @@ def _garment_profile(form) -> dict:
 
 def _server_profile_json() -> str:
     """JSON профиля «Примерочной» из аккаунта (если вошёл) — для префилла формы; иначе null."""
-    email = session.get("email")
+    email = _current_user()
     if not email:
         return "null"
     sp = (get_profile(email) or {}).get("style_profile") or None

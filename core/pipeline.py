@@ -656,8 +656,11 @@ def _garment_input(d: dict) -> dict:
 _PHOTO_FINISH = (
     " Editorial fashion photograph shot on Kodak Portra 400 film, 85mm lens, shallow depth of field, "
     "authentic film grain, natural soft contrast, true-to-life colors. "
-    "Real unretouched skin with visible texture, pores and fine lines, no beauty retouching, "
-    "no skin smoothing, matte natural complexion, candid documentary feel. "
+    # ВАЖНО: раньше здесь стояло «visible texture, pores and fine lines». В связке с плёнкой и
+    # documentary-подачей модель ДОРИСОВЫВАЛА морщины, которых на референсе нет, — клиентка
+    # получала себя старше, чем она есть. Текстуру кожи воспроизводим ПО РЕФЕРЕНСУ, а не добавляем.
+    "Real unretouched skin with natural texture and pores exactly as in the reference photo, "
+    "no beauty retouching, no skin smoothing, matte natural complexion, candid documentary feel. "
     "Not plastic, not waxy, not glossy, not airbrushed, not CGI, not a 3D render, not over-saturated. "
     "No text, no logos, no watermark."
 )
@@ -688,6 +691,9 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
         "Do NOT replace her with a generic or idealised model.\n"
         "- Face: copy the SAME face from the close-up — face shape, eyes (shape and colour), nose, "
         "lips, eyebrows, skin tone and complexion, freckles and age. Do NOT beautify or alter it.\n"
+        "- Age: she must look EXACTLY as old as in the close-up — neither older nor younger. "
+        "Do NOT add wrinkles, fine lines, eye bags, sagging, dull skin or grey hair that are not "
+        "clearly visible in the reference. Ageing her is as wrong as beautifying her.\n"
         "- Hair: keep the same colour, length and texture.\n"
         "- Body: keep the same height, build, weight and body proportions (figure type) from the "
         "wider shot. Do NOT slim, lengthen, or idealise her body — keep her real silhouette.\n"
