@@ -47,6 +47,44 @@ def _conn(db_path: Path = DB_PATH) -> sqlite3.Connection:
     return con
 
 
+def merge_profile(src: str, dst: str, db_path: Path = DB_PATH) -> bool:
+    """Перенести всё нажитое с анонимного id на почту. Возвращает True, если что-то перенесли.
+
+    Клиентка проходит путь анонимно, а почту оставляет после квиза. Без переноса её Карта,
+    замеры и гардероб остаются под старым `anon-<hex>`: она делает ровно то, о чём мы просим —
+    и теряет результат. Существующие данные под почтой не затираем: аккаунт старше анонимной
+    сессии, и его содержимое важнее.
+    """
+    src, dst = _norm(src), _norm(dst)
+    if not src or not dst or src == dst:
+        return False
+    moved = False
+    with _conn(db_path) as con:
+        row = con.execute(
+            "SELECT style_profile, diagnosis, card FROM profiles WHERE email=?", (src,)
+        ).fetchone()
+        if row and any(row):
+            cur = con.execute(
+                "SELECT style_profile, diagnosis, card FROM profiles WHERE email=?", (dst,)
+            ).fetchone() or (None, None, None)
+            merged = tuple(cur[i] or row[i] for i in range(3))  # своё под почтой в приоритете
+            now = datetime.now(timezone.utc).isoformat()
+            con.execute(
+                "INSERT INTO profiles (email, style_profile, diagnosis, card, updated_at) "
+                "VALUES (?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET "
+                "style_profile=excluded.style_profile, diagnosis=excluded.diagnosis, "
+                "card=excluded.card, updated_at=excluded.updated_at",
+                (dst, merged[0], merged[1], merged[2], now),
+            )
+            con.execute("DELETE FROM profiles WHERE email=?", (src,))
+            moved = True
+        for table in ("card_history", "wardrobe"):
+            cur = con.execute(f"UPDATE {table} SET email=? WHERE email=?", (dst, src))
+            moved = moved or cur.rowcount > 0
+        con.commit()
+    return moved
+
+
 def add_wardrobe_item(email: str, item: dict, db_path: Path = DB_PATH) -> None:
     """Добавить вещь в личный гардероб клиентки (после «брать»)."""
     if not _norm(email) or not (item or {}).get("name"):

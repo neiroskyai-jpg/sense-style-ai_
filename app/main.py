@@ -42,8 +42,8 @@ from core.chat import stylist_reply
 from core.catalog import match_products, parse_csv, score_products
 from core.weather import configured as weather_configured, dress_advice, get_weather
 from core.profiles import (add_wardrobe_item, current_card_by_season, delete_wardrobe_item,
-                           get_profile, save_card, save_diagnosis, save_style_profile,
-                           wardrobe_items)
+                           get_profile, merge_profile, save_card, save_diagnosis,
+                           save_style_profile, wardrobe_items)
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"  # дизайнерский сайт (статика)
@@ -1399,6 +1399,9 @@ def auth_verify():
         return render_template_string(
             LOGIN_PAGE, error="Ссылка недействительна или устарела — запроси новую.",
             sent=False, email="", dev_link=None, next=""), 400
+    anon = session.get("anon")
+    if anon:
+        merge_profile(anon, email)   # анонимная сессия не должна пропадать при входе
     session["email"] = email
     session.permanent = True
     return redirect(_safe_next(session.pop("next_url", None)) or "/me")
@@ -3563,6 +3566,11 @@ def capture_lead():
     record_event("lead_captured", email, meta="quiz")
     # режим теста: почта введена → сразу впускаем, чтобы «Получить Карту» вело в Карту, а не на /login
     if _open_access():
+        # переносим всё, что клиентка нажила анонимно (Карта, замеры, гардероб), иначе она
+        # оставляет почту — как мы и просим — и теряет собранный результат
+        anon = session.get("anon")
+        if anon:
+            merge_profile(anon, email)
         session["email"] = email
     return jsonify({"ok": True})
 
