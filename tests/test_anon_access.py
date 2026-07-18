@@ -41,17 +41,31 @@ def _as_anon(client, uid: str) -> None:
 
 
 def test_card_does_not_ask_for_login(client):
-    """/card анониму больше не предлагает вход — ведёт на квиз, если диагностики нет."""
+    """/card анониму не предлагает вход. Без диагностики — объясняет, почему Карты пока нет.
+
+    Раньше здесь был молчаливый редирект на квиз с ?fresh=1: человек жал «Карта стиля» и
+    оказывался в начале квиза без объяснений — выглядело как петля.
+    """
     r = client.get("/card")
-    assert r.status_code == 302
-    assert "/login" not in r.headers["Location"]
-    assert "identity-scan-quiz" in r.headers["Location"]
+    assert r.status_code == 200
+    html = r.get_data(as_text=True)
+    assert "/login" not in html
+    assert "Сначала — диагностика" in html
+    assert "identity-scan-quiz.html" in html  # кнопка ведёт в квиз, но человек жмёт её сам
 
 
 def test_cabinet_does_not_ask_for_login(client):
     r = client.get("/cabinet")
-    assert r.status_code == 302
-    assert "/login" not in r.headers["Location"]
+    assert r.status_code == 200
+    html = r.get_data(as_text=True)
+    assert "/login" not in html
+    assert "после диагностики" in html
+
+
+def test_need_diagnosis_screen_does_not_reset_quiz(client):
+    """Кнопка ведёт на квиз БЕЗ ?fresh=1 — иначе стирается уже пройденный прогресс."""
+    html = client.get("/card").get_data(as_text=True)
+    assert "identity-scan-quiz.html?fresh=1" not in html
 
 
 def test_anon_with_diagnosis_reaches_card(client):

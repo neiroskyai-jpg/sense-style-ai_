@@ -912,6 +912,48 @@ function downloadPdf(){
 </body></html>"""
 
 
+# Экран «нужна диагностика». Раньше /card и /cabinet молча редиректили на квиз с ?fresh=1 —
+# человек жал «Карта стиля» и оказывался в начале квиза без единого слова о том, почему.
+# Фаундер: «нажимаю на кнопки и переходит на квиз... нужно грамотно проработать путь клиента».
+NEED_DIAGNOSIS = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>{{ title }} — Чувство стиля</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
+<style>
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
+ *{box-sizing:border-box}
+ body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.6}
+ .wrap{max-width:640px;margin:0 auto;padding:40px 26px 80px}
+ .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:40px}
+ .logo{font-family:'Cormorant Garamond',serif;font-size:22px}
+ .top a{color:var(--muted);font-size:14px;text-decoration:none}
+ .card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:34px 32px;box-shadow:0 12px 30px rgba(31,22,20,.04)}
+ .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine)}
+ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:34px;line-height:1.1;margin:10px 0 14px}
+ p{margin:0 0 14px;color:#4e473f}
+ .steps{margin:22px 0 26px;padding:0;list-style:none}
+ .steps li{display:flex;gap:12px;align-items:flex-start;margin:12px 0;font-size:15px}
+ .num{flex:0 0 26px;height:26px;border-radius:50%;background:var(--cream);color:var(--wine);
+      display:flex;align-items:center;justify-content:center;font-size:13px;border:1px solid var(--line)}
+ .done .num{background:var(--wine);color:#fff;border-color:var(--wine)}
+ .btn{display:inline-block;padding:15px 30px;background:var(--wine);color:#fff;border-radius:10px;
+      text-decoration:none;font-size:16px}
+ .meta{font-size:13px;color:var(--muted);margin-top:16px}
+</style></head><body><div class=wrap>
+<div class=top><span class=logo>Чувство стиля</span><a href="/">← на главную</a></div>
+<div class=card>
+ <div class=eyebrow>{{ eyebrow }}</div>
+ <h1>{{ title }}</h1>
+ <p>{{ lead }}</p>
+ <ul class=steps>
+  <li class=done><span class=num>1</span><span>Диагностика — 14 вопросов и фото. Отсюда берётся твоя Формула стиля, цветотип и силуэт.</span></li>
+  <li><span class=num>2</span><span>Карта стиля — палитра, капсула и образы на тебе. Строится на результатах диагностики.</span></li>
+  <li><span class=num>3</span><span>Стиль каждый день — кабинет, где формула работает в обычной жизни.</span></li>
+ </ul>
+ <a class=btn href="/identity-scan-quiz.html">Пройти диагностику</a>
+ <p class=meta>5 минут, без регистрации. Результат сохранится за тобой.</p>
+</div>
+</div></body></html>"""
+
 CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Собрать Карту стиля</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2402,7 +2444,11 @@ def cabinet():
             save_diagnosis(email, job_diag)
             diag = job_diag
         else:
-            return redirect("/identity-scan-quiz.html?fresh=1")
+            return render_template_string(
+                NEED_DIAGNOSIS, eyebrow="Шаг 1 из 3",
+                title="Кабинет открывается после диагностики",
+                lead="«Стиль каждый день» продолжает твою Формулу, а не заводит её заново. "
+                     "Пройди диагностику — дальше кабинет соберётся сам.")
     by_season = current_card_by_season(email)  # {код_сезона: карта} — последняя версия на сезон
     card = prof.get("card") or {}
     sel = (request.args.get("season") or "").strip()
@@ -3276,7 +3322,12 @@ def style_card():
     prof = get_profile(email)
     diag = prof.get("diagnosis") or {}
     if not diag.get("style_formula"):
-        return redirect("/identity-scan-quiz.html?fresh=1")  # сначала нужна диагностика (квиз)
+        # Не редирект: человек нажал «Карта стиля» осознанно и должен понять, почему её пока нет.
+        return render_template_string(
+            NEED_DIAGNOSIS, eyebrow="Шаг 1 из 3",
+            title="Сначала — диагностика",
+            lead="Карта стиля строится на твоей Формуле: цветотипе, силуэте и разрыве между тем, "
+                 "как ты выглядишь и как хочешь считываться. Без диагностики её не из чего собрать.")
     card = prof.get("card") or {}
     stale = _card_stale(prof)  # диагностика обновилась (новый квиз), а Карта на прежней
     # Новый квиз → НЕ показываем старую Карту (путает: «прошлый результат»). Ведём вперёд: новый Gap
@@ -3319,7 +3370,9 @@ def card_build():
     prof = get_profile(email) or {}
     diag = prof.get("diagnosis") or {}
     if not diag.get("style_formula"):
-        return redirect("/identity-scan-quiz.html?fresh=1")
+        return render_template_string(
+            NEED_DIAGNOSIS, eyebrow="Шаг 1 из 3", title="Сначала — диагностика",
+            lead="Чтобы собрать Карту, нужна твоя Формула стиля.")
     # бесплатная генерация — один раз на email (защита токенов). Исключение — устаревшая Карта
     # (клиентка заново прошла квиз): разрешаем пересобрать под новую диагностику.
     if not _gen_allowed(email) and not _card_stale(prof):
