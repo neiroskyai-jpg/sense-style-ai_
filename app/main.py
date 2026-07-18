@@ -41,8 +41,9 @@ from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
 from core.catalog import match_products, parse_csv, score_products
 from core.weather import configured as weather_configured, dress_advice, get_weather
-from core.profiles import (current_card_by_season, get_profile, save_card,
-                           save_diagnosis, save_style_profile)
+from core.profiles import (add_wardrobe_item, current_card_by_season, delete_wardrobe_item,
+                           get_profile, save_card, save_diagnosis, save_style_profile,
+                           wardrobe_items)
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"  # дизайнерский сайт (статика)
@@ -457,6 +458,11 @@ GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .db{background:#fbf1ef;border:1px solid #eccfc9;border-radius:12px;padding:13px 18px;font-size:14px;color:#9b3030;text-align:center;margin:6px 0}
  .cta{display:block;text-align:center;margin-top:26px;padding:15px;background:var(--wine);color:#fff;border-radius:10px;text-decoration:none;font-size:16px}
  .back{text-align:center;margin-top:14px} .back a{color:var(--wine);font-size:14px}
+ .addform{margin-top:22px;text-align:center}
+ .addbtn{width:100%;padding:14px;border:1px solid var(--wine);background:#fff;color:var(--wine);
+         border-radius:10px;font:inherit;font-size:15px;cursor:pointer}
+ .addbtn:hover{background:#fbf6ec}
+ .addhint{font-size:13px;color:var(--muted);margin:8px 0 0}
 </style></head><body><div class=wrap>
 <div class=top><span class=logo>Чувство стиля</span><a href="/">← на главную</a></div>
 
@@ -476,8 +482,19 @@ GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <p class=reason>{{ reason }}</p>
 {% if replace_with %}<div class=replace><b>Что проверить / чем заменить:</b> {{ replace_with }}</div>{% endif %}
 
+{# Вердикт без действия — разговор впустую. Если вещь подходит, клиентка должна мочь забрать её
+   к себе: дальше гардероб виден в кабинете и участвует в сборке образов. #}
+{% if item %}
+<form method=post action="/wardrobe/add" class=addform>
+ <input type=hidden name=name value="{{ item }}">
+ <input type=hidden name=verdict value="{{ verdict_ru }}">
+ <input type=hidden name=reason value="{{ reason }}">
+ <button type=submit class=addbtn>Добавить в мой гардероб</button>
+ <p class=addhint>Вещь появится в кабинете и будет учитываться в образах.</p>
+</form>
+{% endif %}
 <a class=cta href="/garment">Проверить ещё вещь</a>
-<div class=back><a href="/demo">Пройти полную диагностику стиля →</a></div>
+<div class=back><a href="/cabinet">Мой гардероб →</a></div>
 </div></body></html>"""
 
 
@@ -1859,6 +1876,13 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .weeklist{display:grid;gap:10px}
  .wrow{display:grid;grid-template-columns:58px auto 1fr;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
  .wimg{width:64px;height:86px;object-fit:cover;border-radius:10px;border:1px solid var(--line);display:block}
+ .minegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin:12px 0 8px}
+ .mineitem{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;position:relative}
+ .mineslot{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--wine)}
+ .minename{font-size:15px;margin:5px 0 4px;line-height:1.4}
+ .mineverdict{font-size:12px;color:var(--muted)}
+ .mineremove{position:absolute;top:10px;right:12px;margin:0}
+ .mineremove button{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline}
  .wrow:last-child{border-bottom:0;padding-bottom:0}
  .wday{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--wine);padding-top:2px}
  .wrole{font-size:15px;color:var(--ink)}
@@ -2082,7 +2106,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 {% if advice %}
 <div class=advice id=advice>
- <div class=ae>Стиль каждый день</div>
+ <div class=ae>Совет недели</div>
  <div class=at>{{ advice.title }}</div>
  <p class=ab>{{ advice.body }}</p>
  {% if advice.chips %}<div class=ac>{% for chip in advice.chips %}<span>{{ chip }}</span>{% endfor %}</div>{% endif %}
@@ -2093,7 +2117,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if weekview %}
 <div class=todaygrid id=today>
  <div class=todaycard>
-  <div class=tk>Стиль каждый день</div>
+  <div class=tk>Образ дня</div>
   <div class=tt>{{ weekview['today']['title'] }}</div>
   {# Образ дня с ФОТО — берём готовый образ Карты, новую генерацию не запускаем #}
   {% if look_today %}
@@ -2141,6 +2165,25 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    <div class=rn>{% if r.name %}{{ r.name }}{% else %}{{ r.scenario }}{% endif %}</div>
    {% if r.pieces %}<ul>{% for it in r.pieces %}<li>{{ it }}</li>{% endfor %}</ul>{% endif %}
   </div>
+ </div>
+ {% endfor %}
+</div>
+{% endif %}
+
+{# Личные вещи клиентки — то, что она забрала после проверки «брать / не брать» #}
+{% if mine %}
+<h2 class=sechead id=wardrobe-mine>Твои вещи</h2>
+<p class=sechint>Вещи, которые ты проверила и решила взять. Они учитываются, когда собираешь образ.</p>
+<div class=minegrid>
+ {% for it in mine %}
+ <div class=mineitem>
+  <div class=mineslot>{{ it.slot or 'Вещь' }}</div>
+  <div class=minename>{{ it.name }}</div>
+  {% if it.verdict %}<div class=mineverdict>{{ it.verdict }}</div>{% endif %}
+  <form method=post action="/wardrobe/remove" class=mineremove>
+   <input type=hidden name=id value="{{ it.id }}">
+   <button type=submit title="Убрать из гардероба">убрать</button>
+  </form>
  </div>
  {% endfor %}
 </div>
@@ -2587,6 +2630,7 @@ def cabinet():
     weather = get_weather(city) if city else None
     dress = dress_advice(weather) if weather else {}
     look_today = _look_of_the_day(card, weather)  # фото из уже готовых образов Карты
+    mine = wardrobe_items(email)  # личные вещи: что клиентка забрала после «брать / не брать»
     return render_template_string(
         CABINET_PAGE, email=email, roles=roles, milestones=milestones,
         formula=card.get("formula") or diag.get("style_formula"),
@@ -2595,7 +2639,7 @@ def cabinet():
         gap=card.get("gap"), gap_now=gap_now, track=track,
         advice=advice, weekview=weekview,
         city=city, weather=weather, dress=dress, weather_on=weather_configured(),
-        look_today=look_today,
+        look_today=look_today, mine=mine,
         season_label=(card.get("season_label") or (_CARD_SEASONS[sel]["label"] if sel in _CARD_SEASONS else None)),
         n_items=n_items, combos_label=combos_label, items_n=items_n,
         board=board, palette=palette, shopping=card.get("shopping") or [],
@@ -2755,6 +2799,33 @@ a.back{color:var(--muted);font-size:14px;text-decoration:none;display:inline-blo
 <a class=btn href="/premium.html">Узнать о «Преображении» →</a><br>
 <a class=back href="/cabinet">← Вернуться в кабинет</a>
 </div></body></html>"""
+
+
+@app.post("/wardrobe/add")
+def wardrobe_add():
+    """Вещь из проверки «брать / не брать» → в личный гардероб клиентки."""
+    email = _current_user()
+    name = (request.form.get("name") or "").strip()[:160]
+    if name:
+        add_wardrobe_item(email, {
+            "name": name,
+            "slot": _capsule_slot(name),
+            "verdict": (request.form.get("verdict") or "").strip()[:40],
+            "reason": (request.form.get("reason") or "").strip()[:400],
+        })
+        record_event("wardrobe_item_added", email)
+    return redirect("/cabinet#wardrobe-mine")
+
+
+@app.post("/wardrobe/remove")
+def wardrobe_remove():
+    """Передумала — убрать вещь из гардероба."""
+    email = _current_user()
+    try:
+        delete_wardrobe_item(email, int(request.form.get("id") or 0))
+    except (TypeError, ValueError):
+        pass
+    return redirect("/cabinet#wardrobe-mine")
 
 
 @app.post("/cabinet/city")

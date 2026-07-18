@@ -36,7 +36,51 @@ def _conn(db_path: Path = DB_PATH) -> sqlite3.Connection:
         " id INTEGER PRIMARY KEY AUTOINCREMENT,"
         " email TEXT, ts TEXT, season TEXT, card TEXT)"
     )
+    # Личный гардероб: вещи, которые клиентка решила взять после проверки «брать / не брать».
+    # Без него проверка была разговором без последствий: вердикт есть, а вещь никуда не девается
+    # и в капсуле не участвует.
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS wardrobe ("
+        " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        " email TEXT, ts TEXT, name TEXT, slot TEXT, verdict TEXT, reason TEXT, image TEXT)"
+    )
     return con
+
+
+def add_wardrobe_item(email: str, item: dict, db_path: Path = DB_PATH) -> None:
+    """Добавить вещь в личный гардероб клиентки (после «брать»)."""
+    if not _norm(email) or not (item or {}).get("name"):
+        return
+    with _conn(db_path) as con:
+        con.execute(
+            "INSERT INTO wardrobe (email, ts, name, slot, verdict, reason, image) VALUES (?,?,?,?,?,?,?)",
+            (_norm(email), datetime.now(timezone.utc).isoformat(), item.get("name"),
+             item.get("slot") or "", item.get("verdict") or "", item.get("reason") or "",
+             item.get("image") or ""),
+        )
+        con.commit()
+
+
+def wardrobe_items(email: str, db_path: Path = DB_PATH) -> list[dict]:
+    """Личный гардероб: вещи клиентки, новые сверху."""
+    if not _norm(email):
+        return []
+    with _conn(db_path) as con:
+        rows = con.execute(
+            "SELECT id, ts, name, slot, verdict, reason, image FROM wardrobe WHERE email=? "
+            "ORDER BY id DESC", (_norm(email),)
+        ).fetchall()
+    return [{"id": r[0], "ts": r[1], "name": r[2], "slot": r[3],
+             "verdict": r[4], "reason": r[5], "image": r[6]} for r in rows]
+
+
+def delete_wardrobe_item(email: str, item_id: int, db_path: Path = DB_PATH) -> None:
+    """Убрать вещь из гардероба (передумала)."""
+    if not _norm(email):
+        return
+    with _conn(db_path) as con:
+        con.execute("DELETE FROM wardrobe WHERE email=? AND id=?", (_norm(email), item_id))
+        con.commit()
 
 
 def _norm(email: str) -> str:
