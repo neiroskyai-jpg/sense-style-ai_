@@ -671,7 +671,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   .looks,.caps{grid-template-columns:1fr!important;gap:12px}
   /* карточки и картинки не режем посреди страницы */
   .look,.capitem,.shopitem,.ref,.sw{break-inside:avoid;page-break-inside:avoid}
-  .look img{break-inside:avoid}
+  /* Высоту фото ограничиваем в САНТИМЕТРАХ. Раньше стояла только ширина 100%: кадр 3:4 на всю
+     ширину листа — это ~25 см, он не влезал вместе с подписью, резался пополам и уносил каждый
+     образ на отдельную страницу (Карта печаталась на 44 листа). */
+  .look{grid-template-columns:1fr!important}
+  .look img{break-inside:avoid;max-height:11cm;width:auto;max-width:100%;object-fit:contain;margin:0 auto}
+  .capitem img,.shopitem img{max-height:5cm;object-fit:contain}
   h2{break-after:avoid;page-break-after:avoid}
   /* каждый смысловой блок 02–04 — с новой страницы (у первого разрыв не нужен) */
   .blocklead{break-before:page;page-break-before:always;border-top:0;padding-top:0;margin:0 0 8px}
@@ -1852,7 +1857,8 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .tchips span,.wkchips span{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:#fbf8f1;color:var(--muted)}
  .tcta{display:inline-block;margin-top:16px;background:var(--wine);color:#fff;text-decoration:none;padding:11px 18px;border-radius:10px;font-size:14px}
  .weeklist{display:grid;gap:10px}
- .wrow{display:grid;grid-template-columns:58px 1fr;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+ .wrow{display:grid;grid-template-columns:58px auto 1fr;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+ .wimg{width:64px;height:86px;object-fit:cover;border-radius:10px;border:1px solid var(--line);display:block}
  .wrow:last-child{border-bottom:0;padding-bottom:0}
  .wday{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--wine);padding-top:2px}
  .wrole{font-size:15px;color:var(--ink)}
@@ -2110,6 +2116,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    {% for row in weekview['week'] %}
    <div class=wrow>
     <div class=wday>{{ row['day'] }}</div>
+    {% if row['img'] %}<img class=wimg src="{{ row['img'] }}" alt="{{ row['title'] }}">{% endif %}
     <div>
      <div class=wrole>{{ row['title'] }}</div>
      <div class=wtext>{{ row['text'] }}</div>
@@ -2467,7 +2474,10 @@ def _daily_week_view(card: dict, board: list[dict], weekday: int | None = None) 
         text = (lk or {}).get("why_it_works") or (
             f"Опора на {bucket_cycle[i].lower()} сценарий: собери день из уже согласованных вещей капсулы."
         )
-        week.append({"day": day, "title": title.capitalize(), "text": text, "tags": pieces})
+        # фото образа — из уже готовых образов Карты, чтобы неделя была лентой кадров, а не
+        # списком текста. Новых генераций не запускаем: кадр стоит ~30с и денег на ключе.
+        week.append({"day": day, "title": title.capitalize(), "text": text, "tags": pieces,
+                     "img": (lk or {}).get("img")})
 
     today_row = week[weekday % 7]
     return {
