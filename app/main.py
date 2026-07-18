@@ -39,7 +39,7 @@ from core.tracking import (approved_feedback, chat_log, count_generations, count
 from core.auth import email_configured, make_token, read_token, send_magic_link
 from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
-from core.catalog import match_products, parse_csv
+from core.catalog import match_products, parse_csv, score_products
 from core.profiles import (current_card_by_season, get_profile, save_card,
                            save_diagnosis, save_style_profile)
 
@@ -1429,7 +1429,36 @@ def _catalog_products() -> list:
 # отдают их вперемешку с одеждой, и в капсулу прилетали «Подъюбник из вискозы» в слот Низ и «Топ-бра»
 # в слот Верх. По канону расходники в счёт вещей капсулы не входят.
 _CAPSULE_EXCLUDE = ("подъюбник", "пижам", "бра", "бюстгальтер", "трус", "бельё", "белье",
-                    "купальник", "плавк", "чулк", "носки", "колготк", "халат", "сорочка ночная")
+                    "купальник", "плавк", "чулк", "носки", "колготк", "халат", "сорочка ночная",
+                    # пляжное и домашнее — не капсульный гардероб: «Рубашка летняя прозрачная для
+                    # пляжа» приходила клиентке в рабочую капсулу как обычный верх
+                    "для пляжа", "пляжн", "парео", "домашн", "спальн")
+
+# Сезонная несовместимость: капсула собирается на сезон (card["season"] = ss|fw), а каталог о
+# сезоне не знает. Без этого в капсулу «Осень–зима» падали летний лён и пляжные рубашки.
+_SEASON_WRONG = {
+    "fw": ("летн", "пляжн", "для пляжа", "льнян", "изо льна", "из льна", "сарафан", "шорты"),
+    "ss": ("пуховик", "шуба", "дублён", "дублен", "зимн", "утеплён", "утеплен", "угги",
+           "шерстян", "кашемир"),
+}
+
+
+_SPORTY_SHOES = ("кроссовк", "кед", "слипон", "сникер", "дутик", "шлепанц", "сланц")
+
+
+def _is_sporty_shoe(name: str) -> bool:
+    n = (name or "").lower()
+    return any(k in n for k in _SPORTY_SHOES)
+
+
+def _season_ok(name: str, season: str | None) -> bool:
+    """Вещь уместна в сезоне капсулы. Мягкий фильтр по названию — в фидах сезон отдельным полем
+    не приходит."""
+    bad = _SEASON_WRONG.get((season or "").lower())
+    if not bad:
+        return True
+    n = (name or "").lower()
+    return not any(k in n for k in bad)
 
 
 def _is_capsule_worthy(name: str) -> bool:
@@ -1505,9 +1534,15 @@ def _visual_capsule(card: dict, diag: dict, n: int) -> list:
     dist = diag.get("semantic_field_distribution") or {}
     styles = [k for k, _ in sorted(dist.items(), key=lambda kv: kv[1] or 0, reverse=True)
               if (dist.get(k) or 0) > 0][:2]
+    # Стоп-цвета. Генератор палитры кладёт их в card["stop_colors"] (см. pipeline.generate_card_palette),
+    # а здесь годами читалось card["stop_list"] — поля, которого в Карте нет. Табу-цвета просто не
+    # доезжали до фильтра: клиентке мягкого лета в капсулу спокойно падал чистый чёрный.
+    # Берём оба имени плюс stop_list из visual_formula диагностики.
+    stop_colors = (card.get("stop_colors") or card.get("stop_list")
+                   or ((diag.get("visual_formula") or {}).get("stop_list")) or [])
     profile = {
         "palette": card.get("palette") or [],
-        "stop_list": card.get("stop_list") or [],
+        "stop_list": stop_colors,
         "figure_type": diag.get("figure_type"),
         "base_style": (diag.get("style_dominant") or diag.get("base_style") or ""),
         "styles": styles,
@@ -1515,13 +1550,35 @@ def _visual_capsule(card: dict, diag: dict, n: int) -> list:
     }
     # Ранжируем ВЕСЬ каталог под профиль, чтобы в каждом слоте был выбор, и раскладываем по слотам
     # (порядок внутри слота = релевантность). Предметное фото вперёд: в капсуле нужна сама вещь.
-    ranked = _dedup_products(match_products(profile, products, k=len(products)))
-    ranked = [p for p in ranked if _is_capsule_worthy(p.name)]
+    scored = score_products(profile, products)
+    # Порог: вещь, у которой И цвет вне палитры, И стиль мимо Формулы, уходит в минус — такую в
+    # капсулу не берём. Отсекаем только пока есть из чего выбирать: если после отсева слот пуст,
+    # лучше показать слабую вещь, чем пустой слот (проверяется ниже, при доборе).
+    good = [(s, p) for s, p in scored if s > 0]
+    ranked = _dedup_products([p for _, p in (good if len(good) >= n * 3 else scored)])
+    season = (card.get("season") or "").lower()
+    ranked = [p for p in ranked
+              if _is_capsule_worthy(p.name) and _season_ok(f"{p.name} {p.category}", season)]
     by_slot: dict[str, list] = {}
+    rank = {id(p): i for i, p in enumerate(ranked)}  # позиция = релевантность профилю
     for p in ranked:
-        by_slot.setdefault(_capsule_slot(p.category, p.name), []).append(p)
+        # Имя ВПЕРЕДИ категории: категории фидов врут. У «Пальто свободного демисезонного с поясом»
+        # категория в фиде WB — «аксессуар», и пальто уезжало в слот сумок и ремней.
+        by_slot.setdefault(_capsule_slot(p.name, p.category), []).append(p)
+    # Предметное фото приятнее в конструкторе, но раньше packshot сортировался ГЛАВНЫМ ключом и
+    # перекрывал релевантность: нерелевантный packshot вставал впереди подходящей вещи на модели —
+    # так в капсулу «Классики» попадали кроссовки. Теперь это фора в несколько позиций, не приоритет.
+    _PACKSHOT_BONUS = 8
     for slot in by_slot:
-        by_slot[slot].sort(key=lambda p: 0 if (p.image_kind or "") == "packshot" else 1)
+        by_slot[slot].sort(key=lambda p: rank[id(p)]
+                           - (_PACKSHOT_BONUS if (p.image_kind or "") == "packshot" else 0))
+    # Обувь: кроссовки — не база капсулы. Клиентке-классике доставались две пары кроссовок, хотя в
+    # каталоге десятки лоферов. Спортивную опускаем в конец слота: она возьмётся, только если
+    # неспортивной обуви под её палитру не нашлось вовсе.
+    shoes = by_slot.get("Обувь") or []
+    if any(_is_sporty_shoe(p.name) for p in shoes):
+        by_slot["Обувь"] = ([p for p in shoes if not _is_sporty_shoe(p.name)]
+                            + [p for p in shoes if _is_sporty_shoe(p.name)])
 
     quota = _capsule_quota(n)
     picked: dict[str, list] = {s: by_slot.get(s, [])[:q] for s, q in quota.items() if by_slot.get(s)}
@@ -3828,16 +3885,24 @@ def _capsule_slot(*names: str) -> str:
         n = (raw or "").lower()
         if not n:
             continue
+        # Побеждает ключ, стоящий РАНЬШЕ в названии, а не раньше в списке слотов. Вещь называют по
+        # главному предмету, детали идут следом: «Пальто свободное демисезонное с поясом» — это
+        # пальто, а не пояс, но при переборе по порядку слотов оно уезжало в «Аксессуары».
+        best: tuple[int, str] | None = None
         for slot, keys in _CAPSULE_SLOTS:
             for k in keys:
                 # ключ с «=» — только целым словом. Остальные ключи намеренно усечены под
                 # морфологию («блуз» ловит блузу и блузку), но короткие вроде «поло» так
                 # попадают внутрь чужих слов («в полоску») и утаскивают вещь в чужой слот.
                 if k.startswith("="):
-                    if re.search(rf"\b{re.escape(k[1:])}\b", n):
-                        return slot
-                elif k in n:
-                    return slot
+                    hit = re.search(rf"\b{re.escape(k[1:])}\b", n)
+                    pos = hit.start() if hit else -1
+                else:
+                    pos = n.find(k)
+                if pos >= 0 and (best is None or pos < best[0]):
+                    best = (pos, slot)
+        if best:
+            return best[1]
     return _SLOT_OTHER
 
 

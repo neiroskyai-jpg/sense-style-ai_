@@ -8,6 +8,7 @@ from __future__ import annotations
 import base64
 import io
 import json
+import os
 import re
 from pathlib import Path
 
@@ -214,6 +215,9 @@ def chat_messages(model: str, messages: list[dict], max_tokens: int = 700) -> st
     return content
 
 
+_IMAGE_MAX_TOKENS = int(os.getenv("SENSE_IMAGE_MAX_TOKENS", "12000"))
+
+
 def generate_image(prompt: str, model: str | None = None, ref_images=None) -> list[str]:
     """Генерация изображения через OpenRouter (Seedream / Nano Banana).
 
@@ -227,6 +231,11 @@ def generate_image(prompt: str, model: str | None = None, ref_images=None) -> li
     body = {
         "model": model,
         "modalities": ["image", "text"],
+        # Без явного лимита OpenRouter резервирует максимум модели (у gemini-3-pro-image — 32768)
+        # и отклоняет запрос с 402, если на ключе меньше кредитов, ХОТЯ картинке нужно много
+        # меньше: изображение ~1300 токенов плюс короткий текст. Из-за этого генерация образов
+        # молча падала в фолбэк «Карта без образов» при живом балансе.
+        "max_tokens": _IMAGE_MAX_TOKENS,
         "messages": [{"role": "user", "content": content}],
     }
     r = requests.post(

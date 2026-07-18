@@ -291,6 +291,16 @@ def match_products(profile: dict, products: list[Product], k: int = 12) -> list[
     Логика прозрачная и правится: цвет из палитры +, табу-цвет — исключение, категория под формулу +,
     бюджет, наличие, женский пол. Это каркас — точность растёт по мере разметки и связки с RAG.
     """
+    return [p for _, p in score_products(profile, products)[:k]]
+
+
+def score_products(profile: dict, products: list[Product]) -> list[tuple[float, Product]]:
+    """Ранжирование со скором наружу: [(score, товар)] по убыванию соответствия профилю.
+
+    Скор нужен капсуле, чтобы отсекать вещи с отрицательным итогом (цвет вне палитры И стиль мимо
+    формулы). Без порога такая вещь всё равно попадала в слот, если слот беден: так в капсулу
+    «Классики» в мягкой палитре приходили чёрное платье на бретелях и кроссовки.
+    """
     palette = _names(profile.get("palette"))
     stop = _names(profile.get("stop_list"))
     base = (profile.get("base_style") or "").lower()
@@ -342,7 +352,7 @@ def match_products(profile: dict, products: list[Product], k: int = 12) -> list[
         scored.append((score, p))
 
     scored.sort(key=lambda sp: sp[0], reverse=True)
-    return [p for _, p in scored[:k]]
+    return scored
 
 
 def _names(items) -> list[str]:
