@@ -90,3 +90,21 @@ def test_real_capsule_reads_as_classic():
         f"летняя вещь в капсуле осень–зима: {all_names}"
     # пальто/тренч не должны оказаться среди сумок и ремней
     assert not any("пальто" in n.lower() for n in (by_slot.get("Аксессуары") or []))
+
+
+def test_starter_capsule_is_exactly_nine():
+    """Тариф обещает стартовую капсулу из 9 вещей — столько и должно приходить.
+
+    Ступени 9 не было: любое n>6 давало 12, и клиентка за 3900 ₽ получала не то число,
+    что прочитала на лендинге.
+    """
+    assert sum(m._capsule_quota(9).values()) == 9
+    assert sum(m._capsule_quota(6).values()) == 6
+    assert sum(m._capsule_quota(12).values()) == 12
+
+
+def test_tops_outnumber_bottoms_in_every_size():
+    """Канон «Алгоритмы имиджа»: капсула богатеет за счёт верхов."""
+    for n in (6, 9, 12):
+        q = m._capsule_quota(n)
+        assert q["Верх"] > q["Низ"], f"n={n}: верхов не больше, чем низов"
