@@ -1601,7 +1601,11 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .fb .done{margin:0;font-size:16px;color:var(--ink)}
  /* ── роли недели ── */
  .roles3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 2px}
- .role3{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 16px;display:flex;flex-direction:column}
+ .role3{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+ /* фото сгенерированного образа на клиентке — вау-верх карточки роли (по мокапу) */
+ .roleimg{aspect-ratio:4/5;overflow:hidden;background:#f2ede3}
+ .roleimg img{width:100%;height:100%;object-fit:cover;display:block}
+ .rolebody{padding:14px 16px;display:flex;flex-direction:column}
  .role3 .rb{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine)}
  .role3 .rn{font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.15;margin:5px 0 8px;color:var(--ink)}
  .role3 ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
@@ -1746,9 +1750,12 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=roles3>
  {% for r in roles %}
  <div class=role3>
-  <div class=rb>{{ r.bucket }}</div>
-  <div class=rn>{% if r.name %}{{ r.name }}{% else %}{{ r.scenario }}{% endif %}</div>
-  {% if r.pieces %}<ul>{% for it in r.pieces %}<li>{{ it }}</li>{% endfor %}</ul>{% endif %}
+  {% if r.img %}<div class=roleimg><img src="{{ r.img }}" alt="Образ · {{ r.bucket }}" loading=lazy></div>{% endif %}
+  <div class=rolebody>
+   <div class=rb>{{ r.bucket }}</div>
+   <div class=rn>{% if r.name %}{{ r.name }}{% else %}{{ r.scenario }}{% endif %}</div>
+   {% if r.pieces %}<ul>{% for it in r.pieces %}<li>{{ it }}</li>{% endfor %}</ul>{% endif %}
+  </div>
  </div>
  {% endfor %}
 </div>
@@ -2001,7 +2008,8 @@ def cabinet():
             continue
         seen_buckets.add(b)
         roles.append({"bucket": b, "scenario": lk.get("scenario") or b,
-                      "name": lk.get("name"), "pieces": (lk.get("items") or [])[:4]})
+                      "name": lk.get("name"), "pieces": (lk.get("items") or [])[:4],
+                      "img": lk.get("img")})  # сгенерированный образ на клиентке — фото в карточку роли
     roles.sort(key=lambda r: ["Работа", "Повседневное", "Выход"].index(r["bucket"])
                if r["bucket"] in ("Работа", "Повседневное", "Выход") else 9)
     # «Прогресс-вехи»: старт, текущий, лучший разрыв, суммарная дельта (из трекера)
