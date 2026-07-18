@@ -48,7 +48,10 @@ from core.profiles import (add_wardrobe_item, current_card_by_season, delete_war
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"  # дизайнерский сайт (статика)
 ALLOWED = {"image/jpeg", "image/png", "image/webp"}
-N_RENDER = 2  # сколько образов рендерим (контроль стоимости/времени)
+N_RENDER = 2  # сколько образов рендерим в квизе (контроль стоимости/времени)
+# Сколько образов генерим одновременно. Больше — быстрее, но каждый воркер держит картинку в
+# памяти; на маленьком контейнере это кончается убитым процессом и потерянной Картой.
+RENDER_WORKERS = int(os.getenv("SENSE_RENDER_WORKERS", "3"))
 DEMO_DAILY_LIMIT = int(os.getenv("DEMO_DAILY_LIMIT", "40"))  # защита от слива ключа
 
 # статика сайта раздаётся из web/ в корне; зарегистрированные роуты (/demo, /api…) важнее
@@ -3423,7 +3426,11 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
             except Exception:  # noqa: BLE001 — один неудавшийся образ не валит карту
                 return None
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(targets))) as ex:
+        # Параллелим ОГРАНИЧЕННО. Раньше воркеров было по числу образов — для Карты это 6 образов
+        # плюс 2 стилизации = 8 одновременных генераций, каждая держит картинку ~1 МБ и её
+        # обработку. Локально проходило, на контейнере Amvera процесс убивало по памяти: задание
+        # исчезало из _JOBS и статус становился «unknown» вместо готовой Карты.
+        with concurrent.futures.ThreadPoolExecutor(max_workers=RENDER_WORKERS) as ex:
             imgs = list(ex.map(_render, targets))
         for lk, img in zip(targets, imgs):
             if img:
