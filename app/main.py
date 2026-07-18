@@ -1952,7 +1952,14 @@ def cabinet():
     prof = get_profile(email)
     diag = prof.get("diagnosis") or {}
     if not diag.get("style_formula"):
-        return redirect("/identity-scan-quiz.html?fresh=1")
+        # страховка: анонимный диагноз квиза (last_job) привязываем к почте, иначе петля на квиз
+        last_job = session.get("last_job")
+        job_diag = ((_JOBS.get(last_job) or {}).get("diag") or _load_pending_diag(last_job)) if last_job else None
+        if job_diag:
+            save_diagnosis(email, job_diag)
+            diag = job_diag
+        else:
+            return redirect("/identity-scan-quiz.html?fresh=1")
     by_season = current_card_by_season(email)  # {код_сезона: карта} — последняя версия на сезон
     card = prof.get("card") or {}
     sel = (request.args.get("season") or "").strip()
@@ -2602,8 +2609,10 @@ def style_card():
     email = session.get("email")
     if not email:  # не вошла → на регистрацию, потом вернёмся сюда (с from_job)
         return redirect("/login?next=" + quote(request.full_path))
-    # привязка диагностики из квиза (анонимный прошёл квиз → зарегистрировался → сюда)
-    from_job = request.args.get("from_job")
+    # привязка диагностики из квиза. from_job — из главной CTA; last_job — из сессии (страховка для
+    # тарифных кнопок, которые ведут на /card БЕЗ ?from_job=: иначе анонимный диагноз терялся и
+    # клиентку кидало обратно на квиз по кругу).
+    from_job = request.args.get("from_job") or session.get("last_job")
     if from_job:
         # из памяти (быстро) или с диска (переживает рестарт сервера) — иначе была петля на квиз
         job_diag = (_JOBS.get(from_job) or {}).get("diag") or _load_pending_diag(from_job)
@@ -3451,6 +3460,9 @@ def api_analyze():
     record_call()
     job_id = uuid.uuid4().hex
     _JOBS[job_id] = {"status": "processing"}
+    # запоминаем последний квиз в сессии: тарифные кнопки ведут на /card без ?from_job=, и без этого
+    # анонимный диагноз (под job_id, не под почтой) терялся — /card кидал обратно на квиз по кругу
+    session["last_job"] = job_id
     client = (request.form.get("client") or "").strip()
     account_email = session.get("email")
     season = (request.form.get("season") or "").strip() or None
