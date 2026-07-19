@@ -99,5 +99,6 @@ def test_daily_tariff_with_existing_card_opens_cabinet(client):
     html = r.get_data(as_text=True)
 
     assert r.status_code == 200
-    assert "Мой гардероб" in html
+    # Кабинет называется по тарифу — «Стиль каждый день», а его рабочее ядро — конструктор капсулы.
     assert "Стиль каждый день" in html
+    assert "Конструктор капсулы" in html

@@ -625,233 +625,291 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
- :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
- *{box-sizing:border-box} body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;margin:0;background:var(--cream);color:var(--ink);line-height:1.62}
- /* Разворот на всю ширину. Карта была узкой колонкой в 820px и читалась как длинная статья:
-    чтобы дойти от Формулы до капсулы, нужно было пролистать несколько экранов. Макет фаундера —
-    дашборд: разделы стоят рядом и видны одним взглядом. */
- .wrap{max-width:1180px;margin:0 auto;padding:26px 30px 90px}
- .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
- /* верхняя навигация по разделам — как в макете */
- .cardnav{display:flex;gap:22px;flex-wrap:wrap;align-items:center;padding:14px 0 16px;
-          border-bottom:1px solid var(--line);margin-bottom:22px}
- .cardnav a{color:var(--muted);font-size:14px;text-decoration:none;white-space:nowrap}
- .cardnav a:hover{color:var(--wine)}
- .cardnav .navlogo{font-family:'Cormorant Garamond',Georgia,serif;font-size:21px;color:var(--ink);margin-right:8px}
- .cardnav .navright{margin-left:auto;display:flex;gap:18px}
- /* три равные колонки: почему это твой стиль | фигура | палитра */
- .trio{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-top:18px}
- .triocard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px}
- .triocard h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:24px;margin:0 0 12px}
- /* пара колонок: капсула | покупки */
- .duo{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-top:18px}
- @media(max-width:900px){.duo{grid-template-columns:1fr}}
- .bar a,.bar button{color:var(--wine);font:inherit;font-size:14px;background:none;border:0;cursor:pointer;text-decoration:none}
- .stale{background:#fbeee4;border:1px solid #e3cdb8;border-radius:12px;padding:14px 16px;margin:6px 0 20px;font-size:14.5px;color:#5a4a3a;line-height:1.5}
- .stale b{color:var(--wine)} .stale a{display:inline-block;margin-top:9px;background:var(--wine);color:#fff;text-decoration:none;padding:9px 18px;border-radius:8px;font-size:14px}
- .eyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine)}
- h1{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:54px;line-height:1.04;margin:8px 0 4px;letter-spacing:-.01em} .who{color:var(--muted);margin:0 0 6px}
- h2{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:30px;margin:46px 0 16px;border-bottom:1px solid var(--line);padding-bottom:8px;letter-spacing:-.01em}
- .formula{font-family:'Cormorant Garamond',Georgia,serif;font-size:31px;font-weight:600;line-height:1.15;margin:4px 0} .gap{color:var(--wine);font-weight:600}
- .dna{font-size:18px;line-height:1.7;color:#3a352e}
- /* hero-полоса: Формула слева, кольцо разрыва справа */
- .heroband{display:grid;grid-template-columns:1.35fr .65fr;gap:26px;align-items:center;
-           background:linear-gradient(135deg,#fff,#fbf7ef);border:1px solid var(--line);
-           border-radius:24px;padding:28px 30px;margin:14px 0 18px;box-shadow:0 12px 34px rgba(40,26,20,.04)}
- .heroband h1{font-size:44px;margin:6px 0 2px}
- .heroband .formula{font-size:27px;margin:2px 0 10px}
- .heroband .dna{font-size:16px;margin:14px 0 0}
- .herogap{text-align:center;position:relative}
- .gapring{width:150px;height:150px;display:block;margin:0 auto}
- .gapnum{margin-top:-95px;margin-bottom:44px}
- .gapnum b{display:block;font-family:'Cormorant Garamond',Georgia,serif;font-size:38px;color:var(--wine);line-height:1}
- .gapnum span{font-size:12px;color:var(--muted)}
- .gaptext{font-size:13px;color:var(--muted);line-height:1.5;margin:0}
- @media(max-width:820px){.heroband{grid-template-columns:1fr}}
- .nslist{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:16px 0 18px}
- .nsitem{background:rgba(255,255,255,.55);border:1px solid var(--line);border-radius:12px;padding:11px 14px}
- .nsitem b{display:block;font-size:14.5px} .nsitem span{font-size:12.5px;color:var(--muted);line-height:1.45}
- /* Дашборд с боковой навигацией — макет фаундера 19.07.2026. Карта перестала быть длинной
-    статьёй: слева постоянная навигация и тариф, справа рабочая область. */
- .shell{display:grid;grid-template-columns:236px 1fr;gap:0;min-height:100vh}
- .side{background:#F3ECDF;border-right:1px solid var(--line);padding:26px 18px;display:flex;
-       flex-direction:column;gap:26px;position:sticky;top:0;align-self:start;height:100vh}
- .sidelogo{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;line-height:1.1}
- .sidelogo span{display:block;font-family:Onest,sans-serif;font-size:9.5px;letter-spacing:.16em;
-                text-transform:uppercase;color:var(--muted);margin-top:4px}
+ /* ── Карта стиля: дашборд по макету фаундера от 19.07.2026 ────────────────────────────────
+    Карта — не длинная статья, а рабочая панель: слева постоянная навигация и тариф, справа
+    две колонки. Левая колонка — «что носить» (образы, покупки, палитра), правая — «на чём это
+    держится» (капсула-ядро, сочетания, стоп-лист). Всё, что раньше растягивалось на десяток
+    экранов, теперь либо в панели, либо свёрнуто в разделы «Разбор» внизу. */
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--wine2:#7A2438;--muted:#6b645c;
+       --line:#e6dfd2;--sand:#F3ECDF;--soft:#FBF6EC}
+ *{box-sizing:border-box}
+ body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;margin:0;
+      background:var(--cream);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+ a{color:inherit}
+ .serif{font-family:'Cormorant Garamond',Georgia,serif}
+ .shell{display:grid;grid-template-columns:228px 1fr;min-height:100vh}
+
+ /* ── левая колонка ───────────────────────────────────────────────────────────────────── */
+ .side{background:var(--sand);border-right:1px solid var(--line);padding:24px 16px 22px;
+       display:flex;flex-direction:column;gap:22px;position:sticky;top:0;align-self:start;height:100vh}
+ .sidelogo{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;line-height:1.12;padding:0 8px}
+ .sidelogo span{display:block;font-family:Onest,sans-serif;font-size:9px;letter-spacing:.17em;
+                text-transform:uppercase;color:var(--muted);margin-top:5px;font-weight:400}
  .sidenav{display:flex;flex-direction:column;gap:2px}
- .sidenav a{display:block;padding:10px 13px;border-radius:11px;color:#4e473f;text-decoration:none;font-size:14px}
- .sidenav a:hover{background:rgba(255,255,255,.6)}
+ .sidenav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:11px;
+            color:#4e473f;text-decoration:none;font-size:14px;transition:background .12s,color .12s}
+ .sidenav a svg{flex:0 0 auto;width:17px;height:17px;stroke:currentColor;fill:none;
+                stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
+ .sidenav a:hover{background:rgba(255,255,255,.65)}
  .sidenav a.on{background:var(--wine);color:#fff}
+ .sidenav a.on svg{opacity:1}
  .sidetariff{margin-top:auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px 16px}
- .sidetariff .st-k{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
- .sidetariff .st-n{font-family:'Cormorant Garamond',Georgia,serif;font-size:21px;color:var(--wine);margin:4px 0 2px}
- .sidetariff .st-d{font-size:12px;color:var(--muted);line-height:1.45}
- .sidetariff a{display:block;margin-top:11px;text-align:center;padding:9px;border:1px solid var(--line);
-               border-radius:10px;color:var(--wine);text-decoration:none;font-size:13px}
- .main{padding:24px 30px 80px;max-width:1240px}
+ .st-k{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+ .st-n{font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;line-height:1.15;color:var(--wine);margin:5px 0 4px}
+ .st-d{font-size:12px;color:var(--muted);line-height:1.4}
+ .st-d b{color:#4e473f;font-weight:500}
+ .sidetariff a{display:block;margin-top:12px;text-align:center;padding:9px;border:1px solid var(--line);
+               border-radius:10px;color:var(--wine);text-decoration:none;font-size:12.5px}
+ .sidetariff a:hover{border-color:var(--wine)}
+
+ /* ── рабочая область ─────────────────────────────────────────────────────────────────── */
+ .main{padding:22px 26px 60px;min-width:0}
+ .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 20px}
+ .ph{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;line-height:1.15;margin:0;
+     display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+ .ph .dot{width:15px;height:15px;flex:0 0 auto;opacity:.5}
+ .ph .more{margin-left:auto;font-family:Onest,sans-serif;font-size:12px;color:var(--wine);
+           text-decoration:none;font-weight:400;white-space:nowrap}
+ .psub{font-size:12px;color:var(--muted);margin:4px 0 0;line-height:1.45}
+
  /* шапка профиля */
- .profbar{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--line);
-          border-radius:18px;padding:16px 20px;margin-bottom:16px;flex-wrap:wrap}
- .profav{width:56px;height:56px;border-radius:50%;background:var(--wine);color:#fff;display:flex;
-         align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:24px;flex:0 0 auto}
- .profname{font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;line-height:1.15}
+ .profbar{display:flex;align-items:center;gap:15px;background:#fff;border:1px solid var(--line);
+          border-radius:18px;padding:14px 18px;margin-bottom:16px;flex-wrap:wrap}
+ .profav{width:54px;height:54px;border-radius:50%;background:var(--wine);color:#fff;display:flex;
+         align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;
+         font-size:24px;flex:0 0 auto;overflow:hidden}
+ .profav img{width:100%;height:100%;object-fit:cover}
+ .profname{font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;line-height:1.1}
  .proff{font-size:14px;color:var(--muted)}
- .proff b{color:var(--wine);font-weight:500}
- .profchips{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
- .profchip{background:#FBF6EC;border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-size:12px;color:var(--muted)}
- .profchip b{display:block;font-size:14px;color:var(--ink);font-weight:500;margin-top:2px}
- /* три карточки верхнего ряда */
- .toprow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
- @media(max-width:1050px){.toprow{grid-template-columns:1fr}.shell{grid-template-columns:1fr}
-   .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center}
-   .sidenav{flex-direction:row;flex-wrap:wrap}.sidetariff{margin:0}}
- .tcard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px}
- .tcard h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:21px;margin:0 0 12px}
- .dnasub{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:14px 0 2px}
- .subchips{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
- .subchip{border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12.5px;background:#FBF6EC}
- .traits{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:13px;color:#4e473f}
- .traits div::before{content:"◆";color:var(--wine);font-size:9px;margin-right:7px;vertical-align:middle}
- .idxwrap{display:flex;align-items:center;gap:16px}
- .idxring{width:120px;height:120px;flex:0 0 auto}
- .idxnum{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;color:var(--wine)}
- .idxtext{font-size:13px;color:#4e473f;line-height:1.5}
- .combohead{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;margin:26px 0 4px}
- .combolane{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:10px}
- .combo{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
- .combopics{display:flex;gap:5px}
- .combopics img{width:100%;height:64px;object-fit:cover;border-radius:8px;background:#f4eee3}
- .combodot{flex:1;height:64px;border-radius:8px;background:#F3ECDF;display:flex;align-items:center;
-           justify-content:center;color:var(--wine);font-family:'Cormorant Garamond',serif;font-size:19px}
- .combotitle{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
- .corecaps{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px;margin-top:14px}
- .coreitem{display:block;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 15px;
-           text-decoration:none;color:inherit}
- .corethumb{width:100%;height:150px;object-fit:cover;border-radius:11px;margin-bottom:10px;display:block;background:#f4eee3}
- .coreslot{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine)}
- .corename{display:block;font-size:15px;margin:5px 0 5px;line-height:1.35}
- .coreexample{font-size:10.5px;color:var(--muted);margin:-6px 0 8px}
- .coresearch{font-size:12px;color:var(--muted);margin-top:8px}
- .coresearch a{color:var(--wine);text-decoration:none}
- .corewhy{font-size:12.5px;color:var(--muted);line-height:1.45}
- .dnaband{margin:18px 0;background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px 26px}
- .dnalead{margin:8px 0 16px;color:var(--muted);font-size:14px}
- .dnacodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
- .dnacode{border-left:2px solid var(--wine);padding:2px 0 2px 13px}
- .dnacode b{display:block;font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;font-weight:600;line-height:1.25}
- .dnacode span{font-size:12.5px;color:var(--muted)}
- .hero-card{margin:26px 0 18px;background:linear-gradient(135deg,#fff,#fbf7ef);border:1px solid var(--line);border-radius:22px;padding:24px 26px 22px;box-shadow:0 12px 34px rgba(40,26,20,.04)}
- .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:start}
- .hero-note{font-size:14px;color:#4e473f;max-width:540px}
- .hero-facts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
- .hero-fact{background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px 16px}
- .hero-fact-k{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
- .hero-fact-v{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;line-height:1.05;color:var(--wine);margin-top:7px}
- .hero-fact-s{font-size:13px;color:#5f564d;margin-top:4px;line-height:1.4}
- .hero-pillrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
- .hero-pill{display:inline-flex;align-items:center;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:12px;color:#5e554c}
- .hero-pill b{color:var(--wine);font-weight:500}
- .sw-group{font-size:13px;color:var(--muted);margin:14px 0 6px;letter-spacing:.04em;text-transform:uppercase}
- .swatches{display:flex;flex-wrap:wrap;gap:10px}
- .sw{width:84px} .sw .chip{height:54px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
- .sw .nm{font-size:11.5px;color:#4a443c;margin-top:4px;line-height:1.25}
- .stopcolors .chip{height:40px;border-radius:8px} .stopcolors .nm b{color:#9b3030}
- ul.clean{list-style:none;padding:0;margin:0} ul.clean li{padding:6px 0 6px 18px;position:relative;font-size:15.5px}
+ .proff b{color:var(--wine2);font-weight:400;font-family:'Cormorant Garamond',Georgia,serif;font-size:16px}
+ .profchips{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+ .profchip{display:flex;align-items:center;gap:9px;background:var(--soft);border:1px solid var(--line);
+           border-radius:13px;padding:7px 15px}
+ .profchip .pi{font-size:15px;line-height:1}
+ .profchip .pk{font-size:11px;color:var(--muted);display:block}
+ .profchip .pv{font-size:13.5px;color:var(--ink);display:block;font-weight:400}
+ .profedit{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:11px;
+           padding:10px 15px;font-size:13px;color:#4e473f;text-decoration:none;background:#fff}
+ .profedit:hover{border-color:var(--wine);color:var(--wine)}
+
+ /* верхний ряд из трёх карточек */
+ .toprow{display:grid;grid-template-columns:.95fr 1.1fr .95fr;gap:15px;margin-bottom:16px;align-items:stretch}
+ .dnaformula{font-family:'Cormorant Garamond',Georgia,serif;font-size:27px;line-height:1.15;margin:12px 0 0}
+ .dnaformula .b{color:var(--wine2)}
+ .dnak{font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin:15px 0 7px}
+ .subchips{display:flex;gap:7px;flex-wrap:wrap}
+ .subchip{border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;background:var(--soft)}
+ .traits{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;font-size:12.5px;color:#4e473f}
+ .traits div{display:flex;align-items:flex-start;gap:7px;line-height:1.35}
+ .traits i{flex:0 0 auto;color:var(--wine2);font-style:normal;font-size:10px;margin-top:2px}
+ .idxwrap{display:flex;align-items:center;gap:18px;margin-top:10px}
+ .idxring{width:118px;height:118px;flex:0 0 auto}
+ .idxnum{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;fill:var(--wine)}
+ .idxtext{font-size:12.5px;color:#4e473f;line-height:1.5;margin:0}
+ .idxtext + .idxtext{margin-top:9px;color:var(--muted)}
+ .idxmore{display:inline-block;margin-top:11px;font-size:12.5px;color:var(--wine);text-decoration:none}
+ .effchips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+ .effchip{border:1px solid var(--line);border-radius:999px;padding:6px 15px;font-size:13px;background:var(--soft)}
+
+ /* две рабочие колонки */
+ .cols{display:grid;grid-template-columns:1.42fr 1fr;gap:16px;align-items:start}
+ .col{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+ /* образы под роли жизни */
+ .secttl{font-family:'Cormorant Garamond',Georgia,serif;font-size:25px;margin:0 0 11px;line-height:1.1}
+ .looksgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+ .lookcard{display:grid;grid-template-columns:96px 1fr;background:#fff;border:1px solid var(--line);
+           border-radius:14px;overflow:hidden;text-decoration:none;color:inherit;min-height:148px}
+ .lookcard:hover{border-color:#d5c9b6;box-shadow:0 8px 22px rgba(40,26,20,.06)}
+ .lookpic{background:var(--sand);width:100%;height:100%;object-fit:cover;display:block}
+ .lookpic.empty{display:flex;align-items:center;justify-content:center;color:var(--wine);
+                font-family:'Cormorant Garamond',serif;font-size:26px;opacity:.35}
+ .lookbody{padding:11px 12px 10px;display:flex;flex-direction:column;min-width:0}
+ .lookttl{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:var(--ink)}
+ .lookttl .chev{margin-left:auto;color:var(--muted);font-size:13px}
+ .lookdesc{font-size:11.5px;color:var(--muted);line-height:1.4;margin:6px 0 0;
+           display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+ .lookmatch{margin-top:auto;padding-top:8px;text-align:right;font-size:11px;color:var(--muted)}
+ .lookmatch b{color:var(--wine);font-weight:500;font-size:12px}
+ .noimg{background:var(--soft);border:1px solid var(--line);border-left:3px solid var(--wine);
+        border-radius:12px;padding:14px 16px;margin:0 0 12px;font-size:13.5px}
+ .noimg a{display:inline-block;margin-top:8px;background:var(--wine);color:#fff;text-decoration:none;
+          padding:9px 16px;border-radius:8px;font-size:13px}
+
+ /* нижняя пара левой колонки: покупки + палитра */
+ .buyrow{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start}
+ .buygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:13px}
+ .buycard{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--soft);
+          display:flex;flex-direction:column}
+ .buyname{font-size:13px;font-weight:500;line-height:1.3}
+ .buywhy{font-size:11.5px;color:var(--muted);line-height:1.4;margin:8px 0 0}
+ .buywhy b{color:var(--wine);font-weight:500}
+ .buylinks{margin-top:auto;padding-top:9px;font-size:11px;color:var(--muted)}
+ .buylinks a{color:var(--wine);text-decoration:none}
+ .palgrp{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:14px 0 7px}
+ .palrow{display:flex;flex-wrap:wrap;gap:7px}
+ .palrow .c{width:26px;height:26px;border-radius:50%;border:1px solid rgba(0,0,0,.09)}
+
+ /* капсула-ядро */
+ .capgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:12px}
+ .capcard{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:#fff;
+          text-decoration:none;color:inherit;display:flex;flex-direction:column;position:relative}
+ .capcard:hover{border-color:#d5c9b6}
+ .capimg{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--sand)}
+ .capimg.empty{display:flex;align-items:center;justify-content:center;color:var(--wine);
+               font-family:'Cormorant Garamond',serif;font-size:22px;opacity:.35}
+ .capbadge{position:absolute;top:7px;right:7px;background:rgba(255,255,255,.94);border:1px solid var(--line);
+           border-radius:999px;padding:3px 9px;font-size:9.5px;color:var(--wine);letter-spacing:.02em}
+ .capbody{padding:9px 10px 11px}
+ .capname{font-size:12px;line-height:1.3;color:var(--ink)}
+ .capbrand{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+ .capprice{font-size:11.5px;color:#4e473f;margin-top:3px}
+ .capfind{font-size:10.5px;color:var(--muted);margin-top:5px}
+ .capfind a{color:var(--wine);text-decoration:none}
+
+ /* лента сочетаний */
+ .combolane{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
+ .combo{border:1px solid var(--line);border-radius:10px;padding:5px;background:var(--soft)}
+ .combopics{display:flex;gap:3px}
+ .combopics img{width:100%;height:52px;object-fit:cover;border-radius:5px;background:var(--sand)}
+ .combodot{flex:1;height:52px;border-radius:5px;background:var(--sand);display:flex;align-items:center;
+           justify-content:center;color:var(--wine);font-family:'Cormorant Garamond',serif;font-size:15px}
+
+ /* что уводит от формулы */
+ .stopgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+ .stopcell{position:relative;text-align:center}
+ .stopbox{aspect-ratio:1/1;border:1px solid var(--line);border-radius:10px;background:var(--sand);
+          display:flex;align-items:center;justify-content:center;overflow:hidden}
+ .stopbox img{width:100%;height:100%;object-fit:cover;filter:grayscale(.55) opacity(.75)}
+ .stopbox .sw{width:100%;height:100%}
+ .stopbox.text{padding:8px;background:var(--soft)}
+ .stopbox.text span{font-size:10.5px;color:#7a6f64;line-height:1.3;text-align:center;
+                    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+ .stopx{position:absolute;top:5px;right:5px;width:17px;height:17px;border-radius:50%;background:#B23A38;
+        color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;
+        border:1.5px solid #fff;line-height:1}
+ .stopcap{font-size:10px;color:var(--muted);margin-top:6px;line-height:1.25;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+ /* нижняя лента */
+ .footband{display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#fff,#fbf6ec);
+           border:1px solid var(--line);border-radius:18px;padding:20px 24px;margin-top:18px;flex-wrap:wrap}
+ .mono{flex:0 0 auto;width:54px;height:54px;border-radius:50%;border:1px solid var(--line);
+       background:var(--soft);color:var(--wine);font-family:'Cormorant Garamond',serif;font-size:23px;
+       display:flex;align-items:center;justify-content:center;letter-spacing:.02em}
+ .foottext{font-size:14px;color:#4e473f;line-height:1.5;min-width:200px}
+ .footbtns{margin-left:auto;display:flex;gap:12px;flex-wrap:wrap}
+ .btnfill{background:var(--wine);color:#fff;border:1px solid var(--wine);border-radius:11px;
+          padding:13px 26px;font:inherit;font-size:14px;cursor:pointer;text-decoration:none;
+          display:inline-flex;align-items:center;gap:9px}
+ .btnline{background:#fff;color:var(--wine);border:1px solid var(--wine);border-radius:11px;
+          padding:13px 26px;font-size:14px;text-decoration:none;display:inline-flex;align-items:center;gap:9px}
+
+ /* разделы «разбор» — глубина, которая не помещается в панель */
+ .deep{margin-top:26px}
+ .deep summary{cursor:pointer;list-style:none;font-family:'Cormorant Garamond',Georgia,serif;
+               font-size:23px;padding:14px 20px;background:#fff;border:1px solid var(--line);
+               border-radius:14px;display:flex;align-items:center;gap:10px}
+ .deep summary::-webkit-details-marker{display:none}
+ .deep summary::after{content:'+';margin-left:auto;color:var(--wine);font-size:20px;font-family:Onest,sans-serif}
+ .deep[open] summary::after{content:'–'}
+ .deep summary span{font-family:Onest,sans-serif;font-size:12.5px;color:var(--muted);font-weight:300}
+ .deepbody{padding:16px 20px 4px}
+ .deepbody h3{font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;margin:18px 0 8px}
+ .deepbody h3:first-child{margin-top:0}
+ .deepbody p{font-size:14px;color:#4a443c;margin:0 0 10px}
+ ul.clean{list-style:none;padding:0;margin:0 0 10px}
+ ul.clean li{padding:5px 0 5px 17px;position:relative;font-size:14px}
  ul.clean li:before{content:'·';position:absolute;left:4px;color:var(--wine)}
- .stop li:before{content:'✕';font-size:11px;color:#c07a6a}
- /* Шесть образов в ряд — как в макете «Образы под твою фигуру и сценарии жизни».
-    Две широкие колонки заставляли листать; лента показывает всю жизнь клиентки сразу. */
- .looks{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px}
- @media(max-width:560px){.looks{grid-template-columns:1fr}}
- .look{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 18px 18px;box-shadow:0 10px 24px rgba(31,22,20,.035)}
- .look .scn{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--wine)}
- .look .nm{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:23px;margin:4px 0 8px;line-height:1.1}
- .look .it{font-size:13px;color:#4a443c;margin:0 0 8px;line-height:1.45}
- .look .ds{font-size:14px;color:#5a5246}
- .look .meta{font-size:13px;margin-top:10px}
- .look-metrics{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 10px}
- .look-chip{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:#fbf7f0;border:1px solid var(--line);font-size:11.5px;color:#655b52}
- .look-chip strong{color:var(--wine);font-weight:500}
- .look-items{padding-top:10px;border-top:1px solid rgba(93,34,48,.08)}
- .cap-h{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine);margin:18px 0 8px;font-weight:normal}
- .blocklead{font-family:Arial,sans-serif;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--wine);margin:46px 0 -4px;padding-top:22px;border-top:2px solid var(--wine)}
- .noimg{background:#fff;border:1px solid #e3dccf;border-left:3px solid var(--wine);border-radius:10px;padding:16px 18px;margin:18px 0}
- .noimg p{color:var(--muted);font-size:14px;margin:6px 0 12px}
- .noimg a{display:inline-block;background:var(--wine);color:#fff;text-decoration:none;padding:11px 20px;border-radius:6px;font-size:15px}
- .blocklead b{opacity:.5;font-weight:normal;margin-right:8px}
- .meta{font-size:15px;color:var(--muted);margin:0 0 10px}
- .caps{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:8px}
- @media(max-width:560px){.caps{grid-template-columns:1fr}}
- .capitem{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px}
- .capdot{flex:none;width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.12);margin-top:3px}
- .capitem b{font-size:14.5px;font-weight:normal} .captag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--wine);border-radius:6px;padding:1px 6px;vertical-align:middle}
- .capwhy{font-size:12.5px;color:#7a7064}
- .capcard{text-decoration:none;color:inherit}
- .capthumb{flex:none;width:64px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#f4f1ec}
- .capmeta{min-width:0}
- .capbrand{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--wine);margin-top:3px}
- .capprice{font-size:12.5px;color:#7a7064;margin-top:2px}
- .capslot{margin:18px 0 8px} .capslotname{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine)}
- .shop{display:flex;flex-direction:column;gap:10px} .shopitem{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px}
- .shopname{font-size:16px;color:#2a2620} .shopwhy{font-size:13.5px;color:#5a5246;margin:3px 0 6px}
- .shoplinks{font-size:13px;color:#9a8f80} .shoplinks a{color:var(--wine);text-decoration:none}
- .ref{background:#fbf8f3;border:1px solid var(--line);border-radius:14px;padding:16px 20px}
- .refname{font-size:20px;color:var(--wine)} .refline{font-size:14px;color:#5a5246;margin:6px 0 0}
- .print{display:block;margin:30px auto 0;background:var(--wine);color:#fff;border:0;border-radius:10px;padding:14px 26px;font:inherit;font-size:16px;cursor:pointer}
- /* блок «что дальше» — переход из Карты в кабинет «Стиль каждый день» */
- .nextstep{margin:44px 0 10px;background:linear-gradient(135deg,#fff,#fbf6ed);border:1px solid var(--line,#e3dccf);border-radius:22px;overflow:hidden;box-shadow:0 14px 34px rgba(31,22,20,.045)}
- .nsbody{padding:26px 28px}
- .nseyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine);margin-bottom:6px}
- .nstitle{font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;color:var(--ink,#1f1d1b);margin-bottom:8px;line-height:1.04}
- .nstext{color:var(--muted,#6b645c);font-size:15px;line-height:1.6;margin:0 0 16px;max-width:560px}
- .nsbtn{display:inline-block;background:var(--wine);color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-size:14px;letter-spacing:.06em}
- @media(max-width:720px){.hero-grid{grid-template-columns:1fr}.hero-facts{grid-template-columns:1fr 1fr}}
- @media print{.nextstep{display:none!important}}
+ ul.clean.stop li:before{content:'✕';font-size:10px;color:#B23A38}
+ .swatches{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+ .sw{width:82px} .sw .chip{height:48px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
+ .sw .nm{font-size:11px;color:#4a443c;margin-top:4px;line-height:1.25}
+ .sw .nm b{color:#B23A38;font-weight:500}
+ .shopfull{display:flex;flex-direction:column;gap:9px}
+ .shopfull .si{border:1px solid var(--line);border-radius:11px;padding:12px 15px;background:#fff}
+ .shopfull .sn{font-size:15px} .shopfull .sy{font-size:13px;color:var(--muted);margin:3px 0 5px}
+ .shopfull .sl{font-size:12px;color:var(--muted)} .shopfull .sl a{color:var(--wine);text-decoration:none}
+ .ref{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+ .refname{font-size:19px;color:var(--wine);font-family:'Cormorant Garamond',serif}
+ .refline{font-size:13.5px;color:#5a5246;margin:5px 0 0}
+
+ .stale{background:#fbeee4;border:1px solid #e3cdb8;border-radius:14px;padding:14px 18px;margin:0 0 16px;
+        font-size:14px;color:#5a4a3a;line-height:1.5}
+ .stale b{color:var(--wine)}
+ .stale a{display:inline-block;margin-top:9px;background:var(--wine);color:#fff;text-decoration:none;
+          padding:9px 18px;border-radius:8px;font-size:13.5px}
+ .fbblock{margin-top:20px;padding:20px 22px;border:1px solid var(--line);border-radius:16px;background:#fff}
+ .fbblock h2{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;margin:0 0 4px}
+ .fbblock p.h{margin:0 0 14px;color:var(--muted);font-size:13.5px}
+ .fbblock textarea{width:100%;padding:11px 13px;border:1px solid #d9d2c7;border-radius:10px;
+                   font:inherit;font-size:14.5px;resize:vertical}
+ .fbblock button{margin-top:12px;padding:12px 24px;background:var(--wine);color:#fff;border:0;
+                 border-radius:10px;font:inherit;font-size:14.5px;cursor:pointer}
+
+ /* ── адаптив ─────────────────────────────────────────────────────────────────────────── */
+ @media(max-width:1280px){.cols{grid-template-columns:1.2fr 1fr}.combolane{grid-template-columns:repeat(3,1fr)}}
+ @media(max-width:1080px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:14px}
+  .sidenav{flex-direction:row;flex-wrap:wrap}
+  .sidetariff{margin:0;flex:1 1 240px}
+  .toprow,.cols,.buyrow{grid-template-columns:1fr}
+  .profchips{margin-left:0;width:100%}
+ }
+ @media(max-width:760px){
+  .main{padding:18px 16px 50px}
+  .looksgrid,.capgrid,.buygrid{grid-template-columns:1fr 1fr}
+  .stopgrid{grid-template-columns:repeat(3,1fr)}
+  .footbtns{margin-left:0;width:100%}
+  .btnfill,.btnline{flex:1;justify-content:center}
+ }
+ @media(max-width:460px){.looksgrid,.capgrid,.buygrid{grid-template-columns:1fr}}
+
+ /* ── печать: дашборд разворачиваем в один поток ──────────────────────────────────────── */
  @media print{
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .bar,.print,#fbblock,.cardnav{display:none!important}
-  body{background:var(--cream)} .wrap{max-width:none;padding:0}
-  /* одна колонка на печати — двухколоночная сетка ломает разбивку и плодит белые листы */
-  .looks,.caps{grid-template-columns:1fr!important;gap:12px}
-  /* карточки и картинки не режем посреди страницы */
-  .look,.capitem,.shopitem,.ref,.sw{break-inside:avoid;page-break-inside:avoid}
-  /* Высоту фото ограничиваем в САНТИМЕТРАХ. Раньше стояла только ширина 100%: кадр 3:4 на всю
-     ширину листа — это ~25 см, он не влезал вместе с подписью, резался пополам и уносил каждый
-     образ на отдельную страницу (Карта печаталась на 44 листа). */
-  .look{grid-template-columns:1fr!important}
-  .look img{break-inside:avoid;max-height:11cm;width:auto;max-width:100%;object-fit:contain;margin:0 auto}
-  .capitem img,.shopitem img{max-height:5cm;object-fit:contain}
-  h2{break-after:avoid;page-break-after:avoid}
-  /* каждый смысловой блок 02–04 — с новой страницы (у первого разрыв не нужен) */
-  .blocklead{break-before:page;page-break-before:always;border-top:0;padding-top:0;margin:0 0 8px}
-  .blocklead:first-of-type{break-before:avoid;page-break-before:avoid}
+  .side,.footband,.fbblock,.profedit,.ph .more,.idxmore{display:none!important}
+  .shell{display:block} .main{padding:0}
+  .cols,.buyrow,.toprow{display:block}
+  .col > *,.panel{margin-bottom:12px}
+  .looksgrid{grid-template-columns:1fr 1fr}
+  .capgrid{grid-template-columns:repeat(3,1fr)}
+  .deep{display:block} .deep summary{display:none} .deepbody{padding:0}
+  .lookcard,.capcard,.buycard,.combo,.sw,.ref{break-inside:avoid;page-break-inside:avoid}
+  .lookpic{max-height:6cm}
+  .panel{break-inside:avoid;page-break-inside:avoid}
  }
-</style></head><body><div class=shell>
-{# Навигация по разделам Карты: она стала широкой и длинной, без оглавления клиентка не видит,
-   что внутри. Ссылки — якоря, на печати блок скрыт. #}
+</style></head><body>
+{# Формула вида «Леди-лайк × Soft Classic»: первая часть — ведущий стиль, вторая — подстиль.
+   Разводим их по цвету, как в макете: направление тёмное, уточнение — винным. #}
+{% set fparts = (c.formula or '').split('×') %}
+{% set idx = (100 - c.gap) if c.get('gap') is not none else none %}
+<div class=shell>
 <div class=side>
  <div class=sidelogo>Чувство стиля<span>твоя формула стиля</span></div>
  <nav class=sidenav>
-  <a class=on href="#top">Моя карта стиля</a>
-  <a href="/cabinet">Стиль каждый день</a>
-  <a href="#capsule">Капсула-ядро</a>
-  <a href="#looks">Образы</a>
-  <a href="#palette">Палитра</a>
-  <a href="#shopping">Покупки</a>
-  <a href="#figure">Фигура</a>
-  <a href="/me">Профиль</a>
+  <a class=on href="#top"><svg viewBox="0 0 20 20"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M2.5 8h15M8 8v8.5"/></svg>Моя карта стиля</a>
+  <a href="/cabinet"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>Стиль каждый день</a>
+  <a href="/cabinet#wardrobe"><svg viewBox="0 0 20 20"><path d="M10 4.5a1.6 1.6 0 1 1 1.6 1.6c0 1-1.6 1.2-1.6 2.4"/><path d="M2.5 14.5 10 8.5l7.5 6v2h-15z"/></svg>Гардероб</a>
+  <a href="#capsule"><svg viewBox="0 0 20 20"><rect x="2.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.4"/></svg>Капсула</a>
+  <a href="#looks"><svg viewBox="0 0 20 20"><rect x="3" y="2.5" width="14" height="15" rx="2"/><circle cx="10" cy="7.5" r="2.2"/><path d="M5.5 16c1-2.6 2.6-4 4.5-4s3.5 1.4 4.5 4"/></svg>Образы</a>
+  <a href="#shopping"><svg viewBox="0 0 20 20"><path d="M4 6.5h12l-1 10.5H5z"/><path d="M7.2 6.5V5a2.8 2.8 0 0 1 5.6 0v1.5"/></svg>Покупки</a>
+  <a href="#looks"><svg viewBox="0 0 20 20"><circle cx="10" cy="6.5" r="3"/><path d="M3.5 17c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5"/></svg>Роли жизни</a>
+  <a href="/cabinet#track"><svg viewBox="0 0 20 20"><path d="M3 17h14"/><rect x="4.5" y="10" width="3" height="5" rx=".8"/><rect x="9" y="6" width="3" height="9" rx=".8"/><rect x="13.5" y="3" width="3" height="12" rx=".8"/></svg>Отчёты</a>
+  <a href="/cabinet#wardrobe-mine"><svg viewBox="0 0 20 20"><path d="M10 16.5S3.5 12.6 3.5 8.2A3.6 3.6 0 0 1 10 6a3.6 3.6 0 0 1 6.5 2.2c0 4.4-6.5 8.3-6.5 8.3z"/></svg>Избранное</a>
  </nav>
  <div class=sidetariff>
   <div class=st-k>Тариф</div>
   <div class=st-n>Карта стиля</div>
-  <div class=st-d>Разовый персональный результат{% if c.season_label %} · {{ c.season_label }}{% endif %}</div>
+  <div class=st-d>Разовый персональный результат{% if c.season_label %}<br><b>{{ c.season_label }}</b>{% endif %}</div>
   <a href="/card?rebuild=1">Собрать заново</a>
  </div>
 </div>
+
 <div class=main id=top>
 
-{# Шапка профиля: кто ты и на чём построен весь стайлбук ниже #}
+{# ── шапка профиля ───────────────────────────────────────────────────────────────────── #}
 <div class=profbar>
  <div class=profav>{{ (name or 'К')[0]|upper }}</div>
  <div>
@@ -859,315 +917,351 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <div class=proff><b>{{ c.formula }}</b></div>
  </div>
  <div class=profchips>
-  {% if c.season_label %}<div class=profchip>Сезон<b>{{ c.season_label }}</b></div>{% endif %}
-  {% if c.colortype %}<div class=profchip>Цветотип<b>{{ c.colortype }}</b></div>{% endif %}
-  {% if c.figure %}<div class=profchip>Фигура<b>{{ c.figure }}</b></div>{% endif %}
+  {% if c.season_label %}<div class=profchip><span class=pi>❦</span><span><span class=pk>Сезон</span><span class=pv>{{ c.season_label }}</span></span></div>{% endif %}
+  {% if c.colortype %}<div class=profchip><span class=pi>✦</span><span><span class=pk>Цветотип</span><span class=pv>{{ c.colortype }}</span></span></div>{% endif %}
+  {% if c.figure %}<div class=profchip><span class=pi>◈</span><span><span class=pk>Фигура</span><span class=pv>{{ c.figure }}</span></span></div>{% endif %}
+  <a class=profedit href="/me">Редактировать профиль <span>✎</span></a>
  </div>
 </div>
 
-{# Верхний ряд: ДНК стиля · индекс настройки образа · желаемый эффект #}
+{% if stale %}<div class=stale><b>Твоя диагностика обновилась.</b> Ты недавно заново прошла квиз, и разрыв изменился. Эта Карта собрана на прежней диагностике — числа и подборка ниже от неё.<br><a href="/card?rebuild=1">Собрать Карту заново →</a></div>{% endif %}
+
+{# ── верхний ряд: ДНК · индекс · желаемый эффект ─────────────────────────────────────── #}
 <div class=toprow>
- <div class=tcard>
-  <h3>Твоя ДНК стиля</h3>
-  <div class=proff style="font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;color:var(--ink)">{{ c.formula }}</div>
+
+ <div class=panel>
+  <h2 class=ph>Твоя ДНК стиля</h2>
+  <div class=dnaformula>{{ fparts[0]|trim }}{% if fparts|length > 1 %} <span class=b>× {{ fparts[1]|trim }}</span>{% endif %}</div>
   {% if c.substyles %}
-  <div class=dnasub>Субстили</div>
+  <div class=dnak>Субстили</div>
   <div class=subchips>{% for sub in c.substyles %}<span class=subchip>{{ sub }}</span>{% endfor %}</div>
   {% endif %}
-  {% if c.want_traits %}
-  <div class=dnasub>Ключевые черты</div>
-  <div class=traits>{% for t in c.want_traits %}<div>{{ t }}</div>{% endfor %}</div>
-  {% endif %}
-  {% if c.accent_note %}<p class=idxtext style="margin-top:12px">{{ c.accent_note }}</p>{% endif %}
- </div>
- {% set gap_pct = c.get('gap') %}
- <div class=tcard>
-  <h3>Индекс настройки образа</h3>
-  {% if gap_pct is not none %}
-  <div class=idxwrap>
-   <svg viewBox="0 0 120 120" class=idxring aria-hidden="true">
-    <circle cx="60" cy="60" r="52" fill="none" stroke="#eee3cf" stroke-width="11"/>
-    <circle cx="60" cy="60" r="52" fill="none" stroke="#5D2230" stroke-width="11" stroke-linecap="round"
-            transform="rotate(-90 60 60)" stroke-dasharray="327"
-            stroke-dashoffset="{{ (327 - 327 * (100 - gap_pct) / 100)|round|int }}"/>
-    <text x="60" y="68" text-anchor="middle" class=idxnum fill="#5D2230"
-          style="font-size:26px">{{ 100 - gap_pct }}%</text>
-   </svg>
-   <p class=idxtext>Настолько твой образ уже совпадает с тем, как ты хочешь считываться. Оставшиеся {{ gap_pct }}% закрываются капсулой-ядром и точечными покупками ниже.</p>
-  </div>
-  {% endif %}
- </div>
- <div class=tcard>
-  <h3>Какой эффект ты хочешь производить</h3>
-  {% if c.emphasize or c.dna %}<p class=idxtext>{{ c.emphasize or c.dna }}</p>{% endif %}
+  {# Ключевые черты — визуальные коды формулы: что именно делает образ её, а не просто название
+     направления. Желаемый эффект («как хочу считываться») живёт в третьей карточке. #}
   {% if c.style_dna %}
-  <div class=dnasub>Визуальные коды</div>
-  <div class=subchips>
-   {% for d in c.style_dna[:4] %}<span class=subchip title="{{ d.note }}">{{ d.code }}</span>{% endfor %}
+  <div class=dnak>Ключевые черты</div>
+  <div class=traits>{% for d in c.style_dna[:4] %}<div><i>◆</i><span title="{{ d.note }}">{{ d.code }}</span></div>{% endfor %}</div>
+  {% endif %}
+ </div>
+
+ <div class=panel>
+  <h2 class=ph>Индекс настройки образа</h2>
+  {% if idx is not none %}
+  <div class=idxwrap>
+   <svg viewBox="0 0 120 120" class=idxring aria-hidden=true>
+    <circle cx="60" cy="60" r="52" fill=none stroke="#eee3cf" stroke-width="11"/>
+    <circle cx="60" cy="60" r="52" fill=none stroke="#5D2230" stroke-width="11" stroke-linecap=round
+            transform="rotate(-90 60 60)" stroke-dasharray="327"
+            stroke-dashoffset="{{ (327 - 327 * idx / 100)|round|int }}"/>
+    <text x=60 y=70 text-anchor=middle class=idxnum>{{ idx }}%</text>
+   </svg>
+   <div>
+    {# Формулировка по величине индекса: не хвалим ради похвалы, а называем, где клиентка стоит. #}
+    <p class=idxtext>{% if idx >= 80 %}Ты уже близко. Образ почти совпадает с тем, как ты хочешь считываться.{% elif idx >= 60 %}Хороший результат, гармония близка. Основа собрана — осталось убрать то, что размывает.{% elif idx >= 40 %}Половина образа уже работает на тебя. Вторая половина — то, что мы закрываем ниже.{% else %}Разрыв большой, и это твой ресурс: изменения будут заметны сразу.{% endif %}</p>
+    {# Разрыв называем числом, а не только кольцом: Карта обязана показывать тот же Gap,
+       что посчитал квиз, иначе диагностика и результат расходятся. #}
+    <p class=idxtext>Оставшиеся {{ c.gap }}% закрываются выбранной<br>капсулой и точечными покупками.</p>
+    <a class=idxmore href="#howto">Как повысить индекс →</a>
+   </div>
+  </div>
+  {% else %}
+  <p class=psub style="margin-top:12px">Индекс появится после замера разрыва в квизе.</p>
+  {% endif %}
+ </div>
+
+ <div class=panel>
+  <h2 class=ph>Какой эффект ты хочешь производить</h2>
+  <p class=idxtext style="margin-top:12px">Ты выбрала воздействие, которое работает<br>на твои цели и характер.</p>
+  {% if c.want_traits %}
+  <div class=effchips>{% for t in c.want_traits %}<span class=effchip>{{ t }}</span>{% endfor %}</div>
+  {% elif c.emphasize %}
+  <p class=psub style="margin-top:10px">{{ c.emphasize }}</p>
+  {% endif %}
+ </div>
+
+</div>
+
+{# ── две рабочие колонки ─────────────────────────────────────────────────────────────── #}
+<div class=cols>
+
+ {# ── левая: что носить ───────────────────────────────────────────────────────────── #}
+ <div class=col>
+
+  <div>
+   <h2 class=secttl id=looks>Образы под роли жизни</h2>
+   {# Ни одного отрисованного образа — зовём догенерить: без этого клиентка остаётся с текстом
+      и не знает, что образы на ней ещё можно получить. #}
+   {% if c.looks and not c.looks|selectattr('img')|list %}
+   <div class=noimg><b>Здесь пока только текст — без образов на тебе.</b>
+    <div>Загрузи фото — соберём эти же образы на тебе.</div>
+    <a href="/card?rebuild=1">Добавить образы →</a></div>
+   {% endif %}
+   {% if c.looks %}
+   <div class=looksgrid>
+    {% for lk in c.looks[:6] %}
+    <a class=lookcard href="#look{{ loop.index }}">
+     {% if lk.img %}<img class=lookpic src="{{ lk.img }}" alt="Образ · {{ lk.scenario or lk.title }}" loading=lazy>
+     {% else %}<span class="lookpic empty">{{ (lk.scenario or lk.title or '·')[:1] }}</span>{% endif %}
+     <div class=lookbody>
+      <div class=lookttl>{{ lk.scenario or lk.title or lk.name }}<span class=chev>›</span></div>
+      <p class=lookdesc>{{ lk.why_it_works or lk.description or (lk['items']|join(' · ') if lk.get('items') else '') }}</p>
+      {% if lk.formula_match %}<div class=lookmatch>совпадение <b>{{ lk.formula_match }}%</b></div>{% endif %}
+     </div>
+    </a>
+    {% endfor %}
+   </div>
+   {% else %}
+   <div class=panel><p class=psub>Образы появятся вместе со сборкой Карты.</p></div>
+   {% endif %}
+  </div>
+
+  <div class=buyrow>
+   <div class=panel>
+    <h2 class=ph>Первые покупки под твою Формулу<a class=more href="#shopping">Смотреть все рекомендации →</a></h2>
+    <p class=psub>Точечные вещи, которые усиливают капсулу и закрывают пробелы.</p>
+    {% if c.shopping %}
+    <div class=buygrid>
+     {% for it in c.shopping[:3] %}
+     <div class=buycard>
+      <div class=buyname>{{ it.item_name }}</div>
+      {% if it.closes_gap %}<p class=buywhy><b>Почему подходит:</b> {{ it.closes_gap }}</p>{% endif %}
+      {% if it.links %}<div class=buylinks><a href="{{ it.links.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.links.lamoda }}" target=_blank rel=noopener>Lamoda</a> · <a href="{{ it.links.ozon }}" target=_blank rel=noopener>Ozon</a></div>{% endif %}
+     </div>
+     {% endfor %}
+    </div>
+    {% else %}<p class=psub style="margin-top:12px">Список покупок появится вместе со сборкой Карты.</p>{% endif %}
+   </div>
+
+   <div class=panel id=palette>
+    <h2 class=ph>Твоя палитра</h2>
+    <p class=psub>Базовые, акцентные и нейтральные цвета.</p>
+    {% for grp, title in [('base','Базовые'),('main','Основные'),('accent','Акцентные')] %}
+     {% set items = c.palette|selectattr('group','equalto',grp)|list %}
+     {% if items %}<div class=palgrp>{{ title }}</div>
+     <div class=palrow>{% for p in items %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>{% endif %}
+    {% endfor %}
+    {% set rest = c.palette|rejectattr('group','in',['base','main','accent'])|list %}
+    {% if rest %}<div class=palgrp>Ещё в палитре</div>
+    <div class=palrow>{% for p in rest %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>{% endif %}
+    <a class=idxmore href="#howto">Как использовать палитру →</a>
+   </div>
+  </div>
+
+ </div>
+
+ {# ── правая: на чём это держится ─────────────────────────────────────────────────── #}
+ <div class=col>
+
+  <div class=panel id=capsule>
+   <h2 class=ph>Капсула-ядро {{ c.starter_capsule_count or (c.starter_capsule|length if c.starter_capsule else 0) }} вещей<span class=dot>◈</span></h2>
+   <p class=psub>База, которая собирает твои образы.</p>
+   {% if c.starter_capsule %}
+   <div class=capgrid>
+    {% for it in c.starter_capsule[:6] %}
+    <div class=capcard>
+     {% if it.image %}<img class=capimg src="{{ it.image }}" alt="{{ it.name }}" loading=lazy>
+     {% else %}<span class="capimg empty">{{ it.name[:1] }}</span>{% endif %}
+     {# Бейдж говорит, ЗАЧЕМ вещь в ядре: ядро работает в нескольких образах, остальное — поддержка. #}
+     {% if it.capsule_role == 'core' %}<span class=capbadge>ядро</span>
+     {% elif it.outfits_count and it.outfits_count > 1 %}<span class=capbadge>собирает {{ it.outfits_count }} образ{{ 'а' if it.outfits_count % 10 in [2,3,4] and it.outfits_count // 10 != 1 else 'ов' }}</span>
+     {% elif loop.first %}<span class=capbadge>купить первой</span>{% endif %}
+     <div class=capbody>
+      <div class=capname>{{ it.name }}</div>
+      {% if it.brand %}<div class=capbrand>{{ it.brand }}</div>{% endif %}
+      {% if it.price %}<div class=capprice>{{ '{:,}'.format(it.price).replace(',',' ') }} ₽</div>{% endif %}
+      {% if it.search %}<div class=capfind><a href="{{ it.search.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.search.lamoda }}" target=_blank rel=noopener>Lamoda</a></div>{% endif %}
+     </div>
+    </div>
+    {% endfor %}
+   </div>
+   {% else %}<p class=psub style="margin-top:12px">Капсула соберётся вместе с образами.</p>{% endif %}
+  </div>
+
+  {% if c.capsule_combos %}
+  <div class=panel>
+   <h2 class=ph>Из {{ c.starter_capsule_count }} вещей — {{ c.combination_count }} сочетаний<a class=more href="#combos">Показать все →</a></h2>
+   <p class=psub>Примеры готовых образов из твоей капсулы.</p>
+   <div class=combolane>
+    {% for combo in c.capsule_combos[:6] %}
+    <div class=combo title="{{ combo.title }}">
+     <div class=combopics>
+      {% for it in combo['items'][:3] %}
+       {% if it.image %}<img src="{{ it.image }}" alt="{{ it.name }}" loading=lazy>{% else %}<span class=combodot>{{ it.name[:1] }}</span>{% endif %}
+      {% endfor %}
+     </div>
+    </div>
+    {% endfor %}
+   </div>
   </div>
   {% endif %}
-  <p class=idxtext style="margin-top:10px">По этим кодам собраны образы ниже — сначала ДНК, потом уже конкретные вещи.</p>
+
+  {# «Что уводит» — стоп-цвета и стоп-лист в одном месте: клиентке важнее увидеть запрет
+     рядом с капсулой, чем отдельной главой в конце. #}
+  {% set stopn = (c.stop_colors|length if c.stop_colors else 0) + (c.stop_list|length if c.stop_list else 0) %}
+  {% if stopn %}
+  <div class=panel>
+   <h2 class=ph>Что уводит от твоей Формулы</h2>
+   <p class=psub>Избегай этих элементов — они нарушают твою гармонию.</p>
+   <div class=stopgrid>
+    {% for p in (c.stop_colors or [])[:5] %}
+    <div class=stopcell>
+     <div class=stopbox><span class=sw style="background:{{ p.hex }}"></span></div>
+     <span class=stopx>✕</span>
+     <div class=stopcap title="{{ p.why }}">{{ p.name }}</div>
+    </div>
+    {% endfor %}
+    {# Стоп-цвет показываем плашкой цвета, а запрет из стоп-листа — текстом внутри плитки:
+       картинок «чего не носить» у нас нет, а пустая бежевая рамка читается как поломка. #}
+    {% for s in (c.stop_list or [])[:5 - (c.stop_colors|length if c.stop_colors else 0)] %}
+    <div class=stopcell>
+     <div class="stopbox text"><span title="{{ s }}">{{ s }}</span></div>
+     <span class=stopx>✕</span>
+    </div>
+    {% endfor %}
+   </div>
+   <a class=idxmore href="#stoplist">Смотреть стоп-лист целиком →</a>
+  </div>
+  {% endif %}
+
  </div>
 </div>
-{% if stale %}<div class=stale><b>Твоя диагностика обновилась.</b> Ты недавно заново прошла квиз, и разрыв изменился. Эта Карта пока собрана на прежней диагностике — числа и подборка ниже от неё. Собери Карту заново, чтобы она совпала с последним квизом.<br><a href="/card?rebuild=1">Собрать Карту заново →</a></div>{% endif %}
 
-<div class=hero-card>
- <div class=hero-grid>
-  <div>
-   <div class=eyebrow>Персональный стайлбук</div>
-   <p class=hero-note>Здесь собрана не просто красивая подборка, а твоя личная система: что тебя усиливает, на каких вещах держится образ и как не терять направление при покупках.</p>
-  </div>
-  <div class=hero-facts>
-   <div class=hero-fact>
-    <div class=hero-fact-k>Образы</div>
-    <div class=hero-fact-v>{{ c.looks|length if c.looks else 0 }}</div>
-    <div class=hero-fact-s>сценариев на тебе под жизнь и роли</div>
-   </div>
-   <div class=hero-fact>
-    <div class=hero-fact-k>Капсула</div>
-    <div class=hero-fact-v>{{ c.starter_capsule_count or (c.base_capsule|length if c.base_capsule else 0) }}</div>
-    <div class=hero-fact-s>стартовых вещей в первом опорном гардеробе</div>
-   </div>
-   <div class=hero-fact>
-    <div class=hero-fact-k>Покупки</div>
-    <div class=hero-fact-v>{{ c.shopping|length if c.shopping else 0 }}</div>
-    <div class=hero-fact-s>приоритетов, которые усиливают Формулу</div>
-   </div>
-   <div class=hero-fact>
-    <div class=hero-fact-k>Сочетания</div>
-    <div class=hero-fact-v>{{ c.combination_count or '—' }}</div>
-    <div class=hero-fact-s>рабочих комплектов из стартовой капсулы</div>
-   </div>
-  </div>
+{# ── нижняя лента ────────────────────────────────────────────────────────────────────── #}
+<div class=footband>
+ <div class=mono>SS</div>
+ <div class=foottext>Твоя Карта стиля — это персональная стратегия.<br>Она работает на тебя каждый день.</div>
+ <div class=footbtns>
+  <button class=btnfill id=pdfbtn onclick="downloadPdf()">Скачать PDF <span>⬇</span></button>
+  <a class=btnline href="/cabinet">Перейти в Стиль каждый день <span>→</span></a>
  </div>
 </div>
-{% macro lookcard(lk) %}<div class=look>
-  {% if lk.img %}<img src="{{ lk.img }}" alt="Образ" style="width:100%;border-radius:10px;margin-bottom:10px;display:block">{% endif %}
-  {% if lk.scenario %}<div class=scn>{{ lk.scenario }}</div>{% endif %}
-  {% if lk.title %}<div class=nm>{{ lk.title }}</div>{% elif lk.name %}<div class=nm>{{ lk.name }}</div>{% endif %}
-  {% if lk.formula_match or lk.effect %}<div class=look-metrics>{% if lk.formula_match %}<span class=look-chip>Совпадение · <strong>{{ lk.formula_match }}%</strong></span>{% endif %}{% if lk.effect %}<span class=look-chip>{{ lk.effect }}</span>{% endif %}</div>{% endif %}
-  {% if lk.why_it_works %}<p class=ds>{{ lk.why_it_works }}</p>{% elif lk.description %}<p class=ds>{{ lk.description }}</p>{% endif %}
-  {# .get(), а не lk['items']: Jinja при отсутствии ключа падает обратно на getattr и подставляет
-    метод dict.items — страница Карты валилась в 500 на образе без состава. #}
-{% set look_items = lk.get('items') %}
-{% if look_items %}<div class=look-items><p class=it>{{ look_items|join(' · ') }}</p></div>{% endif %}
-  {% if lk.missing_items %}<p class=meta>Если докупить: {{ lk.missing_items|join(' · ') }}</p>{% endif %}
- </div>{% endmacro %}
 
-<!-- ═══════ БЛОК 1 · КТО ТЫ ═══════ -->
-{% if c.substyle_rationale or (c.personality and c.personality.portrait) %}
-<div class=blocklead><b>01</b>Кто ты</div>
-<h2 id=formula>Почему это твой стиль</h2>
-{% if c.substyle_rationale %}<p style="font-size:16px;color:#3a352e;margin:0 0 12px">{{ c.substyle_rationale }}</p>{% endif %}
-{% if c.personality and c.personality.portrait %}<p style="font-size:16px;color:#3a352e;margin:0 0 12px">{{ c.personality.portrait }}</p>
-{% if c.personality.style_implications %}<ul class=clean>{% for s in c.personality.style_implications %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}{% endif %}
-{% endif %}
+{# ── разбор: глубина Карты, свёрнутая по разделам ───────────────────────────────────── #}
 
-<!-- ═══════ БЛОК 2 · ТВОИ ОБРАЗЫ ═══════ -->
 {% if c.looks %}
-<div class=blocklead><b>02</b>Твои образы</div>
-<h2 id=looks>Образы под твою жизнь</h2>
-<p class=meta>Ты в своей Формуле — видно, как одни и те же базовые вещи работают в разных ситуациях.</p>
-{# Ни одного отрисованного образа (текстовая версия или все рендеры не удались) — зовём догенерить.
-   Без этого клиентка оставалась с текстом и не знала, что образы ещё можно получить: два отзыва
-   «нет генерации образов, только текст» / «не хватило визуальных примеров» — про это. #}
-{% if not c.looks|selectattr('img')|list %}
-<div class=noimg>
- <b>Здесь пока только текст — без образов на тебе.</b>
- <p>Загрузи фото — соберём эти же образы на тебе. Бесплатная генерация ещё не использована.</p>
- <a href="/card?rebuild=1">Добавить образы →</a>
-</div>
-{% endif %}
-{% set ns = namespace(shown=0) %}
-{% for bucket in ['Работа','Повседневное','Выход'] %}
- {% set bl = c.looks|selectattr('bucket','equalto',bucket)|list %}
- {% if bl %}{% set ns.shown = ns.shown + bl|length %}<h3 class=cap-h>{{ bucket }}</h3><div class=looks>{% for lk in bl %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
-{% endfor %}
-{% if ns.shown == 0 %}<div class=looks>{% for lk in c.looks %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
-
-{% if c.styling and c.styling.looks %}<h2>Стилизация: одна вещь — два образа</h2>
-<p class=meta>{% if c.styling.idea %}{{ c.styling.idea }}{% else %}Одна базовая вещь{% if c.styling.base_item %} ({{ c.styling.base_item }}){% endif %} — два разных образа.{% endif %} Так работает капсула: мало вещей, много решений.</p>
-<div class=looks>{% for lk in c.styling.looks %}{{ lookcard(lk) }}{% endfor %}</div>{% endif %}
-{% endif %}
-
-<!-- ═══════ БЛОК 3 · ТВОЯ ФИГУРА ═══════ -->
-{% if c.figure or c.figure_fit or c.silhouettes %}
-<div class=blocklead><b>03</b>Твоя фигура</div>
-<h2>Что носить по твоей фигуре</h2>
-{% if c.figure %}<p class=meta>Силуэт: <b>{{ c.figure }}</b> — по этим правилам подобраны образы выше и капсула ниже, чтобы вещи сидели по твоим пропорциям.</p>{% endif %}
-<ul class=clean>
- {% if c.emphasize %}<li><b>Твой акцент:</b> {{ c.emphasize }} — образы строим вокруг этого</li>{% endif %}
- {% if c.figure_fit %}<li><b>Подчёркиваем:</b> {{ c.figure_fit.emphasize }}</li>
- <li><b>Баланс:</b> {{ c.figure_fit.balance }}</li>
- <li><b>Посадка и размеры:</b> {{ c.figure_fit.fit }}</li>{% endif %}
-</ul>
-{% set sils = c.figure_fit.silhouettes if (c.figure_fit and c.figure_fit.silhouettes) else c.silhouettes %}
-{% if sils %}<p class=meta style="margin:12px 0 6px">Твои силуэты:</p>
-<ul class=clean>{% for s in sils %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}{% endif %}
-
-<!-- ═══════ БЛОК 4 · ТВОИ ЦВЕТА ═══════ -->
-<div class=blocklead><b>04</b>Твои цвета</div>
-{% if c.colortype %}<h2>Твой цветотип — {{ c.colortype }}</h2>
-<p class=meta>{% if c.contrast %}Контраст {{ c.contrast }}. {% endif %}На нём построена палитра ниже.</p>{% endif %}
-<h2 id=palette>Твоя палитра</h2>
-<p class=meta>База — основа гардероба, на ней строится всё. Основные — цветные вещи, спокойно сочетаются с базой. Акценты — точечно: один на образ, не больше.</p>
-{% for grp, title in [('base','База и нейтрали'),('main','Основные'),('accent','Акценты')] %}
- {% set items = c.palette|selectattr('group','equalto',grp)|list %}
- {% if items %}<div class=sw-group>{{ title }}</div><div class=swatches>
-  {% for p in items %}<div class=sw><div class=chip style="background:{{ p.hex }}"></div><div class=nm>{{ p.name }}</div></div>{% endfor %}
- </div>{% endif %}
-{% endfor %}
-{% set rest = c.palette|rejectattr('group','in',['base','main','accent'])|list %}
-{% if rest %}<div class=sw-group>Ещё в палитре</div><div class=swatches>
- {% for p in rest %}<div class=sw><div class=chip style="background:{{ p.hex }}"></div><div class=nm>{{ p.name }}</div></div>{% endfor %}
-</div>{% endif %}
-
-{% if c.stop_colors %}<h2>Стоп-цвета — что тебя гасит</h2>
-<div class="swatches stopcolors">
- {% for p in c.stop_colors %}<div class=sw><div class=chip style="background:{{ p.hex }}"></div><div class=nm><b>{{ p.name }}</b><br>{{ p.why }}</div></div>{% endfor %}
-</div>{% endif %}
-
-<!-- ═══════ БЛОК 5 · ТВОЙ ГАРДЕРОБ ═══════ -->
-{% if c.starter_capsule or c.visual_capsule or c.base_capsule %}
-<div class=blocklead><b>05</b>Твой гардероб</div>
-{# «Базовая капсула» звучит как универсальный список для всех и обесценивает персональную
-   сборку. По бизнес-логике тарифов — «Капсула-ядро», собранная из её же образов. #}
-<h2 id=capsule>Капсула-ядро под твою Формулу</h2>
-<p class=meta>Это не универсальный список базовых вещей. Капсула-ядро собрана из твоих образов выше и показывает, какие вещи действительно держат гардероб: сочетаются друг с другом, закрывают роли жизни и помогают не покупать случайно{% if c.starter_capsule_count %}. Здесь {{ c.starter_capsule_count }} вещей{% endif %}{% if c.combination_count %}, из них получается около {{ c.combination_count }} рабочих образов{% endif %}.</p>
-{# Сначала — капсула-ядро, собранная ИЗ ОБРАЗОВ (starter_capsule). У каждой вещи видно, в
-   скольких образах она работает: это и отличает ядро от случайной пачки вещей каталога.
-   visual_capsule (подбор каталога) остаётся запасным, если состава образов нет. #}
-{% if c.starter_capsule %}
- <div class=corecaps>
-  {% for it in c.starter_capsule %}
-  <div class="coreitem">
-   {% if it.image %}<img class=corethumb src="{{ it.image }}" alt="{{ it.name }}">
-    {% if it.image_is_example %}<div class=coreexample>пример вещи такого типа</div>{% endif %}{% endif %}
-   <div class=coreslot>{{ it.slot }}{% if it.capsule_role == 'core' %} · ядро{% endif %}</div>
-   <b class=corename>{{ it.name }}</b>
-   {% if it.why %}<div class=corewhy>{{ it.why }}</div>{% endif %}
-   {% if it.search %}<div class=coresearch>Найти:
-    <a href="{{ it.search.wildberries }}" target=_blank rel=noopener>WB</a> ·
-    <a href="{{ it.search.lamoda }}" target=_blank rel=noopener>Lamoda</a> ·
-    <a href="{{ it.search.ozon }}" target=_blank rel=noopener>Ozon</a></div>{% endif %}
+{# Закрыт по умолчанию: Карта — панель на один экран, а полный разбор образов раскрывается
+   по клику (и принудительно раскрывается перед печатью в PDF). #}
+<details class=deep id=combos>
+ <summary>Образы целиком <span>состав, сценарии и что докупить</span></summary>
+ <div class=deepbody>
+  {% for lk in c.looks %}
+  <div class=panel style="margin-bottom:12px" id="look{{ loop.index }}">
+   <h3 style="margin-top:0">{{ lk.scenario or lk.title or lk.name }}</h3>
+   {% if lk.img %}<img src="{{ lk.img }}" alt="Образ" style="max-width:280px;width:100%;border-radius:12px;display:block;margin-bottom:10px">{% endif %}
+   {% if lk.why_it_works or lk.description %}<p>{{ lk.why_it_works or lk.description }}</p>{% endif %}
+   {% set look_items = lk.get('items') %}
+   {% if look_items %}<p style="color:var(--muted)">Состав: {{ look_items|join(' · ') }}</p>{% endif %}
+   {% if lk.missing_items %}<p style="color:var(--muted)">Если докупить: {{ lk.missing_items|join(' · ') }}</p>{% endif %}
   </div>
   {% endfor %}
+  {% if c.styling and c.styling.looks %}
+  <h3>Одна вещь — два образа</h3>
+  <p>{% if c.styling.idea %}{{ c.styling.idea }}{% else %}Одна базовая вещь{% if c.styling.base_item %} ({{ c.styling.base_item }}){% endif %} — два разных образа.{% endif %} Так работает капсула: мало вещей, много решений.</p>
+  {% for lk in c.styling.looks %}
+  <div class=panel style="margin-bottom:12px">
+   <h3 style="margin-top:0">{{ lk.title or lk.name or lk.scenario }}</h3>
+   {% if lk.img %}<img src="{{ lk.img }}" alt="Образ" style="max-width:280px;width:100%;border-radius:12px;display:block;margin-bottom:10px">{% endif %}
+   {% if lk.description %}<p>{{ lk.description }}</p>{% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
  </div>
-{# Лента сочетаний: цифра «18 образов» без примеров остаётся обещанием. Показываем, КАК они
-   собираются — из тех же вещей ядра, без новых генераций. #}
-{% if c.capsule_combos %}
-<div class=combohead>Из {{ c.starter_capsule_count }} вещей — {{ c.combination_count }} сочетаний</div>
-<div class=combolane>
- {% for combo in c.capsule_combos %}
- <div class=combo>
-  <div class=combopics>
-   {% for it in combo['items'][:4] %}
-    {% if it.image %}<img src="{{ it.image }}" alt="{{ it.name }}">{% else %}<span class=combodot>{{ it.name[:1] }}</span>{% endif %}
+</details>
+{% endif %}
+
+<details class=deep id=howto>
+ <summary>Как повысить индекс <span>кто ты, твоя фигура, работа с палитрой</span></summary>
+ <div class=deepbody>
+  {% if c.substyle_rationale %}<h3>Почему это твой стиль</h3><p>{{ c.substyle_rationale }}</p>{% endif %}
+  {% if c.personality and c.personality.portrait %}<p>{{ c.personality.portrait }}</p>
+   {% if c.personality.style_implications %}<ul class=clean>{% for s in c.personality.style_implications %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}{% endif %}
+  {% if c.figure or c.figure_fit or c.silhouettes %}
+  <h3 id=figure>Что носить по твоей фигуре</h3>
+  {% if c.figure %}<p>Геометрия: <b>{{ c.figure }}</b> — по этим правилам подобраны образы и капсула, чтобы вещи сидели по твоим пропорциям.</p>{% endif %}
+  <ul class=clean>
+   {% if c.emphasize %}<li><b>Твой акцент:</b> {{ c.emphasize }} — образы строим вокруг этого</li>{% endif %}
+   {% if c.figure_fit %}<li><b>Подчёркиваем:</b> {{ c.figure_fit.emphasize }}</li>
+   <li><b>Баланс:</b> {{ c.figure_fit.balance }}</li>
+   <li><b>Посадка и размеры:</b> {{ c.figure_fit.fit }}</li>{% endif %}
+  </ul>
+  {% set sils = c.figure_fit.silhouettes if (c.figure_fit and c.figure_fit.silhouettes) else c.silhouettes %}
+  {% if sils %}<p style="color:var(--muted)">Твои силуэты:</p><ul class=clean>{% for s in sils %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
+  {% endif %}
+  <h3>Как работает палитра</h3>
+  {% if c.colortype %}<p>Твой цветотип — <b>{{ c.colortype }}</b>.{% if c.contrast %} Контраст {{ c.contrast }}.{% endif %} На нём построена палитра.</p>{% endif %}
+  <p>База — основа гардероба, на ней строится всё. Основные — цветные вещи, спокойно сочетаются с базой. Акценты — точечно: один на образ, не больше.</p>
+  {% for grp, title in [('base','База и нейтрали'),('main','Основные'),('accent','Акценты')] %}
+   {% set items = c.palette|selectattr('group','equalto',grp)|list %}
+   {% if items %}<div class=palgrp>{{ title }}</div><div class=swatches>
+    {% for p in items %}<div class=sw><div class=chip style="background:{{ p.hex }}"></div><div class=nm>{{ p.name }}</div></div>{% endfor %}
+   </div>{% endif %}
+  {% endfor %}
+  {% if c.style_reference %}
+  <h3>Стилевой ориентир</h3>
+  <div class=ref>
+   <div class=refname>{{ c.style_reference.name }}</div>
+   {% if c.style_reference.match_axis_1_impression %}<p class=refline>По впечатлению: {{ c.style_reference.match_axis_1_impression }}</p>{% endif %}
+   {% if c.style_reference.match_axis_2_physical %}<p class=refline>По параметрам: {{ c.style_reference.match_axis_2_physical }}</p>{% endif %}
+  </div>{% endif %}
+ </div>
+</details>
+
+{% if c.shopping %}
+<details class=deep id=shopping>
+ <summary>Топ покупок под твою Формулу <span>{{ c.shopping|length }} приоритетов и ориентир по бюджету</span></summary>
+ <div class=deepbody>
+  <div class=shopfull>
+   {% for it in c.shopping %}
+   <div class=si>
+    <div class=sn>{{ it.item_name }}</div>
+    {% if it.closes_gap %}<div class=sy>{{ it.closes_gap }}</div>{% endif %}
+    {% if it.links %}<div class=sl>Найти: <a href="{{ it.links.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.links.lamoda }}" target=_blank rel=noopener>Lamoda</a> · <a href="{{ it.links.ozon }}" target=_blank rel=noopener>Ozon</a></div>{% endif %}
+   </div>
    {% endfor %}
   </div>
-  <div class=combotitle>{{ combo.title }}</div>
+  {% if c.budget and c.budget.min %}<p style="margin-top:12px;color:var(--muted)">Ориентир по бюджету: {{ '{:,}'.format(c.budget.min).replace(',',' ') }}–{{ '{:,}'.format(c.budget.max).replace(',',' ') }} ₽{% if c.budget.note %} · {{ c.budget.note }}{% endif %}</p>{% endif %}
  </div>
- {% endfor %}
-</div>
+</details>
 {% endif %}
 
-{% elif c.visual_capsule %}
- {% for grp in c.visual_capsule %}
- <div class=capslot><span class=capslotname>{{ grp.slot }}</span></div>
- <div class=caps>
-  {% for it in grp['items'] %}{% if it.url %}<a class="capitem capcard" href="{{ it.url }}" target=_blank rel=noopener>{% else %}<div class="capitem capcard">{% endif %}
-   {% if it.image %}<img class=capthumb src="{{ it.image }}" alt="{{ it.name }}">{% endif %}
-   <div class=capmeta><b>{{ it.name }}</b>{% if it.brand %}<div class=capbrand>{{ it.brand }}</div>{% endif %}{% if it.price %}<div class=capprice>{{ '{:,}'.format(it.price).replace(',',' ') }} ₽</div>{% endif %}</div>
-  {% if it.url %}</a>{% else %}</div>{% endif %}{% endfor %}
+{% if c.stop_list or c.stop_colors %}
+<details class=deep id=stoplist>
+ <summary>Стоп-лист целиком <span>что гасит тебя и почему</span></summary>
+ <div class=deepbody>
+  {% if c.stop_colors %}
+  <h3>Стоп-цвета</h3>
+  <div class=swatches>
+   {% for p in c.stop_colors %}<div class=sw><div class=chip style="background:{{ p.hex }}"></div><div class=nm><b>{{ p.name }}</b><br>{{ p.why }}</div></div>{% endfor %}
+  </div>{% endif %}
+  {% if c.stop_list %}<h3>Что не носить</h3><ul class="clean stop">{% for s in c.stop_list %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
  </div>
- {% endfor %}
-{% elif c.capsule_board %}
- {% for grp in c.capsule_board %}
- <div class=capslot><span class=capslotname>{{ grp.slot }}</span></div>
- <div class=caps>
-  {% for it in grp['items'] %}<div class=capitem>
-   {% if it.color and it.color.hex %}<span class=capdot style="background:{{ it.color.hex }}"></span>{% endif %}
-   <div><b>{{ it.name }}</b>{% if it.role == 'base' %} <span class=captag>база</span>{% endif %}{% if it.why %}<br><span class=capwhy>{{ it.why }}</span>{% endif %}</div>
-  </div>{% endfor %}
- </div>
- {% endfor %}
-{% else %}
-<div class=caps>
- {% for it in c.base_capsule %}<div class=capitem>
-  {% if it.color and it.color.hex %}<span class=capdot style="background:{{ it.color.hex }}"></span>{% endif %}
-  <div><b>{{ it.name }}</b>{% if it.role == 'base' %} <span class=captag>база</span>{% endif %}{% if it.why %}<br><span class=capwhy>{{ it.why }}</span>{% endif %}</div>
- </div>{% endfor %}
-</div>{% endif %}{% endif %}
+</details>
+{% endif %}
 
-<!-- ═══════ БЛОК 6 · ЧТО КУПИТЬ ═══════ -->
-{% if c.shopping or c.style_reference or c.stop_list %}<div class=blocklead><b>06</b>Что купить</div>{% endif %}
-{% if c.shopping %}<h2 id=shopping>Топ покупок под твою Формулу</h2>
-<div class=shop>
- {% for it in c.shopping %}<div class=shopitem>
-  <div class=shopname>{{ it.item_name }}</div>
-  {% if it.closes_gap %}<div class=shopwhy>{{ it.closes_gap }}</div>{% endif %}
-  {% if it.links %}<div class=shoplinks>Найти: <a href="{{ it.links.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.links.lamoda }}" target=_blank rel=noopener>Lamoda</a> · <a href="{{ it.links.ozon }}" target=_blank rel=noopener>Ozon</a></div>{% endif %}
- </div>{% endfor %}
-</div>
-{% if c.budget and c.budget.min %}<p class=meta>Ориентир по бюджету: {{ '{:,}'.format(c.budget.min).replace(',',' ') }}–{{ '{:,}'.format(c.budget.max).replace(',',' ') }} ₽{% if c.budget.note %} · {{ c.budget.note }}{% endif %}</p>{% endif %}{% endif %}
-
-{% if c.style_reference %}<h2>Стилевой ориентир</h2>
-<div class=ref>
- <div class=refname>{{ c.style_reference.name }}</div>
- {% if c.style_reference.match_axis_1_impression %}<p class=refline>По впечатлению: {{ c.style_reference.match_axis_1_impression }}</p>{% endif %}
- {% if c.style_reference.match_axis_2_physical %}<p class=refline>По параметрам: {{ c.style_reference.match_axis_2_physical }}</p>{% endif %}
-</div>{% endif %}
-
-{% if c.stop_list %}<h2>Стоп-лист — что не носить</h2>
-<ul class="clean stop">{% for s in c.stop_list %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
-
-<button class=print id=pdfbtn onclick="downloadPdf()">Скачать PDF к шкафу</button>
-
-{# Следующий шаг: из разовой Карты — в живой кабинет «Стиль каждый день» #}
-<div class=nextstep>
- <div class=nsbody>
-  <div class=nseyebrow>Шаг 2 · Что дальше</div>
-  <div class=nstitle>Стиль каждый день</div>
-  {# Не повторяем функции Карты, а объясняем, чем кабинет её ПРОДОЛЖАЕТ: та же формула и та же
-     капсула-ядро, но в ежедневных решениях. По бизнес-логике второй тариф не пересоздаёт
-     формулу — он применяет её. #}
-  <p class=nstext>Карта дала формулу и капсулу-ядро — это фундамент, он собран один раз. Кабинет ничего не пересобирает заново: он берёт то же ядро и превращает его в ежедневные решения.</p>
-  <div class=nslist>
-   <div class=nsitem><b>Образ дня</b><span>что надеть сегодня — под роль, погоду и твою капсулу</span></div>
-   <div class=nsitem><b>Активная сезонная капсула</b><span>ядро из Карты расширяется под сезон</span></div>
-   <div class=nsitem><b>Брать / не брать</b><span>проверка вещи по фото до покупки</span></div>
-   <div class=nsitem><b>Трекер разрыва</b><span>видно, как образ догоняет тебя</span></div>
-  </div>
-  <a class=nsbtn href="/cabinet">Открыть живой кабинет →</a>
- </div>
-</div>
-
-<div id=fbblock style="margin-top:38px;padding:22px;border:1px solid var(--line,#e3dccf);border-radius:14px;background:#fff">
+<div class=fbblock id=fbblock>
 {% if thanks %}
-  <p style="margin:0;font-size:16px">Спасибо. Твой отзыв записан — он помогает делать Карту точнее.</p>
+ <p style="margin:0;font-size:15px">Спасибо. Твой отзыв записан — он помогает делать Карту точнее.</p>
 {% else %}
-  <h2 style="margin:0 0 4px">Как тебе Карта?</h2>
-  <p style="margin:0 0 14px;color:var(--muted,#6b645c);font-size:14px">Оцени и напиши пару слов — что откликнулось, чего не хватило.</p>
-  <form method=post action="/card/feedback">
-   <div style="display:flex;gap:10px;margin-bottom:12px">
-    {% for n in [1,2,3,4,5] %}<label style="display:inline-flex;align-items:center;gap:5px;font-size:14px"><input type=radio name=rating value="{{ n }}" style="width:auto">{{ n }}</label>{% endfor %}
-   </div>
-   <textarea name=text rows=3 placeholder="Что откликнулось, чего не хватило?" style="width:100%;padding:11px 13px;border:1px solid #d9d2c7;border-radius:10px;font:inherit;font-size:15px"></textarea>
-   <button type=submit style="margin-top:12px;padding:12px 24px;background:var(--wine,#5D2230);color:#fff;border:0;border-radius:10px;font:inherit;font-size:15px;cursor:pointer">Отправить отзыв</button>
-  </form>
+ <h2>Как тебе Карта?</h2>
+ <p class=h>Оцени и напиши пару слов — что откликнулось, чего не хватило.</p>
+ <form method=post action="/card/feedback">
+  <div style="display:flex;gap:10px;margin-bottom:12px">
+   {% for n in [1,2,3,4,5] %}<label style="display:inline-flex;align-items:center;gap:5px;font-size:14px"><input type=radio name=rating value="{{ n }}" style="width:auto">{{ n }}</label>{% endfor %}
+  </div>
+  <textarea name=text rows=3 placeholder="Что откликнулось, чего не хватило?"></textarea>
+  <button type=submit>Отправить отзыв</button>
+ </form>
 {% endif %}
 </div>
-</div>
+
+</div></div>
 <script>
-// (html2pdf убран — печатаем через браузер, см. downloadPdf ниже)
 function downloadPdf(){
-  // Печать браузера вместо html2canvas. html2canvas снимал всю Карту в ОДНУ картинку: на
-  // мобильных переполнял canvas и отдавал пустые кремовые страницы (то, что скачивала клиентка),
-  // а где работал — текст был растровый, нечёткий, невыделяемый. Браузерная печать даёт
-  // НАСТОЯЩИЙ PDF: векторный текст, стабильно на любом устройстве. @media print скрывает
-  // навигацию/кнопки/форму отзыва. Клиентка выбирает «Сохранить как PDF» в диалоге печати.
-  // Ждём декодирования крупных фото-образов (data-URL), иначе часть не попадёт в печать.
-  var imgs=Array.prototype.slice.call(document.querySelectorAll('.wrap img'));
+  // Печать браузера вместо html2canvas: даёт НАСТОЯЩИЙ PDF с векторным текстом на любом
+  // устройстве. @media print разворачивает дашборд в один поток и раскрывает разделы «разбор»,
+  // поэтому в файл попадает вся Карта, а не только видимая панель.
+  document.querySelectorAll('details.deep').forEach(function(d){ d.open = true; });
+  var imgs=Array.prototype.slice.call(document.querySelectorAll('img'));
   var waits=imgs.map(function(img){
     if(img.complete && img.naturalWidth>0) return img.decode?img.decode().catch(function(){}):Promise.resolve();
     return new Promise(function(res){ img.onload=function(){ (img.decode?img.decode().catch(function(){}):Promise.resolve()).then(res); }; img.onerror=res; });
@@ -1177,8 +1271,20 @@ function downloadPdf(){
     Promise.all(waits).then(go, go);
   }, go);
 }
+// Ссылки «Как повысить индекс», «Показать все» и т.п. ведут в свёрнутый раздел — раскрываем его,
+// иначе клик по якорю прокручивает к закрытому заголовку и выглядит как сломанная ссылка.
+document.addEventListener('click', function(e){
+  var a = e.target.closest && e.target.closest('a[href^="#"]');
+  if(!a) return;
+  var t = document.querySelector(a.getAttribute('href'));
+  if(!t) return;
+  var d = t.closest('details');
+  if(d) d.open = true;
+  var dp = t.tagName === 'DETAILS' ? t : null;
+  if(dp) dp.open = true;
+});
 </script>
-</div></div></body></html>"""
+</body></html>"""
 
 
 # Экран «нужна диагностика». Раньше /card и /cabinet молча редиректили на квиз с ?fresh=1 —
@@ -1952,386 +2058,430 @@ def _inline_capsule_images(board: list, max_side: int = 640, timeout: float = 4.
 
 
 CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
-<meta name=viewport content="width=device-width, initial-scale=1"><title>Мой гардероб</title>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Стиль каждый день</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
- :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
- *{box-sizing:border-box} body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
- .wrap{max-width:1120px;margin:0 auto;padding:30px 26px 80px}
- .top{display:flex;justify-content:space-between;align-items:center} .logo{font-family:'Cormorant Garamond',serif;font-size:22px} .top a{color:var(--muted);font-size:14px;text-decoration:none;margin-left:16px}
- h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:38px;margin:20px 0 2px}
- .sub{color:var(--muted);margin:0} .sub .gap{color:var(--wine);font-weight:600}
- .pageintro{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin:18px 0 18px}
- .pagecard{background:linear-gradient(135deg,#fff,#fbf6ec);border:1px solid var(--line);border-radius:22px;padding:22px 24px;box-shadow:0 12px 30px rgba(31,22,20,.04)}
- .pageeyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine)}
- .pagetitle{font-family:'Cormorant Garamond',serif;font-size:32px;line-height:1.04;margin:8px 0 10px;color:var(--ink)}
- .pagecopy{font-size:15px;color:#4e473f;line-height:1.6}
- .pagechips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
- .pagechips span{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted)}
- .weatherbox{margin-top:16px;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:#fff}
- .weathernow{display:flex;align-items:baseline;gap:10px}
- .weathernow b{font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--wine)}
- .weathernow span{font-size:13px;color:var(--muted)}
- .weatheradvice{margin:8px 0 0;font-size:14px;color:#4e473f;line-height:1.55}
- .weatherlayer{margin-top:8px;font-size:13px;color:var(--muted)}
- .weatherlayer b{color:var(--ink)}
- .cityform{display:flex;gap:8px;margin-top:12px}
- .cityform input{flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:14px;background:#fff}
- .cityform button{padding:9px 16px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:inherit;font-size:13px;cursor:pointer}
- .todaylook{display:flex;gap:14px;margin:14px 0 4px}
- .todaylook img{width:132px;height:176px;object-fit:cover;border-radius:14px;border:1px solid var(--line);flex:0 0 auto}
- .todaylookmeta{display:flex;flex-direction:column;justify-content:center;gap:6px}
- .todaylookscn{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--wine);text-transform:capitalize}
- .todaylookdesc{margin:0;font-size:13px;color:#4e473f;line-height:1.5}
- .todaylooklayer{font-size:12px;color:var(--muted)}
- @media(max-width:520px){.todaylook{flex-direction:column}.todaylook img{width:100%;height:auto}}
- .pagefacts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
- .pagefact{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 15px}
- .pagefact-k{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
- .pagefact-v{font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.02;color:var(--wine);margin-top:7px}
- .pagefact-s{font-size:13px;color:#5f564d;margin-top:4px;line-height:1.4}
- h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:26px;margin:34px 0 4px}
- .hint{color:var(--muted);font-size:14px;margin:2px 0 14px}
- .seasons{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
- .seasons a{padding:8px 15px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--ink);text-decoration:none;background:#fff}
+ /* ── Кабинет «Стиль каждый день»: тот же дашборд-каркас, что и Карта (макет 19.07.2026).
+    Карта отвечает на «кто я по стилю», кабинет — на «что мне делать с этим сегодня»: слева
+    конструктор капсулы, справа образ на сегодня, ниже — AI-помощник и докупки. #2 тариф
+    ничего не пересобирает: он берёт формулу и ядро из Карты и применяет их. */
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--wine2:#7A2438;--muted:#6b645c;
+       --line:#e6dfd2;--sand:#F3ECDF;--soft:#FBF6EC;--violet:#5B4B8A}
+ *{box-sizing:border-box}
+ body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;margin:0;
+      background:var(--cream);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+ .shell{display:grid;grid-template-columns:228px 1fr;min-height:100vh}
+
+ /* ── левая колонка (общий каркас с Картой) ───────────────────────────────────────────── */
+ .side{background:var(--sand);border-right:1px solid var(--line);padding:24px 16px 22px;
+       display:flex;flex-direction:column;gap:22px;position:sticky;top:0;align-self:start;height:100vh}
+ .sidelogo{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;line-height:1.12;padding:0 8px}
+ .sidelogo span{display:block;font-family:Onest,sans-serif;font-size:9px;letter-spacing:.17em;
+                text-transform:uppercase;color:var(--muted);margin-top:5px;font-weight:400}
+ .sidenav{display:flex;flex-direction:column;gap:2px}
+ .sidenav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:11px;
+            color:#4e473f;text-decoration:none;font-size:14px;transition:background .12s,color .12s}
+ .sidenav a svg{flex:0 0 auto;width:17px;height:17px;stroke:currentColor;fill:none;
+                stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
+ .sidenav a:hover{background:rgba(255,255,255,.65)}
+ .sidenav a.on{background:var(--wine);color:#fff} .sidenav a.on svg{opacity:1}
+ .sidetariff{margin-top:auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px 16px}
+ .st-k{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+ .st-n{font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;line-height:1.15;color:var(--wine);margin:5px 0 4px}
+ .st-d{font-size:12px;color:var(--muted);line-height:1.4} .st-d b{color:#4e473f;font-weight:500}
+ .sidetariff a{display:block;margin-top:12px;text-align:center;padding:9px;border:1px solid var(--line);
+               border-radius:10px;color:var(--wine);text-decoration:none;font-size:12.5px}
+ .sidetariff a:hover{border-color:var(--wine)}
+
+ /* ── рабочая область ─────────────────────────────────────────────────────────────────── */
+ .main{padding:22px 26px 60px;min-width:0}
+ .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 20px}
+ .ph{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;line-height:1.15;margin:0;
+     display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+ .ph .tag{font-family:Onest,sans-serif;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+          color:var(--violet);background:#F1EEF8;border:1px solid #ddd6ee;border-radius:999px;padding:3px 10px}
+ .ph .more{margin-left:auto;font-family:Onest,sans-serif;font-size:12px;color:var(--wine);
+           text-decoration:none;font-weight:400;white-space:nowrap}
+ .psub{font-size:12px;color:var(--muted);margin:4px 0 0;line-height:1.45}
+ .secttl{font-family:'Cormorant Garamond',Georgia,serif;font-size:25px;margin:26px 0 4px;line-height:1.1}
+ .hint{color:var(--muted);font-size:13px;margin:2px 0 12px}
+
+ /* шапка профиля */
+ .profbar{display:flex;align-items:center;gap:15px;background:#fff;border:1px solid var(--line);
+          border-radius:18px;padding:14px 18px;margin-bottom:16px;flex-wrap:wrap}
+ .profav{width:54px;height:54px;border-radius:50%;background:var(--wine);color:#fff;display:flex;
+         align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;
+         font-size:24px;flex:0 0 auto}
+ .profname{font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;line-height:1.1}
+ .proff{font-size:14px;color:var(--muted)}
+ .proff b{color:var(--wine2);font-weight:400;font-family:'Cormorant Garamond',Georgia,serif;font-size:16px}
+ .profchips{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+ .profchip{display:flex;align-items:center;gap:9px;background:var(--soft);border:1px solid var(--line);
+           border-radius:13px;padding:7px 15px}
+ .profchip .pi{font-size:15px;line-height:1}
+ .profchip .pk{font-size:11px;color:var(--muted);display:block}
+ .profchip .pv{font-size:13.5px;color:var(--ink);display:block}
+ .profedit{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:11px;
+           padding:10px 15px;font-size:13px;color:#4e473f;text-decoration:none;background:#fff}
+ .profedit:hover{border-color:var(--wine);color:var(--wine)}
+
+ /* ── ряд 1: конструктор капсулы + образ на сегодня ───────────────────────────────────── */
+ .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+ .seasons{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 0}
+ .seasons a{padding:6px 13px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;
+            color:var(--ink);text-decoration:none;background:var(--soft)}
  .seasons a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
  .seasons a.notbuilt:not(.on){color:var(--muted);border-style:dashed}
- /* Планировщик недели: собери образ на каждый день, он сохраняется в браузере. Точка на кнопке —
-    день с собранным образом. */
- .weekplan{margin:6px 0 4px}
- .wplabel{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
- .weekdays{display:flex;flex-wrap:wrap;gap:8px}
- .wd{position:relative;width:46px;height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-size:14px;cursor:pointer;transition:all .12s}
- .wd:hover{border-color:var(--wine)}
- .wd.on{background:var(--wine);color:#fff;border-color:var(--wine)}
- .wd.filled::after{content:'';position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--wine)}
- .wd.on.filled::after{background:#fff}
- .build{margin-top:10px}
- /* По-слотная раскладка: целевая ячейка лука и вещи ЭТОГО слота на одной строке. Раньше вещи и
-    ячейки были в разных колонках — обувь внизу списка, а её слот вверху: тащить через всю
-    страницу. Теперь вещь и её слот рядом, перенос короткий. */
- .lookrows{background:#fff;border:1px solid var(--line);border-radius:16px;padding:6px 18px}
- .lookrow{display:grid;grid-template-columns:210px 1fr;gap:16px;align-items:start;padding:14px 0;border-bottom:1px solid var(--line)}
- .lookrow:last-child{border-bottom:0}
- @media(max-width:640px){.lookrow{grid-template-columns:1fr;gap:10px}}
- .slotname{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine);margin:0 0 7px}
- .items{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:8px}
- .pitem{cursor:grab;border:1px solid #e3dccf;border-radius:10px;background:#fff;padding:5px;text-align:center;user-select:none;transition:all .12s}
- .pitem:hover{border-color:var(--wine)} .pitem.on{border-color:var(--wine);box-shadow:0 0 0 2px var(--wine)}
- .pitem img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;display:block;background:#f2ede3}
- .pitem .ph{width:100%;aspect-ratio:3/4;border-radius:6px;background:#efe8db}
- .pitem .pname{display:block;font-size:10.5px;color:#4a443c;margin-top:5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- .canvas{margin-top:16px}
- /* целевая ячейка слота — слева в строке; сюда клик/дроп вещи этого слота */
- .cell{display:flex;flex-direction:column;gap:6px;border:1.5px dashed #cdbfa6;border-radius:12px;padding:12px 14px;background:#fbf8f1;transition:all .12s;min-height:96px;position:sticky;top:14px}
+ .itemtoggle{display:flex;gap:7px;margin:12px 0 0}
+ .itemtoggle a{font-size:12.5px;padding:6px 13px;border:1px solid var(--line);border-radius:999px;
+               text-decoration:none;color:var(--ink);background:var(--soft)}
+ .itemtoggle a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
+ /* minmax(0,…), а не 1fr: у подписи вещи nowrap, и в обычном 1fr она задавала колонке
+    min-content — колонки разъезжались по ширине, а плитки прыгали по высоте. */
+ .slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:9px;margin-top:14px}
+ .pitem{cursor:grab;border:1px solid var(--line);border-radius:11px;background:#fff;padding:5px;
+        text-align:center;user-select:none;transition:border-color .12s,box-shadow .12s;display:block}
+ .pitem:hover{border-color:var(--wine)}
+ .pitem.on{border-color:var(--wine);box-shadow:0 0 0 2px rgba(93,34,48,.28)}
+ .pitem img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:7px;display:block;background:var(--sand)}
+ .pitem .ph0{width:100%;aspect-ratio:3/4;border-radius:7px;background:var(--sand);display:block}
+ .pitem .pname{display:block;font-size:10.5px;color:#4a443c;margin-top:5px;line-height:1.2;
+               white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .checks{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+ .checks div{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+ .checks i{flex:0 0 auto;width:14px;height:14px;border-radius:4px;background:var(--wine);color:#fff;
+           font-style:normal;font-size:9px;display:flex;align-items:center;justify-content:center}
+
+ /* образ на сегодня */
+ .todaygrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.8fr);gap:16px;margin-top:14px;align-items:start}
+ .cells{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ .cell{border:1.4px dashed #cdbfa6;border-radius:11px;padding:9px 11px;background:var(--soft);
+       min-height:76px;display:flex;flex-direction:column;gap:5px;transition:border-color .12s,background .12s}
  .cell.filled{border-style:solid;border-color:var(--wine);background:#fff}
  .cell.drop{border-color:var(--wine);background:#fdeee2}
- .cellslot{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
- .cellbody{display:flex;align-items:center;gap:9px;min-height:52px}
- .cellbody .thumb{width:38px;aspect-ratio:3/4;object-fit:cover;border-radius:5px;background:#f2ede3;flex:0 0 auto}
- /* название выбранной вещи — ОДНА строка с многоточием: в узкой ячейке 2 строки ломались в
-    столбик по слову. min-width:0 обязателен, иначе flex не даёт ellipsis сработать. */
- .cellval{font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0}
+ .cellslot{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+ .cellbody{display:flex;align-items:center;gap:8px;min-height:40px}
+ .cellbody .thumb{width:30px;aspect-ratio:3/4;object-fit:cover;border-radius:5px;background:var(--sand);flex:0 0 auto}
+ .cellval{font-size:11.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+          flex:1 1 auto;min-width:0}
  .cell.filled .cellval{font-weight:500}
- .cellbody .buy{font-size:11.5px;color:var(--wine);text-decoration:none;white-space:nowrap;flex:0 0 auto;align-self:flex-start}
- .itemtoggle{display:flex;gap:8px;margin:0 0 12px} .itemtoggle a{font-size:13px;padding:6px 13px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--ink);background:#fff}
- .itemtoggle a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
- .ctrls{display:flex;gap:10px;align-items:center;margin-top:12px}
- .ctrls button{font:inherit;font-size:14px;padding:9px 15px;border-radius:9px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--wine)}
- .ctrls .cnt{color:var(--muted);font-size:13px}
- .pal{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 2px}
- .pal .c{width:34px;height:34px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
- .palgrp{margin:14px 0 0;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--wine)}
- .palhint{display:block;text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--muted);margin-top:2px}
- .shop{display:flex;flex-direction:column;gap:10px;margin-top:6px} .shopitem{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 15px}
- .shopname{font-size:15.5px} .shopwhy{font-size:13px;color:var(--muted);margin:2px 0 0}
- .empty{color:var(--muted);font-size:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
- /* ── дашборд-хиро: сводка сверху (KPI + кольцо разрыва + трекер) ── */
- /* Премиальный обзор в 3 карточки (по мокапу «Моя карта стиля») */
- .ovgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0 4px}
- @media(max-width:820px){.ovgrid{grid-template-columns:1fr}}
- .ovcard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px;display:flex;flex-direction:column}
- .ovhead{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:14px}
- .ovring{display:flex;align-items:center;gap:16px;flex:1}
- .ovring .ring{width:118px;height:118px}
- .ovring .rn{font-size:34px}
- .ovtext{font-size:13.5px;line-height:1.5;color:var(--muted);margin:0}
- .ovlist{list-style:none;margin:0;padding:0;flex:1}
- .ovlist li{position:relative;padding:0 0 10px 26px;font-size:14px;line-height:1.4;color:var(--ink)}
- .ovlist li::before{content:'✓';position:absolute;left:0;top:0;color:var(--wine);font-weight:700}
- .ovlink{color:var(--wine);text-decoration:none;font-size:14px;margin-top:auto}
- .ovformula{flex:1;margin-bottom:12px}
- .ovfrow{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
- .ovfrow:last-child{border-bottom:0}
- .ovfn{flex:0 0 26px;height:26px;border-radius:50%;background:#fbf1f1;color:var(--wine);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
- .ovfv{font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--ink)}
- .ovchips{display:flex;flex-wrap:wrap;gap:6px}
- .ovchips .pc{font-size:11.5px;color:var(--muted);background:#fbf8f1;border:1px solid var(--line);border-radius:999px;padding:4px 10px}
- .ovchips .pc b{color:var(--ink);font-weight:500}
- .dash{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;background:#fff;
-  border:1px solid var(--line);border-radius:20px;padding:22px 24px;margin:18px 0 4px}
- .ring{position:relative;width:132px;height:132px;flex:0 0 auto}
- .ring svg{transform:rotate(-90deg)} .ring circle{transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)}
- .ring .rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
- .ring .rn{font-family:'Cormorant Garamond',serif;font-size:40px;line-height:1;color:var(--wine);font-weight:600}
- .ring .rl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:3px}
- .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
- .kpi{background:#fbf8f1;border:1px solid var(--line);border-radius:14px;padding:13px 15px}
- .kpi .kn{font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
- .kpi .kl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:6px;line-height:1.3}
- .kpi.wide{grid-column:1/-1;background:#fff}
- .kpi.wide .kn{font-size:20px}
- .delta{display:inline-block;background:#eef6ee;color:#3a5a3a;font-size:11.5px;padding:3px 9px;border-radius:999px;margin-left:8px;vertical-align:middle}
- .trk{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px 22px;margin:12px 0 4px}
- .trk .th{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
- .trk h2{margin:0} .trk .ts{color:var(--muted);font-style:italic;font-size:14px}
- .trow{display:flex;align-items:center;gap:12px;margin:11px 0;font-size:13px}
- .tdate{flex:0 0 132px;color:var(--muted)} .tdate b{color:var(--wine);font-weight:normal}
- .tbar{flex:1;height:12px;background:#efe8db;border-radius:999px;overflow:hidden}
+ .cellbody .buy{font-size:10.5px;color:var(--wine);text-decoration:none;white-space:nowrap;flex:0 0 auto}
+ .wbox{border:1px solid var(--line);border-radius:14px;padding:14px 15px;background:var(--soft)}
+ .wtemp{display:flex;align-items:baseline;gap:9px;margin-top:6px}
+ .wtemp b{font-family:'Cormorant Garamond',serif;font-size:32px;color:var(--wine);line-height:1}
+ .wk{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+ .wd0{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4}
+ .wrow2{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:12.5px;color:#4e473f}
+ .wrow2 b{color:var(--wine);font-weight:500}
+ .cityform{display:flex;gap:7px;margin-top:11px}
+ .cityform input{flex:1;min-width:0;padding:8px 11px;border:1px solid var(--line);border-radius:9px;
+                 font:inherit;font-size:12.5px;background:#fff}
+ .cityform button{padding:8px 13px;border:0;border-radius:9px;background:var(--wine);color:#fff;
+                  font:inherit;font-size:12px;cursor:pointer}
+ .ctrls{display:flex;gap:9px;align-items:center;margin-top:12px;flex-wrap:wrap}
+ .ctrls button{font:inherit;font-size:12.5px;padding:8px 14px;border-radius:9px;cursor:pointer;
+               border:1px solid var(--line);background:#fff;color:var(--wine)}
+ .ctrls .cnt{color:var(--muted);font-size:12px}
+ .weekdays{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+ .wd{position:relative;width:36px;height:32px;border:1px solid var(--line);border-radius:9px;
+     background:var(--soft);color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;transition:all .12s}
+ .wd:hover{border-color:var(--wine)}
+ .wd.on{background:var(--wine);color:#fff;border-color:var(--wine)}
+ .wd.filled::after{content:'';position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--wine)}
+ .wd.on.filled::after{background:#fff}
+ .btnviolet{display:inline-flex;align-items:center;gap:8px;margin-top:13px;background:var(--violet);
+            color:#fff;text-decoration:none;padding:11px 20px;border-radius:11px;font-size:12.5px;
+            letter-spacing:.06em;text-transform:uppercase}
+
+ /* ── ряд 2: AI-помощник + докупки ────────────────────────────────────────────────────── */
+ .row2b{display:grid;grid-template-columns:.8fr 1.2fr;gap:16px;margin-top:16px;align-items:start}
+ .helper{display:flex;flex-direction:column;gap:2px;margin-top:12px}
+ .hrow{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);
+       text-decoration:none;color:inherit}
+ .hrow:last-child{border-bottom:0}
+ .hico{flex:0 0 auto;width:30px;height:30px;border-radius:9px;background:#F1EEF8;color:var(--violet);
+       display:flex;align-items:center;justify-content:center;font-size:14px}
+ .hrow b{display:block;font-size:13.5px;font-weight:500}
+ .hrow span{display:block;font-size:11.5px;color:var(--muted);line-height:1.4;margin-top:2px}
+ .buygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:13px}
+ .buycard{border:1px solid var(--line);border-radius:13px;padding:12px 13px;background:var(--soft);
+          display:flex;flex-direction:column}
+ .buyname{font-size:13px;font-weight:500;line-height:1.3}
+ .buywhy{font-size:11.5px;color:var(--muted);line-height:1.4;margin:7px 0 0}
+ .buyok{margin-top:auto;padding-top:9px;font-size:11px;color:#3a5a3a;display:flex;align-items:center;gap:6px}
+ .buyok i{font-style:normal;color:#3a7a4a}
+ .buyfoot{margin-top:12px;font-size:12px;color:var(--wine)}
+ .buyfoot a{color:var(--wine);text-decoration:none}
+
+ /* ── ряд 3: четыре плитки возможностей ───────────────────────────────────────────────── */
+ .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px}
+ .tile{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 17px;
+       display:flex;flex-direction:column}
+ .tile .ti{width:30px;height:30px;border-radius:9px;background:#F1EEF8;color:var(--violet);
+           display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:10px}
+ .tile b{font-size:14px;font-weight:500}
+ .tile p{font-size:12px;color:var(--muted);line-height:1.45;margin:5px 0 12px}
+ .tile a{margin-top:auto;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+         color:var(--violet);text-decoration:none}
+
+ /* ── лента «кабинет продолжает Карту» ────────────────────────────────────────────────── */
+ .footband{display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#fff,#f6f3fb);
+           border:1px solid #e2dcef;border-radius:18px;padding:20px 24px;margin-top:18px;flex-wrap:wrap}
+ .footband .mono{flex:0 0 auto;width:44px;height:44px;border-radius:12px;background:#F1EEF8;
+                 color:var(--violet);display:flex;align-items:center;justify-content:center;font-size:19px}
+ .foottext b{display:block;font-size:14px;font-weight:500}
+ .foottext span{display:block;font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:3px;max-width:520px}
+ .footbtn{margin-left:auto;background:var(--violet);color:#fff;text-decoration:none;padding:13px 26px;
+          border-radius:11px;font-size:12.5px;letter-spacing:.07em;text-transform:uppercase}
+
+ /* ── секции ниже панели ──────────────────────────────────────────────────────────────── */
+ .trk{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 20px;margin-top:10px}
+ .trow{display:flex;align-items:center;gap:12px;margin:10px 0;font-size:12.5px}
+ .tdate{flex:0 0 128px;color:var(--muted)} .tdate b{color:var(--wine);font-weight:normal}
+ .tbar{flex:1;height:10px;background:#efe8db;border-radius:999px;overflow:hidden}
  .tfill{display:block;height:100%;background:linear-gradient(90deg,var(--wine),#8a3346);border-radius:999px;
-  width:0;transition:width 1s cubic-bezier(.22,1,.36,1)}
- .tval{flex:0 0 42px;text-align:right;font-variant-numeric:tabular-nums;color:var(--wine)}
- .tnote{font-size:13px;color:var(--muted);margin:10px 0 0;line-height:1.5}
- @media(max-width:680px){.dash{grid-template-columns:1fr;justify-items:center;text-align:center}
-  .kpis{grid-template-columns:1fr 1fr;width:100%} .tdate{flex-basis:96px}}
- @media(prefers-reduced-motion:reduce){.ring circle,.tfill{transition:none}}
- /* ── профиль-идентичность («стилевая ДНК») ── */
- .prof{display:flex;gap:18px;align-items:center;background:linear-gradient(135deg,#fff,#fbf6ec);
-  border:1px solid var(--line);border-radius:20px;padding:20px 22px;margin:6px 0 2px}
- .ava{flex:0 0 auto;width:64px;height:64px;border-radius:50%;background:var(--wine);color:#fff;
-  font-family:'Cormorant Garamond',serif;font-size:30px;display:flex;align-items:center;justify-content:center}
- .profmain{flex:1;min-width:0}
- .profform{font-family:'Cormorant Garamond',serif;font-size:24px;line-height:1.1;color:var(--ink)}
- .profchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
- .pc{font-size:12px;padding:4px 11px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:#fff}
- .pc b{color:var(--wine);font-weight:500}
- .want{font-size:13.5px;color:var(--muted);margin-top:10px;font-style:italic}
- .want b{color:var(--ink);font-style:normal}
-.nudge{display:flex;gap:12px;align-items:center;background:#fbf3e8;border:1px solid #e8d9c2;
- border-radius:14px;padding:12px 16px;margin:12px 0 2px;font-size:13.5px;color:#7a5b32}
-.nudge a{margin-left:auto;white-space:nowrap;background:var(--wine);color:#fff;text-decoration:none;
-  padding:8px 14px;border-radius:9px;font-size:13px;flex:0 0 auto}
-@media(max-width:680px){.prof{flex-direction:column;text-align:center}.profchips{justify-content:center}}
- .advice{background:linear-gradient(135deg,#fff,#fbf6ec);border:1px solid var(--line);border-radius:22px;padding:22px 24px;margin:16px 0 4px;box-shadow:0 12px 30px rgba(31,22,20,.04)}
- .advice .ae{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine)}
- .advice .at{font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.05;margin:8px 0 10px}
- .advice .ab{font-size:15px;color:#4a443c;max-width:760px}
- .advice .ac{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
- .advice .ac span{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted)}
- .advice .aa{display:inline-block;margin-top:16px;background:var(--wine);color:#fff;text-decoration:none;padding:11px 18px;border-radius:10px;font-size:14px}
- .todaygrid{display:grid;grid-template-columns:1.2fr .9fr;gap:16px;margin:16px 0 6px}
- .todaycard,.weekcard{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px 24px;box-shadow:0 10px 28px rgba(31,22,20,.035)}
- .tk{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--wine)}
- .tt{font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1.05;margin:8px 0 10px}
- .tsub{font-size:14px;color:#5a5246}
- .tchips,.wkchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
- .tchips span,.wkchips span{font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:#fbf8f1;color:var(--muted)}
- .tcta{display:inline-block;margin-top:16px;background:var(--wine);color:#fff;text-decoration:none;padding:11px 18px;border-radius:10px;font-size:14px}
- .weeklist{display:grid;gap:10px}
- .wrow{display:grid;grid-template-columns:58px auto 1fr;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
- .wimg{width:64px;height:86px;object-fit:cover;border-radius:10px;border:1px solid var(--line);display:block}
- .minegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin:12px 0 8px}
+        width:0;transition:width 1s cubic-bezier(.22,1,.36,1)}
+ .tval{flex:0 0 40px;text-align:right;font-variant-numeric:tabular-nums;color:var(--wine)}
+ .tnote{font-size:12.5px;color:var(--muted);margin:10px 0 0;line-height:1.5}
+ .miles{display:flex;flex-wrap:wrap;gap:9px;margin:10px 0 4px}
+ .mile{flex:1;min-width:110px;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+ .mile .mn{font-family:'Cormorant Garamond',serif;font-size:24px;line-height:1;color:var(--ink);
+           font-variant-numeric:tabular-nums}
+ .mile .mn.win{color:#3a5a3a}
+ .mile .ml{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:5px}
+ .roles3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+ .role3{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+ .roleimg{aspect-ratio:4/5;overflow:hidden;background:var(--sand)}
+ .roleimg img{width:100%;height:100%;object-fit:cover;display:block}
+ .rolebody{padding:13px 15px}
+ .role3 .rb{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine)}
+ .role3 .rn{font-family:'Cormorant Garamond',serif;font-size:18px;line-height:1.15;margin:5px 0 8px}
+ .role3 ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+ .role3 li{font-size:12px;color:var(--muted);line-height:1.3}
+ .role3 li::before{content:"— ";color:var(--wine)}
+ .minegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
  .mineitem{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;position:relative}
- .mineslot{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--wine)}
- .minename{font-size:15px;margin:5px 0 4px;line-height:1.4}
- .mineverdict{font-size:12px;color:var(--muted)}
+ .mineslot{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--wine)}
+ .minename{font-size:14px;margin:5px 0 4px;line-height:1.4}
+ .mineverdict{font-size:11.5px;color:var(--muted)}
  .mineremove{position:absolute;top:10px;right:12px;margin:0}
- .mineremove button{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline}
- .wrow:last-child{border-bottom:0;padding-bottom:0}
- .wday{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--wine);padding-top:2px}
- .wrole{font-size:15px;color:var(--ink)}
- .wtext{font-size:13px;color:var(--muted);margin-top:2px;line-height:1.45}
- @media(max-width:820px){.todaygrid{grid-template-columns:1fr}}
- /* ── отзыв клиентки ── */
- .fb{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-top:14px}
- .fb h2{margin:0 0 4px} .fb p.h{color:var(--muted);font-size:14px;margin:0 0 14px}
+ .mineremove button{border:0;background:none;color:var(--muted);font:inherit;font-size:11.5px;
+                    cursor:pointer;text-decoration:underline}
+ .nudge{display:flex;gap:12px;align-items:center;background:#fbf3e8;border:1px solid #e8d9c2;
+        border-radius:14px;padding:12px 16px;margin-top:14px;font-size:13px;color:#7a5b32;flex-wrap:wrap}
+ .nudge a{margin-left:auto;white-space:nowrap;background:var(--wine);color:#fff;text-decoration:none;
+          padding:8px 14px;border-radius:9px;font-size:12.5px}
+ .empty{color:var(--muted);font-size:13px;background:#fff;border:1px solid var(--line);
+        border-radius:12px;padding:16px}
+ .fb{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-top:16px}
+ .fb h2{font-family:'Cormorant Garamond',serif;font-size:23px;margin:0 0 4px}
+ .fb p.h{color:var(--muted);font-size:13.5px;margin:0 0 14px}
  .stars{display:flex;gap:6px;margin-bottom:12px;flex-direction:row-reverse;justify-content:flex-end}
  .stars input{position:absolute;opacity:0;width:0;height:0}
- .stars label{font-size:26px;color:#d9cfbf;cursor:pointer;line-height:1;transition:color .12s}
+ .stars label{font-size:25px;color:#d9cfbf;cursor:pointer;line-height:1;transition:color .12s}
  .stars label:hover,.stars label:hover~label,.stars input:checked~label{color:#c8a24a}
- .fb textarea{width:100%;padding:11px 13px;border:1px solid #d9d2c7;border-radius:10px;font:inherit;font-size:15px;resize:vertical}
- .fb button{margin-top:12px;padding:12px 24px;background:var(--wine);color:#fff;border:0;border-radius:10px;font:inherit;font-size:15px;cursor:pointer}
- .fb .done{margin:0;font-size:16px;color:var(--ink)}
- /* ── роли недели ── */
- .roles3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 2px}
- .role3{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 26px rgba(31,22,20,.03)}
- /* фото сгенерированного образа на клиентке — вау-верх карточки роли (по мокапу) */
- .roleimg{aspect-ratio:4/5;overflow:hidden;background:#f2ede3}
- .roleimg img{width:100%;height:100%;object-fit:cover;display:block}
- .rolebody{padding:14px 16px;display:flex;flex-direction:column}
- .role3 .rb{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine)}
- .role3 .rn{font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.15;margin:5px 0 8px;color:var(--ink)}
- .role3 ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
- .role3 li{font-size:12.5px;color:var(--muted);line-height:1.3}
- .role3 li::before{content:"— ";color:var(--wine)}
- @media(max-width:820px){.pageintro{grid-template-columns:1fr}.pagefacts{grid-template-columns:1fr 1fr}}
- @media(max-width:680px){.roles3{grid-template-columns:1fr}.pagefacts{grid-template-columns:1fr}}
- /* ── прогресс-вехи ── */
- .miles{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 2px}
- .mile{flex:1;min-width:120px;background:#fbf8f1;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
- .mile .mn{font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
- .mile .mn.win{color:#3a5a3a} .mile .ml{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:5px}
- /* ── липкая навигация по секциям (как таб-бар приложения) ── */
- .cabnav{position:sticky;top:0;z-index:20;background:rgba(245,239,227,.92);backdrop-filter:blur(8px);
-  margin:0 -22px 8px;padding:10px 22px;border-bottom:1px solid var(--line);display:flex;gap:8px;
-  overflow-x:auto;-webkit-overflow-scrolling:touch}
- .cabnav a{flex:0 0 auto;font-size:13px;color:var(--muted);text-decoration:none;padding:6px 13px;
-  border-radius:999px;border:1px solid transparent;white-space:nowrap;transition:all .12s}
- .cabnav a:hover{color:var(--wine);border-color:var(--line);background:#fff}
- .sechead{scroll-margin-top:64px}
- /* ── карточка «Брать / не брать» ── */
- .checkc{display:flex;gap:18px;align-items:center;background:linear-gradient(135deg,#fff,#f7efe0);
-  border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-top:6px}
- .checkc .ico{flex:0 0 auto;width:56px;height:56px;border-radius:16px;background:var(--wine);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:26px}
- .checkc .ct{flex:1;min-width:0}
- .checkc .ctt{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);line-height:1.1}
- .checkc .cts{font-size:14px;color:var(--muted);margin-top:5px}
- .checkc .verd{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
- .checkc .vt{font-size:11.5px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
- .checkc a.go{flex:0 0 auto;background:var(--wine);color:#fff;text-decoration:none;padding:12px 20px;
-  border-radius:10px;font-size:14px;white-space:nowrap}
- @media(max-width:680px){.checkc{flex-direction:column;text-align:center}.checkc a.go{width:100%;text-align:center}}
-</style></head><body><div class=wrap>
-<div class=top><span class=logo>Чувство стиля</span><span><a href="/stylebook">Style Book</a><a href="/me">профиль</a><a href="/card">Карта</a><a href="/logout">выйти</a></span></div>
-<h1>Мой гардероб</h1>
-<div class=pageintro>
- <div class=pagecard>
-  <div class=pageeyebrow>Стиль каждый день</div>
-  <div class=pagetitle>Формула уже собрана — теперь она должна работать в обычной жизни.</div>
-  <p class=pagecopy>Этот кабинет не объясняет стиль заново, а помогает проживать его каждый день: утром, в магазине, по ходу недели и сезона.</p>
-  <div class=pagechips>
-   <span>образ дня</span>
-   <span>ритм недели</span>
-   <span>проверка по фото</span>
-   <span>капсула по сезонам</span>
-  </div>
-  {# Погода: совет «что надеть» бессмысленен без неё — в +25 и −10 капсула работает по-разному #}
-  {% if weather %}
-  <div class=weatherbox>
-   <div class=weathernow>
-    <b>{{ weather.temp }}°</b>
-    <span>{{ weather.city }} · {{ weather.description }}{% if weather.feels_like != weather.temp %} · ощущается {{ weather.feels_like }}°{% endif %}</span>
-   </div>
-   {% if dress %}<p class=weatheradvice>{{ dress.note }}</p>
-   <div class=weatherlayer>Сегодня поверх капсулы — <b>{{ dress.layer }}</b></div>{% endif %}
-   <form method=post action="/cabinet/city" class=cityform>
-    <input name=city value="{{ city }}" placeholder="Город" aria-label="Город">
-    <button type=submit>Обновить</button>
-   </form>
-  </div>
-  {% elif weather_on %}
-  <div class=weatherbox>
-   <p class=weatheradvice>Укажи город — и совет на день будет учитывать погоду: что надеть поверх капсулы и какую обувь взять.</p>
-   <form method=post action="/cabinet/city" class=cityform>
-    <input name=city value="{{ city }}" placeholder="Например: Санкт-Петербург" aria-label="Город">
-    <button type=submit>Сохранить</button>
-   </form>
+ .fb textarea{width:100%;padding:11px 13px;border:1px solid #d9d2c7;border-radius:10px;font:inherit;
+              font-size:14.5px;resize:vertical}
+ .fb button{margin-top:12px;padding:12px 24px;background:var(--wine);color:#fff;border:0;border-radius:10px;
+            font:inherit;font-size:14.5px;cursor:pointer}
+ .fb .done{margin:0;font-size:15px}
+
+ @media(max-width:1280px){.slotgrid{grid-template-columns:repeat(3,1fr)}.tiles{grid-template-columns:1fr 1fr}}
+ @media(max-width:1080px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:14px}
+  .sidenav{flex-direction:row;flex-wrap:wrap} .sidetariff{margin:0;flex:1 1 240px}
+  .row2,.row2b,.todaygrid{grid-template-columns:1fr}
+  .profchips{margin-left:0;width:100%}
+ }
+ @media(max-width:760px){
+  .main{padding:18px 16px 50px}
+  .buygrid,.roles3,.tiles{grid-template-columns:1fr}
+  .cells{grid-template-columns:1fr} .footbtn{margin-left:0;width:100%;text-align:center}
+ }
+ @media(prefers-reduced-motion:reduce){.tfill{transition:none}}
+</style></head><body>
+{% set fparts = (formula or '').split('×') %}
+<div class=shell>
+<div class=side>
+ <div class=sidelogo>Чувство стиля<span>твоя формула стиля</span></div>
+ <nav class=sidenav>
+  <a href="/card"><svg viewBox="0 0 20 20"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M2.5 8h15M8 8v8.5"/></svg>Моя карта стиля</a>
+  <a class=on href="#top"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>Стиль каждый день</a>
+  <a href="#wardrobe"><svg viewBox="0 0 20 20"><path d="M10 4.5a1.6 1.6 0 1 1 1.6 1.6c0 1-1.6 1.2-1.6 2.4"/><path d="M2.5 14.5 10 8.5l7.5 6v2h-15z"/></svg>Гардероб</a>
+  <a href="/card#capsule"><svg viewBox="0 0 20 20"><rect x="2.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.4"/></svg>Капсула</a>
+  <a href="#roles"><svg viewBox="0 0 20 20"><rect x="3" y="2.5" width="14" height="15" rx="2"/><circle cx="10" cy="7.5" r="2.2"/><path d="M5.5 16c1-2.6 2.6-4 4.5-4s3.5 1.4 4.5 4"/></svg>Образы</a>
+  <a href="#shopping"><svg viewBox="0 0 20 20"><path d="M4 6.5h12l-1 10.5H5z"/><path d="M7.2 6.5V5a2.8 2.8 0 0 1 5.6 0v1.5"/></svg>Покупки</a>
+  <a href="#roles"><svg viewBox="0 0 20 20"><circle cx="10" cy="6.5" r="3"/><path d="M3.5 17c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5"/></svg>Роли жизни</a>
+  <a href="#track"><svg viewBox="0 0 20 20"><path d="M3 17h14"/><rect x="4.5" y="10" width="3" height="5" rx=".8"/><rect x="9" y="6" width="3" height="9" rx=".8"/><rect x="13.5" y="3" width="3" height="12" rx=".8"/></svg>Отчёты</a>
+  <a href="#wardrobe-mine"><svg viewBox="0 0 20 20"><path d="M10 16.5S3.5 12.6 3.5 8.2A3.6 3.6 0 0 1 10 6a3.6 3.6 0 0 1 6.5 2.2c0 4.4-6.5 8.3-6.5 8.3z"/></svg>Избранное</a>
+ </nav>
+ <div class=sidetariff>
+  <div class=st-k>Тариф</div>
+  <div class=st-n>Стиль каждый день</div>
+  <div class=st-d>Ежедневная поддержка и умный гардероб{% if season_label %}<br><b>{{ season_label }}</b>{% endif %}</div>
+  <a href="/card">Вернуться в Карту</a>
+ </div>
+</div>
+
+<div class=main id=top>
+
+<div class=profbar>
+ <div class=profav>{{ (email or 'К')[0]|upper }}</div>
+ <div>
+  <div class=profname>Стиль каждый день</div>
+  <div class=proff><b>{{ formula }}</b></div>
+ </div>
+ <div class=profchips>
+  {% if season_label %}<div class=profchip><span class=pi>❦</span><span><span class=pk>Сезон</span><span class=pv>{{ season_label }}</span></span></div>{% endif %}
+  {% if colortype %}<div class=profchip><span class=pi>✦</span><span><span class=pk>Цветотип</span><span class=pv>{{ colortype }}</span></span></div>{% endif %}
+  {% if gap_now is not none %}<div class=profchip><span class=pi>◔</span><span><span class=pk>Разрыв</span><span class=pv>{{ gap_now }}%</span></span></div>{% endif %}
+  <a class=profedit href="/me">Профиль <span>✎</span></a>
+ </div>
+</div>
+
+{# ── ряд 1: конструктор капсулы · образ на сегодня ───────────────────────────────────── #}
+<div class=row2>
+
+ <div class=panel id=wardrobe>
+  <h2 class=ph>Конструктор капсулы<span class=tag>живой AI-кабинет</span></h2>
+  <p class=psub>Собери образ из своей капсулы: нажми или перетащи вещь в ячейку справа. Вещи настоящие — каждую можно купить.</p>
+  {% if season_tabs %}
+  <div class=seasons>
+   {% for s in season_tabs %}<a href="/cabinet?season={{ s.code }}" class="{{ 'on' if s.on else '' }}{{ ' notbuilt' if not s.built else '' }}" title="{{ 'капсула собрана' if s.built else 'подберётся из каталога' }}">{{ s.label }}</a>{% endfor %}
   </div>
   {% endif %}
+  <div class=itemtoggle>
+   <a href="/cabinet?items=6{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 6 else '' }}">Капсула 6 вещей</a>
+   <a href="/cabinet?items=12{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 12 else '' }}">Расширенная 12</a>
+  </div>
+  {% if board %}
+  <div class=slotgrid>
+   {% for grp in board %}{% for it in grp['items'] %}
+   <span class=pitem data-slot="{{ grp.slot }}" data-name="{{ it.name }}" data-img="{{ it.image or '' }}" data-url="{{ it.url or '' }}">
+    {% if it.image %}<img src="{{ it.image }}" alt="" loading=lazy>{% else %}<span class=ph0></span>{% endif %}
+    <span class=pname title="{{ it.name }}">{{ it.name }}</span>
+   </span>
+   {% endfor %}{% endfor %}
+  </div>
+  <div class=checks>
+   <div><i>✓</i>Перетаскивай вещи между ячейками</div>
+   <div><i>✓</i>Собирай образ на каждый день недели</div>
+   <div><i>✓</i>Вещи подобраны под твою Формулу и палитру</div>
+  </div>
+  {% else %}
+  <p class=empty style="margin-top:14px">Капсула ещё не собрана. <a href="/card">Собери Карту стиля</a> — вещи появятся здесь.</p>
+  {% endif %}
  </div>
- <div class=pagefacts>
-  <div class=pagefact>
-   <div class=pagefact-k>Формула</div>
-   <div class=pagefact-v>{{ formula }}</div>
-   <div class=pagefact-s>не новая диагностика, а твоя уже собранная основа</div>
-  </div>
-  <div class=pagefact>
-   <div class=pagefact-k>Капсула</div>
-   <div class=pagefact-v>{{ n_items }}</div>
-   <div class=pagefact-s>реальных вещей в активном сезоне</div>
-  </div>
-  <div class=pagefact>
-   <div class=pagefact-k>Покупки</div>
-   <div class=pagefact-v>{{ shopping|length if shopping else 0 }}</div>
-   <div class=pagefact-s>следующих шагов без случайных трат</div>
-  </div>
-  <div class=pagefact>
-   <div class=pagefact-k>Разрыв</div>
-   <div class=pagefact-v>{% if gap_now is not none %}{{ gap_now }}%{% else %}—{% endif %}</div>
-   <div class=pagefact-s>можно отслеживать не разово, а в динамике</div>
-  </div>
- </div>
-</div>
 
-{# ── профиль-идентичность: кто ты по стилю (наша «стилевая ДНК») ── #}
-<div class=prof>
- <div class=ava>{{ email[0]|upper }}</div>
- <div class=profmain>
-  <div class=profform>{{ formula }}</div>
-  <div class=profchips>
-   {% if colortype %}<span class=pc>Цветотип · <b>{{ colortype }}</b></span>{% endif %}
-   {% if figure %}<span class=pc>Силуэт · <b>{{ figure }}</b></span>{% endif %}
-   {% if season_label %}<span class=pc>Сезон · <b>{{ season_label }}</b></span>{% endif %}
-  </div>
-  {% if want_traits %}<div class=want>Ты хочешь считываться как <b>{{ want_traits|join(', ') }}</b> — на это работает вся капсула ниже.</div>{% endif %}
- </div>
-</div>
-
-{# ── навигация по секциям кабинета ── #}
-<nav class=cabnav>
- <a href="#dash">Обзор</a>
- {% if track %}<a href="#track">Трекер</a>{% endif %}
- {% if advice %}<a href="#advice">Совет недели</a>{% endif %}
- {% if weekview %}<a href="#today">Сегодня</a>{% endif %}
- {% if roles %}<a href="#roles">Роли недели</a>{% endif %}
- <a href="#wardrobe">Гардероб</a>
- <a href="#check">Брать / не брать</a>
- <a href="#shopping">Покупки</a>
- <a href="#review">Отзыв</a>
-</nav>
-
-{# ── дашборд: премиальный обзор в 3 карточки (по мокапу «Моя карта стиля») ── #}
-<div class=ovgrid id=dash>
-
- {# карточка 1 — разрыв стиля с кольцом #}
- <div class=ovcard>
-  <div class=ovhead>Разрыв стиля</div>
-  <div class=ovring>
-   <div class=ring>
-    <svg width=118 height=118 viewBox="0 0 132 132" aria-hidden=true>
-     <circle cx=66 cy=66 r=52 fill=none stroke="#efe8db" stroke-width=11></circle>
-     <circle id=gapRing cx=66 cy=66 r=52 fill=none stroke="var(--wine)" stroke-width=11
-       stroke-linecap=round stroke-dasharray=327
-       stroke-dashoffset="{{ 327 if gap_now is none else (327 * (1 - gap_now / 100.0))|round(1) }}"></circle>
-    </svg>
-    <div class=rc><span class=rn>{% if gap_now is not none %}{{ gap_now }}%{% else %}—{% endif %}</span><span class=rl>сейчас</span></div>
+ <div class=panel>
+  <h2 class=ph>Твой образ на сегодня</h2>
+  {% if weekview %}<p class=psub>{{ weekview['today']['body'] }}</p>{% endif %}
+  <div class=todaygrid>
+   <div>
+    <div class=cells>
+     {% for grp in board %}
+     <div class=cell data-cell="{{ grp.slot }}"><span class=cellslot>{{ grp.slot }}</span><span class=cellbody><span class=cellval>—</span></span></div>
+     {% endfor %}
+     {% if not board %}<p class=empty>Ячейки появятся вместе с капсулой.</p>{% endif %}
+    </div>
+    <div class=weekdays>
+     <button type=button class=wd data-day=mon>Пн</button>
+     <button type=button class=wd data-day=tue>Вт</button>
+     <button type=button class=wd data-day=wed>Ср</button>
+     <button type=button class=wd data-day=thu>Чт</button>
+     <button type=button class=wd data-day=fri>Пт</button>
+     <button type=button class=wd data-day=sat>Сб</button>
+     <button type=button class=wd data-day=sun>Вс</button>
+    </div>
+    <div class=ctrls><button type=button onclick=clearOutfit()>Очистить образ</button><span class=cnt>вещей: <b id=count>0</b></span></div>
    </div>
-   <p class=ovtext>{% if track and track.delta and track.delta > 0 %}Ты на правильном пути — разрыв сократился на {{ track.delta }} п.п. Ещё немного, и гардероб начнёт работать на тебя.{% else %}Здесь ты видишь, насколько образ совпадает с тем, как ты хочешь считываться. Ниже — что закрыть.{% endif %}</p>
-  </div>
- </div>
-
- {# карточка 2 — что закрывает разрыв (принципы метода) #}
- <div class=ovcard>
-  <div class=ovhead>Что закрывает разрыв</div>
-  <ul class=ovlist>
-   <li>Собери базу и ключевые вещи капсулы</li>
-   <li>Добавь акценты и фактуры из палитры</li>
-   <li>Держи силуэты под свою фигуру</li>
-   <li>Соблюдай цветовую гамму, избегай стоп-цветов</li>
-  </ul>
-  <a class=ovlink href="#wardrobe">Смотреть капсулу →</a>
- </div>
-
- {# карточка 3 — разбор формулы на компоненты #}
- <div class=ovcard>
-  <div class=ovhead>Твоя формула</div>
-  {% set parts = (formula or '').replace('×','|').split('|') %}
-  <div class=ovformula>
-   {% for p in parts %}{% if p.strip() %}<div class=ovfrow><span class=ovfn>{{ loop.index }}</span><span class=ovfv>{{ p.strip() }}</span></div>{% endif %}{% endfor %}
-  </div>
-  <div class=ovchips>
-   {% if colortype %}<span class=pc>Цветотип · <b>{{ colortype }}</b></span>{% endif %}
-   {% if season_label %}<span class=pc>Сезон · <b>{{ season_label }}</b></span>{% endif %}
+   <div>
+    <div class=wbox>
+     {% if weather %}
+     <div class=wk>Погода{% if weather.city %} в городе {{ weather.city }}{% endif %}</div>
+     <div class=wtemp><b>{{ weather.temp }}°</b><span class=wd0>{{ weather.description }}</span></div>
+     {% if dress %}<div class=wd0>{{ dress.note }}</div>{% endif %}
+     {% else %}
+     <div class=wk>Погода</div>
+     <p class=wd0>Укажи город — и образ на день будет учитывать, что надеть поверх капсулы.</p>
+     {% endif %}
+     <div class=wrow2>
+      {% if weekview %}Роль: <b>{{ weekview['today']['title'] }}</b><br>{% endif %}
+      {% if want_traits %}Настроение: <b>{{ want_traits[0] }}</b>{% endif %}
+      {% if dress %}<br>Поверх: <b>{{ dress.layer }}</b>{% endif %}
+     </div>
+     {% if weather_on %}
+     <form method=post action="/cabinet/city" class=cityform>
+      <input name=city value="{{ city }}" placeholder="Город" aria-label="Город">
+      <button type=submit>Обновить</button>
+     </form>
+     {% endif %}
+    </div>
+    <a class=btnviolet href="#roles">Смотреть другие образы</a>
+   </div>
   </div>
  </div>
 
 </div>
 
+{# ── ряд 2: AI-помощник · что докупить ───────────────────────────────────────────────── #}
+<div class=row2b>
+
+ <div class=panel>
+  <h2 class=ph>AI-помощник гардероба</h2>
+  <div class=helper>
+   <a class=hrow href="/garment"><span class=hico>✓</span><span><b>Брать или не брать</b><span>Проверка вещи по фото до покупки</span></span></a>
+   <a class=hrow href="#wardrobe"><span class=hico>▦</span><span><b>План недели</b><span>Готовые образы на неделю под роли, погоду и твоё время</span></span></a>
+   <a class=hrow href="/cabinet"><span class=hico>❋</span><span><b>Сезонные обновления</b><span>Микро-капсула и свежие идеи под текущий сезон</span></span></a>
+   <a class=hrow href="#track"><span class=hico>◔</span><span><b>Трекер разрыва</b><span>Видно, как образ догоняет то, какой ты себя хочешь</span></span></a>
+  </div>
+ </div>
+
+ <div class=panel id=shopping>
+  <h2 class=ph>Что докупить к капсуле<span class=tag>AI-подбор</span></h2>
+  <p class=psub>Точечные вещи, которые закрывают разрыв — под твою Формулу и сезон.</p>
+  {% if shopping %}
+  <div class=buygrid>
+   {% for it in shopping[:3] %}
+   <div class=buycard>
+    {# В покупках Карты поле называется item_name; шаблон читал it.name и печатал пустоту —
+       клиентка видела «почему подходит» без самой вещи. #}
+    <div class=buyname>{{ it.item_name or it.name }}</div>
+    {% if it.closes_gap %}<p class=buywhy>{{ it.closes_gap }}</p>{% endif %}
+    <div class=buyok><i>✓</i>Подходит к твоей капсуле и палитре</div>
+   </div>
+   {% endfor %}
+  </div>
+  <div class=buyfoot><a href="/card#shopping">Весь список покупок из Карты →</a></div>
+  {% else %}<p class=empty style="margin-top:12px">Лист покупок появится вместе с собранной Картой.</p>{% endif %}
+ </div>
+
+</div>
+
+{# ── ряд 3: что умеет кабинет ────────────────────────────────────────────────────────── #}
+<div class=tiles>
+ <div class=tile><span class=ti>◫</span><b>Конструктор образов</b><p>Создавай образы из своей капсулы. Все сочетания проверены под твою Формулу.</p><a href="#wardrobe">Открыть конструктор →</a></div>
+ <div class=tile><span class=ti>✓</span><b>Брать или не брать</b><p>Проверь любую покупку: подойдёт ли она по стилю, цветотипу и фигуре.</p><a href="/garment">Проверить вещь →</a></div>
+ <div class=tile><span class=ti>▦</span><b>План недели</b><p>Готовые образы на неделю под роли, погоду и твоё время.</p><a href="#roles">Посмотреть план →</a></div>
+ <div class=tile><span class=ti>❋</span><b>Сезонные обновления</b><p>Обновляем капсулу: добавляем актуальные вещи и убираем лишнее.</p><a href="#wardrobe">Посмотреть обновления →</a></div>
+</div>
+
+<div class=footband>
+ <div class=mono>✦</div>
+ <div class=foottext>
+  <b>Кабинет использует твою Формулу и капсулу из Карты стиля</b>
+  <span>Мы не пересобираем стиль заново — ты получаешь ежедневную поддержку, чтобы выглядеть уверенно без лишних трат и стресса.</span>
+ </div>
+ <a class=footbtn href="/card">Смотреть Карту стиля</a>
+</div>
+
+{# ── трекер разрыва ──────────────────────────────────────────────────────────────────── #}
 {% if track %}
-<div class=trk id=track>
- <div class=th><h2 class=sechead>Как закрывается разрыв</h2><span class=ts>измеримая трансформация</span></div>
+<h2 class=secttl id=track>Как закрывается разрыв</h2>
+<p class=hint>Измеримая трансформация: цифра двигается только от реального пере-замера.</p>
+<div class=trk>
  {% if milestones %}
  <div class=miles>
   <div class=mile><div class=mn>{{ milestones.start }}%</div><div class=ml>старт</div></div>
@@ -2348,9 +2498,9 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  </div>
  {% endfor %}
  {% if track.measurements < 2 %}
- <p class=tnote>Это точка отсчёта. Сделай пере-замер через время — увидишь, как разрыв закрывается. Он двигается только от настоящего замера: новых фото того, как ты одеваешься сейчас.</p>
+ <p class=tnote>Это точка отсчёта. Сделай пере-замер через время — увидишь, как разрыв закрывается.</p>
  {% else %}
- <p class=tnote>Разрыв закрывается — и это видно. Двигается он только от реального пере-замера, поэтому цифре можно верить.</p>
+ <p class=tnote>Разрыв закрывается, и это видно. Двигается он только от настоящего пере-замера, поэтому цифре можно верить.</p>
  {% endif %}
 </div>
 {% endif %}
@@ -2359,57 +2509,9 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=nudge><span>С последнего замера прошло {{ days_since }} дней. Пере-замер покажет, как разрыв закрылся за это время.</span><a href="/identity-scan-quiz.html?fresh=1">Сделать пере-замер</a></div>
 {% endif %}
 
-{% if advice %}
-<div class=advice id=advice>
- <div class=ae>Совет недели</div>
- <div class=at>{{ advice.title }}</div>
- <p class=ab>{{ advice.body }}</p>
- {% if advice.chips %}<div class=ac>{% for chip in advice.chips %}<span>{{ chip }}</span>{% endfor %}</div>{% endif %}
- <a class=aa href="{{ advice.cta_href }}">{{ advice.cta_label }}</a>
-</div>
-{% endif %}
-
-{% if weekview %}
-<div class=todaygrid id=today>
- <div class=todaycard>
-  <div class=tk>Образ дня</div>
-  <div class=tt>{{ weekview['today']['title'] }}</div>
-  {# Образ дня с ФОТО — берём готовый образ Карты, новую генерацию не запускаем #}
-  {% if look_today %}
-  <div class=todaylook>
-   <img src="{{ look_today.img }}" alt="Образ дня: {{ look_today.scenario }}">
-   <div class=todaylookmeta>
-    <div class=todaylookscn>{{ look_today.scenario }}</div>
-    {% if look_today.desc %}<p class=todaylookdesc>{{ look_today.desc }}</p>{% endif %}
-    {% if dress %}<div class=todaylooklayer>Поверх — {{ dress.layer }}</div>{% endif %}
-   </div>
-  </div>
-  {% endif %}
-  <p class=tsub>{{ weekview['today']['body'] }}</p>
-  {% if weekview['today']['items'] %}<div class=tchips>{% for item in weekview['today']['items'] %}<span>{{ item }}</span>{% endfor %}</div>{% endif %}
-  <a class=tcta href="#wardrobe">{{ weekview['today']['cta'] }}</a>
- </div>
- <div class=weekcard>
-  <div class=tk>Ритм недели</div>
-  <div class=weeklist>
-   {% for row in weekview['week'] %}
-   <div class=wrow>
-    <div class=wday>{{ row['day'] }}</div>
-    {% if row['img'] %}<img class=wimg src="{{ row['img'] }}" alt="{{ row['title'] }}">{% endif %}
-    <div>
-     <div class=wrole>{{ row['title'] }}</div>
-     <div class=wtext>{{ row['text'] }}</div>
-     {% if row['tags'] %}<div class=wkchips>{% for tag in row['tags'] %}<span>{{ tag }}</span>{% endfor %}</div>{% endif %}
-    </div>
-   </div>
-   {% endfor %}
-  </div>
- </div>
-</div>
-{% endif %}
-
+{# ── роли недели ─────────────────────────────────────────────────────────────────────── #}
 {% if roles %}
-<h2 class=sechead id=roles>Роли твоей недели</h2>
+<h2 class=secttl id=roles>Роли твоей недели</h2>
 <p class=hint>Одна капсула — разные роли твоего дня. Так формула работает под каждую жизненную ситуацию.</p>
 <div class=roles3>
  {% for r in roles %}
@@ -2425,10 +2527,10 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div>
 {% endif %}
 
-{# Личные вещи клиентки — то, что она забрала после проверки «брать / не брать» #}
+{# ── вещи, которые клиентка забрала после проверки «брать / не брать» ─────────────────── #}
 {% if mine %}
-<h2 class=sechead id=wardrobe-mine>Твои вещи</h2>
-<p class=sechint>Вещи, которые ты проверила и решила взять. Они учитываются, когда собираешь образ.</p>
+<h2 class=secttl id=wardrobe-mine>Твои вещи</h2>
+<p class=hint>Вещи, которые ты проверила и решила взять. Они учитываются, когда собираешь образ.</p>
 <div class=minegrid>
  {% for it in mine %}
  <div class=mineitem>
@@ -2444,100 +2546,12 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div>
 {% endif %}
 
-<h2 class=sechead id=wardrobe>Твой капсульный гардероб</h2>
-<p class=hint>Реальные вещи под твою Формулу и сезон — каждую можно купить. Ниже собери из них лук.</p>
-{% if season_tabs %}
-<div class=seasons>
- {% for s in season_tabs %}<a href="/cabinet?season={{ s.code }}" class="{{ 'on' if s.on else '' }}{{ ' notbuilt' if not s.built else '' }}" title="{{ 'капсула собрана' if s.built else 'подберётся из каталога' }}">{{ s.label }}</a>{% endfor %}
-</div>
-{% endif %}
-<h2>Конструктор образа</h2>
-<p class=hint>Собери лук из своей капсулы: перетащи или нажми вещь в каждый слот. Цвета берёшь из своей палитры — они выверены и сочетаются между собой. Вещи настоящие — каждую можно купить.</p>
-<div class=itemtoggle>
- <a href="/cabinet?items=6{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 6 else '' }}">Капсула 6 вещей</a>
- <a href="/cabinet?items=12{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 12 else '' }}">Расширенная 12</a>
-</div>
-<div class=weekplan>
- <span class=wplabel>Собери образ на день недели:</span>
- <div class=weekdays>
-  <button type=button class=wd data-day=mon>Пн</button>
-  <button type=button class=wd data-day=tue>Вт</button>
-  <button type=button class=wd data-day=wed>Ср</button>
-  <button type=button class=wd data-day=thu>Чт</button>
-  <button type=button class=wd data-day=fri>Пт</button>
-  <button type=button class=wd data-day=sat>Сб</button>
-  <button type=button class=wd data-day=sun>Вс</button>
- </div>
-</div>
-<div class=build>
- <div class=lookrows>
-  {% for grp in board %}
-  <div class=lookrow>
-   <div class=cell data-cell="{{ grp.slot }}"><span class=cellslot>{{ grp.slot }}</span><span class=cellbody><span class=cellval>—</span></span></div>
-   <div class=items>
-    {% for it in grp['items'] %}<span class=pitem data-slot="{{ grp.slot }}" data-name="{{ it.name }}" data-img="{{ it.image or '' }}" data-url="{{ it.url or '' }}">{% if it.image %}<img src="{{ it.image }}" alt="" loading=lazy>{% else %}<span class=ph></span>{% endif %}<span class=pname>{{ it.name }}</span></span>{% endfor %}
-   </div>
-  </div>
-  {% endfor %}
-  {% if not board %}<p class=empty>Капсула ещё не собрана. <a href="/card">Собери Карту стиля</a> — вещи появятся здесь.</p>{% endif %}
- </div>
- <div class=panel canvas>
-  <div class=ctrls><button type=button onclick=clearOutfit()>Очистить лук</button><span class=cnt>вещей в луке: <b id=count>0</b></span></div>
-  {% if palette %}
-  <div class=slotname style="margin:16px 0 6px">Твоя палитра</div>
-  {% set grouped = palette|selectattr('group')|list %}
-  {% if grouped %}
-   {# цвета разложены по роли: обещать «всё сочетается со всем» нельзя — акценты работают точечно #}
-   {% for grp, title, hint in [
-       ('base','База и нейтрали','основа гардероба — на них строится всё остальное'),
-       ('main','Основные','цветные вещи, спокойно сочетаются с базой'),
-       ('accent','Акценты','точечно: один акцент на образ, не больше')] %}
-    {% set items = palette|selectattr('group','equalto',grp)|list %}
-    {% if items %}
-    <div class=palgrp>{{ title }}<span class=palhint>{{ hint }}</span></div>
-    <div class=pal>{% for p in items %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>
-    {% endif %}
-   {% endfor %}
-   {# цвет с неожиданной ролью не должен молча исчезнуть с экрана #}
-   {% set rest = palette|rejectattr('group','in',['base','main','accent'])|list %}
-   {% if rest %}
-   <div class=palgrp>Ещё в палитре</div>
-   <div class=pal>{% for p in rest %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>
-   {% endif %}
-  {% else %}
-   {# старая Карта без ролей цветов — показываем как есть, без обещаний про сочетаемость #}
-   <div class=pal>{% for p in palette %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>
-  {% endif %}
-  {% endif %}
- </div>
-</div>
-
-<h2 class=sechead id=check>Брать или не брать?</h2>
-<p class=hint>Стоишь в магазине с вещью в руках — сфотографируй, и я скажу, работает ли она на твою Формулу.</p>
-<div class=checkc>
- <div class=ico>✓</div>
- <div class=ct>
-  <div class=ctt>Проверка вещи по фото</div>
-  <div class=cts>Оценю по твоему цветотипу, линиям фигуры и ядру стиля — до того, как ты потратишь деньги.</div>
-  <div class=verd><span class=vt>✓ Брать</span><span class=vt>↺ Подумай</span><span class=vt>✕ Оставь в магазине</span></div>
- </div>
- <a class=go href="/garment">Проверить вещь →</a>
-</div>
-
-<h2 class=sechead id=shopping>Лист покупок</h2>
-<p class=hint>Что докупить, чтобы закрыть разрыв — вещи под твою Формулу и сезон.</p>
-{% if shopping %}
-<div class=shop>
- {% for it in shopping %}<div class=shopitem><div class=shopname>{{ it.name }}</div>{% if it.closes_gap %}<div class=shopwhy>{{ it.closes_gap }}</div>{% endif %}</div>{% endfor %}
-</div>
-{% else %}<p class=empty>Лист покупок появится вместе с собранной Картой.</p>{% endif %}
-
 <div class=fb id=review>
 {% if thanks %}
  <p class=done>Спасибо. Твой отзыв записан — он помогает нам делать сервис точнее.</p>
 {% else %}
- <h2 class=sechead>Как тебе твой гардероб?</h2>
- <p class=h>Оцени и напиши пару слов — что откликнулось, чего не хватило. Это помогает нам и другим клиенткам.</p>
+ <h2>Как тебе твой гардероб?</h2>
+ <p class=h>Оцени и напиши пару слов — что откликнулось, чего не хватило.</p>
  <form method=post action="/card/feedback">
   <input type=hidden name=next value="/cabinet{% if sel_season %}?season={{ sel_season }}{% endif %}">
   <div class=stars>
@@ -2549,14 +2563,15 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% endif %}
 </div>
 
+</div></div>
 <script>
-// Планировщик недели (мини): образ хранится ПО ДНЯМ в браузере (localStorage), без сервера.
+// Планировщик недели: образ хранится ПО ДНЯМ в браузере (localStorage), без сервера.
 // outfit — всегда образ ТЕКУЩЕГО дня; переключение дня меняет, какой образ показан/редактируется.
 var byKey={}, week={}, curDay='mon';
 try { week = JSON.parse(localStorage.getItem('senseWeek') || '{}') || {}; } catch(e) { week={}; }
 function saveWeek(){ try { localStorage.setItem('senseWeek', JSON.stringify(week)); } catch(e){} }
 function dayOutfit(){ if(!week[curDay]) week[curDay]={}; return week[curDay]; }
-var outfit;  // ссылка на образ текущего дня, обновляется в setDay
+var outfit;
 document.querySelectorAll('.pitem').forEach(function(i){
  byKey[i.getAttribute('data-slot')+'|'+i.getAttribute('data-name')]={
   slot:i.getAttribute('data-slot'), name:i.getAttribute('data-name'),
@@ -2588,7 +2603,7 @@ function render(){
   var s=i.getAttribute('data-slot');
   i.classList.toggle('on', outfit[s] && outfit[s].name===i.getAttribute('data-name'));
  });
- document.getElementById('count').textContent=Object.keys(outfit).length;
+ var cnt=document.getElementById('count'); if(cnt) cnt.textContent=Object.keys(outfit).length;
 }
 function pickKey(key){ var o=byKey[key]; if(!o) return;
  if(outfit[o.slot] && outfit[o.slot].name===o.name){ delete outfit[o.slot]; } else { outfit[o.slot]=o; }
@@ -2603,27 +2618,23 @@ document.querySelectorAll('.pitem').forEach(function(i){
 document.querySelectorAll('.wd').forEach(function(b){
  b.addEventListener('click',function(){ setDay(b.getAttribute('data-day')); });
 });
-setDay(curDay);  // показать образ понедельника (или сохранённый) при загрузке
+setDay(curDay);
 document.querySelectorAll('[data-cell]').forEach(function(c){
  c.addEventListener('dragover',function(e){ e.preventDefault(); c.classList.add('drop'); });
  c.addEventListener('dragleave',function(){ c.classList.remove('drop'); });
  c.addEventListener('drop',function(e){ e.preventDefault(); c.classList.remove('drop');
   var key=e.dataTransfer.getData('text')||''; if(key.split('|')[0]===c.getAttribute('data-cell')) pickKey(key); });
 });
-// трекер и кольцо разрыва: анимируем от нуля к значению при загрузке. Значения уже проставлены
-// в разметке (корректны без JS) — стартуем с пустого и возвращаем к финалу, transition доигрывает.
+// Трекер: полосы анимируем от нуля к значению. Значения уже в разметке — корректны без JS.
 (function(){
- var ring=document.getElementById('gapRing'), fills=document.querySelectorAll('.tfill');
- var finalOff=ring?ring.style.strokeDashoffset:null;
- if(ring) ring.style.strokeDashoffset=327;               // пусто
+ var fills=document.querySelectorAll('.tfill');
  fills.forEach(function(b){ b.style.width='0%'; });
  requestAnimationFrame(function(){ requestAnimationFrame(function(){
-  if(ring) ring.style.strokeDashoffset=finalOff;         // → к значению
   fills.forEach(function(b){ b.style.width=(b.getAttribute('data-w')||0)+'%'; });
  }); });
 })();
 </script>
-</div></body></html>"""
+</body></html>"""
 
 
 def _look_of_the_day(card: dict, weather: dict | None = None) -> dict | None:
