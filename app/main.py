@@ -3749,6 +3749,10 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
     scenarios = list(_CARD_SCENARIOS)
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": seas["gen"],
                "scenarios": scenarios, "n_looks": 6, "price_segment": price_segment,
+               # Шаг колориста должен доехать до образов: без этого Карта показывала одну
+               # палитру, а образы собирались в других цветах — вплоть до тех, что её гасят.
+               "palette": palette.get("palette") or [],
+               "stop_colors": palette.get("stop_colors") or [],
                "taboos": taboo_items,  # что точно не носит → не предлагаем
                "emphasize": deep.get("adv"),         # достоинство → подчеркнуть
                "balance": deep.get("balance"),       # что уравновесить
