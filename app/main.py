@@ -3604,7 +3604,8 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         "accent_note": diag.get("accent_note"),
         "want_traits": [t for t in (diag.get("want_traits_top3") or []) if t][:4],
         "style_dna": _style_dna_codes(diag, {
-            "silhouettes": card.get("silhouettes") or vf.get("silhouettes"),
+            # внутри build_style_card словаря `card` ещё нет — силуэты берём из visual_formula
+            "silhouettes": vf.get("silhouettes"),
             "palette": palette.get("palette"),
             "figure": _figure_label(diag.get("figure_type")),
         }),
