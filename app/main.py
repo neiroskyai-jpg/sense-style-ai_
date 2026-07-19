@@ -41,6 +41,7 @@ from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
 from core.catalog import match_products, parse_csv, score_products
 from core.weather import configured as weather_configured, dress_advice, get_weather
+from core.canon import enforce_substyles
 from core.item_images import item_image_url, item_type
 from core.profiles import (add_wardrobe_item, card_link_token, current_card_by_season,
                            delete_wardrobe_item, get_profile, merge_profile, save_card,
@@ -3739,6 +3740,7 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
     except Exception:  # noqa: BLE001 — уточнение подстиля не должно ронять карту
         ref = {}
     if ref.get("primary_substyle"):
+        ref = enforce_substyles(dict(ref))  # шаг 4 тоже обязан держаться канона
         for key in ("primary_substyle", "secondary_substyle", "accent_note", "style_formula"):
             if ref.get(key):
                 diag[key] = ref[key]

@@ -10,6 +10,7 @@ import sys
 from urllib.parse import quote_plus
 
 from . import config, provider
+from .canon import canon_rule, enforce_substyles
 from .figure_rules import fit_rules_prompt
 from .prompts import load_knowledge, load_reference, load_system_prompt
 
@@ -131,7 +132,7 @@ def diagnose(quiz_answers: dict, vision_result: dict, mode: str | None = None) -
     (цветотип/фигура/желаемое впечатление), а после — прикрепляем «сработавшие правила»
     по итоговому профилю (`retrieved_rules`) для блока объяснимости.
     """
-    system = load_system_prompt("formula-diagnostic")
+    system = load_system_prompt("formula-diagnostic") + "\n\n" + canon_rule()
     vis = _vision_to_diagnostic_input(vision_result)
     payload = {**quiz_answers, **vis}
 
@@ -149,6 +150,7 @@ def diagnose(quiz_answers: dict, vision_result: dict, mode: str | None = None) -
     )
 
     result = _recompute_gap(result)   # арифметику Gap не доверяем модели — считаем сами
+    result = enforce_substyles(result)  # подстиль — только из 25, а не выдуманный ярлык
 
     final_rules = _rag_retrieve(_diag_to_profile(result)) or pre_rules
     if final_rules:
@@ -284,7 +286,7 @@ def generate_directions(diagnosis: dict, quiz: dict | None = None,
         payload["season"] = SEASON_RU[season]
         payload["season_guidance"] = _SEASON_HINT[season]
     result = provider.chat_json(
-        config.model_for("text", mode), _DIRECTIONS_SYSTEM,
+        config.model_for("text", mode), _DIRECTIONS_SYSTEM + "\n\n" + canon_rule(),
         json.dumps(payload, ensure_ascii=False), max_tokens=2048,
     )
     return _canonical_direction_names(
@@ -485,7 +487,8 @@ def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None
     Каждый образ на выходе содержит image_generation_prompt — он пойдёт в Seedream (Фаза 2).
     """
     system = (
-        load_system_prompt("look-generator")
+        canon_rule() + "\n\n"
+        + load_system_prompt("look-generator")
         + "\n\n# БАЗА ЗНАНИЙ (style-library)\n\n"
         + load_knowledge("style-library")
         # Без описаний подстилей модель видит только ЯРЛЫК и наполняет его как умеет: реальный
@@ -642,6 +645,7 @@ def refine_substyle(diagnosis: dict, deep_intake: dict, mode: str | None = None)
             hints.append(lo)
     system = (
         load_system_prompt("substyle-refine")
+        + "\n\n" + canon_rule()
         + "\n\n# БАЗА ЗНАНИЙ (25 подстилей)\n\n"
         + load_reference("reference/style-typology/style-typology.md")
     )
