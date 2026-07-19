@@ -41,6 +41,7 @@ from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
 from core.catalog import match_products, parse_csv, score_products
 from core.weather import configured as weather_configured, dress_advice, get_weather
+from core.item_images import item_image_url
 from core.profiles import (add_wardrobe_item, card_link_token, current_card_by_season,
                            delete_wardrobe_item, get_profile, merge_profile, save_card,
                            save_diagnosis, save_style_profile, user_by_card_token,
@@ -57,6 +58,9 @@ DEMO_DAILY_LIMIT = int(os.getenv("DEMO_DAILY_LIMIT", "40"))  # защита от
 
 # статика сайта раздаётся из web/ в корне; зарегистрированные роуты (/demo, /api…) важнее
 app = Flask(__name__, static_folder=str(WEB_DIR), static_url_path="")
+# Предметное фото по названию вещи. Фильтр, а не поле Карты: у собранных ранее Карт поля нет,
+# а картинка нужна и им. Генерации здесь не происходит — только поиск готового кадра.
+app.jinja_env.filters["item_img"] = item_image_url
 app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # лимит загрузки 15 МБ
 # секрет сессий/magic-link: env SENSE_SECRET_KEY или стабильный файл на постоянном томе
 from core.config import secret_key as _secret_key, data_dir as _data_dir  # noqa: E402
@@ -759,6 +763,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  /* Названия из генерации длинные («жакет полуприлегающего силуэта серо-синего цвета»).
     Заголовок — до двух строк, обоснование — до четырёх: карточки в ряду одной высоты,
     и текст обрывается многоточием, а не на полуслове посреди строки. */
+ .buyimg{width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:9px;background:#F7F2E9;
+         border:1px solid var(--line);margin-bottom:9px;display:block}
  .buyname{font-size:13px;font-weight:500;line-height:1.3;
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
  .buywhy{font-size:11.5px;color:var(--muted);line-height:1.4;margin:8px 0 0;
@@ -1074,6 +1080,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     <div class=buygrid>
      {% for it in c.shopping[:3] %}
      <div class=buycard>
+      {% set bimg = it.item_name|item_img %}
+      {% if bimg %}<img class=buyimg src="{{ bimg }}" alt="{{ it.item_name }}" loading=lazy>{% endif %}
       <div class=buyname>{{ it.item_name[0]|upper }}{{ it.item_name[1:] }}</div>
       {% if it.closes_gap %}<p class=buywhy><b>Почему подходит:</b> {{ it.closes_gap }}</p>{% endif %}
       {% if it.links %}<div class=buylinks><a href="{{ it.links.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.links.lamoda }}" target=_blank rel=noopener>Lamoda</a> · <a href="{{ it.links.ozon }}" target=_blank rel=noopener>Ozon</a></div>{% endif %}
@@ -1110,7 +1118,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    <div class=capgrid>
     {% for it in c.starter_capsule[:6] %}
     <div class=capcard>
-     {% if it.image %}<img class=capimg src="{{ it.image }}" alt="{{ it.name }}" loading=lazy>
+     {% set lib = it.image or (it.name|item_img) %}
+     {% if lib %}<img class=capimg src="{{ lib }}" alt="{{ it.name }}" loading=lazy>
      {% else %}<span class="capimg empty">{{ it.slot or 'вещь' }}<br>без фото</span>{% endif %}
      {# Бейдж говорит, ЗАЧЕМ вещь в ядре: ядро работает в нескольких образах, остальное — поддержка. #}
      {% if it.capsule_role == 'core' %}<span class=capbadge>ядро</span>
@@ -1137,7 +1146,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     <div class=combo title="{{ combo.title }}">
      <div class=combopics>
       {% for it in combo['items'][:3] %}
-       {% if it.image %}<img src="{{ it.image }}" alt="{{ it.name }}" loading=lazy>{% else %}<span class=combodot>{{ it.name[:1] }}</span>{% endif %}
+       {% set ci = it.image or (it.name|item_img) %}{% if ci %}<img src="{{ ci }}" alt="{{ it.name }}" loading=lazy>{% else %}<span class=combodot title="{{ it.name }}"></span>{% endif %}
       {% endfor %}
      </div>
     </div>
