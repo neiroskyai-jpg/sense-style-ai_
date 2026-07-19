@@ -74,8 +74,12 @@ _MAX_SIDE = 640
 _QUALITY = 82
 
 
+from core.item_images import _SLUG
+
+
 def slug(name: str) -> str:
-    return name.strip().lower()
+    """Имя файла латиницей: кириллица в URL ломается на прокси и кэшах."""
+    return _SLUG.get(name.strip().lower(), name.strip().lower())
 
 
 def optimize(src: pathlib.Path, dest: pathlib.Path) -> None:

@@ -37,4 +37,10 @@ def test_url_points_at_existing_file_only():
     """Ссылку отдаём, только если кадр реально лежит на диске."""
     for kind in ii.available_types():
         url = ii.item_image_url(kind)
-        assert url == f"{ii.URL_PREFIX}{kind}.jpg", kind
+        assert url == f"{ii.URL_PREFIX}{ii._SLUG[kind]}.jpg", kind
+
+
+def test_urls_are_latin_only():
+    """Кириллица в URL требует процент-кодирования и ломается на части прокси и кэшей."""
+    for kind in ii.available_types():
+        assert ii.item_image_url(kind).isascii(), kind

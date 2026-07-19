@@ -13,6 +13,31 @@ import re
 from pathlib import Path
 
 ITEMS_DIR = Path(__file__).resolve().parent.parent / "web" / "photos" / "items"
+
+# Имя файла — латиницей: кириллица в URL требует процент-кодирования и ломается
+# на части прокси и кэшей. Тип вещи остаётся русским, наружу уходит slug.
+_SLUG = {
+    "жакет": "jacket",
+    "пальто": "coat",
+    "плащ": "raincoat",
+    "тренч": "trench",
+    "блуза": "blouse",
+    "рубашка": "shirt",
+    "джемпер": "jumper",
+    "водолазка": "turtleneck",
+    "футболка": "tshirt",
+    "платье": "dress",
+    "юбка": "skirt",
+    "брюки": "trousers",
+    "джинсы": "jeans",
+    "туфли": "pumps",
+    "ботильоны": "ankle-boots",
+    "лоферы": "loafers",
+    "сапоги": "boots",
+    "сумка": "bag",
+    "ремень": "belt",
+    "шарф": "scarf",
+}
 URL_PREFIX = "/photos/items/"
 
 # Тип вещи → корни слов, по которым он узнаётся в названии. Порядок важен: более узкие типы
@@ -55,11 +80,13 @@ def item_image_url(name: str) -> str:
     kind = item_type(name)
     if not kind:
         return ""
-    return f"{URL_PREFIX}{kind}.jpg" if (ITEMS_DIR / f"{kind}.jpg").exists() else ""
+    name_ = _SLUG.get(kind, kind)
+    return f"{URL_PREFIX}{name_}.jpg" if (ITEMS_DIR / f"{name_}.jpg").exists() else ""
 
 
 def available_types() -> set[str]:
     """Типы, для которых кадр реально лежит на диске (для тестов и диагностики)."""
     if not ITEMS_DIR.is_dir():
         return set()
-    return {p.stem for p in ITEMS_DIR.glob("*.jpg")}
+    have = {p.stem for p in ITEMS_DIR.glob("*.jpg")}
+    return {ru for ru, la in _SLUG.items() if la in have}
