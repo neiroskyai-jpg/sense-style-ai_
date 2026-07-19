@@ -10,6 +10,10 @@
     'background:#7A1C2E;color:#fff;border:0;border-radius:999px;padding:13px 20px;font-family:Georgia,serif;' +
     'font-size:15px;cursor:pointer;box-shadow:0 6px 22px rgba(0,0,0,.22)}' +
     '.ssw-btn:hover{opacity:.93}.ssw-btn svg{width:18px;height:18px}' +
+    // Кнопка висит поверх страницы и на телефоне закрывала последние строки текста: до них было
+    // не долистать. Резервируем под неё место внизу и ужимаем саму кнопку на узком экране.
+    '@media(max-width:760px){body{padding-bottom:84px}' +
+    '.ssw-btn{right:12px;bottom:12px;padding:11px 16px;font-size:14px}}' +
     '.ssw-panel{position:fixed;right:20px;bottom:20px;z-index:99999;width:370px;max-width:calc(100vw - 32px);' +
     'height:560px;max-height:calc(100vh - 40px);background:#F5EFE3;border:1px solid #e3dccf;border-radius:16px;' +
     'display:none;flex-direction:column;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.28);font-family:Georgia,serif}' +

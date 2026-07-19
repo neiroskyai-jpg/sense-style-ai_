@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 import json
+import secrets
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -44,7 +45,40 @@ def _conn(db_path: Path = DB_PATH) -> sqlite3.Connection:
         " id INTEGER PRIMARY KEY AUTOINCREMENT,"
         " email TEXT, ts TEXT, name TEXT, slot TEXT, verdict TEXT, reason TEXT, image TEXT)"
     )
+    # Постоянная ссылка на Карту. Без неё Карта достижима только из того браузера, где её
+    # собрали: клиентка со сменой устройства теряет результат, а дать ссылку в мессенджер нечего.
+    # Токен привязан к ПОЛЬЗОВАТЕЛЮ, а не к версии Карты — пересборка ссылку не ломает.
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS card_links ("
+        " token TEXT PRIMARY KEY, email TEXT UNIQUE, created_at TEXT)"
+    )
     return con
+
+
+def card_link_token(email: str, db_path: Path = DB_PATH) -> str:
+    """Постоянный токен ссылки на Карту: существующий или новый. 128 бит — не подбирается."""
+    email = _norm(email)
+    if not email:
+        return ""
+    with _conn(db_path) as con:
+        row = con.execute("SELECT token FROM card_links WHERE email=?", (email,)).fetchone()
+        if row:
+            return row[0]
+        token = secrets.token_urlsafe(16)
+        con.execute("INSERT INTO card_links (token, email, created_at) VALUES (?,?,?)",
+                    (token, email, datetime.now(timezone.utc).isoformat()))
+        con.commit()
+        return token
+
+
+def user_by_card_token(token: str, db_path: Path = DB_PATH) -> str:
+    """Чей это токен. Пусто — ссылка невалидна."""
+    token = (token or "").strip()
+    if not token:
+        return ""
+    with _conn(db_path) as con:
+        row = con.execute("SELECT email FROM card_links WHERE token=?", (token,)).fetchone()
+    return row[0] if row else ""
 
 
 def merge_profile(src: str, dst: str, db_path: Path = DB_PATH) -> bool:
@@ -81,6 +115,13 @@ def merge_profile(src: str, dst: str, db_path: Path = DB_PATH) -> bool:
         for table in ("card_history", "wardrobe"):
             cur = con.execute(f"UPDATE {table} SET email=? WHERE email=?", (dst, src))
             moved = moved or cur.rowcount > 0
+        # Ссылка переезжает вместе с Картой, но только если под почтой своей ещё нет:
+        # у card_links.email стоит UNIQUE, и вторая строка уронила бы склейку.
+        if not con.execute("SELECT 1 FROM card_links WHERE email=?", (dst,)).fetchone():
+            cur = con.execute("UPDATE card_links SET email=? WHERE email=?", (dst, src))
+            moved = moved or cur.rowcount > 0
+        else:
+            con.execute("DELETE FROM card_links WHERE email=?", (src,))
         con.commit()
     return moved
 

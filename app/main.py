@@ -21,8 +21,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote, quote_plus
 
-from flask import (Flask, Response, jsonify, redirect, render_template_string,
-                   request, session, send_from_directory)
+from flask import (Flask, Response, abort, jsonify, make_response, redirect,
+                   render_template_string, request, session, send_from_directory)
 from PIL import Image, UnidentifiedImageError
 from werkzeug.utils import secure_filename
 
@@ -41,9 +41,10 @@ from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
 from core.catalog import match_products, parse_csv, score_products
 from core.weather import configured as weather_configured, dress_advice, get_weather
-from core.profiles import (add_wardrobe_item, current_card_by_season, delete_wardrobe_item,
-                           get_profile, merge_profile, save_card, save_diagnosis,
-                           save_style_profile, wardrobe_items)
+from core.profiles import (add_wardrobe_item, card_link_token, current_card_by_season,
+                           delete_wardrobe_item, get_profile, merge_profile, save_card,
+                           save_diagnosis, save_style_profile, user_by_card_token,
+                           wardrobe_items)
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"  # дизайнерский сайт (статика)
@@ -797,9 +798,13 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .combolane{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
  .combo{border:1px solid var(--line);border-radius:10px;padding:5px;background:var(--soft)}
  .combopics{display:flex;gap:3px}
- .combopics img{width:100%;height:52px;object-fit:cover;border-radius:5px;background:var(--sand)}
- .combodot{flex:1;height:52px;border-radius:5px;background:var(--sand);display:flex;align-items:center;
-           justify-content:center;color:var(--wine);font-family:'Cormorant Garamond',serif;font-size:15px}
+ /* flex:1 1 0 + min-width:0 обязательны: при width:100% на каждой из трёх картинок они
+    суммарно втрое шире плитки и вылезали наружу вместе с буквами-заглушками. */
+ .combopics img{flex:1 1 0;min-width:0;width:100%;height:52px;object-fit:cover;
+                border-radius:5px;background:var(--sand)}
+ .combodot{flex:1 1 0;min-width:0;height:52px;border-radius:5px;background:var(--sand);display:flex;
+           align-items:center;justify-content:center;color:var(--wine);
+           font-family:'Cormorant Garamond',serif;font-size:15px}
 
  /* что уводит от формулы */
  .stopgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
@@ -831,6 +836,18 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .btnline{background:#fff;color:var(--wine);border:1px solid var(--wine);border-radius:11px;
           padding:13px 26px;font-size:14px;text-decoration:none;display:inline-flex;align-items:center;gap:9px}
 
+ /* блок постоянной ссылки на Карту */
+ .sharebox{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+           background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 20px;margin-top:16px}
+ .sharek{font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;line-height:1.2}
+ .sharep{font-size:12.5px;color:var(--muted);margin:4px 0 0;max-width:430px;line-height:1.45}
+ .sharerow{display:flex;gap:8px;align-items:center;flex:1 1 320px;min-width:0}
+ .shareinput{flex:1 1 auto;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+             font:inherit;font-size:12.5px;background:var(--soft);color:#4e473f;text-overflow:ellipsis}
+ .sharebtn{flex:0 0 auto;padding:10px 18px;border:1px solid var(--wine);border-radius:10px;
+           background:var(--wine);color:#fff;font:inherit;font-size:13px;cursor:pointer}
+ .sharebtn.done{background:#3a6b46;border-color:#3a6b46}
+ @media print{.sharebox{display:none!important}}
  /* разделы «разбор» — глубина, которая не помещается в панель */
  .deep{margin-top:26px}
  .deep summary{cursor:pointer;list-style:none;font-family:'Cormorant Garamond',Georgia,serif;
@@ -933,7 +950,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <div class=st-k>Тариф</div>
   <div class=st-n>Карта стиля</div>
   <div class=st-d>Разовый персональный результат{% if c.season_label %}<br><b>{{ c.season_label }}</b>{% endif %}</div>
-  <a href="/card?rebuild=1">Собрать заново</a>
+  {% if not shared %}<a href="/card?rebuild=1">Собрать заново</a>{% endif %}
  </div>
 </div>
 
@@ -1025,7 +1042,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    <h2 class=secttl id=looks>Образы под роли жизни</h2>
    {# Ни одного отрисованного образа — зовём догенерить: без этого клиентка остаётся с текстом
       и не знает, что образы на ней ещё можно получить. #}
-   {% if c.looks and not c.looks|selectattr('img')|list %}
+   {% if not shared and c.looks and not c.looks|selectattr('img')|list %}
    <div class=noimg><b>Здесь пока только текст — без образов на тебе.</b>
     <div>Загрузи фото — соберём эти же образы на тебе.</div>
     <a href="/card?rebuild=1">Добавить образы →</a></div>
@@ -1161,12 +1178,28 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div>
 
 {# ── нижняя лента ────────────────────────────────────────────────────────────────────── #}
+{# Постоянная ссылка: без неё Карта достижима только из того браузера, где её собрали.
+   На чужом экране (открыли по ссылке) блок скрыт — там нечего копировать и некуда вести. #}
+{% if not shared and card_link %}
+<div class=sharebox>
+ <div>
+  <div class=sharek>Ссылка на твою Карту</div>
+  <p class=sharep>Открывается на любом устройстве и остаётся рабочей, даже если ты пересоберёшь Карту. Сохрани её.</p>
+ </div>
+ <div class=sharerow>
+  <input id=sharelink class=shareinput readonly value="{{ card_link }}" aria-label="Ссылка на Карту">
+  <button type=button class=sharebtn onclick="copyLink(this)">Скопировать</button>
+ </div>
+</div>
+{% endif %}
+
 <div class=footband>
  <div class=mono>SS</div>
  <div class=foottext>Твоя Карта стиля — это персональная стратегия.<br>Она работает на тебя каждый день.</div>
  <div class=footbtns>
   <button class=btnfill id=pdfbtn onclick="downloadPdf()">Скачать PDF <span>⬇</span></button>
-  <a class=btnline href="/cabinet">Перейти в Стиль каждый день <span>→</span></a>
+  {% if not shared %}<a class=btnline href="/cabinet">Перейти в Стиль каждый день <span>→</span></a>
+  {% else %}<a class=btnline href="/quiz">Собрать свою Карту <span>→</span></a>{% endif %}
  </div>
 </div>
 
@@ -1272,7 +1305,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </details>
 {% endif %}
 
-<div class=fbblock id=fbblock>
+{% if not shared %}<div class=fbblock id=fbblock>
 {% if thanks %}
  <p style="margin:0;font-size:15px">Спасибо. Твой отзыв записан — он помогает делать Карту точнее.</p>
 {% else %}
@@ -1287,9 +1320,20 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  </form>
 {% endif %}
 </div>
+{% endif %}
 
 </div></div>
 <script>
+function copyLink(btn){
+  var f=document.getElementById('sharelink'); if(!f) return;
+  f.select(); f.setSelectionRange(0, 99999);
+  var done=function(){ var t=btn.textContent; btn.textContent='Скопировано'; btn.classList.add('done');
+    setTimeout(function(){ btn.textContent=t; btn.classList.remove('done'); }, 1800); };
+  // navigator.clipboard живёт только на https и localhost — на http падает, поэтому фолбэк
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(f.value).then(done, function(){ try{document.execCommand('copy'); done();}catch(e){} });
+  } else { try{ document.execCommand('copy'); done(); }catch(e){} }
+}
 function downloadPdf(){
   // Печать браузера вместо html2canvas: даёт НАСТОЯЩИЙ PDF с векторным текстом на любом
   // устройстве. @media print разворачивает дашборд в один поток и раскрывает разделы «разбор»,
@@ -4011,13 +4055,15 @@ def style_card():
     if card and not request.args.get("rebuild") and not request.args.get("text"):
         return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
                                       figure_short=_figure_short(diag.get("figure_type")),
+                                      card_link=_card_link_url(email),
                                       thanks=request.args.get("fb"), stale=False)
     # бесплатная генерация — один раз на email; пересборку/повтор блокируем (защита токенов).
     # Исключение: диагностика реально изменилась (новый квиз) — даём пересобрать Карту под неё.
     if (request.args.get("rebuild") or request.args.get("text")) and not _gen_allowed(email) and not stale:
         if card:
             return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
-                                          figure_short=_figure_short(diag.get("figure_type")), thanks=None)
+                                          figure_short=_figure_short(diag.get("figure_type")),
+                                          card_link=_card_link_url(email), thanks=None)
         return render_template_string(CARD_BUILD_FORM, error=_GEN_LIMIT_MSG), 429
     if request.args.get("text"):  # текстовая карта без образов (синхронно)
         if not _quota_left():
@@ -4030,9 +4076,48 @@ def style_card():
         except Exception as e:  # noqa: BLE001
             return render_template_string(CARD_BUILD_FORM, error=f"Не удалось собрать: {e}"), 500
         return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
-                                      figure_short=_figure_short(diag.get("figure_type")))
+                                      figure_short=_figure_short(diag.get("figure_type")),
+                                      card_link=_card_link_url(email))
     record_event("card_form_view", email)
     return render_template_string(CARD_BUILD_FORM, error=None)
+
+
+def _card_link_url(user: str) -> str:
+    """Полный адрес постоянной ссылки на Карту. Пусто — если выдать не смогли."""
+    try:
+        token = card_link_token(user)
+    except Exception:  # noqa: BLE001 — без ссылки Карта работает, ронять её незачем
+        return ""
+    return (request.url_root.rstrip("/") + "/card/" + token) if token else ""
+
+
+@app.get("/card/<token>")
+def card_by_link(token):
+    """Карта по постоянной ссылке — открывается в любом браузере, живёт после пересборки.
+
+    Только чтение. Сессию НЕ подменяем: иначе ссылка равносильна передаче аккаунта — открывший
+    её получил бы чужой кабинет и чужие генерации. Поэтому здесь нет ни пересборки, ни отзыва.
+    """
+    # Токен — token_urlsafe(16). Формат проверяем, чтобы маршрут не отвечал на случайные пути.
+    if not re.fullmatch(r"[A-Za-z0-9_-]{16,64}", token or ""):
+        abort(404)
+    owner = user_by_card_token(token)
+    card = (get_profile(owner) or {}).get("card") if owner else None
+    if not card:
+        return render_template_string(
+            NEED_DIAGNOSIS, eyebrow="Ссылка не открывается",
+            title="Такой Карты у нас нет",
+            lead="Ссылка устарела или Карта ещё не собрана. Попроси свежую ссылку — "
+                 "или собери свою Карту стиля, это займёт несколько минут."), 404
+    diag = (get_profile(owner) or {}).get("diagnosis") or {}
+    record_event("card_link_view", owner)
+    html = render_template_string(STYLE_CARD, c=card, name=_display_name(owner),
+                                  figure_short=_figure_short(diag.get("figure_type")),
+                                  shared=True, thanks=None, stale=False)
+    resp = make_response(html)
+    # Карта содержит образы на фото клиентки — в поисковой выдаче ей делать нечего.
+    resp.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return resp
 
 
 @app.post("/card/build")
