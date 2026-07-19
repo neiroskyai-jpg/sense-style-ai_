@@ -670,10 +670,29 @@ _PHOTO_FINISH = (
 
 # Правила капсулы в рендере (по канону «Алгоритмы имиджа», см. base-vs-trend.md) — страховка на случай,
 # если image-модель «сдрейфует» в устаревший силуэт. Держим актуальный крой в самой картинке.
+# Образы должны читаться как съёмка из модного журнала сезона, а не как карточка маркетплейса.
+# Мы не копируем вещи магазинов — мы показываем СТИЛЬ, поэтому силуэт и режиссура кадра важнее
+# «похожести на товар». Ориентир — актуальная editorial-мода 2026-2027: тихая роскошь, чистая
+# линия, объём в правильных местах.
 _LOOK_CANON = (
-    " The outfit must read current and wearable: clean modern cut, full-length sleeves (never 3/4), "
-    "structured outerwear with room for layers, well-proportioned silhouette. "
-    "No dated styling: no skinny jeans with chunky boots, no cheap fur trim, no bulky mini-backpack."
+    " The outfit must read as current editorial fashion for the 2026-2027 season: "
+    "elongated clean lines, considered proportions, quiet-luxury materials (wool, silk, cashmere, "
+    "fine leather), tonal or restrained colour blocking, one deliberate accent — never busy. "
+    "Modern silhouette cues: relaxed wide or straight trousers with proper break, elongated or "
+    "softly structured tailoring, generous outerwear worn over slim layers, midi lengths, "
+    "sculptural bag, refined footwear. Full-length sleeves (never 3/4). "
+    "No dated styling: no skinny jeans with chunky boots, no cheap fur trim, no bulky mini-backpack, "
+    "no logo-heavy fast-fashion pieces, no shiny synthetic fabrics."
+)
+
+# Режиссура кадра. Без неё модель ставит человека в пустоту и получается карточка товара, а не
+# образ, который хочется примерить на себя.
+_EDITORIAL_DIRECTION = (
+    " Compose it like a fashion editorial: confident relaxed posture, natural mid-stride or "
+    "grounded stance, hands used naturally, gaze calm and direct or slightly off-camera. "
+    "Real location with depth and atmosphere that suits the scenario — city street, gallery, "
+    "hotel lobby, staircase, cafe terrace — never a plain studio backdrop or empty white void. "
+    "Soft directional daylight, gentle shadows, shallow depth of field."
 )
 
 
@@ -703,7 +722,7 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
         "Change ONLY her clothing and the background. "
         "Place her in a new location that fits the outfit's setting (do not reuse the reference background). "
         "Outfit and scene: " + look_prompt + _LOOK_CANON
-        + " Full-body head to toe, vertical 3:4 ratio." + _PHOTO_FINISH
+        + _EDITORIAL_DIRECTION + " Full-body head to toe, vertical 3:4 ratio." + _PHOTO_FINISH
     )
     model = config.MODELS["image"]["dressing"]
     # ДВА референса личности: (1) крупный кадр головы — чтобы лицо было в высоком разрешении и
