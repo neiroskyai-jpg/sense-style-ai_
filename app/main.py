@@ -1466,7 +1466,13 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  *{box-sizing:border-box}
  body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;margin:0;background:var(--cream);
       color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
- .wrap{max-width:640px;margin:0 auto;padding:30px 22px 70px}
+ .wrap{max-width:900px;margin:0 auto;padding:30px 22px 110px}
+ /* Вопросы парами на десктопе: анкета в одну колонку на широком экране выглядит
+    бесконечной лентой, хотя половина вопросов — короткие наборы чипов. */
+ .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 28px}
+ .qgrid .q{min-width:0}
+ .qwide{grid-column:1/-1}
+ @media(max-width:760px){.qgrid{grid-template-columns:1fr}}
  .top{display:flex;justify-content:space-between;align-items:center} .logo{font-family:'Cormorant Garamond',serif;font-size:22px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
  .eyebrow{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--wine);margin:24px 0 9px}
  h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:40px;line-height:1.05;
@@ -1474,8 +1480,13 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .lead{color:var(--muted);margin:0 0 8px;font-size:15px;line-height:1.6}
  /* карточка-секция: у каждой части анкеты своя, между ними воздух */
  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:4px 24px 26px;margin-top:16px}
- .sect{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 24px 24px;margin-top:14px}
- .secth{font-family:'Cormorant Garamond',serif;font-size:21px;line-height:1.2;margin:0 0 4px}
+ .sect{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px 26px 26px;margin-top:16px}
+ .secth{font-family:'Cormorant Garamond',serif;font-size:23px;line-height:1.2;margin:0 0 4px;
+        display:flex;align-items:baseline;gap:11px}
+ /* номер шага: длинная анкета должна показывать, сколько ещё осталось */
+ .secth i{flex:0 0 auto;font-style:normal;font-family:Onest,sans-serif;font-size:11px;
+          letter-spacing:.14em;color:var(--wine);border:1px solid var(--line);border-radius:999px;
+          padding:4px 10px;background:var(--soft)}
  .sectd{font-size:13px;color:var(--muted);margin:0 0 6px;line-height:1.5}
  label{display:block;margin:20px 0 8px;font-size:14px;font-weight:400;color:#3f3931;line-height:1.5}
  .fld{width:100%;padding:12px 13px;border:1px solid #d9d2c7;border-radius:10px;font-family:inherit;font-size:15px;color:var(--ink);background:#fff;transition:border-color .15s}
@@ -1506,9 +1517,12 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .filet{font-size:14.5px;color:var(--ink);margin-top:8px}
  .filet b{color:var(--wine);font-weight:500}
  .files{font-size:12.5px;color:var(--muted);margin-top:4px}
- button{margin-top:22px;width:100%;padding:16px;background:var(--wine);color:#fff;border:0;
-        border-radius:12px;font-family:inherit;font-size:16px;cursor:pointer;letter-spacing:.01em;
-        transition:opacity .15s}
+ /* Кнопка не должна теряться в конце длинной анкеты — держим её на виду. */
+ .submitbar{position:sticky;bottom:0;margin-top:18px;padding:14px 0 10px;
+            background:linear-gradient(180deg,rgba(245,239,227,0),var(--cream) 28%)}
+ button{width:100%;padding:16px;background:var(--wine);color:#fff;border:0;border-radius:12px;
+        font-family:inherit;font-size:16px;cursor:pointer;letter-spacing:.01em;
+        box-shadow:0 8px 24px rgba(93,34,48,.18);transition:opacity .15s}
  button:hover{opacity:.92}
  .consent{font-size:13px;color:var(--muted);display:flex;gap:8px;margin-top:14px;line-height:1.4} .consent input{width:auto;margin-top:3px}
  .hint{color:var(--muted);font-size:13px;text-align:center;margin-top:14px} .hint a{color:var(--wine)}
@@ -1524,6 +1538,7 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if error %}<p class=err>{{ error }}</p>{% endif %}
 <form method=post action="/card/build" enctype="multipart/form-data">
 <div class=card>
+ <div class=secth style="margin-bottom:10px"><i>ШАГ 1</i>Твоё фото</div>
  <label>Фото в полный рост</label>
  <div class=file>
   <input type=file name=photo accept="image/*" required onchange="var n=this.files[0]&&this.files[0].name;if(n){this.parentNode.querySelector('.filet').innerHTML='<b>'+n+'</b>';}">
@@ -1535,7 +1550,7 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div>
 
 <div class=sect>
- <div class=secth>Чтобы Карта была точнее</div>
+ <div class=secth><i>ШАГ 2</i>Чтобы Карта была точнее</div>
  <p class=sectd>Всё ниже — по желанию. Но чем больше расскажешь, тем точнее соберутся образы.</p>
  <label>Какие образы тебе откликаются? Отметь, к чему тяготеешь — образы соберём в этом характере.</label>
  <div class=stylegrid>
@@ -1547,28 +1562,44 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   </label>
   {% endfor %}
  </div>
- <label>{% if current_colortype_label %}Твой цветотип по фото — <b>{{ current_colortype_label }}</b>. Если знаешь свой сезон и он другой, выбери его — палитра пересоберётся:{% else %}Знаешь свой цветотип? Выбери сезон, и палитра соберётся под него (по желанию):{% endif %}</label>
- <select name=colortype_override class=fld>
-  <option value="">{% if current_colortype_label %}— оставить как есть —{% else %}— определим по фото —{% endif %}</option>
-  {% for code, lab in colortype_options %}<option value="{{ code }}">{{ lab }}</option>{% endfor %}
- </select>
- <label>На какой сезон собрать капсулу?</label>
- <div class=chips>
+ <div class=qgrid>
+  <div class=q>
+   <label>{% if current_colortype_label %}Твой цветотип по фото — <b>{{ current_colortype_label }}</b>. Если знаешь свой сезон и он другой, выбери его — палитра пересоберётся:{% else %}Знаешь свой цветотип? Выбери сезон, и палитра соберётся под него (по желанию):{% endif %}</label>
+   <select name=colortype_override class=fld>
+    <option value="">{% if current_colortype_label %}— оставить как есть —{% else %}— определим по фото —{% endif %}</option>
+    {% for code, lab in colortype_options %}<option value="{{ code }}">{{ lab }}</option>{% endfor %}
+   </select>
+  </div>
+  <div class=q>
+   <label>На какой сезон собрать капсулу?</label>
+   <div class=chips>
   <label class=chip><input type=radio name=season value=spring><span>Весна</span></label>
   <label class=chip><input type=radio name=season value=summer><span>Лето</span></label>
   <label class=chip><input type=radio name=season value=autumn checked><span>Осень</span></label>
   <label class=chip><input type=radio name=season value=winter><span>Зима</span></label>
+   </div>
+  </div>
  </div>
- <label>Что в твоей внешности подчеркнуть? Отметь, что нравится.</label>
- {{ chips('adv', ['талию','ноги','плечи','шею и декольте','запястья','осанку','грудь','бёдра']) }}
- <label>Что визуально уравновесить?</label>
- {{ chips('balance', ['плечи и бёдра','талию','добавить рост','смягчить плечи','объём сверху','объём снизу']) }}
- <label>Что ты точно не носишь? Уберём из образов.</label>
- {{ chips('taboo', ['мини','глубокое декольте','каблук выше 5 см','обтягивающее','яркие принты','красный','прозрачное','оверсайз']) }}
- <label>Чьё мнение учитываем в стиле?</label>
- {{ chips('audience', ['только своё','партнёр','дети','коллеги','родители']) }}
+ <div class=qgrid>
+  <div class=q>
+   <label>Что в твоей внешности подчеркнуть? Отметь, что нравится.</label>
+   {{ chips('adv', ['талию','ноги','плечи','шею и декольте','запястья','осанку','грудь','бёдра']) }}
+  </div>
+  <div class=q>
+   <label>Что визуально уравновесить?</label>
+   {{ chips('balance', ['плечи и бёдра','талию','добавить рост','смягчить плечи','объём сверху','объём снизу']) }}
+  </div>
+  <div class=q>
+   <label>Что ты точно не носишь? Уберём из образов.</label>
+   {{ chips('taboo', ['мини','глубокое декольте','каблук выше 5 см','обтягивающее','яркие принты','красный','прозрачное','оверсайз']) }}
+  </div>
+  <div class=q>
+   <label>Чьё мнение учитываем в стиле?</label>
+   {{ chips('audience', ['только своё','партнёр','дети','коллеги','родители']) }}
+  </div>
+ </div>
 
- <div class=eyebrow style="margin:26px 0 2px">Пара вопросов о тебе (по желанию)</div>
+ <div class=secth style="margin:28px 0 4px"><i>ШАГ 3</i>Пара вопросов о тебе</div>
  <p style="font-size:13px;color:var(--muted);margin:0 0 10px">По шкале: 1 — совсем не про меня, 5 — точно про меня. Это поможет собрать образы под твою натуру.</p>
  {% for i, q in big5_questions %}
   <div style="margin:12px 0">
@@ -1579,7 +1610,7 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   </div>
  {% endfor %}
 
- <div class=eyebrow style="margin:24px 0 2px">Твой круг жизни (по желанию)</div>
+ <div class=secth style="margin:28px 0 4px"><i>ШАГ 4</i>Твой круг жизни</div>
  <p style="font-size:13px;color:var(--muted);margin:0 0 8px">Сколько примерно времени в неделю (%) — чтобы образы попали в реальную жизнь.</p>
  <div style="display:flex;gap:10px">
   <label style="flex:1;margin:6px 0 0;font-size:13px;font-weight:400;color:var(--muted)">Работа<input type=number name=life_work min=0 max=100 placeholder="%" class=fld style="margin-top:4px"></label>
@@ -1598,7 +1629,7 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label class=consent style="font-weight:normal;margin-top:22px"><input type=checkbox name=consent_processing required> Согласна на обработку данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
  <label class=consent style="font-weight:normal"><input type=checkbox name=consent_transfer required> Согласна на передачу фото в ИИ-сервис для генерации образов.</label>
 </div>
- <button>Собрать Карту стиля →</button>
+ <div class=submitbar><button>Собрать Карту стиля →</button></div>
  <p class=hint>Фото нужно только для генерации образов и <b>удаляется сразу после сборки</b> — храним лишь готовые образы. Нет фото под рукой? <a href="/card?text=1">Собрать пока текстовую версию</a> — образы добавишь потом, бесплатная генерация останется за тобой.</p>
 </form></div></body></html>"""
 
