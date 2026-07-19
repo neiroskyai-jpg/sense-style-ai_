@@ -41,7 +41,7 @@ from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
 from core.catalog import match_products, parse_csv, score_products
 from core.weather import configured as weather_configured, dress_advice, get_weather
-from core.item_images import item_image_url
+from core.item_images import item_image_url, item_type
 from core.profiles import (add_wardrobe_item, card_link_token, current_card_by_season,
                            delete_wardrobe_item, get_profile, merge_profile, save_card,
                            save_diagnosis, save_style_profile, user_by_card_token,
@@ -740,8 +740,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
            border-radius:14px;overflow:hidden;text-decoration:none;color:inherit;min-height:148px}
  .lookcard:hover{border-color:#d5c9b6;box-shadow:0 8px 22px rgba(40,26,20,.06)}
  .lookpic{background:var(--sand);width:100%;height:100%;object-fit:cover;display:block}
- .lookpic.empty{display:flex;align-items:center;justify-content:center;color:var(--wine);
-                font-family:'Cormorant Garamond',serif;font-size:26px;opacity:.35}
+ .lookpic.empty{display:block;background:var(--sand)}
  .lookbody{padding:11px 12px 10px;display:flex;flex-direction:column;min-width:0}
  .lookttl{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:var(--ink);min-width:0}
  .lookttl .lt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -795,6 +794,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     держим три строки, дальше многоточие, иначе карточки в ряду разной высоты */
  .capname{font-size:12px;line-height:1.3;color:var(--ink);
           display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+ .capexample{font-size:9.5px;color:#9a9086;margin-top:3px;font-style:italic}
  .capbrand{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:3px}
  .capprice{font-size:11.5px;color:#4e473f;margin-top:3px}
  .capfind{font-size:10.5px;color:var(--muted);margin-top:5px}
@@ -1057,8 +1057,9 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    <div class=looksgrid>
     {% for lk in c.looks[:6] %}
     <a class=lookcard href="#look{{ loop.index }}">
-     {% if lk.img %}<img class=lookpic src="{{ lk.img }}" alt="Образ · {{ lk.scenario or lk.title }}" loading=lazy>
-     {% else %}<span class="lookpic empty">{{ (lk.scenario or lk.title or '·')[:1] }}</span>{% endif %}
+     {% set li = lk.img or lk.get('preview_img') %}
+     {% if li %}<img class=lookpic src="{{ li }}" alt="Образ · {{ lk.scenario or lk.title }}" loading=lazy>
+     {% else %}<span class="lookpic empty"></span>{% endif %}
      <div class=lookbody>
       <div class=lookttl>{% set ltl = lk.scenario or lk.title or lk.name or '' %}<span class=lt>{{ ltl[0]|upper }}{{ ltl[1:] }}</span><span class=chev>›</span></div>
       <p class=lookdesc>{{ lk.why_it_works or lk.description or (lk['items']|join(' · ') if lk.get('items') else '') }}</p>
@@ -1081,7 +1082,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
      {% for it in c.shopping[:3] %}
      <div class=buycard>
       {% set bimg = it.item_name|item_img %}
-      {% if bimg %}<img class=buyimg src="{{ bimg }}" alt="{{ it.item_name }}" loading=lazy>{% endif %}
+      {% if bimg %}<img class=buyimg src="{{ bimg }}" alt="{{ it.item_name }}" loading=lazy>
+      <div class=capexample style="margin:-4px 0 6px">пример типа вещи</div>{% endif %}
       <div class=buyname>{{ it.item_name[0]|upper }}{{ it.item_name[1:] }}</div>
       {% if it.closes_gap %}<p class=buywhy><b>Почему подходит:</b> {{ it.closes_gap }}</p>{% endif %}
       {% if it.links %}<div class=buylinks><a href="{{ it.links.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.links.lamoda }}" target=_blank rel=noopener>Lamoda</a> · <a href="{{ it.links.ozon }}" target=_blank rel=noopener>Ozon</a></div>{% endif %}
@@ -1118,7 +1120,10 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    <div class=capgrid>
     {% for it in c.starter_capsule[:6] %}
     <div class=capcard>
-     {% set lib = it.image or (it.name|item_img) %}
+     {# Кадр из нашей библиотеки иллюстрирует ТИП вещи, а не её цвет: жакет графитового
+        цвета показан бежевым. Молчать об этом нечестно — помечаем. #}
+     {% set fromlib = (not it.image) and (it.name|item_img) %}
+     {% set lib = it.image or fromlib %}
      {% if lib %}<img class=capimg src="{{ lib }}" alt="{{ it.name }}" loading=lazy>
      {% else %}<span class="capimg empty">{{ it.slot or 'вещь' }}<br>без фото</span>{% endif %}
      {# Бейдж говорит, ЗАЧЕМ вещь в ядре: ядро работает в нескольких образах, остальное — поддержка. #}
@@ -1127,6 +1132,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
      {% elif loop.first %}<span class=capbadge>купить первой</span>{% endif %}
      <div class=capbody>
       <div class=capname>{{ it.name }}</div>
+      {% if fromlib %}<div class=capexample>пример типа вещи</div>{% endif %}
       {% if it.brand %}<div class=capbrand>{{ it.brand }}</div>{% endif %}
       {% if it.price %}<div class=capprice>{{ '{:,}'.format(it.price).replace(',',' ') }} ₽</div>{% endif %}
       {% if it.search %}<div class=capfind><a href="{{ it.search.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.search.lamoda }}" target=_blank rel=noopener>Lamoda</a></div>{% endif %}
@@ -3433,10 +3439,41 @@ def _scenario_why_it_works(look: dict, diag: dict, scenario: str) -> str:
     return f"Образ работает {effect} — держит {sil}."
 
 
+def _look_preview_images(looks: list[dict]) -> list[str]:
+    """По одному предметному кадру на образ — и по возможности РАЗНОМУ.
+
+    Пока фото на клиентке не сгенерированы, карточка образа показывает вещь из его состава.
+    Брать «первую подходящую» нельзя: брюки входят в четыре образа из шести, и лента выглядела
+    как одна и та же картинка, размноженная шесть раз. Поэтому сначала раздаём вещи, которые
+    ещё никем не заняты, и только если своего не осталось — повторяем.
+
+    Приоритет внутри образа — вещь, которая его определяет: платье и юбка меняют силуэт
+    сильнее, чем блузка, верхний слой заметнее обуви.
+    """
+    weight = {"платье": 0, "юбка": 1, "пальто": 2, "плащ": 3, "тренч": 4, "жакет": 5,
+              "джемпер": 6, "блуза": 7, "рубашка": 8, "брюки": 9, "джинсы": 10,
+              "ботильоны": 11, "сапоги": 12, "туфли": 13, "лоферы": 14, "сумка": 15}
+    used: set[str] = set()
+    previews: list[str] = []
+    for lk in looks:
+        cands = []
+        for name in (lk.get("items") or []):
+            url = item_image_url(name or "")
+            if url:
+                cands.append((weight.get(item_type(name), 99), url))
+        cands.sort(key=lambda c: c[0])
+        pick = next((u for _, u in cands if u not in used), None) or (cands[0][1] if cands else "")
+        if pick:
+            used.add(pick)
+        previews.append(pick)
+    return previews
+
+
 def _enrich_card_looks(looks: list[dict], diag: dict) -> list[dict]:
     """Добавить к образам Карты explainable-слой и стабильные продуктовые поля."""
     out = []
-    for lk in looks:
+    previews = _look_preview_images(looks)
+    for i, lk in enumerate(looks):
         scenario = lk.get("scenario") or ""
         item_names = [it for it in (lk.get("items") or []) if it]
         enriched = dict(lk)
@@ -3450,6 +3487,7 @@ def _enrich_card_looks(looks: list[dict], diag: dict) -> list[dict]:
             enriched["missing_items"] = missing
         enriched["title"] = enriched.get("title") or enriched.get("name") or scenario.capitalize()
         enriched["items"] = item_names
+        enriched["preview_img"] = previews[i] if i < len(previews) else ""
         out.append(enriched)
     return out
 
@@ -3477,7 +3515,7 @@ def _style_dna_codes(diag: dict, card_bits: dict) -> list[dict]:
     codes: list[dict] = []
     sil = [s for s in (card_bits.get("silhouettes") or []) if s][:2]
     for s in sil:
-        codes.append({"code": s if len(s) < 34 else s[:31] + "…", "note": "силуэт, который держит образ"})
+        codes.append({"code": s, "note": "силуэт, который держит образ"})
 
     palette = [p.get("name") for p in (card_bits.get("palette") or []) if p.get("name")][:2]
     if palette:
@@ -3576,7 +3614,12 @@ def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]
             score = len(words & cw)
             if best is None or score > best[0]:
                 best = (score, cand)
-        if best and best[1]:
+        # Совпадение хотя бы по одному значимому слову — обязательно. Раньше бралась ЛЮБАЯ вещь
+        # того же слота, даже с нулевым сходством: «Блузка с бантом, чёрная» получала фото
+        # клетчатой рубашки, «Сумка структурированная, чёрная» — зелёный рекламный коллаж
+        # «ТРЕНД 2025», «Приталенный жакет, красный» — белую вещь. Чужая картинка рядом с
+        # названием хуже, чем её отсутствие: ниже подставится наш предметный кадр по типу вещи.
+        if best and best[0] >= 1 and best[1]:
             used_photos.add(best[1].get("url") or "")
             return best[1]
         return {}

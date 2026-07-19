@@ -44,3 +44,28 @@ def test_urls_are_latin_only():
     """Кириллица в URL требует процент-кодирования и ломается на части прокси и кэшей."""
     for kind in ii.available_types():
         assert ii.item_image_url(kind).isascii(), kind
+
+
+# ── Превью образов: разные вещи, а не одна картинка шесть раз ──────────────────────────────
+from app import main as m  # noqa: E402
+
+
+def test_look_previews_do_not_repeat_the_same_picture():
+    """Брюки входят в большинство образов — лента не должна стать одной картинкой на всё."""
+    looks = [
+        {"items": ["Прямые брюки со стрелкой", "Белая шёлковая блузка", "Лоферы"]},
+        {"items": ["Прямые брюки со стрелкой", "Джемпер тонкий", "Ботильоны"]},
+        {"items": ["Юбка-карандаш", "Белая шёлковая блузка", "Туфли-лодочки"]},
+    ]
+
+    previews = m._look_preview_images(looks)
+
+    assert all(previews), "у каждого образа должен быть кадр"
+    assert len(set(previews)) == 3, f"кадры повторяются: {previews}"
+
+
+def test_look_preview_prefers_the_defining_piece():
+    """Юбка меняет силуэт сильнее блузки — она и должна представлять образ."""
+    previews = m._look_preview_images([{"items": ["Белая блузка", "Юбка-карандаш"]}])
+
+    assert previews[0].endswith("skirt.jpg"), previews
