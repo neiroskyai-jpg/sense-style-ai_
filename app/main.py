@@ -1590,6 +1590,42 @@ def quiz_short():
     return redirect("/identity-scan-quiz.html?fresh=1")
 
 
+def _user_stage() -> str:
+    """Где человек стоит на пути: nothing → diagnosed → carded.
+
+    Тарифные кнопки лендинга статические и раньше вели прямо в продукт. Человек с уже пройденным
+    квизом упирался в экран «сначала диагностика», хотя диагностика у него есть: путь должен
+    открывать то, что уже заслужено, а не начинаться заново.
+    """
+    user = _current_user()
+    _attach_quiz_diagnosis(user)  # диагноз квиза лежит под job_id — привязываем к пользователю
+    prof = get_profile(user)
+    if prof.get("card"):
+        return "carded"
+    if (prof.get("diagnosis") or {}).get("style_formula"):
+        return "diagnosed"
+    return "nothing"
+
+
+@app.get("/start/card")
+def start_card():
+    """Кнопка тарифа «Карта стиля» → туда, где человек уже находится."""
+    stage = _user_stage()
+    record_event("tier_click_card", _current_user(), meta=stage)
+    # Карта есть или есть диагностика — открываем Карту (во втором случае она соберётся).
+    # Ничего нет — вести в продукт незачем: там всё равно нечего показать, идём в диагностику.
+    return redirect("/card" if stage in ("carded", "diagnosed") else "/quiz")
+
+
+@app.get("/start/daily")
+def start_daily():
+    """Кнопка тарифа «Стиль каждый день» → кабинет, Карта или диагностика, по состоянию."""
+    stage = _user_stage()
+    record_event("tier_click_daily", _current_user(), meta=stage)
+    # Кабинет продолжает Карту, поэтому без Карты ведём сначала собрать её.
+    return redirect({"carded": "/cabinet", "diagnosed": "/card"}.get(stage, "/quiz"))
+
+
 @app.get("/privacy")
 def privacy():
     return render_template_string(PRIVACY)
