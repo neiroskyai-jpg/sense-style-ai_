@@ -668,6 +668,67 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .gapnum span{font-size:12px;color:var(--muted)}
  .gaptext{font-size:13px;color:var(--muted);line-height:1.5;margin:0}
  @media(max-width:820px){.heroband{grid-template-columns:1fr}}
+ .nslist{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:16px 0 18px}
+ .nsitem{background:rgba(255,255,255,.55);border:1px solid var(--line);border-radius:12px;padding:11px 14px}
+ .nsitem b{display:block;font-size:14.5px} .nsitem span{font-size:12.5px;color:var(--muted);line-height:1.45}
+ /* Дашборд с боковой навигацией — макет фаундера 19.07.2026. Карта перестала быть длинной
+    статьёй: слева постоянная навигация и тариф, справа рабочая область. */
+ .shell{display:grid;grid-template-columns:236px 1fr;gap:0;min-height:100vh}
+ .side{background:#F3ECDF;border-right:1px solid var(--line);padding:26px 18px;display:flex;
+       flex-direction:column;gap:26px;position:sticky;top:0;align-self:start;height:100vh}
+ .sidelogo{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;line-height:1.1}
+ .sidelogo span{display:block;font-family:Onest,sans-serif;font-size:9.5px;letter-spacing:.16em;
+                text-transform:uppercase;color:var(--muted);margin-top:4px}
+ .sidenav{display:flex;flex-direction:column;gap:2px}
+ .sidenav a{display:block;padding:10px 13px;border-radius:11px;color:#4e473f;text-decoration:none;font-size:14px}
+ .sidenav a:hover{background:rgba(255,255,255,.6)}
+ .sidenav a.on{background:var(--wine);color:#fff}
+ .sidetariff{margin-top:auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px 16px}
+ .sidetariff .st-k{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+ .sidetariff .st-n{font-family:'Cormorant Garamond',Georgia,serif;font-size:21px;color:var(--wine);margin:4px 0 2px}
+ .sidetariff .st-d{font-size:12px;color:var(--muted);line-height:1.45}
+ .sidetariff a{display:block;margin-top:11px;text-align:center;padding:9px;border:1px solid var(--line);
+               border-radius:10px;color:var(--wine);text-decoration:none;font-size:13px}
+ .main{padding:24px 30px 80px;max-width:1240px}
+ /* шапка профиля */
+ .profbar{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--line);
+          border-radius:18px;padding:16px 20px;margin-bottom:16px;flex-wrap:wrap}
+ .profav{width:56px;height:56px;border-radius:50%;background:var(--wine);color:#fff;display:flex;
+         align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:24px;flex:0 0 auto}
+ .profname{font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;line-height:1.15}
+ .proff{font-size:14px;color:var(--muted)}
+ .proff b{color:var(--wine);font-weight:500}
+ .profchips{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+ .profchip{background:#FBF6EC;border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-size:12px;color:var(--muted)}
+ .profchip b{display:block;font-size:14px;color:var(--ink);font-weight:500;margin-top:2px}
+ /* три карточки верхнего ряда */
+ .toprow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+ @media(max-width:1050px){.toprow{grid-template-columns:1fr}.shell{grid-template-columns:1fr}
+   .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center}
+   .sidenav{flex-direction:row;flex-wrap:wrap}.sidetariff{margin:0}}
+ .tcard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px}
+ .tcard h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:21px;margin:0 0 12px}
+ .subchips{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+ .subchip{border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12.5px;background:#FBF6EC}
+ .traits{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:13px;color:#4e473f}
+ .traits div::before{content:"◆";color:var(--wine);font-size:9px;margin-right:7px;vertical-align:middle}
+ .idxwrap{display:flex;align-items:center;gap:16px}
+ .idxring{width:120px;height:120px;flex:0 0 auto}
+ .idxnum{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;color:var(--wine)}
+ .idxtext{font-size:13px;color:#4e473f;line-height:1.5}
+ .corecaps{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px;margin-top:14px}
+ .coreitem{display:block;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 15px;
+           text-decoration:none;color:inherit}
+ .corethumb{width:100%;height:150px;object-fit:cover;border-radius:11px;margin-bottom:10px;display:block;background:#f4eee3}
+ .coreslot{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine)}
+ .corename{display:block;font-size:15px;margin:5px 0 5px;line-height:1.35}
+ .corewhy{font-size:12.5px;color:var(--muted);line-height:1.45}
+ .dnaband{margin:18px 0;background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px 26px}
+ .dnalead{margin:8px 0 16px;color:var(--muted);font-size:14px}
+ .dnacodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+ .dnacode{border-left:2px solid var(--wine);padding:2px 0 2px 13px}
+ .dnacode b{display:block;font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;font-weight:600;line-height:1.25}
+ .dnacode span{font-size:12.5px;color:var(--muted)}
  .hero-card{margin:26px 0 18px;background:linear-gradient(135deg,#fff,#fbf7ef);border:1px solid var(--line);border-radius:22px;padding:24px 26px 22px;box-shadow:0 12px 34px rgba(40,26,20,.04)}
  .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:start}
  .hero-note{font-size:14px;color:#4e473f;max-width:540px}
@@ -754,52 +815,84 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   .blocklead{break-before:page;page-break-before:always;border-top:0;padding-top:0;margin:0 0 8px}
   .blocklead:first-of-type{break-before:avoid;page-break-before:avoid}
  }
-</style></head><body><div class=wrap>
+</style></head><body><div class=shell>
 {# Навигация по разделам Карты: она стала широкой и длинной, без оглавления клиентка не видит,
    что внутри. Ссылки — якоря, на печати блок скрыт. #}
-<div class=cardnav>
- <span class=navlogo>Чувство стиля</span>
- <a href="#formula">Формула</a>
- <a href="#looks">Образы</a>
- <a href="#palette">Палитра</a>
- <a href="#capsule">Капсула</a>
- <a href="#shopping">Покупки</a>
- <span class=navright>
+<div class=side>
+ <div class=sidelogo>Чувство стиля<span>твоя формула стиля</span></div>
+ <nav class=sidenav>
+  <a class=on href="#top">Моя карта стиля</a>
   <a href="/cabinet">Стиль каждый день</a>
+  <a href="#capsule">Капсула-ядро</a>
+  <a href="#looks">Образы</a>
+  <a href="#palette">Палитра</a>
+  <a href="#shopping">Покупки</a>
+  <a href="#figure">Фигура</a>
   <a href="/me">Профиль</a>
- </span>
+ </nav>
+ <div class=sidetariff>
+  <div class=st-k>Тариф</div>
+  <div class=st-n>Карта стиля</div>
+  <div class=st-d>Разовый персональный результат{% if c.season_label %} · {{ c.season_label }}{% endif %}</div>
+  <a href="/card?rebuild=1">Собрать заново</a>
+ </div>
 </div>
-<div class=bar><a href="/card?rebuild=1">собрать заново</a></div>
-{% if stale %}<div class=stale><b>Твоя диагностика обновилась.</b> Ты недавно заново прошла квиз, и разрыв изменился. Эта Карта пока собрана на прежней диагностике — числа и подборка ниже от неё. Собери Карту заново, чтобы она совпала с последним квизом.<br><a href="/card?rebuild=1">Собрать Карту заново →</a></div>{% endif %}
+<div class=main id=top>
 
-{# Hero как в макете: слева личность и Формула, справа кольцо разрыва. Раньше Gap был строчкой
-   текста среди прочих — главную метрику продукта не видно с первого экрана. #}
-<div class=heroband>
- <div class=herolead>
-  <div class=eyebrow>Карта стиля</div>
-  <h1>Твоя Формула</h1>
-  <p class=formula><b>{{ c.formula }}</b></p>
-  <div class=hero-pillrow>
-   {% if c.colortype %}<span class=hero-pill>Цветотип · <b>{{ c.colortype }}</b></span>{% endif %}
-   {% if c.figure %}<span class=hero-pill>Фигура · <b>{{ c.figure }}</b></span>{% endif %}
-   {% if c.season_label %}<span class=hero-pill>Сезон · <b>{{ c.season_label }}</b></span>{% endif %}
+{# Шапка профиля: кто ты и на чём построен весь стайлбук ниже #}
+<div class=profbar>
+ <div class=profav>{{ (name or 'К')[0]|upper }}</div>
+ <div>
+  <div class=profname>{{ name or 'Твоя Карта' }}</div>
+  <div class=proff><b>{{ c.formula }}</b></div>
+ </div>
+ <div class=profchips>
+  {% if c.season_label %}<div class=profchip>Сезон<b>{{ c.season_label }}</b></div>{% endif %}
+  {% if c.colortype %}<div class=profchip>Цветотип<b>{{ c.colortype }}</b></div>{% endif %}
+  {% if c.figure %}<div class=profchip>Фигура<b>{{ c.figure }}</b></div>{% endif %}
+ </div>
+</div>
+
+{# Верхний ряд: ДНК стиля · индекс настройки образа · желаемый эффект #}
+<div class=toprow>
+ <div class=tcard>
+  <h3>Твоя ДНК стиля</h3>
+  <div class=proff style="font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;color:var(--ink)">{{ c.formula }}</div>
+  {% if c.style_dna %}
+  <div class=traits style="margin-top:14px">
+   {% for d in c.style_dna %}<div>{{ d.code }}</div>{% endfor %}
   </div>
-  {% if c.dna %}<p class=dna>{{ c.dna }}</p>{% endif %}
+  {% endif %}
  </div>
  {% set gap_pct = c.get('gap') %}
- {% if gap_pct is not none %}
- <div class=herogap>
-  <svg viewBox="0 0 120 120" class=gapring aria-hidden="true">
-   <circle cx="60" cy="60" r="52" fill="none" stroke="#e8ddc9" stroke-width="10"/>
-   <circle cx="60" cy="60" r="52" fill="none" stroke="#5D2230" stroke-width="10"
-           stroke-linecap="round" transform="rotate(-90 60 60)"
-           stroke-dasharray="327" stroke-dashoffset="{{ (327 - 327 * gap_pct / 100)|round|int }}"/>
-  </svg>
-  <div class=gapnum><b>{{ gap_pct }}%</b><span>разрыв стиля</span></div>
-  <p class=gaptext>Это расстояние между тем, как тебя считывают сейчас, и тем, как ты хочешь. Ниже — чем именно его закрыть.</p>
+ <div class=tcard>
+  <h3>Индекс настройки образа</h3>
+  {% if gap_pct is not none %}
+  <div class=idxwrap>
+   <svg viewBox="0 0 120 120" class=idxring aria-hidden="true">
+    <circle cx="60" cy="60" r="52" fill="none" stroke="#eee3cf" stroke-width="11"/>
+    <circle cx="60" cy="60" r="52" fill="none" stroke="#5D2230" stroke-width="11" stroke-linecap="round"
+            transform="rotate(-90 60 60)" stroke-dasharray="327"
+            stroke-dashoffset="{{ (327 - 327 * (100 - gap_pct) / 100)|round|int }}"/>
+    <text x="60" y="68" text-anchor="middle" class=idxnum fill="#5D2230"
+          style="font-size:26px">{{ 100 - gap_pct }}%</text>
+   </svg>
+   <p class=idxtext>Настолько твой образ уже совпадает с тем, как ты хочешь считываться. Оставшиеся {{ gap_pct }}% закрываются капсулой-ядром и точечными покупками ниже.</p>
+  </div>
+  {% endif %}
  </div>
- {% endif %}
+ <div class=tcard>
+  <h3>Какой эффект ты хочешь производить</h3>
+  {% if c.emphasize or c.dna %}<p class=idxtext>{{ c.emphasize or c.dna }}</p>{% endif %}
+  {% if c.style_dna %}
+  <div class=subchips>
+   {% for d in c.style_dna[:4] %}<span class=subchip>{{ d.code }}</span>{% endfor %}
+  </div>
+  {% endif %}
+ </div>
 </div>
+{% if stale %}<div class=stale><b>Твоя диагностика обновилась.</b> Ты недавно заново прошла квиз, и разрыв изменился. Эта Карта пока собрана на прежней диагностике — числа и подборка ниже от неё. Собери Карту заново, чтобы она совпала с последним квизом.<br><a href="/card?rebuild=1">Собрать Карту заново →</a></div>{% endif %}
+
 <div class=hero-card>
  <div class=hero-grid>
   <div>
@@ -917,13 +1010,28 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div>{% endif %}
 
 <!-- ═══════ БЛОК 5 · ТВОЙ ГАРДЕРОБ ═══════ -->
-{% if c.visual_capsule or c.base_capsule %}
+{% if c.starter_capsule or c.visual_capsule or c.base_capsule %}
 <div class=blocklead><b>05</b>Твой гардероб</div>
 {# «Базовая капсула» звучит как универсальный список для всех и обесценивает персональную
    сборку. По бизнес-логике тарифов — «Капсула-ядро», собранная из её же образов. #}
 <h2 id=capsule>Капсула-ядро под твою Формулу</h2>
 <p class=meta>Это не универсальный список базовых вещей. Капсула-ядро собрана из твоих образов выше и показывает, какие вещи действительно держат гардероб: сочетаются друг с другом, закрывают роли жизни и помогают не покупать случайно{% if c.starter_capsule_count %}. Здесь {{ c.starter_capsule_count }} вещей{% endif %}{% if c.combination_count %}, из них получается около {{ c.combination_count }} рабочих образов{% endif %}.</p>
-{% if c.visual_capsule %}
+{# Сначала — капсула-ядро, собранная ИЗ ОБРАЗОВ (starter_capsule). У каждой вещи видно, в
+   скольких образах она работает: это и отличает ядро от случайной пачки вещей каталога.
+   visual_capsule (подбор каталога) остаётся запасным, если состава образов нет. #}
+{% if c.starter_capsule %}
+ <div class=corecaps>
+  {% for it in c.starter_capsule %}
+  {% if it.url %}<a class="coreitem" href="{{ it.url }}" target=_blank rel=noopener>{% else %}<div class="coreitem">{% endif %}
+   {% if it.image %}<img class=corethumb src="{{ it.image }}" alt="{{ it.name }}">{% endif %}
+   <div class=coreslot>{{ it.slot }}{% if it.capsule_role == 'core' %} · ядро{% endif %}</div>
+   <b class=corename>{{ it.name }}</b>
+   {% if it.brand %}<div class=capbrand>{{ it.brand }}</div>{% endif %}
+   {% if it.why %}<div class=corewhy>{{ it.why }}</div>{% endif %}
+  {% if it.url %}</a>{% else %}</div>{% endif %}
+  {% endfor %}
+ </div>
+{% elif c.visual_capsule %}
  {% for grp in c.visual_capsule %}
  <div class=capslot><span class=capslotname>{{ grp.slot }}</span></div>
  <div class=caps>
@@ -978,10 +1086,19 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {# Следующий шаг: из разовой Карты — в живой кабинет «Стиль каждый день» #}
 <div class=nextstep>
  <div class=nsbody>
-  <div class=nseyebrow>Что дальше</div>
+  <div class=nseyebrow>Шаг 2 · Что дальше</div>
   <div class=nstitle>Стиль каждый день</div>
-  <p class=nstext>Формула не заканчивается на Карте. В кабинете капсула живёт по сезонам, собираешь образ на каждый день недели и проверяешь покупки по фото — «брать / не брать».</p>
-  <a class=nsbtn href="/cabinet">Перейти в «Стиль каждый день» →</a>
+  {# Не повторяем функции Карты, а объясняем, чем кабинет её ПРОДОЛЖАЕТ: та же формула и та же
+     капсула-ядро, но в ежедневных решениях. По бизнес-логике второй тариф не пересоздаёт
+     формулу — он применяет её. #}
+  <p class=nstext>Карта дала формулу и капсулу-ядро — это фундамент, он собран один раз. Кабинет ничего не пересобирает заново: он берёт то же ядро и превращает его в ежедневные решения.</p>
+  <div class=nslist>
+   <div class=nsitem><b>Образ дня</b><span>что надеть сегодня — под роль, погоду и твою капсулу</span></div>
+   <div class=nsitem><b>Активная сезонная капсула</b><span>ядро из Карты расширяется под сезон</span></div>
+   <div class=nsitem><b>Брать / не брать</b><span>проверка вещи по фото до покупки</span></div>
+   <div class=nsitem><b>Трекер разрыва</b><span>видно, как образ догоняет тебя</span></div>
+  </div>
+  <a class=nsbtn href="/cabinet">Открыть живой кабинет →</a>
  </div>
 </div>
 
@@ -1021,7 +1138,7 @@ function downloadPdf(){
   }, go);
 }
 </script>
-</body></html>"""
+</div></div></body></html>"""
 
 
 # Экран «нужна диагностика». Раньше /card и /cabinet молча редиректили на квиз с ?fresh=1 —
@@ -3151,6 +3268,40 @@ def _enrich_card_looks(looks: list[dict], diag: dict) -> list[dict]:
     return out
 
 
+def _style_dna_codes(diag: dict, card_bits: dict) -> list[dict]:
+    """Style DNA — 3–5 визуальных кодов клиентки: {code, note}.
+
+    По бизнес-логике тарифов Карта обязана показывать, «из чего складывается стиль». Формула
+    («Классика × Минимализм») называет направление, но не объясняет, что именно делает образ её.
+    Коды собираем из уже посчитанного — силуэтов, палитры, контраста, фигуры и желаемого
+    впечатления. Новых обращений к модели не делаем: всё это уже посчитано диагностикой.
+    """
+    codes: list[dict] = []
+    sil = [s for s in (card_bits.get("silhouettes") or []) if s][:2]
+    for s in sil:
+        codes.append({"code": s if len(s) < 34 else s[:31] + "…", "note": "силуэт, который держит образ"})
+
+    palette = [p.get("name") for p in (card_bits.get("palette") or []) if p.get("name")][:2]
+    if palette:
+        codes.append({"code": " · ".join(palette), "note": "цвета, с которых начинается твоя база"})
+
+    tonal = diag.get("tonal_characteristics") or {}
+    contrast = {"high": "Высокий контраст", "medium": "Средний контраст",
+                "low": "Мягкий контраст"}.get(tonal.get("contrast"))
+    if contrast:
+        codes.append({"code": contrast, "note": "насколько резко работают сочетания"})
+
+    want = (diag.get("want_traits_top3") or (diag.get("quiz") or {}).get("want_traits_top3") or [])
+    want = [w for w in want if w][:2]
+    if want:
+        codes.append({"code": ", ".join(want).capitalize(), "note": "как ты хочешь считываться"})
+
+    fig = card_bits.get("figure")
+    if fig and len(codes) < 5:
+        codes.append({"code": fig, "note": "геометрия, под которую подобраны посадки"})
+    return codes[:5]
+
+
 def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]:
     """Капсула-ядро ИЗ ОБРАЗОВ клиентки, а не отдельным набором из каталога.
 
@@ -3350,6 +3501,13 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         "visual_capsule": visual_capsule,
         "starter_capsule": starter_capsule,
         "starter_capsule_count": len(starter_capsule),
+        # Style DNA — визуальные коды клиентки. Формула называет направление, коды объясняют,
+        # что именно делает образ её.
+        "style_dna": _style_dna_codes(diag, {
+            "silhouettes": card.get("silhouettes") or vf.get("silhouettes"),
+            "palette": palette.get("palette"),
+            "figure": _figure_label(diag.get("figure_type")),
+        }),
         "combination_count": starter_combos or (capsule.get("capsule") or {}).get("combination_count"),
         "looks": looks,
         "styling": styling,  # {base_item, idea, looks:[…x2]} — рендерятся в воркере
