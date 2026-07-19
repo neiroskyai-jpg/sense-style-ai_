@@ -988,6 +988,10 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  </div>
 </div>
 
+{# Карта собрана без модели (кончились кредиты или выключена генерация). Молчать об этом
+   нельзя: клиентка должна понимать, почему нет образов и текстов. #}
+{% if c.no_generation %}<div class=stale><b>Это каркас Карты — без генерации.</b> Формула, разрыв, палитра, силуэты и капсула из каталога уже здесь. Образы на тебе, тексты и лист покупок появятся, когда генерация снова будет доступна.<br><a href="/card?rebuild=1">Собрать с образами →</a></div>{% endif %}
+
 {% if stale %}<div class=stale><b>Твоя диагностика обновилась.</b> Ты недавно заново прошла квиз, и разрыв изменился. Эта Карта собрана на прежней диагностике — числа и подборка ниже от неё.<br><a href="/card?rebuild=1">Собрать Карту заново →</a></div>{% endif %}
 
 {# ── верхний ряд: ДНК · индекс · желаемый эффект ─────────────────────────────────────── #}
@@ -3779,10 +3783,79 @@ def _starter_capsule_from_board(board: list[dict]) -> tuple[list[dict], int]:
     return picked[:9], combos
 
 
+def _is_provider_out(e: Exception) -> bool:
+    """Кончились кредиты или упёрлись в лимит ключа — то есть генерировать сейчас нечем."""
+    t = str(e).lower()
+    return ("402" in t or "insufficient" in t or "credit" in t
+            or "429" in t or "rate limit" in t or "quota" in t)
+
+
+def build_card_skeleton(diag: dict, season: str | None = None) -> dict:
+    """Карта без единого обращения к модели: структура настоящая, тексты — честные заглушки.
+
+    Нужна в двух случаях: кончились кредиты у провайдера и надо проверять механику тарифов, либо
+    прогон интерфейса без трат. Всё, что можно взять из диагностики и каталога, берём по-настоящему:
+    формула, разрыв, цветотип, фигура, силуэты, стоп-лист, палитра из visual_formula и капсула из
+    реального каталога вещей. Выдумывать состав образов и тексты не имеем права — оставляем пусто
+    и честно помечаем карту флагом `no_generation`, чтобы интерфейс сказал об этом клиентке.
+    """
+    season = season if season in _CARD_SEASONS else _DEFAULT_SEASON
+    seas = _CARD_SEASONS[season]
+    vf = diag.get("visual_formula") or {}
+    deep = diag.get("deep_intake") or {}
+    taboo = [t.strip() for t in re.split(r"[;,]", deep.get("taboo", "")) if t.strip()]
+    stop_list = (vf.get("stop_list") or []) + [t for t in taboo if t not in (vf.get("stop_list") or [])]
+    # палитра диагностики — список названий, приводим к формату Карты
+    palette = [{"name": str(c), "hex": "", "group": "base"} for c in (vf.get("palette") or []) if c]
+    board = _inline_capsule_images(_visual_capsule({"palette": palette, "stop_list": stop_list}, diag, 9))
+    starter, combos = _starter_capsule_from_board(board)
+    looks = [{"scenario": sc, "bucket": _SCENARIO_BUCKET.get(sc, "Повседневное"),
+              "title": sc.capitalize(), "items": [], "effect": _SCENARIO_EFFECT.get(sc, ""),
+              "why_it_works": "Образ соберётся, когда включим генерацию."}
+             for sc in _CARD_SCENARIOS]
+    return {
+        "formula": diag.get("style_formula"),
+        "gap": diag.get("gap_percentage"),
+        "dna": diag.get("dna_explanation", ""),
+        "colortype": _colortype_label(diag.get("colortype")),
+        "figure": _figure_label(diag.get("figure_type")),
+        "figure_fit": fit_rules_client(diag.get("figure_type")),
+        "contrast": _CONTRAST_RU.get((diag.get("tonal_characteristics") or {}).get("contrast"), ""),
+        "palette": palette,
+        "stop_colors": [],
+        "silhouettes": vf.get("silhouettes") or [],
+        "base_capsule": [], "capsule_board": [], "visual_capsule": board,
+        "starter_capsule": starter,
+        "starter_capsule_count": len(starter),
+        "capsule_combos": _capsule_combos(starter),
+        "combination_count": combos,
+        "substyles": [x for x in (diag.get("primary_substyle"), diag.get("secondary_substyle")) if x],
+        "accent_note": diag.get("accent_note"),
+        "want_traits": [t for t in (diag.get("want_traits_top3") or []) if t][:4],
+        "style_dna": _style_dna_codes(diag, {"silhouettes": vf.get("silhouettes"),
+                                             "palette": palette,
+                                             "figure": _figure_label(diag.get("figure_type"))}),
+        "looks": looks, "styling": {}, "shopping": [], "budget": {},
+        "style_reference": None,
+        "stop_list": stop_list,
+        "emphasize": deep.get("adv"),
+        "personality": {},
+        "substyle_rationale": "",
+        "season": season,
+        "season_label": seas["label"],
+        "no_generation": True,   # интерфейс обязан сказать клиентке, что это ещё не полная Карта
+        "_diag_sig": _diag_signature(diag),
+    }
+
+
 def build_style_card(diag: dict, season: str | None = None) -> dict:
     """Собрать продукт «Карта стиля» из Формулы: выверенная палитра + 6 образов + секции.
     Два текстовых вызова (палитра + капсула), без рендера картинок. season — ss|fw (капсула
     собирается под сезон); по умолчанию осень-зима."""
+    # Выключатель генерации: SENSE_NO_GEN=1 — собираем Карту без модели. Нужен, чтобы проверять
+    # механику тарифов и кабинета, когда кредиты у провайдера кончились или тратить их незачем.
+    if os.getenv("SENSE_NO_GEN") == "1":
+        return build_card_skeleton(diag, season=season)
     season = season if season in _CARD_SEASONS else _DEFAULT_SEASON
     seas = _CARD_SEASONS[season]
     diag_sig = _diag_signature(diag)  # до refine_substyle: отпечаток исходной диагностики квиза
@@ -3805,7 +3878,15 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         substyle_rationale = ref.get("substyle_rationale") or ""
     # Палитра и капсула — на flash (dev): надёжно и быстро. pro@final в проде отдаёт
     # finish_reason=error (нестабилен), поэтому для продукта НЕ используем (2026-06-29).
-    palette = generate_card_palette(diag, mode="dev")
+    try:
+        palette = generate_card_palette(diag, mode="dev")
+    except Exception as e:  # noqa: BLE001
+        # Кредиты кончились — клиентка не должна упираться в пустой экран. Отдаём Карту без
+        # генерации: структура, капсула из каталога и честная пометка вместо выдуманных текстов.
+        if _is_provider_out(e):
+            print(f"[card] генерация недоступна ({e}); собираем Карту без модели", file=sys.stderr)
+            return build_card_skeleton(diag, season=season)
+        raise
     scenarios = list(_CARD_SCENARIOS)
     gen_req = {"mode": "capsule", "capsule_type": "auto", "season": seas["gen"],
                "scenarios": scenarios, "n_looks": 6, "price_segment": price_segment,

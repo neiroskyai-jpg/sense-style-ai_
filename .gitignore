@@ -86,3 +86,4 @@ tmp_visual/
 
 # локальная сборка настоящей Карты для проверки
 tmp_realcard/
+tmp_nogen/
