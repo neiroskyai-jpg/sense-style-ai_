@@ -709,22 +709,31 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .toprow{display:grid;grid-template-columns:.95fr 1.1fr .95fr;gap:15px;margin-bottom:16px;align-items:stretch}
  /* Формула из трёх частей длиннее двухсоставной — размер уменьшаем через clamp по ширине
     панели, чтобы «Smart Casual × Драма-акцент × Классическая сдержанность» не разъезжалась. */
- .dnaformula{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(20px,2.1vw,27px);
-             line-height:1.2;margin:14px 0 12px;overflow-wrap:break-word;letter-spacing:-.01em}
- .dnaformula .b{color:var(--wine2)}
+ /* Формула — главное в карточке: направление тёмным, уточнение винным с новой строки.
+    Знак × приглушён до разделителя, чтобы не спорил с самими словами. */
+ .dnaformula{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(22px,2.3vw,30px);
+             line-height:1.16;margin:16px 0 12px;overflow-wrap:break-word;letter-spacing:-.015em}
+ /* × уходит в начало второй строки, а не висит в конце первой */
+ .dnaformula .x{color:#c9bda9;font-weight:400;margin-right:8px;font-size:.8em;vertical-align:.06em}
+ .dnaformula .b{color:var(--wine2);display:block;margin-top:1px}
+ .dnarule{height:1px;margin:16px 0 0;opacity:.32;
+          background:linear-gradient(90deg,var(--wine),rgba(93,34,48,0))}
  .dnak{font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin:15px 0 7px}
- /* ДНК в долях: одна полоса вместо четырёх строк — читается за секунду */
- .dnabar{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--sand)}
+ /* ДНК в долях. Полоса тонкая и без обводок: это акцент, а не диаграмма — карточка
+    должна оставаться про формулу. Кружки в легенде убраны, цвет уже в полосе. */
+ .dnabar{display:flex;height:6px;border-radius:999px;overflow:hidden;background:var(--sand)}
  .dnabar span{display:block;height:100%}
- .dnabar span + span{box-shadow:inset 1px 0 0 rgba(255,255,255,.55)}
- .dnalegend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
- .dnaleg{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#5f574e}
- .dnaleg i{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
- .dnaleg b{color:var(--ink);font-weight:500}
+ .dnalegend{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:9px}
+ .dnaleg{font-size:11.5px;color:var(--muted);letter-spacing:.01em}
+ .dnaleg b{color:var(--ink);font-weight:500;margin-left:2px}
  .subchips{display:flex;gap:7px;flex-wrap:wrap}
  .subchip{border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;background:var(--soft)}
- .traits{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;font-size:12.5px;color:#4e473f}
- .traits div{display:flex;align-items:flex-start;gap:7px;line-height:1.35;min-width:0}
+ /* Черты — списком с тонкими разделителями, а не сеткой 2×2: в узкой колонке сетка
+    ломала длинные формулировки на обрывки и карточка выглядела тесной. */
+ .traits{display:flex;flex-direction:column;font-size:12.5px;color:#4e473f}
+ .traits div{display:flex;align-items:flex-start;gap:8px;line-height:1.35;min-width:0;
+             padding:8px 0;border-bottom:1px solid var(--line)}
+ .traits div:last-child{border-bottom:0;padding-bottom:0}
  .traits i{flex:0 0 auto;color:var(--wine2);font-style:normal;font-size:10px;margin-top:2px}
  /* черта в две строки максимум: длинные формулировки («жакеты с деликатно обозначенным…»)
     иначе разгоняли карточку по высоте и рвали ряд из трёх панелей */
@@ -999,7 +1008,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
  <div class=panel>
   <h2 class=ph>Твоя ДНК стиля</h2>
-  <div class=dnaformula>{{ flead }}{% for p in fmore %} <span class=b>&times;&nbsp;{{ p }}</span>{% endfor %}</div>
+  <div class=dnaformula>{{ flead }}{% for p in fmore %}<span class=b><span class=x>&times;</span>{{ p }}</span>{% endfor %}</div>
   {% if c.substyles %}
   {# Подстиль приходит машинным кодом (smart_casual) — на экране клиентки это выглядит как
      утечка внутренностей. Подчёркивания в пробелы, первая буква заглавная. #}
@@ -1013,12 +1022,13 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    {% for f in dna_fields %}<span style="width:{{ f.pct }}%;background:{{ f.hex }}" title="{{ f.label }} · {{ f.pct }}%"></span>{% endfor %}
   </div>
   <div class=dnalegend>
-   {% for f in dna_fields %}<span class=dnaleg><i style="background:{{ f.hex }}"></i>{{ f.label }}<b>{{ f.pct }}%</b></span>{% endfor %}
+   {% for f in dna_fields %}<span class=dnaleg>{{ f.label }} <b>{{ f.pct }}%</b></span>{% endfor %}
   </div>
   {% endif %}
   {# Ключевые черты — визуальные коды формулы: что именно делает образ её, а не просто название
      направления. Желаемый эффект («как хочу считываться») живёт в третьей карточке. #}
   {% if c.style_dna %}
+  <div class=dnarule></div>
   <div class=dnak>Ключевые черты</div>
   <div class=traits>{% for d in c.style_dna[:4] %}<div><i>◆</i><span title="{{ d.note }}">{{ d.code }}</span></div>{% endfor %}</div>
   {% endif %}
@@ -1450,14 +1460,24 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
- :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
- *{box-sizing:border-box} body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
- .wrap{max-width:560px;margin:0 auto;padding:34px 22px 70px}
+ /* Один язык с новой Картой: те же токены, спокойный ритм, секции вместо длинного списка. */
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--wine2:#7A2438;--muted:#6b645c;
+       --line:#e6dfd2;--sand:#F3ECDF;--soft:#FBF6EC}
+ *{box-sizing:border-box}
+ body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;margin:0;background:var(--cream);
+      color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+ .wrap{max-width:640px;margin:0 auto;padding:30px 22px 70px}
  .top{display:flex;justify-content:space-between;align-items:center} .logo{font-family:'Cormorant Garamond',serif;font-size:22px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
- .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine);margin:26px 0 10px}
- h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:36px;line-height:1.08;margin:0 0 12px} .lead{color:var(--muted);margin:0 0 8px;font-size:15px}
- .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px 22px 26px;margin-top:16px}
- label{display:block;margin:20px 0 7px;font-size:14px;font-weight:500;color:var(--ink)}
+ .eyebrow{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--wine);margin:24px 0 9px}
+ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:40px;line-height:1.05;
+    margin:8px 0 12px;letter-spacing:-.015em}
+ .lead{color:var(--muted);margin:0 0 8px;font-size:15px;line-height:1.6}
+ /* карточка-секция: у каждой части анкеты своя, между ними воздух */
+ .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:4px 24px 26px;margin-top:16px}
+ .sect{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 24px 24px;margin-top:14px}
+ .secth{font-family:'Cormorant Garamond',serif;font-size:21px;line-height:1.2;margin:0 0 4px}
+ .sectd{font-size:13px;color:var(--muted);margin:0 0 6px;line-height:1.5}
+ label{display:block;margin:20px 0 8px;font-size:14px;font-weight:400;color:#3f3931;line-height:1.5}
  .fld{width:100%;padding:12px 13px;border:1px solid #d9d2c7;border-radius:10px;font-family:inherit;font-size:15px;color:var(--ink);background:#fff;transition:border-color .15s}
  .fld:focus{outline:0;border-color:var(--wine)} .fld::placeholder{color:#a89f92}
  select.fld{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b645c' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
@@ -1471,12 +1491,25 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px}
  .chip{position:relative;cursor:pointer;margin:0}
  .chip input{position:absolute;opacity:0;pointer-events:none}
- .chip span{display:inline-block;padding:9px 15px;border:1px solid #d9d2c7;border-radius:999px;font-size:14px;color:var(--ink);background:#fff;transition:background .15s,color .15s,border-color .15s;user-select:none}
+ .chip span{display:inline-block;padding:9px 15px;border:1px solid var(--line);border-radius:999px;
+            font-size:13.5px;color:#4e473f;background:var(--soft);user-select:none;
+            transition:background .15s,color .15s,border-color .15s}
+ .chip span:hover{border-color:#c9bda9}
  .chip input:checked+span{background:var(--wine);color:#fff;border-color:var(--wine)}
  .chip input:focus-visible+span{box-shadow:0 0 0 2px rgba(93,34,48,.35)}
- .file{border:1.5px dashed #cdbfa6;border-radius:10px;padding:16px;text-align:center;background:#fbf8f1}
- input[type=file]{width:100%}
- button{margin-top:26px;width:100%;padding:15px;background:var(--wine);color:#fff;border:0;border-radius:10px;font-family:inherit;font-size:17px;cursor:pointer}
+ /* Загрузка фото: своя зона вместо серой кнопки браузера — это первый экран продукта. */
+ .file{position:relative;border:1.5px dashed #cdbfa6;border-radius:14px;padding:22px 18px;
+       text-align:center;background:var(--soft);transition:border-color .15s,background .15s}
+ .file:hover{border-color:var(--wine);background:#fff}
+ .file input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+ .fileico{font-size:22px;color:var(--wine);line-height:1}
+ .filet{font-size:14.5px;color:var(--ink);margin-top:8px}
+ .filet b{color:var(--wine);font-weight:500}
+ .files{font-size:12.5px;color:var(--muted);margin-top:4px}
+ button{margin-top:22px;width:100%;padding:16px;background:var(--wine);color:#fff;border:0;
+        border-radius:12px;font-family:inherit;font-size:16px;cursor:pointer;letter-spacing:.01em;
+        transition:opacity .15s}
+ button:hover{opacity:.92}
  .consent{font-size:13px;color:var(--muted);display:flex;gap:8px;margin-top:14px;line-height:1.4} .consent input{width:auto;margin-top:3px}
  .hint{color:var(--muted);font-size:13px;text-align:center;margin-top:14px} .hint a{color:var(--wine)}
  .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:8px}
@@ -1491,10 +1524,19 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if error %}<p class=err>{{ error }}</p>{% endif %}
 <form method=post action="/card/build" enctype="multipart/form-data">
 <div class=card>
- <label>Фото (в полный рост)</label>
- <div class=file><input type=file name=photo accept="image/*" required></div>
- <p class=hint style="text-align:left;margin:6px 0 0">Лицо должно быть хорошо видно — крупно, при дневном свете, без тёмных очков и сильной тени. От этого зависит сходство в образах.</p>
- <div class=eyebrow style="margin:24px 0 2px">Чтобы Карта была точнее (по желанию)</div>
+ <label>Фото в полный рост</label>
+ <div class=file>
+  <input type=file name=photo accept="image/*" required onchange="var n=this.files[0]&&this.files[0].name;if(n){this.parentNode.querySelector('.filet').innerHTML='<b>'+n+'</b>';}">
+  <div class=fileico>❐</div>
+  <div class=filet>Перетащи фото сюда или <b>выбери файл</b></div>
+  <div class=files>JPG или PNG, в полный рост</div>
+ </div>
+ <p class=hint style="text-align:left;margin:10px 0 0">Лицо должно быть хорошо видно — крупно, при дневном свете, без тёмных очков и сильной тени. От этого зависит сходство в образах.</p>
+</div>
+
+<div class=sect>
+ <div class=secth>Чтобы Карта была точнее</div>
+ <p class=sectd>Всё ниже — по желанию. Но чем больше расскажешь, тем точнее соберутся образы.</p>
  <label>Какие образы тебе откликаются? Отметь, к чему тяготеешь — образы соберём в этом характере.</label>
  <div class=stylegrid>
   {% for s in style_cards %}
