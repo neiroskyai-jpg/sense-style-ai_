@@ -1492,11 +1492,15 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .fld{width:100%;padding:12px 13px;border:1px solid #d9d2c7;border-radius:10px;font-family:inherit;font-size:15px;color:var(--ink);background:#fff;transition:border-color .15s}
  .fld:focus{outline:0;border-color:var(--wine)} .fld::placeholder{color:#a89f92}
  select.fld{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b645c' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
- .stylegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 6px}
+ /* Четыре стиля в ряд: в две колонки кадры 3:4 занимали почти два экрана и анкета
+    начиналась с бесконечной прокрутки. На телефоне остаются пары. */
+ .stylegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 6px}
+ @media(max-width:760px){.stylegrid{grid-template-columns:1fr 1fr}}
  .stylecard{position:relative;margin:0;cursor:pointer;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;transition:border-color .15s,box-shadow .15s}
  .stylecard input{position:absolute;opacity:0;pointer-events:none}
  .stylepic{display:block;aspect-ratio:3/4;background-size:cover;background-position:top center;background-color:#eee6d8}
- .stylemeta{display:block;padding:8px 10px;font-size:14px} .stylehint{color:var(--muted);font-size:12px}
+ .stylemeta{display:block;padding:9px 11px;font-size:13.5px;line-height:1.35}
+ .stylehint{color:var(--muted);font-size:11.5px;line-height:1.3}
  .stylecard:has(input:checked){border-color:var(--wine);box-shadow:0 0 0 2px var(--wine)}
  .stylecard:has(input:checked)::after{content:'✓';position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--wine);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px}
  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px}
