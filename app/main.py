@@ -919,8 +919,10 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <!-- ═══════ БЛОК 5 · ТВОЙ ГАРДЕРОБ ═══════ -->
 {% if c.visual_capsule or c.base_capsule %}
 <div class=blocklead><b>05</b>Твой гардероб</div>
-<h2 id=capsule>Базовая капсула — ядро гардероба</h2>
-<p class=meta>Это стартовая капсула{% if c.starter_capsule_count %} на {{ c.starter_capsule_count }} вещей{% endif %}: с неё удобно начать гардероб, а дальше докупать только то, что усиливает твою Формулу{% if c.combination_count %}. Из неё получается около {{ c.combination_count }} рабочих образов{% endif %}.</p>
+{# «Базовая капсула» звучит как универсальный список для всех и обесценивает персональную
+   сборку. По бизнес-логике тарифов — «Капсула-ядро», собранная из её же образов. #}
+<h2 id=capsule>Капсула-ядро под твою Формулу</h2>
+<p class=meta>Это не универсальный список базовых вещей. Капсула-ядро собрана из твоих образов выше и показывает, какие вещи действительно держат гардероб: сочетаются друг с другом, закрывают роли жизни и помогают не покупать случайно{% if c.starter_capsule_count %}. Здесь {{ c.starter_capsule_count }} вещей{% endif %}{% if c.combination_count %}, из них получается около {{ c.combination_count }} рабочих образов{% endif %}.</p>
 {% if c.visual_capsule %}
  {% for grp in c.visual_capsule %}
  <div class=capslot><span class=capslotname>{{ grp.slot }}</span></div>
@@ -3149,6 +3151,61 @@ def _enrich_card_looks(looks: list[dict], diag: dict) -> list[dict]:
     return out
 
 
+def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]:
+    """Капсула-ядро ИЗ ОБРАЗОВ клиентки, а не отдельным набором из каталога.
+
+    Правило продукта (бизнес-логика тарифов, 19.07.2026): капсула Карты не должна быть случайной
+    пачкой вещей рядом с образами. Она собирается из того, что реально надето в шести образах:
+    вещь, которая работает в нескольких сценариях, и есть ядро гардероба. Иначе клиентка видит
+    образы отдельно, капсулу отдельно и не понимает, откуда она взялась.
+
+    Каталог (board) используем только чтобы подтянуть фото и ссылку к вещи по названию.
+    """
+    if not looks:
+        return []
+    # индекс каталога по нормализованному имени — для фото и ссылки
+    cat: dict[str, dict] = {}
+    for grp in board or []:
+        for it in grp.get("items") or []:
+            key = " ".join((it.get("name") or "").lower().split())
+            if key:
+                cat.setdefault(key, {**it, "slot": grp.get("slot")})
+
+    seen: dict[str, dict] = {}
+    for lk in looks:
+        scenario = (lk.get("scenario") or "").strip()
+        for raw in (lk.get("items") or []):
+            name = (raw or "").strip()
+            if not name or not _is_capsule_worthy(name):
+                continue
+            key = " ".join(name.lower().split())
+            rec = seen.setdefault(key, {"name": name, "slot": _capsule_slot(name),
+                                        "scenarios": [], "outfits_count": 0})
+            if scenario and scenario not in rec["scenarios"]:
+                rec["scenarios"].append(scenario)
+            rec["outfits_count"] += 1
+
+    items = []
+    for rec in seen.values():
+        n = len(rec["scenarios"]) or rec["outfits_count"]
+        extra = cat.get(" ".join(rec["name"].lower().split())) or {}
+        items.append({
+            **{k: v for k, v in extra.items() if k in ("image", "url", "brand", "price")},
+            "name": _ru_item_name(rec["name"]),
+            "slot": rec["slot"],
+            "outfits_count": n,
+            # «ядро» — вещь работает минимум в двух сценариях; остальное поддерживает образ
+            "capsule_role": "core" if n >= 2 else "accent",
+            "why": (f"Работает в {n} образах: {', '.join(rec['scenarios'][:3])}."
+                    if n >= 2 else
+                    f"Держит образ «{rec['scenarios'][0]}»." if rec["scenarios"] else
+                    "Поддерживает формулу."),
+        })
+    # сначала то, что работает чаще — это и есть ядро
+    items.sort(key=lambda x: -x["outfits_count"])
+    return items[:9]
+
+
 def _starter_capsule_from_board(board: list[dict]) -> tuple[list[dict], int]:
     """Стартовая капсула 9 вещей из реального board каталога.
 
@@ -3265,7 +3322,14 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
     visual_capsule = _inline_capsule_images(
         _visual_capsule({"palette": palette.get("palette") or [], "stop_list": stop_list_full}, diag, 9)
     )
-    starter_capsule, starter_combos = _starter_capsule_from_board(visual_capsule)
+    # Капсула-ядро собирается ИЗ ОБРАЗОВ клиентки: вещь, работающая в нескольких сценариях, и есть
+    # ядро гардероба. Каталожная сборка остаётся запасной — если у образов нет состава вещей.
+    starter_capsule = _core_capsule_from_looks(looks, visual_capsule)
+    if len(starter_capsule) >= 5:
+        core_n = sum(1 for it in starter_capsule if it.get("capsule_role") == "core")
+        starter_combos = max(core_n * 3, len(starter_capsule) * 2)
+    else:
+        starter_capsule, starter_combos = _starter_capsule_from_board(visual_capsule)
     return {
         "formula": diag.get("style_formula"),
         "gap": diag.get("gap_percentage"),
