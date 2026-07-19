@@ -708,6 +708,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    .sidenav{flex-direction:row;flex-wrap:wrap}.sidetariff{margin:0}}
  .tcard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px}
  .tcard h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:21px;margin:0 0 12px}
+ .dnasub{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:14px 0 2px}
  .subchips{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
  .subchip{border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12.5px;background:#FBF6EC}
  .traits{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:13px;color:#4e473f}
@@ -716,6 +717,14 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .idxring{width:120px;height:120px;flex:0 0 auto}
  .idxnum{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;color:var(--wine)}
  .idxtext{font-size:13px;color:#4e473f;line-height:1.5}
+ .combohead{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;margin:26px 0 4px}
+ .combolane{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:10px}
+ .combo{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
+ .combopics{display:flex;gap:5px}
+ .combopics img{width:100%;height:64px;object-fit:cover;border-radius:8px;background:#f4eee3}
+ .combodot{flex:1;height:64px;border-radius:8px;background:#F3ECDF;display:flex;align-items:center;
+           justify-content:center;color:var(--wine);font-family:'Cormorant Garamond',serif;font-size:19px}
+ .combotitle{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
  .corecaps{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px;margin-top:14px}
  .coreitem{display:block;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 15px;
            text-decoration:none;color:inherit}
@@ -858,11 +867,15 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <div class=tcard>
   <h3>Твоя ДНК стиля</h3>
   <div class=proff style="font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;color:var(--ink)">{{ c.formula }}</div>
-  {% if c.style_dna %}
-  <div class=traits style="margin-top:14px">
-   {% for d in c.style_dna %}<div>{{ d.code }}</div>{% endfor %}
-  </div>
+  {% if c.substyles %}
+  <div class=dnasub>Субстили</div>
+  <div class=subchips>{% for sub in c.substyles %}<span class=subchip>{{ sub }}</span>{% endfor %}</div>
   {% endif %}
+  {% if c.want_traits %}
+  <div class=dnasub>Ключевые черты</div>
+  <div class=traits>{% for t in c.want_traits %}<div>{{ t }}</div>{% endfor %}</div>
+  {% endif %}
+  {% if c.accent_note %}<p class=idxtext style="margin-top:12px">{{ c.accent_note }}</p>{% endif %}
  </div>
  {% set gap_pct = c.get('gap') %}
  <div class=tcard>
@@ -885,10 +898,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <h3>Какой эффект ты хочешь производить</h3>
   {% if c.emphasize or c.dna %}<p class=idxtext>{{ c.emphasize or c.dna }}</p>{% endif %}
   {% if c.style_dna %}
+  <div class=dnasub>Визуальные коды</div>
   <div class=subchips>
-   {% for d in c.style_dna[:4] %}<span class=subchip>{{ d.code }}</span>{% endfor %}
+   {% for d in c.style_dna[:4] %}<span class=subchip title="{{ d.note }}">{{ d.code }}</span>{% endfor %}
   </div>
   {% endif %}
+  <p class=idxtext style="margin-top:10px">По этим кодам собраны образы ниже — сначала ДНК, потом уже конкретные вещи.</p>
  </div>
 </div>
 {% if stale %}<div class=stale><b>Твоя диагностика обновилась.</b> Ты недавно заново прошла квиз, и разрыв изменился. Эта Карта пока собрана на прежней диагностике — числа и подборка ниже от неё. Собери Карту заново, чтобы она совпала с последним квизом.<br><a href="/card?rebuild=1">Собрать Карту заново →</a></div>{% endif %}
@@ -1031,6 +1046,24 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% if it.url %}</a>{% else %}</div>{% endif %}
   {% endfor %}
  </div>
+{# Лента сочетаний: цифра «18 образов» без примеров остаётся обещанием. Показываем, КАК они
+   собираются — из тех же вещей ядра, без новых генераций. #}
+{% if c.capsule_combos %}
+<div class=combohead>Из {{ c.starter_capsule_count }} вещей — {{ c.combination_count }} сочетаний</div>
+<div class=combolane>
+ {% for combo in c.capsule_combos %}
+ <div class=combo>
+  <div class=combopics>
+   {% for it in combo['items'][:4] %}
+    {% if it.image %}<img src="{{ it.image }}" alt="{{ it.name }}">{% else %}<span class=combodot>{{ it.name[:1] }}</span>{% endif %}
+   {% endfor %}
+  </div>
+  <div class=combotitle>{{ combo.title }}</div>
+ </div>
+ {% endfor %}
+</div>
+{% endif %}
+
 {% elif c.visual_capsule %}
  {% for grp in c.visual_capsule %}
  <div class=capslot><span class=capslotname>{{ grp.slot }}</span></div>
@@ -3302,6 +3335,40 @@ def _style_dna_codes(diag: dict, card_bits: dict) -> list[dict]:
     return codes[:5]
 
 
+def _capsule_combos(capsule: list[dict], limit: int = 6) -> list[dict]:
+    """Готовые комплекты из капсулы-ядра: верх + низ (+ верхний слой, обувь, сумка).
+
+    Метод продаёт «мало вещей → много образов», но цифра сочетаний без примеров остаётся
+    обещанием. Здесь мы показываем, КАК именно они собираются — из тех же вещей ядра.
+    """
+    by_slot: dict[str, list] = {}
+    for it in capsule or []:
+        by_slot.setdefault(it.get("slot") or "", []).append(it)
+    tops = by_slot.get("Верх") or []
+    bottoms = by_slot.get("Низ") or []
+    dresses = by_slot.get("Платья и комбинезоны") or []
+    layer = (by_slot.get("Верхний слой") or [None])[0]
+    shoes = by_slot.get("Обувь") or []
+    bags = by_slot.get("Аксессуары") or []
+
+    combos: list[dict] = []
+    for i, bottom in enumerate(bottoms):
+        for j, top in enumerate(tops):
+            pieces = [top, bottom]
+            if layer and (i + j) % 2 == 0:
+                pieces.append(layer)
+            if shoes:
+                pieces.append(shoes[(i + j) % len(shoes)])
+            if bags and len(pieces) < 5:
+                pieces.append(bags[(i + j) % len(bags)])
+            combos.append({"items": pieces,
+                           "title": " + ".join(p["name"] for p in pieces[:2])})
+    for k, dress in enumerate(dresses):  # платье — готовый образ, добавляем обувь
+        pieces = [dress] + ([shoes[k % len(shoes)]] if shoes else [])
+        combos.append({"items": pieces, "title": dress["name"]})
+    return combos[:limit]
+
+
 def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]:
     """Капсула-ядро ИЗ ОБРАЗОВ клиентки, а не отдельным набором из каталога.
 
@@ -3314,13 +3381,40 @@ def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]
     """
     if not looks:
         return []
-    # индекс каталога по нормализованному имени — для фото и ссылки
+    # Индекс каталога: и по полному имени, и по СЛОТУ. Точного совпадения строк почти не бывает —
+    # образ говорит «Пиджак структурный», каталог «Приталенный однобортный жакет». Из-за этого
+    # карточки капсулы оставались без фото. Подбираем по слоту: вещь того же типа с фото лучше,
+    # чем пустая рамка.
     cat: dict[str, dict] = {}
+    by_slot: dict[str, list] = {}
     for grp in board or []:
         for it in grp.get("items") or []:
-            key = " ".join((it.get("name") or "").lower().split())
-            if key:
-                cat.setdefault(key, {**it, "slot": grp.get("slot")})
+            name = (it.get("name") or "").strip()
+            if not name:
+                continue
+            rec = {**it, "slot": grp.get("slot")}
+            cat.setdefault(" ".join(name.lower().split()), rec)
+            by_slot.setdefault(grp.get("slot") or "", []).append(rec)
+
+    used_photos: set[str] = set()
+
+    def _photo_for(name: str, slot: str) -> dict:
+        exact = cat.get(" ".join(name.lower().split()))
+        if exact:
+            return exact
+        words = {w for w in re.findall(r"[а-яёa-z]{4,}", name.lower())}
+        best = None
+        for cand in by_slot.get(slot, []):
+            if (cand.get("url") or "") in used_photos:
+                continue
+            cw = {w for w in re.findall(r"[а-яёa-z]{4,}", (cand.get("name") or "").lower())}
+            score = len(words & cw)
+            if best is None or score > best[0]:
+                best = (score, cand)
+        if best and best[1]:
+            used_photos.add(best[1].get("url") or "")
+            return best[1]
+        return {}
 
     seen: dict[str, dict] = {}
     for lk in looks:
@@ -3339,7 +3433,7 @@ def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]
     items = []
     for rec in seen.values():
         n = len(rec["scenarios"]) or rec["outfits_count"]
-        extra = cat.get(" ".join(rec["name"].lower().split())) or {}
+        extra = _photo_for(rec["name"], rec["slot"]) or {}
         items.append({
             **{k: v for k, v in extra.items() if k in ("image", "url", "brand", "price")},
             "name": _ru_item_name(rec["name"]),
@@ -3501,8 +3595,14 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         "visual_capsule": visual_capsule,
         "starter_capsule": starter_capsule,
         "starter_capsule_count": len(starter_capsule),
+        "capsule_combos": _capsule_combos(starter_capsule),
         # Style DNA — визуальные коды клиентки. Формула называет направление, коды объясняют,
         # что именно делает образ её.
+        # Субстили и желаемое впечатление — для карточки ДНК: формула называет направление,
+        # субстили уточняют его, а черты говорят, ЧТО она хочет транслировать.
+        "substyles": [x for x in (diag.get("primary_substyle"), diag.get("secondary_substyle")) if x],
+        "accent_note": diag.get("accent_note"),
+        "want_traits": [t for t in (diag.get("want_traits_top3") or []) if t][:4],
         "style_dna": _style_dna_codes(diag, {
             "silhouettes": card.get("silhouettes") or vf.get("silhouettes"),
             "palette": palette.get("palette"),
