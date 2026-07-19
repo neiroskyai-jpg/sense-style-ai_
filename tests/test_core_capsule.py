@@ -51,17 +51,24 @@ def test_why_explains_the_link_to_looks():
     assert top["scenarios"] if "scenarios" in top else True
 
 
-def test_catalog_only_adds_photo_and_link():
-    """Каталог не добавляет вещи в капсулу — только фото и ссылку к тому, что уже в образах."""
+def test_catalog_only_illustrates_and_never_adds_items():
+    """Каталог не добавляет вещи в капсулу и не привязывает её к товару бренда.
+
+    Бизнес-решение 19.07.2026: продукт не должен зависеть от договорённостей с брендами, фидов,
+    наличия и цен. Вещь описывается характеристиками, ссылка ведёт на ПОИСК по описанию,
+    а фото из каталога — только иллюстрация типа вещи.
+    """
     board = [{"slot": "Обувь", "items": [
         {"name": "Лоферы кожаные", "image": "http://img", "url": "http://buy", "brand": "Nexude"},
         {"name": "Кроссовки беговые", "image": "http://x", "url": "http://y"},
     ]}]
     cap = m._core_capsule_from_looks(LOOKS, board)
-    names = [i["name"] for i in cap]
-    assert "Кроссовки беговые" not in names          # в образах её нет — в капсулу не лезет
+    assert "Кроссовки беговые" not in [i["name"] for i in cap]   # в образах её нет
     loafers = next(i for i in cap if "оферы" in i["name"])
-    assert loafers["image"] == "http://img" and loafers["url"] == "http://buy"
+    assert loafers["image"] == "http://img"
+    assert loafers["image_is_example"] is True       # честно помечаем: это пример, не та самая вещь
+    assert "url" not in loafers                      # к товару бренда не привязываемся
+    assert "wildberries" in loafers["search"]        # ищем по описанию в любом магазине
 
 
 def test_underwear_never_enters_capsule():

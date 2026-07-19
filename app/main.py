@@ -19,7 +19,7 @@ import threading
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, quote_plus
 
 from flask import (Flask, Response, jsonify, redirect, render_template_string,
                    request, session, send_from_directory)
@@ -731,6 +731,9 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .corethumb{width:100%;height:150px;object-fit:cover;border-radius:11px;margin-bottom:10px;display:block;background:#f4eee3}
  .coreslot{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine)}
  .corename{display:block;font-size:15px;margin:5px 0 5px;line-height:1.35}
+ .coreexample{font-size:10.5px;color:var(--muted);margin:-6px 0 8px}
+ .coresearch{font-size:12px;color:var(--muted);margin-top:8px}
+ .coresearch a{color:var(--wine);text-decoration:none}
  .corewhy{font-size:12.5px;color:var(--muted);line-height:1.45}
  .dnaband{margin:18px 0;background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px 26px}
  .dnalead{margin:8px 0 16px;color:var(--muted);font-size:14px}
@@ -1037,13 +1040,17 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if c.starter_capsule %}
  <div class=corecaps>
   {% for it in c.starter_capsule %}
-  {% if it.url %}<a class="coreitem" href="{{ it.url }}" target=_blank rel=noopener>{% else %}<div class="coreitem">{% endif %}
-   {% if it.image %}<img class=corethumb src="{{ it.image }}" alt="{{ it.name }}">{% endif %}
+  <div class="coreitem">
+   {% if it.image %}<img class=corethumb src="{{ it.image }}" alt="{{ it.name }}">
+    {% if it.image_is_example %}<div class=coreexample>пример вещи такого типа</div>{% endif %}{% endif %}
    <div class=coreslot>{{ it.slot }}{% if it.capsule_role == 'core' %} · ядро{% endif %}</div>
    <b class=corename>{{ it.name }}</b>
-   {% if it.brand %}<div class=capbrand>{{ it.brand }}</div>{% endif %}
    {% if it.why %}<div class=corewhy>{{ it.why }}</div>{% endif %}
-  {% if it.url %}</a>{% else %}</div>{% endif %}
+   {% if it.search %}<div class=coresearch>Найти:
+    <a href="{{ it.search.wildberries }}" target=_blank rel=noopener>WB</a> ·
+    <a href="{{ it.search.lamoda }}" target=_blank rel=noopener>Lamoda</a> ·
+    <a href="{{ it.search.ozon }}" target=_blank rel=noopener>Ozon</a></div>{% endif %}
+  </div>
   {% endfor %}
  </div>
 {# Лента сочетаний: цифра «18 образов» без примеров остаётся обещанием. Показываем, КАК они
@@ -3301,6 +3308,18 @@ def _enrich_card_looks(looks: list[dict], diag: dict) -> list[dict]:
     return out
 
 
+def _shop_search_links(query: str) -> dict:
+    """Ссылки на ПОИСК вещи по описанию. Не привязываемся к конкретному товару и фиду бренда:
+    описание («приталенный жакет в графите») работает в любом магазине и не зависит от наличия,
+    цены и договорённостей."""
+    q = quote_plus(query or "")
+    return {
+        "wildberries": f"https://www.wildberries.ru/catalog/0/search.aspx?search={q}",
+        "lamoda": f"https://www.lamoda.ru/catalogsearch/result/?q={q}",
+        "ozon": f"https://www.ozon.ru/search/?text={q}",
+    }
+
+
 def _style_dna_codes(diag: dict, card_bits: dict) -> list[dict]:
     """Style DNA — 3–5 визуальных кодов клиентки: {code, note}.
 
@@ -3434,8 +3453,13 @@ def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]
     for rec in seen.values():
         n = len(rec["scenarios"]) or rec["outfits_count"]
         extra = _photo_for(rec["name"], rec["slot"]) or {}
+        # Ссылка ведёт на ПОИСК по описанию вещи, а не на товар из фида: продукт не зависит от
+        # договорённостей с брендами, а клиентка ищет вещь по характеристикам в любом магазине.
+        # Фото из каталога — только иллюстрация типа вещи, поэтому помечаем его как пример.
         items.append({
-            **{k: v for k, v in extra.items() if k in ("image", "url", "brand", "price")},
+            **{k: v for k, v in extra.items() if k in ("image", "brand")},
+            "search": _shop_search_links(rec["name"]),
+            "image_is_example": bool(extra.get("image")),
             "name": _ru_item_name(rec["name"]),
             "slot": rec["slot"],
             "outfits_count": n,
