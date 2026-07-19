@@ -34,10 +34,15 @@ SKIP_NAMES = {"README.md"}
 _SEASON = {"зим": "winter", "лет": "summer", "весн": "spring", "осен": "autumn"}
 _TONE = {"контрастн": "contrast", "натуральн": "natural", "светл": "light"}
 FIGURES = ["rectangle", "hourglass", "pear", "inverted_triangle", "apple"]
+# Курс «Алгоритмы имиджа» называет фигуры иначе, чем англо-коды движка: «нижний тип» = груша,
+# «верхний тип/треугольник» = перевёрнутый треугольник, «овал» = круг. Без этих синонимов куски
+# методологии, написанные языком курса, не тегировались на фигуру и терялись в поиске.
 _FIGURE_RU = {
-    "песочные часы": "hourglass", "перевёрнутый треугольник": "inverted_triangle",
-    "перевернутый треугольник": "inverted_triangle", "груша": "pear",
-    "прямоугольник": "rectangle", "яблоко": "apple", "круг": "apple",
+    "песочные часы": "hourglass", "восьмёрка": "hourglass", "восьмерка": "hourglass",
+    "перевёрнутый треугольник": "inverted_triangle", "перевернутый треугольник": "inverted_triangle",
+    "верхний треугольник": "inverted_triangle", "верхний тип": "inverted_triangle",
+    "груша": "pear", "нижний тип": "pear",
+    "прямоугольник": "rectangle", "яблоко": "apple", "круг": "apple", "овал": "apple",
 }
 _FIELD_RU = {"классика": "classic", "натуральн": "natural",
              "романтика": "romance", "драма": "drama"}
