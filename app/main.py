@@ -663,8 +663,10 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .sidetariff a:hover{border-color:var(--wine)}
 
  /* ── рабочая область ─────────────────────────────────────────────────────────────────── */
- .main{padding:22px 26px 60px;min-width:0}
- .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 20px}
+ /* max-width: на мониторе 2560px дашборд растягивался во всю ширину — строки становились
+    нечитаемо длинными, карточки неоправданно огромными. Ограничиваем и центруем. */
+ .main{padding:22px 26px 60px;min-width:0;max-width:1560px;margin:0 auto;width:100%}
+ .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 20px;min-width:0}
  .ph{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;line-height:1.15;margin:0;
      display:flex;align-items:center;gap:8px;flex-wrap:wrap}
  .ph .dot{width:15px;height:15px;flex:0 0 auto;opacity:.5}
@@ -679,29 +681,40 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
          align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;
          font-size:24px;flex:0 0 auto;overflow:hidden}
  .profav img{width:100%;height:100%;object-fit:cover}
- .profname{font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;line-height:1.1}
+ .profwho{min-width:0;flex:1 1 220px}
+ .profname{font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;line-height:1.1;
+           overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  .proff{font-size:14px;color:var(--muted)}
  .proff b{color:var(--wine2);font-weight:400;font-family:'Cormorant Garamond',Georgia,serif;font-size:16px}
  .profchips{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
  .profchip{display:flex;align-items:center;gap:9px;background:var(--soft);border:1px solid var(--line);
-           border-radius:13px;padding:7px 15px}
+           border-radius:13px;padding:7px 15px;max-width:250px}
  .profchip .pi{font-size:15px;line-height:1}
+ .profchip > span:last-child{min-width:0}
  .profchip .pk{font-size:11px;color:var(--muted);display:block}
- .profchip .pv{font-size:13.5px;color:var(--ink);display:block;font-weight:400}
+ /* значение чипа — одна строка с многоточием: длинный цветотип/фигура иначе рвал шапку */
+ .profchip .pv{font-size:13.5px;color:var(--ink);display:block;font-weight:400;
+               overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  .profedit{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:11px;
            padding:10px 15px;font-size:13px;color:#4e473f;text-decoration:none;background:#fff}
  .profedit:hover{border-color:var(--wine);color:var(--wine)}
 
  /* верхний ряд из трёх карточек */
  .toprow{display:grid;grid-template-columns:.95fr 1.1fr .95fr;gap:15px;margin-bottom:16px;align-items:stretch}
- .dnaformula{font-family:'Cormorant Garamond',Georgia,serif;font-size:27px;line-height:1.15;margin:12px 0 0}
+ /* Формула из трёх частей длиннее двухсоставной — размер уменьшаем через clamp по ширине
+    панели, чтобы «Smart Casual × Драма-акцент × Классическая сдержанность» не разъезжалась. */
+ .dnaformula{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(20px,2.1vw,27px);
+             line-height:1.2;margin:12px 0 0;overflow-wrap:break-word}
  .dnaformula .b{color:var(--wine2)}
  .dnak{font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin:15px 0 7px}
  .subchips{display:flex;gap:7px;flex-wrap:wrap}
  .subchip{border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;background:var(--soft)}
  .traits{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;font-size:12.5px;color:#4e473f}
- .traits div{display:flex;align-items:flex-start;gap:7px;line-height:1.35}
+ .traits div{display:flex;align-items:flex-start;gap:7px;line-height:1.35;min-width:0}
  .traits i{flex:0 0 auto;color:var(--wine2);font-style:normal;font-size:10px;margin-top:2px}
+ /* черта в две строки максимум: длинные формулировки («жакеты с деликатно обозначенным…»)
+    иначе разгоняли карточку по высоте и рвали ряд из трёх панелей */
+ .traits span{min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
  .idxwrap{display:flex;align-items:center;gap:18px;margin-top:10px}
  .idxring{width:118px;height:118px;flex:0 0 auto}
  .idxnum{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;fill:var(--wine)}
@@ -725,10 +738,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .lookpic.empty{display:flex;align-items:center;justify-content:center;color:var(--wine);
                 font-family:'Cormorant Garamond',serif;font-size:26px;opacity:.35}
  .lookbody{padding:11px 12px 10px;display:flex;flex-direction:column;min-width:0}
- .lookttl{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:var(--ink)}
+ .lookttl{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:var(--ink);min-width:0}
+ .lookttl .lt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  .lookttl .chev{margin-left:auto;color:var(--muted);font-size:13px}
  .lookdesc{font-size:11.5px;color:var(--muted);line-height:1.4;margin:6px 0 0;
-           display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+           display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
  .lookmatch{margin-top:auto;padding-top:8px;text-align:right;font-size:11px;color:var(--muted)}
  .lookmatch b{color:var(--wine);font-weight:500;font-size:12px}
  .noimg{background:var(--soft);border:1px solid var(--line);border-left:3px solid var(--wine);
@@ -740,9 +754,14 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .buyrow{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start}
  .buygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:13px}
  .buycard{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--soft);
-          display:flex;flex-direction:column}
- .buyname{font-size:13px;font-weight:500;line-height:1.3}
- .buywhy{font-size:11.5px;color:var(--muted);line-height:1.4;margin:8px 0 0}
+          display:flex;flex-direction:column;min-width:0}
+ /* Названия из генерации длинные («жакет полуприлегающего силуэта серо-синего цвета»).
+    Заголовок — до двух строк, обоснование — до четырёх: карточки в ряду одной высоты,
+    и текст обрывается многоточием, а не на полуслове посреди строки. */
+ .buyname{font-size:13px;font-weight:500;line-height:1.3;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .buywhy{font-size:11.5px;color:var(--muted);line-height:1.4;margin:8px 0 0;
+         display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
  .buywhy b{color:var(--wine);font-weight:500}
  .buylinks{margin-top:auto;padding-top:9px;font-size:11px;color:var(--muted)}
  .buylinks a{color:var(--wine);text-decoration:none}
@@ -755,13 +774,20 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .capcard{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:#fff;
           text-decoration:none;color:inherit;display:flex;flex-direction:column;position:relative}
  .capcard:hover{border-color:#d5c9b6}
- .capimg{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--sand)}
- .capimg.empty{display:flex;align-items:center;justify-content:center;color:var(--wine);
-               font-family:'Cormorant Garamond',serif;font-size:22px;opacity:.35}
+ /* contain, а не cover: у вещей каталога кадр вертикальный, cover срезал верх и низ —
+    от плаща оставался кусок полы. Фон чуть темнее белого, иначе белая блуза сливалась в пустоту. */
+ .capimg{width:100%;aspect-ratio:1/1;object-fit:contain;display:block;background:#F7F2E9;
+         border-bottom:1px solid var(--line)}
+ /* нет фото — не одинокая буква на пустом поле, а подпись, по которой понятно, что это за вещь */
+ .capimg.empty{display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;
+               color:#8d8175;font-size:11px;line-height:1.3;background:var(--soft)}
  .capbadge{position:absolute;top:7px;right:7px;background:rgba(255,255,255,.94);border:1px solid var(--line);
            border-radius:999px;padding:3px 9px;font-size:9.5px;color:var(--wine);letter-spacing:.02em}
- .capbody{padding:9px 10px 11px}
- .capname{font-size:12px;line-height:1.3;color:var(--ink)}
+ .capbody{padding:9px 10px 11px;min-width:0}
+ /* название вещи из генерации бывает длинным («кожаный плащ миди цвета мягкого какао») —
+    держим три строки, дальше многоточие, иначе карточки в ряду разной высоты */
+ .capname{font-size:12px;line-height:1.3;color:var(--ink);
+          display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
  .capbrand{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:3px}
  .capprice{font-size:11.5px;color:#4e473f;margin-top:3px}
  .capfind{font-size:10.5px;color:var(--muted);margin-top:5px}
@@ -883,7 +909,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </style></head><body>
 {# Формула вида «Леди-лайк × Soft Classic»: первая часть — ведущий стиль, вторая — подстиль.
    Разводим их по цвету, как в макете: направление тёмное, уточнение — винным. #}
+{# Формула бывает и из трёх частей («Smart Casual × Драма-акцент × Классическая сдержанность»):
+   берём ВСЁ после первого ×, иначе третья часть молча пропадала с экрана. #}
 {% set fparts = (c.formula or '').split('×') %}
+{% set flead = fparts[0]|trim %}
+{% set fmore = fparts[1:]|map('trim')|select|list %}
 {% set idx = (100 - c.gap) if c.get('gap') is not none else none %}
 <div class=shell>
 <div class=side>
@@ -912,14 +942,16 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {# ── шапка профиля ───────────────────────────────────────────────────────────────────── #}
 <div class=profbar>
  <div class=profav>{{ (name or 'К')[0]|upper }}</div>
- <div>
+ <div class=profwho>
   <div class=profname>{{ name or 'Твоя Карта' }}</div>
   <div class=proff><b>{{ c.formula }}</b></div>
  </div>
  <div class=profchips>
   {% if c.season_label %}<div class=profchip><span class=pi>❦</span><span><span class=pk>Сезон</span><span class=pv>{{ c.season_label }}</span></span></div>{% endif %}
   {% if c.colortype %}<div class=profchip><span class=pi>✦</span><span><span class=pk>Цветотип</span><span class=pv>{{ c.colortype }}</span></span></div>{% endif %}
-  {% if c.figure %}<div class=profchip><span class=pi>◈</span><span><span class=pk>Фигура</span><span class=pv>{{ c.figure }}</span></span></div>{% endif %}
+  {# Короткое имя фигуры: длинное описание («Выраженная талия, сбалансированные пропорции»)
+     растягивало чип на половину шапки. Полное — в подсказке. #}
+  {% if figure_short or c.figure %}<div class=profchip title="{{ c.figure }}"><span class=pi>◈</span><span><span class=pk>Фигура</span><span class=pv>{{ figure_short or c.figure }}</span></span></div>{% endif %}
   <a class=profedit href="/me">Редактировать профиль <span>✎</span></a>
  </div>
 </div>
@@ -931,10 +963,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
  <div class=panel>
   <h2 class=ph>Твоя ДНК стиля</h2>
-  <div class=dnaformula>{{ fparts[0]|trim }}{% if fparts|length > 1 %} <span class=b>× {{ fparts[1]|trim }}</span>{% endif %}</div>
+  <div class=dnaformula>{{ flead }}{% for p in fmore %} <span class=b>&times;&nbsp;{{ p }}</span>{% endfor %}</div>
   {% if c.substyles %}
   <div class=dnak>Субстили</div>
-  <div class=subchips>{% for sub in c.substyles %}<span class=subchip>{{ sub }}</span>{% endfor %}</div>
+  {# Подстиль приходит машинным кодом (smart_casual) — на экране клиентки это выглядит как
+     утечка внутренностей. Подчёркивания в пробелы, первая буква заглавная. #}
+  <div class=subchips>{% for sub in c.substyles %}<span class=subchip>{{ sub|replace('_',' ')|capitalize }}</span>{% endfor %}</div>
   {% endif %}
   {# Ключевые черты — визуальные коды формулы: что именно делает образ её, а не просто название
      направления. Желаемый эффект («как хочу считываться») живёт в третьей карточке. #}
@@ -1003,7 +1037,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
      {% if lk.img %}<img class=lookpic src="{{ lk.img }}" alt="Образ · {{ lk.scenario or lk.title }}" loading=lazy>
      {% else %}<span class="lookpic empty">{{ (lk.scenario or lk.title or '·')[:1] }}</span>{% endif %}
      <div class=lookbody>
-      <div class=lookttl>{{ lk.scenario or lk.title or lk.name }}<span class=chev>›</span></div>
+      <div class=lookttl>{% set ltl = lk.scenario or lk.title or lk.name or '' %}<span class=lt>{{ ltl[0]|upper }}{{ ltl[1:] }}</span><span class=chev>›</span></div>
       <p class=lookdesc>{{ lk.why_it_works or lk.description or (lk['items']|join(' · ') if lk.get('items') else '') }}</p>
       {% if lk.formula_match %}<div class=lookmatch>совпадение <b>{{ lk.formula_match }}%</b></div>{% endif %}
      </div>
@@ -1023,7 +1057,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     <div class=buygrid>
      {% for it in c.shopping[:3] %}
      <div class=buycard>
-      <div class=buyname>{{ it.item_name }}</div>
+      <div class=buyname>{{ it.item_name[0]|upper }}{{ it.item_name[1:] }}</div>
       {% if it.closes_gap %}<p class=buywhy><b>Почему подходит:</b> {{ it.closes_gap }}</p>{% endif %}
       {% if it.links %}<div class=buylinks><a href="{{ it.links.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.links.lamoda }}" target=_blank rel=noopener>Lamoda</a> · <a href="{{ it.links.ozon }}" target=_blank rel=noopener>Ozon</a></div>{% endif %}
      </div>
@@ -1060,7 +1094,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     {% for it in c.starter_capsule[:6] %}
     <div class=capcard>
      {% if it.image %}<img class=capimg src="{{ it.image }}" alt="{{ it.name }}" loading=lazy>
-     {% else %}<span class="capimg empty">{{ it.name[:1] }}</span>{% endif %}
+     {% else %}<span class="capimg empty">{{ it.slot or 'вещь' }}<br>без фото</span>{% endif %}
      {# Бейдж говорит, ЗАЧЕМ вещь в ядре: ядро работает в нескольких образах, остальное — поддержка. #}
      {% if it.capsule_role == 'core' %}<span class=capbadge>ядро</span>
      {% elif it.outfits_count and it.outfits_count > 1 %}<span class=capbadge>собирает {{ it.outfits_count }} образ{{ 'а' if it.outfits_count % 10 in [2,3,4] and it.outfits_count // 10 != 1 else 'ов' }}</span>
@@ -2095,8 +2129,10 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .sidetariff a:hover{border-color:var(--wine)}
 
  /* ── рабочая область ─────────────────────────────────────────────────────────────────── */
- .main{padding:22px 26px 60px;min-width:0}
- .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 20px}
+ /* max-width: на мониторе 2560px дашборд растягивался во всю ширину — строки становились
+    нечитаемо длинными, карточки неоправданно огромными. Ограничиваем и центруем. */
+ .main{padding:22px 26px 60px;min-width:0;max-width:1560px;margin:0 auto;width:100%}
+ .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 20px;min-width:0}
  .ph{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;line-height:1.15;margin:0;
      display:flex;align-items:center;gap:9px;flex-wrap:wrap}
  .ph .tag{font-family:Onest,sans-serif;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
@@ -2120,8 +2156,10 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .profchip{display:flex;align-items:center;gap:9px;background:var(--soft);border:1px solid var(--line);
            border-radius:13px;padding:7px 15px}
  .profchip .pi{font-size:15px;line-height:1}
+ .profchip > span:last-child{min-width:0}
  .profchip .pk{font-size:11px;color:var(--muted);display:block}
- .profchip .pv{font-size:13.5px;color:var(--ink);display:block}
+ .profchip .pv{font-size:13.5px;color:var(--ink);display:block;
+               overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  .profedit{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:11px;
            padding:10px 15px;font-size:13px;color:#4e473f;text-decoration:none;background:#fff}
  .profedit:hover{border-color:var(--wine);color:var(--wine)}
@@ -2140,14 +2178,18 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  /* minmax(0,…), а не 1fr: у подписи вещи nowrap, и в обычном 1fr она задавала колонке
     min-content — колонки разъезжались по ширине, а плитки прыгали по высоте. */
  .slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:9px;margin-top:14px}
+ /* min-width:0 обязателен: у подписи вещи nowrap, и без него автоминимум grid-элемента равен
+    ширине всей строки («Верхний слой · вариант 1») — плитки вылезали за экран телефона и
+    страница ехала вбок. */
  .pitem{cursor:grab;border:1px solid var(--line);border-radius:11px;background:#fff;padding:5px;
-        text-align:center;user-select:none;transition:border-color .12s,box-shadow .12s;display:block}
+        text-align:center;user-select:none;transition:border-color .12s,box-shadow .12s;
+        display:block;min-width:0;max-width:100%}
  .pitem:hover{border-color:var(--wine)}
  .pitem.on{border-color:var(--wine);box-shadow:0 0 0 2px rgba(93,34,48,.28)}
  .pitem img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:7px;display:block;background:var(--sand)}
  .pitem .ph0{width:100%;aspect-ratio:3/4;border-radius:7px;background:var(--sand);display:block}
  .pitem .pname{display:block;font-size:10.5px;color:#4a443c;margin-top:5px;line-height:1.2;
-               white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+               white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
  .checks{margin-top:14px;display:flex;flex-direction:column;gap:6px}
  .checks div{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
  .checks i{flex:0 0 auto;width:14px;height:14px;border-radius:4px;background:var(--wine);color:#fff;
@@ -2448,7 +2490,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    <div class=buycard>
     {# В покупках Карты поле называется item_name; шаблон читал it.name и печатал пустоту —
        клиентка видела «почему подходит» без самой вещи. #}
-    <div class=buyname>{{ it.item_name or it.name }}</div>
+    {% set bn = it.item_name or it.name or '' %}<div class=buyname>{{ bn[0]|upper }}{{ bn[1:] }}</div>
     {% if it.closes_gap %}<p class=buywhy>{{ it.closes_gap }}</p>{% endif %}
     <div class=buyok><i>✓</i>Подходит к твоей капсуле и палитре</div>
    </div>
@@ -2900,7 +2942,7 @@ def cabinet():
     return render_template_string(
         CABINET_PAGE, email=email, roles=roles, milestones=milestones,
         formula=card.get("formula") or diag.get("style_formula"),
-        colortype=_colortype_label(diag.get("colortype")), figure=_figure_label(diag.get("figure_type")),
+        colortype=_colortype_label(diag.get("colortype")), figure=_figure_short(diag.get("figure_type")),
         want_traits=want3, days_since=days_since, thanks=(request.args.get("fb") == "1"),
         gap=card.get("gap"), gap_now=gap_now, track=track,
         advice=advice, weekview=weekview,
@@ -3294,8 +3336,12 @@ def _scenario_why_it_works(look: dict, diag: dict, scenario: str) -> str:
     """Короткое explainable-объяснение без повторения длинного описания."""
     vf = diag.get("visual_formula") or {}
     sil = ((vf.get("silhouettes") or [])[:1] or ["твою фигуру"])[0]
-    effect = _SCENARIO_EFFECT.get(scenario, "работает на твою Формулу")
-    return f"Под {scenario} образ работает {effect}: держит {sil} и собирает впечатление через твою Формулу."
+    effect = _SCENARIO_EFFECT.get(scenario, "на твою Формулу")
+    # Без подстановки сценария в предложение: он приходит в именительном («деловая встреча»),
+    # а шаблон «Под {сценарий} образ…» требует винительного — на карточках выходило
+    # «Под деловая встреча образ работает». Сценарий и так стоит заголовком карточки,
+    # повторять его в первой же строке незачем.
+    return f"Образ работает {effect} — держит {sil}."
 
 
 def _enrich_card_looks(looks: list[dict], diag: dict) -> list[dict]:
@@ -3928,12 +3974,14 @@ def style_card():
         return render_template_string(CARD_BUILD_FORM, error=None, notice=notice)
     if card and not request.args.get("rebuild") and not request.args.get("text"):
         return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
+                                      figure_short=_figure_short(diag.get("figure_type")),
                                       thanks=request.args.get("fb"), stale=False)
     # бесплатная генерация — один раз на email; пересборку/повтор блокируем (защита токенов).
     # Исключение: диагностика реально изменилась (новый квиз) — даём пересобрать Карту под неё.
     if (request.args.get("rebuild") or request.args.get("text")) and not _gen_allowed(email) and not stale:
         if card:
-            return render_template_string(STYLE_CARD, c=card, name=_display_name(email), thanks=None)
+            return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
+                                          figure_short=_figure_short(diag.get("figure_type")), thanks=None)
         return render_template_string(CARD_BUILD_FORM, error=_GEN_LIMIT_MSG), 429
     if request.args.get("text"):  # текстовая карта без образов (синхронно)
         if not _quota_left():
@@ -3945,7 +3993,8 @@ def style_card():
             record_event("card_built", email, meta="text")
         except Exception as e:  # noqa: BLE001
             return render_template_string(CARD_BUILD_FORM, error=f"Не удалось собрать: {e}"), 500
-        return render_template_string(STYLE_CARD, c=card, name=_display_name(email))
+        return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
+                                      figure_short=_figure_short(diag.get("figure_type")))
     record_event("card_form_view", email)
     return render_template_string(CARD_BUILD_FORM, error=None)
 
@@ -4527,6 +4576,16 @@ _FIGURE_LABEL = {
     "pear": "Объём в бёдрах, выраженная талия",
     "apple": "Мягкие линии, объём в центре, стройные ноги",
 }
+# Короткое имя фигуры — для чипов и шапок, где длинное описание разносит вёрстку («Выраженная
+# талия, сбалансированные пропорции» занимало половину строки профиля). Описание остаётся в
+# подсказке и в разборе. Называем геометрией, а не «груша/яблоко»: клиентке не нужен ярлык-овощ.
+_FIGURE_SHORT = {
+    "rectangle": "Прямоугольник",
+    "hourglass": "Песочные часы",
+    "inverted_triangle": "Перевёрнутый треугольник",
+    "pear": "Треугольник",
+    "apple": "Круг",
+}
 _COLORTYPE_LABEL = {
     "spring_light": "Весна светлая", "spring_natural": "Весна натуральная",
     "spring_contrast": "Весна контрастная", "summer_light": "Лето светлое",
@@ -4549,6 +4608,17 @@ _STYLE_LABEL = {c: v["label"] for c, v in _STYLE_CARDS.items()}
 
 def _figure_label(code):
     return _FIGURE_LABEL.get(code, code) if code else code
+
+
+def _figure_short(code):
+    """Короткое имя фигуры для чипов. Нет в словаре — отдаём длинное, но обрезанное по первой
+    запятой: лучше «Прямой силуэт», чем строка на всю ширину экрана."""
+    if not code:
+        return code
+    short = _FIGURE_SHORT.get(code)
+    if short:
+        return short
+    return str(_FIGURE_LABEL.get(code, code)).split(",")[0]
 
 
 # капсула по одежде: раскладываем вещи по слотам гардероба для наглядного борда
