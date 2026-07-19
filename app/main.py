@@ -710,9 +710,17 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  /* Формула из трёх частей длиннее двухсоставной — размер уменьшаем через clamp по ширине
     панели, чтобы «Smart Casual × Драма-акцент × Классическая сдержанность» не разъезжалась. */
  .dnaformula{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(20px,2.1vw,27px);
-             line-height:1.2;margin:12px 0 0;overflow-wrap:break-word}
+             line-height:1.2;margin:14px 0 12px;overflow-wrap:break-word;letter-spacing:-.01em}
  .dnaformula .b{color:var(--wine2)}
  .dnak{font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin:15px 0 7px}
+ /* ДНК в долях: одна полоса вместо четырёх строк — читается за секунду */
+ .dnabar{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--sand)}
+ .dnabar span{display:block;height:100%}
+ .dnabar span + span{box-shadow:inset 1px 0 0 rgba(255,255,255,.55)}
+ .dnalegend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
+ .dnaleg{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#5f574e}
+ .dnaleg i{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+ .dnaleg b{color:var(--ink);font-weight:500}
  .subchips{display:flex;gap:7px;flex-wrap:wrap}
  .subchip{border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;background:var(--soft)}
  .traits{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;font-size:12.5px;color:#4e473f}
@@ -989,10 +997,20 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <h2 class=ph>Твоя ДНК стиля</h2>
   <div class=dnaformula>{{ flead }}{% for p in fmore %} <span class=b>&times;&nbsp;{{ p }}</span>{% endfor %}</div>
   {% if c.substyles %}
-  <div class=dnak>Субстили</div>
   {# Подстиль приходит машинным кодом (smart_casual) — на экране клиентки это выглядит как
      утечка внутренностей. Подчёркивания в пробелы, первая буква заглавная. #}
   <div class=subchips>{% for sub in c.substyles %}<span class=subchip>{{ sub|replace('_',' ')|capitalize }}</span>{% endfor %}</div>
+  {% endif %}
+  {# Доли четырёх полей метода — это и есть результат ДНК-теста: формула называет направление,
+     а полоса показывает, из чего оно собрано. #}
+  {% if dna_fields %}
+  <div class=dnak>Из чего собран твой стиль</div>
+  <div class=dnabar>
+   {% for f in dna_fields %}<span style="width:{{ f.pct }}%;background:{{ f.hex }}" title="{{ f.label }} · {{ f.pct }}%"></span>{% endfor %}
+  </div>
+  <div class=dnalegend>
+   {% for f in dna_fields %}<span class=dnaleg><i style="background:{{ f.hex }}"></i>{{ f.label }}<b>{{ f.pct }}%</b></span>{% endfor %}
+  </div>
   {% endif %}
   {# Ключевые черты — визуальные коды формулы: что именно делает образ её, а не просто название
      направления. Желаемый эффект («как хочу считываться») живёт в третьей карточке. #}
@@ -2332,6 +2350,21 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
             color:#fff;text-decoration:none;padding:11px 20px;border-radius:11px;font-size:12.5px;
             letter-spacing:.06em;text-transform:uppercase}
 
+ /* план недели: лента из семи дней, сегодня выделен */
+ .weekgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;margin-top:13px}
+ .weekday{border:1px solid var(--line);border-radius:12px;padding:9px;background:var(--soft);
+          display:flex;flex-direction:column;min-width:0}
+ .weekday.on{border-color:var(--wine);background:#fff;box-shadow:0 0 0 1px rgba(93,34,48,.18)}
+ .wdname{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+ .weekday.on .wdname{color:var(--wine)}
+ .wdimg{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:var(--sand);display:block}
+ .wdimg.empty{background:var(--sand)}
+ .wdrole{font-size:11.5px;line-height:1.3;margin-top:7px;
+         display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .wdtags{font-size:10px;color:var(--muted);line-height:1.3;margin-top:4px;
+         display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+ @media(max-width:1080px){.weekgrid{grid-template-columns:repeat(4,1fr)}}
+ @media(max-width:600px){.weekgrid{grid-template-columns:repeat(2,1fr)}}
  /* ── ряд 2: AI-помощник + докупки ────────────────────────────────────────────────────── */
  .row2b{display:grid;grid-template-columns:.8fr 1.2fr;gap:16px;margin-top:16px;align-items:start}
  .helper{display:flex;flex-direction:column;gap:2px;margin-top:12px}
@@ -2557,12 +2590,32 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
      </form>
      {% endif %}
     </div>
-    <a class=btnviolet href="#roles">Смотреть другие образы</a>
+    <a class=btnviolet href="#week">Смотреть план недели</a>
    </div>
   </div>
  </div>
 
 </div>
+
+{# ── План недели: семь дней с ролью и образом. Механика считается серверно (_daily_week_view),
+   при перевёрстке её показ был потерян — плитка «План недели» вела в никуда. #}
+{% if weekview and weekview['week'] %}
+<div class=panel style="margin-top:16px" id=week>
+ <h2 class=ph>План недели<span class=tag>под роли и погоду</span></h2>
+ <p class=psub>Семь дней из твоей капсулы. Сегодня выделено — с него и начинай.</p>
+ <div class=weekgrid>
+  {% for row in weekview['week'] %}
+  <div class="weekday{{ ' on' if row['day'] == today_label else '' }}">
+   <div class=wdname>{{ row['day'] }}</div>
+   {% if row['img'] %}<img class=wdimg src="{{ row['img'] }}" alt="{{ row['title'] }}" loading=lazy>
+   {% else %}<span class="wdimg empty"></span>{% endif %}
+   <div class=wdrole>{{ row['title'] }}</div>
+   {% if row['tags'] %}<div class=wdtags>{{ row['tags']|join(' · ') }}</div>{% endif %}
+  </div>
+  {% endfor %}
+ </div>
+</div>
+{% endif %}
 
 {# ── ряд 2: AI-помощник · что докупить ───────────────────────────────────────────────── #}
 <div class=row2b>
@@ -2571,8 +2624,8 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <h2 class=ph>AI-помощник гардероба</h2>
   <div class=helper>
    <a class=hrow href="/garment"><span class=hico>✓</span><span><b>Брать или не брать</b><span>Проверка вещи по фото до покупки</span></span></a>
-   <a class=hrow href="#wardrobe"><span class=hico>▦</span><span><b>План недели</b><span>Готовые образы на неделю под роли, погоду и твоё время</span></span></a>
-   <a class=hrow href="/cabinet"><span class=hico>❋</span><span><b>Сезонные обновления</b><span>Микро-капсула и свежие идеи под текущий сезон</span></span></a>
+   <a class=hrow href="#week"><span class=hico>▦</span><span><b>План недели</b><span>Готовые образы на неделю под роли, погоду и твоё время</span></span></a>
+   <a class=hrow href="#wardrobe"><span class=hico>❋</span><span><b>Сезонные обновления</b><span>Переключи сезон — капсула пересоберётся под него</span></span></a>
    <a class=hrow href="#track"><span class=hico>◔</span><span><b>Трекер разрыва</b><span>Видно, как образ догоняет то, какой ты себя хочешь</span></span></a>
   </div>
  </div>
@@ -2602,8 +2655,8 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=tiles>
  <div class=tile><span class=ti>◫</span><b>Конструктор образов</b><p>Создавай образы из своей капсулы. Все сочетания проверены под твою Формулу.</p><a href="#wardrobe">Открыть конструктор →</a></div>
  <div class=tile><span class=ti>✓</span><b>Брать или не брать</b><p>Проверь любую покупку: подойдёт ли она по стилю, цветотипу и фигуре.</p><a href="/garment">Проверить вещь →</a></div>
- <div class=tile><span class=ti>▦</span><b>План недели</b><p>Готовые образы на неделю под роли, погоду и твоё время.</p><a href="#roles">Посмотреть план →</a></div>
- <div class=tile><span class=ti>❋</span><b>Сезонные обновления</b><p>Обновляем капсулу: добавляем актуальные вещи и убираем лишнее.</p><a href="#wardrobe">Посмотреть обновления →</a></div>
+ <div class=tile><span class=ti>▦</span><b>План недели</b><p>Семь дней из твоей капсулы: у каждого своя роль и свой образ.</p><a href="#week">Посмотреть план →</a></div>
+ <div class=tile><span class=ti>❋</span><b>Сезонные обновления</b><p>Капсула пересобирается под сезон: вещи, ткани и слои меняются.</p><a href="#wardrobe">Переключить сезон →</a></div>
 </div>
 
 <div class=footband>
@@ -2989,7 +3042,9 @@ def cabinet():
             p["date"] = _ru_date(p["ts"])
         last_ts = track["points"][-1].get("ts")
         try:  # сколько дней прошло с последнего замера → мягкий призыв к пере-замеру
-            from datetime import datetime, timezone
+            # timezone берём локально, datetime уже импортирован модулем: повторный локальный
+            # импорт делал имя локальным на всю функцию и ронял обращения к нему выше по коду
+            from datetime import timezone
             dt = datetime.fromisoformat(str(last_ts).replace("Z", "+00:00"))
             days_since = (datetime.now(timezone.utc) - dt).days
         except Exception:  # noqa: BLE001 — битый ts не должен ронять кабинет
@@ -3046,6 +3101,9 @@ def cabinet():
         look_today=look_today, mine=mine,
         season_label=(card.get("season_label") or (_CARD_SEASONS[sel]["label"] if sel in _CARD_SEASONS else None)),
         n_items=n_items, combos_label=combos_label, items_n=items_n,
+        # какой день выделить в плане недели — считаем на сервере, чтобы не зависеть от
+        # часового пояса браузера
+        today_label=["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"][datetime.now().weekday()],
         board=board, palette=palette, shopping=card.get("shopping") or [],
         season_tabs=season_tabs, sel_season=sel)
 
@@ -4113,6 +4171,7 @@ def style_card():
     if card and not request.args.get("rebuild") and not request.args.get("text"):
         return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
                                       figure_short=_figure_short(diag.get("figure_type")),
+                                      dna_fields=_dna_fields(diag),
                                       card_link=_card_link_url(email),
                                       thanks=request.args.get("fb"), stale=False)
     # бесплатная генерация — один раз на email; пересборку/повтор блокируем (защита токенов).
@@ -4121,6 +4180,7 @@ def style_card():
         if card:
             return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
                                           figure_short=_figure_short(diag.get("figure_type")),
+                                          dna_fields=_dna_fields(diag),
                                           card_link=_card_link_url(email), thanks=None)
         return render_template_string(CARD_BUILD_FORM, error=_GEN_LIMIT_MSG), 429
     if request.args.get("text"):  # текстовая карта без образов (синхронно)
@@ -4135,6 +4195,7 @@ def style_card():
             return render_template_string(CARD_BUILD_FORM, error=f"Не удалось собрать: {e}"), 500
         return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
                                       figure_short=_figure_short(diag.get("figure_type")),
+                                      dna_fields=_dna_fields(diag),
                                       card_link=_card_link_url(email))
     record_event("card_form_view", email)
     return render_template_string(CARD_BUILD_FORM, error=None)
@@ -4171,6 +4232,7 @@ def card_by_link(token):
     record_event("card_link_view", owner)
     html = render_template_string(STYLE_CARD, c=card, name=_display_name(owner),
                                   figure_short=_figure_short(diag.get("figure_type")),
+                                  dna_fields=_dna_fields(diag),
                                   shared=True, thanks=None, stale=False)
     resp = make_response(html)
     # Карта содержит образы на фото клиентки — в поисковой выдаче ей делать нечего.
@@ -4787,6 +4849,31 @@ _STYLE_LABEL = {c: v["label"] for c, v in _STYLE_CARDS.items()}
 
 def _figure_label(code):
     return _FIGURE_LABEL.get(code, code) if code else code
+
+
+# Четыре поля метода — то, из чего складывается ДНК стиля. Порядок фиксирован, чтобы полоса
+# не «прыгала» между сборками, а цвета взяты из бренд-палитры.
+_FIELD_ORDER = ("classic", "drama", "romance", "natural")
+_FIELD_LABEL = {"classic": "Классика", "drama": "Драма",
+                "romance": "Романтика", "natural": "Натуральный"}
+_FIELD_COLOR = {"classic": "#5D2230", "drama": "#8A3346",
+                "romance": "#C08A9B", "natural": "#A99684"}
+
+
+def _dna_fields(diag: dict) -> list[dict]:
+    """ДНК стиля в долях: [{code, label, pct, hex}] по убыванию. Пусто — если диагностика старая.
+
+    Это не украшение, а результат теста: формула называет направление, а доли показывают, из чего
+    оно собрано. Нормируем к 100 — модель иногда отдаёт сумму 98 или 103.
+    """
+    dist = diag.get("semantic_field_distribution") or {}
+    vals = {k: float(dist.get(k) or 0) for k in _FIELD_ORDER}
+    total = sum(vals.values())
+    if total <= 0:
+        return []
+    out = [{"code": k, "label": _FIELD_LABEL[k], "hex": _FIELD_COLOR[k],
+            "pct": round(v * 100 / total)} for k, v in vals.items() if v > 0]
+    return sorted(out, key=lambda f: -f["pct"])
 
 
 def _figure_short(code):
