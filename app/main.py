@@ -3199,6 +3199,7 @@ def cabinet():
         sel = card.get("season") or _DEFAULT_SEASON
     if not card:
         return redirect("/card")       # капсулы ещё нет — сначала собрать Карту
+    card = _refresh_card_projection(card, diag)
     items_n = 6 if request.args.get("items") == "6" else 12  # капсула 6 / расширенная 12
     # визуальная капсула из реального каталога (фото+ссылки); фолбэк — текстовый борд из Карты
     board = _visual_capsule(card, diag, items_n) or \
@@ -3999,6 +4000,42 @@ def _starter_capsule_from_board(board: list[dict]) -> tuple[list[dict], int]:
     return picked[:9], combos
 
 
+def _refresh_card_projection(card: dict, diag: dict) -> dict:
+    """Освежить производные блоки старой сохранённой Карты без новой генерации.
+
+    На проде у клиенток уже лежат старые JSON-версии Карты. После починки логики правая колонка
+    могла оставаться «из прошлой жизни»: `starter_capsule` и `capsule_combos` брались как есть из
+    БД, хотя новые правила требуют собирать ядро ИЗ текущих образов клиентки.
+
+    Здесь не трогаем саму диагностику и не генерируем заново looks. Мы лишь пересчитываем
+    производные проекции показа: визуальную капсулу (если её нет), starter capsule и сочетания.
+    """
+    if not card:
+        return card
+    out = dict(card)
+    board = list(out.get("visual_capsule") or out.get("capsule_board") or [])
+    if not board:
+        board = _visual_capsule({
+            "palette": out.get("palette") or [],
+            "stop_colors": out.get("stop_colors") or [],
+            "stop_list": out.get("stop_list") or [],
+            "season": out.get("season"),
+        }, diag, 9)
+    looks = out.get("looks") or []
+    starter = _core_capsule_from_looks(looks, board) if looks else []
+    if starter:
+        core_n = sum(1 for it in starter if it.get("capsule_role") == "core")
+        combos_n = max(core_n * 3, len(starter) * 2)
+    else:
+        starter, combos_n = _starter_capsule_from_board(board)
+    out["visual_capsule"] = board
+    out["starter_capsule"] = starter
+    out["starter_capsule_count"] = len(starter)
+    out["capsule_combos"] = _capsule_combos(starter)
+    out["combination_count"] = combos_n
+    return out
+
+
 def _board_role_cards(board: list[dict]) -> list[dict]:
     """Роли недели из текущей капсулы, когда для сезона ещё нет новых generated-образов."""
     by_slot = {grp.get("slot") or "": [it.get("name") for it in (grp.get("items") or []) if it.get("name")]
@@ -4489,6 +4526,8 @@ def style_card():
                   "Старая Карта осталась на прежней диагностике. Собери её заново под свежий результат.")
         record_event("card_stale_rebuild_prompt", email)
         return render_template_string(CARD_BUILD_FORM, error=None, notice=notice)
+    if card:
+        card = _refresh_card_projection(card, diag)
     if card and not request.args.get("rebuild") and not request.args.get("text"):
         return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
                                       figure_short=_figure_short(diag.get("figure_type")),
@@ -4550,6 +4589,7 @@ def card_by_link(token):
             lead="Ссылка устарела или Карта ещё не собрана. Попроси свежую ссылку — "
                  "или собери свою Карту стиля, это займёт несколько минут."), 404
     diag = (get_profile(owner) or {}).get("diagnosis") or {}
+    card = _refresh_card_projection(card, diag)
     record_event("card_link_view", owner)
     html = render_template_string(STYLE_CARD, c=card, name=_display_name(owner),
                                   figure_short=_figure_short(diag.get("figure_type")),

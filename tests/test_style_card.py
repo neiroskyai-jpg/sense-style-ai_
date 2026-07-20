@@ -8,7 +8,7 @@ import os
 os.environ.setdefault("OPENROUTER_API_KEY", "dummy")  # импорт app.main не должен падать
 
 from app.main import (_board_week_outfits, _card_stale, _core_capsule_from_looks, _daily_cabinet_advice,
-                      _daily_week_view, _diag_signature, _ensure_n_looks,
+                      _daily_week_view, _diag_signature, _ensure_n_looks, _refresh_card_projection,
                       _starter_capsule_from_board)  # noqa: E402
 
 SCENARIOS = ["деловая встреча", "свидание", "выходные",
@@ -97,6 +97,28 @@ def test_core_capsule_keeps_only_items_from_looks():
     names = {it["name"] for it in out}
     assert "Случайная рубашка" not in names
     assert "Жакет графитовый" in names
+
+
+def test_refresh_card_projection_rebuilds_legacy_starter_from_looks():
+    card = {
+        "season": "autumn",
+        "palette": [{"name": "холодный графит", "hex": "#50545c"}],
+        "visual_capsule": [{"slot": "Верх", "items": [{"name": "Случайная рубашка", "image": "https://example.com/shirt.jpg"}]}],
+        "looks": [
+            {"scenario": "деловая встреча", "items": ["Жакет графитовый", "Брюки палаццо", "Лодочки"]},
+            {"scenario": "выходные", "items": ["Жакет графитовый", "Джинсы wide-leg", "Лодочки"]},
+        ],
+        "starter_capsule": [{"name": "ТРЕНД 2026", "slot": "Аксессуары"}],
+        "capsule_combos": [{"title": "старый набор"}],
+        "combination_count": 99,
+    }
+
+    out = _refresh_card_projection(card, {"style_formula": "Классика × Драма"})
+
+    names = {it["name"] for it in out["starter_capsule"]}
+    assert "ТРЕНД 2026" not in names
+    assert "Жакет графитовый" in names
+    assert all("старый набор" != combo["title"] for combo in out["capsule_combos"])
 
 
 def test_daily_cabinet_advice_uses_existing_card_not_new_formula():
