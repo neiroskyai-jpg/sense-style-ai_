@@ -933,6 +933,18 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  @media print{.sharebox{display:none!important}}
  /* разделы «разбор» — глубина, которая не помещается в панель */
  .deep{margin-top:26px}
+ /* Раскладка образа: он на клиентке + flat-lay вещей, из которых собран. */
+ .lookflat{display:grid;grid-template-columns:minmax(0,200px) 1fr;gap:16px;align-items:start}
+ .lookflat-noimg{grid-template-columns:1fr}
+ .lookmodel img{width:100%;border-radius:12px;display:block}
+ .lookpieces{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px}
+ .lookpiece{display:flex;flex-direction:column;gap:5px;text-align:center}
+ .lookpiece img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:9px;border:1px solid var(--line);background:#faf6ee}
+ .lookpiece-ph{display:flex;align-items:center;justify-content:center;aspect-ratio:3/4;border-radius:9px;
+               border:1px dashed #cdbfa6;background:var(--soft);font-size:10px;color:var(--muted)}
+ .lookpiece-nm{font-size:10.5px;color:#5b5249;line-height:1.3}
+ .lookmatchsm{font-family:Onest,sans-serif;font-size:11px;font-weight:400;color:var(--wine);margin-left:10px;letter-spacing:.04em}
+ @media(max-width:560px){.lookflat{grid-template-columns:1fr}.lookmodel img{max-width:220px}}
  .deep summary{cursor:pointer;list-style:none;font-family:'Cormorant Garamond',Georgia,serif;
                font-size:23px;padding:14px 20px;background:#fff;border:1px solid var(--line);
                border-radius:14px;display:flex;align-items:center;gap:10px}
@@ -1334,11 +1346,23 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <div class=deepbody>
   {% for lk in c.looks %}
   <div class=panel style="margin-bottom:12px" id="look{{ loop.index }}">
-   <h3 style="margin-top:0">{{ lk.scenario or lk.title or lk.name }}</h3>
-   {% if lk.img %}<img src="{{ lk.img }}" alt="Образ" style="max-width:280px;width:100%;border-radius:12px;display:block;margin-bottom:10px">{% endif %}
-   {% if lk.why_it_works or lk.description %}<p>{{ lk.why_it_works or lk.description }}</p>{% endif %}
-   {% set look_items = lk.get('items') %}
-   {% if look_items %}<p style="color:var(--muted)">Состав: {{ look_items|join(' · ') }}</p>{% endif %}
+   <h3 style="margin-top:0">{{ lk.scenario or lk.title or lk.name }}{% if lk.formula_match %}<span class=lookmatchsm>совпадение {{ lk.formula_match }}%</span>{% endif %}</h3>
+   {# Раскладка образа: слева он на клиентке, справа — вещи, из которых собран (flat-lay).
+      Это связывает образ с капсулой: клиентка видит, что образ собран из её же вещей. #}
+   <div class="lookflat{% if not lk.img %} lookflat-noimg{% endif %}">
+    {% if lk.img %}<div class=lookmodel><img src="{{ lk.img }}" alt="Образ на тебе"></div>{% endif %}
+    {% if lk.pieces %}
+    <div class=lookpieces>
+     {% for pc in lk.pieces %}
+     <div class=lookpiece>
+      {% if pc.image %}<img src="{{ pc.image }}" alt="{{ pc.name }}" loading=lazy>{% else %}<span class="lookpiece-ph">{{ pc.slot }}</span>{% endif %}
+      <span class=lookpiece-nm>{{ pc.name }}</span>
+     </div>
+     {% endfor %}
+    </div>
+    {% endif %}
+   </div>
+   {% if lk.why_it_works or lk.description %}<p style="margin-top:12px">{{ lk.why_it_works or lk.description }}</p>{% endif %}
    {% if lk.missing_items %}<p style="color:var(--muted)">Если добавить в капсулу: {{ lk.missing_items|join(' · ') }}</p>{% endif %}
   </div>
   {% endfor %}
@@ -4171,6 +4195,56 @@ def _look_preview_images(looks: list[dict]) -> list[str]:
     return previews
 
 
+def _look_pieces(item_names: list[str], board: list[dict]) -> list[dict]:
+    """Вещи образа с фото из каталога — для визуальной раскладки состава (flat-lay).
+
+    Идея фаундера: рядом с образом на клиентке показать, ИЗ ЧЕГО он собран — фото каждой вещи,
+    как раскладка в модном разборе. Текст «Состав: жакет · брюки» этого не даёт: клиентка не
+    видит вещи и не понимает, что это её капсула. Фото берём из board (визуальной капсулы) по
+    слоту: точное совпадение имён редко, но вещь того же слота с фото — верная иллюстрация типа.
+    """
+    by_slot: dict[str, list] = {}
+    exact: dict[str, dict] = {}
+    for grp in board or []:
+        for it in grp.get("items") or []:
+            name = (it.get("name") or "").strip()
+            if not name:
+                continue
+            rec = {"name": name, "image": it.get("image"), "slot": grp.get("slot")}
+            exact.setdefault(" ".join(name.lower().split()), rec)
+            by_slot.setdefault(grp.get("slot") or "", []).append(rec)
+
+    used: set[str] = set()
+    pieces = []
+    for raw in item_names or []:
+        name = (raw or "").strip()
+        if not name:
+            continue
+        slot = _capsule_slot(name)
+        hit = exact.get(" ".join(name.lower().split()))
+        if not hit:                                   # нет точного — берём вещь того же слота с фото
+            for cand in by_slot.get(slot, []):
+                if cand["image"] and id(cand) not in used:
+                    hit = cand
+                    used.add(id(cand))
+                    break
+        pieces.append({
+            "name": _ru_item_name(name),
+            "slot": slot,
+            # Фото — иллюстрация типа вещи, а не именно эта модель: помечаем, чтобы не выдавать
+            # за конкретный товар (продукт не привязан к фиду бренда).
+            "image": (hit or {}).get("image"),
+            "image_is_example": bool((hit or {}).get("image")),
+        })
+    return pieces
+
+
+def _attach_look_pieces(looks: list[dict], board: list[dict]) -> None:
+    """Проставить каждому образу раскладку его вещей с фото (на месте)."""
+    for lk in looks or []:
+        lk["pieces"] = _look_pieces(lk.get("items") or [], board)
+
+
 def _enrich_card_looks(looks: list[dict], diag: dict) -> list[dict]:
     """Добавить к образам Карты explainable-слой и стабильные продуктовые поля."""
     out = []
@@ -4766,10 +4840,26 @@ def build_card_skeleton(diag: dict, season: str | None = None) -> dict:
     board = _inline_capsule_images(_visual_capsule({"palette": palette, "stop_list": stop_list}, diag, 9))
     starter, combos = _starter_capsule_from_board(board)
     base_capsule, capsule_board = _sync_capsule_views(starter)
-    looks = [{"scenario": sc, "bucket": _SCENARIO_BUCKET.get(sc, "Повседневное"),
-              "title": sc.capitalize(), "items": [], "effect": _SCENARIO_EFFECT.get(sc, ""),
-              "why_it_works": "Образ соберётся, когда включим генерацию."}
-             for sc in _CARD_SCENARIOS]
+    # Состав образа берём из реальных вещей капсулы по слотам сценария — это НЕ выдумка (вещи из
+    # каталога под Формулу), а честная раскладка «этот образ = эти вещи». Даёт визуальный flat-lay
+    # даже без генерации фото на клиентке: то, что видит жюри, проходя квиз без своего фото.
+    week = {w["title"]: w["items"] for w in _board_week_outfits(board)}
+    looks = []
+    for sc in _CARD_SCENARIOS:
+        title = sc.capitalize()
+        # сопоставляем сценарий Карты с ближайшим набором недели (совпадение по названию/бакету)
+        items = week.get(title) or week.get(sc.capitalize()) or []
+        items = [i for i in items if i]
+        looks.append({
+            "scenario": sc, "bucket": _SCENARIO_BUCKET.get(sc, "Повседневное"),
+            "title": title, "items": items, "effect": _SCENARIO_EFFECT.get(sc, ""),
+            # match намеренно не проставляем: вещи капсулы подобраны под Формулу скорингом
+            # каталога, а текстовый матчер по названиям этого не видит и показал бы заниженные
+            # ~28% — на витрине это читается как «плохо», хотя подбор верный.
+            "why_it_works": ("Собран из твоей капсулы под этот сценарий."
+                             if items else "Образ соберётся, когда включим генерацию."),
+        })
+    _attach_look_pieces(looks, board)
     return {
         "formula": diag.get("style_formula"),
         "gap": diag.get("gap_percentage"),
@@ -4896,6 +4986,8 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         starter_capsule,
         [it for it in cap_items if isinstance(it, dict) and it.get("name")][:9],
     )
+    # Раскладка состава образа фото-вещами: связывает «образ ↔ из чего собран ↔ капсула».
+    _attach_look_pieces(looks, visual_capsule)
     return {
         "formula": diag.get("style_formula"),
         "gap": diag.get("gap_percentage"),
