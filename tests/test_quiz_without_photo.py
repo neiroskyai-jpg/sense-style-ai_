@@ -191,3 +191,16 @@ def test_summer_items_are_rejected_from_winter_capsule():
     for name in ("Льняной сарафан", "Шорты"):
         assert not m._season_ok(name, "winter"), name
     assert m._season_ok("Пальто шерстяное", "winter")
+
+
+def test_dated_items_never_reach_the_capsule():
+    """Каталог отдаёт всё подряд — устаревшее в капсулу не берём даже при подходящем цвете."""
+    for name in ("Джинсы скинни", "Шуба тедди", "Сумка-бананка поясная",
+                 "Джинсы с рванками", "Дублёнка-авиаторка"):
+        assert m._is_dated(name), name
+
+
+def test_current_items_are_not_rejected_as_dated():
+    """Стоп-лист не должен выкашивать актуальную базу."""
+    for name in ("Прямые джинсы", "Пальто шерстяное миди", "Сумка-шоппер", "Жакет structured"):
+        assert not m._is_dated(name), name

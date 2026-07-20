@@ -80,7 +80,7 @@ def test_trend_canon_reaches_the_render(monkeypatch):
     p.render_look_on_client("photo.jpg", "wool coat")
 
     text = captured["instruction"].lower()
-    assert "2026-2027 runway season" in text
+    assert "current 2026-2027 season notes" in text
     assert "one deliberate trend accent per look" in text
 
 
@@ -92,3 +92,21 @@ def test_provocative_trends_are_blocked_for_daytime():
     assert "corsets or bustiers" in canon
     assert "bare midriffs" in canon
     assert "her formula wins" in canon, "психология прежде моды — тренд не перебивает Формулу"
+
+
+def test_trend_canon_carries_the_course_rules():
+    """Канон должен нести конкретику курса, а не общие слова про моду.
+
+    Без имён модель воспроизводит ровно те клише, которые методология считает устаревшими.
+    """
+    canon = p._TREND_CANON.lower()
+    # пропорция гардероба: база несёт, тренд украшает
+    assert "70-80% long-lasting base" in canon
+    # правило длин из курса
+    assert "the wider the trousers the longer" in canon
+    # главный оттенок сезона
+    assert "hot chocolate" in canon
+    # стоп-лист: самое узнаваемое устаревшее
+    for dated in ("skinny jeans", "3/4 or rolled-up sleeves", "teddy-bear coats",
+                  "long ugg boots", "micro bags", "mixing warm and cold beige"):
+        assert dated in canon, dated

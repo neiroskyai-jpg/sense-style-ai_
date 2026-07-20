@@ -773,19 +773,32 @@ _LOOK_CANON = (
 # ОБНОВЛЯТЬ РАЗ В СЕЗОН вместе с тем файлом: промпт, застрявший на прошлом сезоне, хуже,
 # чем отсутствие трендов вообще.
 _TREND_CANON = (
-    " Ground the outfit in the actual 2026-2027 runway season. The oversized era is receding: "
-    "tailoring is fitted and structured again — narrow jackets, tapered trousers, a defined waist "
-    "with a flared hem, softly squared shoulders; the opposite pole (cocoon volumes, tent dresses) "
-    "is equally valid when it suits her figure. Draw on the season's aesthetics where they fit her "
-    "formula: archival new-luxury (puffed sleeves, art-deco sheen), 80s-90s power dressing and cold "
-    "Helmut Lang minimalism (sleek column dresses, nothing superfluous), military and naval cues "
-    "(officer details, double-breasted pea coats, duffle coats). "
-    "Season materials: leather in ripe-cherry and burgundy, croc texture, velvet in blue, emerald "
-    "or metallic, fur collars and trims, oversized dramatic collars, lace, fringe, stirrup details. "
-    "Season colours: monochrome blues from Klein to navy, turquoise, deep burgundy-cherry, rich "
-    "primary and jewel tones. "
-    # Доза и граница. Наша клиентка — женщина 30-50, образ нужен ей для работы и статуса, а не
-    # для подиума. Провокационные тренды сезона в переговорной работают против неё.
+    # Пропорция гардероба из курса: образ строится на базе, тренд — акцент, а не наполнение.
+    " Build the look as roughly 70-80% long-lasting base and 20-30% current trend — the base is "
+    "the load-bearing structure, the trend is the decor. "
+    "Base that holds for years: straight or semi-fitted cut with air between body and fabric, "
+    "high or mid rise, full-length sleeves. "
+    "Current 2026-2027 season notes, used where they suit her formula: tailoring is fitted and "
+    "structured again (narrow jackets, tapered trousers, defined waist, softly squared shoulders); "
+    "archival new-luxury, 80s-90s power dressing, cold Helmut Lang minimalism, military and naval "
+    "cues (officer details, double-breasted pea coats, duffle coats). "
+    # Правило длин — прямая цитата методологии, модель иначе даёт «спорные» промежуточные длины.
+    "Lengths: the wider the trousers the longer they run (full-length palazzo or wide leg); the "
+    "narrower, the shorter (7/8 to the ankle bone). Skirts and dresses read as clear midi/midaxi or "
+    "clear mini — never an ambiguous in-between length. "
+    # Цвет: 70/30, с главным оттенком сезона.
+    "Colour: about 70% neutral foundation (black, white, grey, beige, sand, milk, camel, navy, "
+    "burgundy, olive, khaki, powder, denim) plus 2-3 accents. Season colours: hot chocolate as the "
+    "key shade, cherry-burgundy, cranberry, umber, deep grown-up blue/green/purple, mustard, "
+    "powder pink. Leather in ripe cherry, velvet, croc texture, fur collars, oversized collars, "
+    "lace, checks, argyle, animal print. "
+    # Стоп-лист. Конкретика важнее общих слов: без имён модель воспроизводит именно эти клише.
+    "NEVER include these dated markers: 3/4 or rolled-up sleeves, skinny jeans, bleached or "
+    "yellowed denim wash, rips, rhinestones, a built-in waist dart on a puffer or jacket, cheap fur "
+    "trim on a hood, teddy-bear coats, aviator shearling, long ugg boots, long puffy snow boots, "
+    "micro bags, mini backpacks, a crossbody belt bag, a soft shapeless lazy coat, mixing warm and "
+    "cold beige in one outfit, or a head-to-toe single-pattern set. "
+    # Доза и граница. Клиентка 30-50 одевается для работы и статуса, а не для подиума.
     "Use ONE deliberate trend accent per look — she should read as someone who knows what season "
     "it is, not as a costume. For daytime, work and business scenarios NEVER use sheer fabrics, "
     "corsets or bustiers, bare midriffs, low-rise waists or chainmail; those belong only to date "
