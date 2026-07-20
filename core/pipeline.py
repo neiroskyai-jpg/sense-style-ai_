@@ -763,13 +763,33 @@ _LOOK_CANON = (
     "Modern silhouette cues: relaxed wide or straight trousers with proper break, elongated or "
     "softly structured tailoring, generous outerwear worn over slim layers, midi lengths, "
     "sculptural bag, refined footwear. Full-length sleeves (never 3/4). "
-    # Образ должен читаться как вещи ЭТОГО сезона, а не как вневременная база: клиентка приходит
-    # за «модно и мне идёт», и трендовая деталь — то, из-за чего образ хочется надеть сегодня.
-    "Include at least one distinctly of-the-moment 2026-2027 element — a current trouser or skirt "
-    "line, a fresh outerwear proportion, a seasonal colour or an unexpected texture pairing — "
-    "styled so it stays flattering and wearable, never a costume or a runway stunt. "
     "No dated styling: no skinny jeans with chunky boots, no cheap fur trim, no bulky mini-backpack, "
     "no logo-heavy fast-fashion pieces, no shiny synthetic fabrics."
+)
+
+# Конкретика сезона по показам SS26 и FW26/27 — см. architecture/trends-2026-2027.md (там же
+# источники и правило применимости). Без названного списка модель опирается на смутное
+# «что-то модное» и выдаёт вневременную базу, которая не читается как этот сезон.
+# ОБНОВЛЯТЬ РАЗ В СЕЗОН вместе с тем файлом: промпт, застрявший на прошлом сезоне, хуже,
+# чем отсутствие трендов вообще.
+_TREND_CANON = (
+    " Ground the outfit in the actual 2026-2027 runway season. The oversized era is receding: "
+    "tailoring is fitted and structured again — narrow jackets, tapered trousers, a defined waist "
+    "with a flared hem, softly squared shoulders; the opposite pole (cocoon volumes, tent dresses) "
+    "is equally valid when it suits her figure. Draw on the season's aesthetics where they fit her "
+    "formula: archival new-luxury (puffed sleeves, art-deco sheen), 80s-90s power dressing and cold "
+    "Helmut Lang minimalism (sleek column dresses, nothing superfluous), military and naval cues "
+    "(officer details, double-breasted pea coats, duffle coats). "
+    "Season materials: leather in ripe-cherry and burgundy, croc texture, velvet in blue, emerald "
+    "or metallic, fur collars and trims, oversized dramatic collars, lace, fringe, stirrup details. "
+    "Season colours: monochrome blues from Klein to navy, turquoise, deep burgundy-cherry, rich "
+    "primary and jewel tones. "
+    # Доза и граница. Наша клиентка — женщина 30-50, образ нужен ей для работы и статуса, а не
+    # для подиума. Провокационные тренды сезона в переговорной работают против неё.
+    "Use ONE deliberate trend accent per look — she should read as someone who knows what season "
+    "it is, not as a costume. For daytime, work and business scenarios NEVER use sheer fabrics, "
+    "corsets or bustiers, bare midriffs, low-rise waists or chainmail; those belong only to date "
+    "and evening-event scenarios. Where a trend conflicts with her formula, her formula wins."
 )
 
 # Режиссура кадра. Без неё модель ставит человека в пустоту и получается карточка товара, а не
@@ -815,7 +835,7 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
         "wider shot. Do NOT slim, lengthen, or idealise her body — keep her real silhouette.\n"
         "Change ONLY her clothing and the background. "
         "Place her in a new location that fits the outfit's setting (do not reuse the reference background). "
-        "Outfit and scene: " + look_prompt + _LOOK_CANON
+        "Outfit and scene: " + look_prompt + _LOOK_CANON + _TREND_CANON
         + _EDITORIAL_DIRECTION + " Full-body head to toe, vertical 3:4 ratio." + _PHOTO_FINISH
     )
     model = config.MODELS["image"]["dressing"]

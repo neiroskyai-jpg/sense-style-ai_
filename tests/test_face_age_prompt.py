@@ -63,3 +63,32 @@ def test_face_and_body_references_both_passed(monkeypatch):
 
     p.render_look_on_client("photo.jpg", "wool coat")
     assert seen["refs"] == ["FACE", "BODY"]
+
+
+def test_trend_canon_reaches_the_render(monkeypatch):
+    """Тренды сезона обязаны доезжать до картинки, а не лежать документом в architecture/."""
+    captured = {}
+
+    def fake_generate_image(instruction, model=None, ref_images=None):
+        captured["instruction"] = instruction
+        return ["data:image/png;base64,AA=="]
+
+    monkeypatch.setattr(p.provider, "generate_image", fake_generate_image)
+    monkeypatch.setattr(p.provider, "encode_image", lambda *a, **k: "BODY")
+    monkeypatch.setattr(p.provider, "head_crop", lambda *a, **k: "FACE")
+
+    p.render_look_on_client("photo.jpg", "wool coat")
+
+    text = captured["instruction"].lower()
+    assert "2026-2027 runway season" in text
+    assert "one deliberate trend accent per look" in text
+
+
+def test_provocative_trends_are_blocked_for_daytime():
+    """Прозрачность, корсеты и голая талия — подиумная провокация. В переговорной она работает
+    против клиентки 30-50, ради которой строится продукт. Допустимы только вечер и свидание."""
+    canon = p._TREND_CANON.lower()
+    assert "never use sheer fabrics" in canon
+    assert "corsets or bustiers" in canon
+    assert "bare midriffs" in canon
+    assert "her formula wins" in canon, "психология прежде моды — тренд не перебивает Формулу"
