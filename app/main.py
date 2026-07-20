@@ -2546,7 +2546,12 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
  /* образ на сегодня */
  .todaygrid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px;align-items:start}
- .cells{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ /* Ячейки идут группами «Основа образа» / «Завершение»: человек собирает образ снизу вверх
+    по логике одевания, а не по алфавиту слотов. Внутри группы — сетка в две колонки. */
+ .cells{display:flex;flex-direction:column;gap:12px}
+ .cellgroup{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .cellgrouplab{grid-column:1/-1;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+               color:var(--muted);margin-bottom:-2px}
  .cell{border:1.4px dashed #cdbfa6;border-radius:11px;padding:9px 11px;background:var(--soft);
        min-height:76px;display:flex;flex-direction:column;gap:5px;transition:border-color .12s,background .12s}
  .cell.filled{border-style:solid;border-color:var(--wine);background:#fff}
@@ -2703,7 +2708,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  @media(max-width:760px){
   .main{padding:18px 16px 50px}
   .buygrid,.roles3,.tiles{grid-template-columns:1fr}
-  .cells{grid-template-columns:1fr}
+  .cellgroup{grid-template-columns:1fr}
   .cityform{grid-template-columns:1fr}
   .footbtn{margin-left:0;width:100%;text-align:center}
  }
@@ -2811,10 +2816,15 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <div class=todaygrid>
    <div>
     <div class=cells>
-     {% for grp in board %}
-     <div class=cell data-cell="{{ grp.slot }}"><span class=cellslot>{{ grp.slot }}</span><span class=cellbody><span class=cellval>—</span></span></div>
+     {% for g in outfit_cells %}
+     <div class=cellgroup>
+      <div class=cellgrouplab>{{ g.title }}</div>
+      {% for slot in g.slots %}
+      <div class=cell data-cell="{{ slot }}"><span class=cellslot>{{ slot }}</span><span class=cellbody><span class=cellval>—</span></span></div>
+      {% endfor %}
+     </div>
      {% endfor %}
-     {% if not board %}<p class=empty>Ячейки появятся вместе с капсулой.</p>{% endif %}
+     {% if not outfit_cells %}<p class=empty>Ячейки появятся вместе с капсулой.</p>{% endif %}
     </div>
     <div class=weekdays>
      <button type=button class=wd data-day=mon>Пн</button>
@@ -3422,7 +3432,7 @@ def cabinet():
         # часового пояса браузера
         today_label=["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"][datetime.now().weekday()],
         board=board, palette=palette, shopping=card.get("shopping") or [],
-        season_tabs=season_tabs, season_diff=season_diff, sel_season=sel)
+        season_tabs=season_tabs, season_diff=season_diff, outfit_cells=_outfit_cells(board), sel_season=sel)
 
 
 STYLEBOOK_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
@@ -5598,6 +5608,27 @@ def _capsule_slot(*names: str) -> str:
         if best:
             return best[1]
     return _SLOT_OTHER
+
+
+# Порядок ячеек конструктора. Отличается от _CAPSULE_SLOTS сознательно: тот словарь задаёт
+# порядок ХРАНЕНИЯ вещей, а здесь человек СОБИРАЕТ образ и думает иначе — сначала основа
+# (верх и низ либо платье), потом всё, что её завершает. Раньше первой ячейкой шёл верхний
+# слой, и конструктор начинался с пальто, когда под ним ещё ничего нет.
+_OUTFIT_CELL_GROUPS = [
+    ("Основа образа", ["Верх", "Низ", "Платья и комбинезоны"]),
+    ("Завершение", ["Верхний слой", "Обувь", "Аксессуары"]),
+]
+
+
+def _outfit_cells(board: list[dict]) -> list[dict]:
+    """Ячейки конструктора: только те слоты, что есть в капсуле, в порядке сборки образа."""
+    have = {grp.get("slot") for grp in board or []}
+    out = []
+    for title, slots in _OUTFIT_CELL_GROUPS:
+        cells = [s for s in slots if s in have]
+        if cells:
+            out.append({"title": title, "slots": cells})
+    return out
 
 
 def _merge_boards(primary: list, extra: list, limit: int) -> list:

@@ -70,3 +70,38 @@ def test_identical_capsules_report_no_change():
 def test_cabinet_template_renders_the_block():
     assert "Капсула пересобрана:" in m.CABINET_PAGE
     assert "Ушли из капсулы" in m.CABINET_PAGE and "Пришли на замену" in m.CABINET_PAGE
+
+
+def test_constructor_cells_follow_dressing_logic():
+    """Порядок ячеек — как человек собирает образ, а не как устроен словарь слотов.
+
+    Раньше ячейки шли в порядке _CAPSULE_SLOTS, и конструктор начинался с верхнего слоя:
+    предлагал надеть пальто, когда под ним ещё ничего нет.
+    """
+    board = [{"slot": "Аксессуары"}, {"slot": "Верхний слой"}, {"slot": "Низ"},
+             {"slot": "Обувь"}, {"slot": "Верх"}]
+
+    groups = m._outfit_cells(board)
+
+    assert [g["title"] for g in groups] == ["Основа образа", "Завершение"]
+    assert groups[0]["slots"] == ["Верх", "Низ"]
+    assert groups[1]["slots"] == ["Верхний слой", "Обувь", "Аксессуары"]
+
+
+def test_dress_belongs_to_the_base_group():
+    """Платье — самостоятельная основа образа, а не дополнение к верху и низу."""
+    groups = m._outfit_cells([{"slot": "Платья и комбинезоны"}, {"slot": "Обувь"}])
+
+    assert groups[0]["slots"] == ["Платья и комбинезоны"]
+
+
+def test_cells_show_only_slots_present_in_capsule():
+    """Пустых ячеек быть не должно: слот без вещей — это тупик в конструкторе."""
+    groups = m._outfit_cells([{"slot": "Верх"}, {"slot": "Низ"}])
+
+    assert [g["title"] for g in groups] == ["Основа образа"]
+    assert all("Обувь" not in g["slots"] for g in groups)
+
+
+def test_empty_board_gives_no_cells():
+    assert m._outfit_cells([]) == []
