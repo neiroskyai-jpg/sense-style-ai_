@@ -990,6 +990,13 @@ body {
 .r-restart-wrap { text-align: center; }
 
 /* REFERENCE PHOTOS (2 образа-превью под направление) */
+.ref-photos-lead {
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.5;
+  margin: 10px 0 2px;
+}
+.ref-photos-lead b { color: var(--wine, #5D2230); }
 .ref-photos-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1801,7 +1808,7 @@ const profiles = {
     quote: "«Хочу, чтобы меня запоминали — а не просто видели «хорошо одетой».»",
     references: [
       { src: "photos/kolupaeva-gallery/корпоратив.png", caption: "Драма — акцент и характер" },
-      { src: "photos/kolupaeva-gallery/свидание.png", caption: "Драма — статусная feminine" }
+      { src: "photos/kolupaeva-gallery/свидание.png", caption: "Драма — статусный акцент" }
     ]
   },
   romance: {
@@ -1814,7 +1821,7 @@ const profiles = {
     quote: "«Хочу выглядеть как женщина — мягкая, замеченная, желанная.»",
     references: [
       { src: "photos/kolupaeva-gallery/свидание.png", caption: "Романтика — мягкая женственность" },
-      { src: "photos/kolupaeva-gallery/выходные.png", caption: "Романтика — повседневная feminine" }
+      { src: "photos/kolupaeva-gallery/выходные.png", caption: "Романтика — повседневная женственность" }
     ]
   },
   natural: {
@@ -2216,7 +2223,27 @@ function buildResult() {
        <div class="your-photo-grid">${cells}</div>`;
     refsWrap.appendChild(block);
   } else if (!userPhotoDataUrl && !hasLooks) {
-    (profile.references || []).forEach(ref => {
+    // Референсы направления, когда клиентка прошла квиз без фото (типичный путь жюри и первого
+    // касания). Для микса берём образы из ДВУХ доминантных полей формулы, а не хардкод классики:
+    // «Драма × Романтика × Натуральный» показывал деловые презентацию с корпоративом — формула
+    // про одно, картинки про другое.
+    let refs;
+    if (profileKey === 'mix3' && sorted && sorted.length >= 2) {
+      refs = sorted.slice(0, 2)
+        .map(([field]) => (profiles[field] && profiles[field].references || [])[0])
+        .filter(Boolean);
+    }
+    if (!refs || refs.length < 2) refs = profile.references || [];
+
+    // Мотиватор над образами: блок без подписи читался как декор. Приглашение загрузить фото —
+    // это и объяснение, и главный шаг воронки (образ на СЕБЕ вместо референса).
+    const lead = document.createElement('div');
+    lead.className = 'ref-photos-lead';
+    lead.innerHTML = 'Так выглядит направление, близкое к твоей формуле. '
+      + '<b>Загрузи фото — и увидишь эти образы на себе.</b>';
+    refsWrap.parentNode.insertBefore(lead, refsWrap);
+
+    refs.forEach(ref => {
       const wrap = document.createElement('div');
       wrap.className = 'ref-photo-wrap';
       wrap.innerHTML = `

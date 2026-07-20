@@ -25,7 +25,8 @@ def placeholders(prs):
     found = []
     for idx, slide in enumerate(prs.slides, 1):
         for shape in slide.shapes:
-            if shape.has_text_frame and shape.text_frame.text.strip().replace("​", "") == "фото":
+            # На контактах плейсхолдер назван «Фото» с большой буквы — сравниваем без регистра.
+            if shape.has_text_frame and shape.text_frame.text.strip().replace("​", "").lower() == "фото":
                 found.append((idx, shape))
     return found
 
