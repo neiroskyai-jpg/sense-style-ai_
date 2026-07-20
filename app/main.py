@@ -3713,17 +3713,27 @@ def _scenario_formula_match(look: dict, diag: dict, scenario: str) -> int:
     ]).lower()
     formula = (diag.get("style_formula") or "").lower()
     vf = diag.get("visual_formula") or {}
-    if any(tok.strip() and tok.strip().lower() in hay for tok in re.split(r"[×,/]| и ", formula) if tok.strip()):
-        score += 12
+    # Формула — несколько полей, и балл растёт за КАЖДОЕ, которое видно в образе. Раньше хватало
+    # одного совпадения на всю формулу, поэтому у образа с одним лишь «натуральным» и у образа,
+    # где собраны все три поля, выходило одинаковое число: на Карте пять карточек из шести
+    # показывали 68%, и процент читался как заглушка, а не как оценка.
+    fields = [t.strip().lower() for t in re.split(r"[×,/]| и ", formula) if t.strip()]
+    if fields:
+        matched = sum(1 for t in fields if t in hay)
+        score += round(18 * matched / len(fields))
     if any(tok in hay for tok in _scenario_tokens(scenario)):
         score += 10
-    if any((sil or "").lower() in hay for sil in (vf.get("silhouettes") or [])[:3]):
-        score += 8
+    sils = [(s or "").lower() for s in (vf.get("silhouettes") or [])[:3]]
+    score += 4 * sum(1 for s in sils if s and s in hay)
+    # Полнота комплекта: образ без обуви и сумки собран наполовину, и это должно быть видно.
+    score -= 4 * len(_scenario_missing_items(look))
     items = look.get("items") or []
-    score += min(12, len(items) * 2)
-    if diag.get("colortype"):
-        score += 4
-    return max(60, min(96, score))
+    score += min(10, len(items) * 2)
+    # Палитра приходит и списком строк, и списком словарей {name, hex} — поддерживаем оба вида.
+    palette = [str((p.get("name") if isinstance(p, dict) else p) or "").lower()
+               for p in (vf.get("palette") or [])[:6]]
+    score += 3 * sum(1 for c in palette if c and c in hay)
+    return max(48, min(96, score))
 
 
 def _scenario_missing_items(look: dict) -> list[str]:
