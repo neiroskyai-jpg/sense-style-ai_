@@ -2206,9 +2206,15 @@ def _is_dated(name: str) -> bool:
 # Сезонная несовместимость: капсула собирается на сезон (card["season"] = ss|fw), а каталог о
 # сезоне не знает. Без этого в капсулу «Осень–зима» падали летний лён и пляжные рубашки.
 _SEASON_WRONG = {
-    "fw": ("летн", "пляжн", "для пляжа", "льнян", "изо льна", "из льна", "сарафан", "шорты"),
+    # Списки пополнены по диффу капсулы: причина «не по сезону» обязана быть точной, иначе
+    # клиентка видит «уступила место» там, где вещь ушла из-за погоды. Босоножки зимой и
+    # пуховик летом — это сезон, а не конкуренция за слот.
+    "fw": ("летн", "пляжн", "для пляжа", "льнян", "изо льна", "из льна", "сарафан", "шорты",
+           "босонож", "сандал", "шлёпан", "шлепан", "вьетнамк", "на бретелях", "майка",
+           "лёгкий плащ", "легкий плащ"),
     "ss": ("пуховик", "шуба", "дублён", "дублен", "зимн", "утеплён", "утеплен", "угги",
-           "шерстян", "кашемир"),
+           "шерстян", "кашемир", "пальто", "тёплый свитер", "теплый свитер", "водолазк",
+           "сапоги", "ботильон", "мех"),
 }
 
 
@@ -2502,7 +2508,19 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
             color:var(--ink);text-decoration:none;background:var(--soft)}
  .seasons a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
  .seasons a.notbuilt:not(.on){color:var(--muted);border-style:dashed}
- .itemtoggle{display:flex;gap:7px;margin:12px 0 0}
+ .capdiff{margin:14px 0 4px;padding:13px 15px;border:1px solid rgba(93,34,48,.14);border-radius:13px;
+         background:linear-gradient(135deg,#fbf6ec,#fff)}
+.capdiffhead b{display:block;font-size:13.5px;color:var(--ink)}
+.capdiffhead span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.capdiffcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px 22px;margin-top:11px}
+.capdifflab{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.capdiffrow{display:flex;gap:8px;align-items:flex-start;margin:5px 0;font-size:12px;line-height:1.4}
+.capdiffrow i{flex:0 0 16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+              font-style:normal;font-size:11px;line-height:1}
+.capdiffrow i.out{background:#efe4e4;color:#a5453a}
+.capdiffrow i.in{background:#e6efe8;color:#3f7d54}
+.capdiffrow b{font-weight:500}
+.itemtoggle{display:flex;gap:7px;margin:12px 0 0}
  .itemtoggle a{font-size:12.5px;padding:6px 13px;border:1px solid var(--line);border-radius:999px;
                text-decoration:none;color:var(--ink);background:var(--soft)}
  .itemtoggle a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
@@ -2740,6 +2758,28 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% if season_tabs %}
   <div class=seasons>
    {% for s in season_tabs %}<a href="/cabinet?season={{ s.code }}" class="{{ 'on' if s.on else '' }}{{ ' notbuilt' if not s.built else '' }}" title="{{ 'капсула собрана' if s.built else 'подберётся из каталога' }}">{{ s.label }}</a>{% endfor %}
+  </div>
+  {% endif %}
+  {# Эволюция капсулы: капсула не просто «другая» в новом сезоне — видно, что ушло, что пришло
+     и что это дало по сочетаниям. Без этого блока переключение сезона выглядело случайным. #}
+  {% if season_diff %}
+  <div class=capdiff>
+   <div class=capdiffhead><b>Капсула пересобрана: {{ season_diff.from_label }} → {{ season_diff.to_label }}</b>
+    <span>{{ season_diff.kept_count }} вещей остались · сочетаний {{ season_diff.combinations_before }} → {{ season_diff.combinations_after }}</span></div>
+   <div class=capdiffcols>
+    {% if season_diff.removed %}
+    <div class=capdiffcol>
+     <div class=capdifflab>Ушли из капсулы</div>
+     {% for r in season_diff.removed[:4] %}<div class=capdiffrow><i class=out>−</i><span><b>{{ r.name }}</b> — {{ r.why }}</span></div>{% endfor %}
+    </div>
+    {% endif %}
+    {% if season_diff.added %}
+    <div class=capdiffcol>
+     <div class=capdifflab>Пришли на замену</div>
+     {% for a in season_diff.added[:4] %}<div class=capdiffrow><i class=in>+</i><span><b>{{ a.name }}</b>{% if a.adds_looks %} — плюс {{ a.adds_looks }} {{ 'образ' if a.adds_looks == 1 else 'образа' if a.adds_looks < 5 else 'образов' }}{% endif %}</span></div>{% endfor %}
+    </div>
+    {% endif %}
+   </div>
   </div>
   {% endif %}
   <div class=itemtoggle>
@@ -3315,6 +3355,21 @@ def cabinet():
     if track and track.get("points"):
         gap_now = track["points"][-1]["gap"]
     want3 = (diag.get("want_traits_top3") or [])[:3]
+    # Эволюция капсулы: что изменилось относительно капсулы «родного» сезона Карты. Раньше при
+    # переключении сезона клиентка просто видела другой набор вещей — без объяснения, что ушло
+    # и что это дало. Капсула выглядела случайной, а не живой.
+    season_diff = None
+    home_season = card.get("season") or _DEFAULT_SEASON
+    if sel != home_season:
+        base_items = [it for grp in (_capsule_board(card.get("starter_capsule") or []) or [])
+                      for it in grp.get("items") or []]
+        now_items = [it for grp in board for it in grp.get("items") or []]
+        if base_items and now_items:
+            d = capsule_diff(base_items, now_items, sel)
+            if d["changed"]:
+                d["from_label"] = _CARD_SEASONS.get(home_season, {}).get("label", home_season)
+                d["to_label"] = _CARD_SEASONS.get(sel, {}).get("label", sel)
+                season_diff = d
     # Для несобранного сезона берём только текущую каталожную капсулу. Иначе в летнем кабинете
     # показывались осенние generated-образы: палитра и вещи уже летние, а фото и роли — старые.
     use_generated_looks = (card.get("season") or _DEFAULT_SEASON) == sel
@@ -3367,7 +3422,7 @@ def cabinet():
         # часового пояса браузера
         today_label=["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"][datetime.now().weekday()],
         board=board, palette=palette, shopping=card.get("shopping") or [],
-        season_tabs=season_tabs, sel_season=sel)
+        season_tabs=season_tabs, season_diff=season_diff, sel_season=sel)
 
 
 STYLEBOOK_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
@@ -3898,6 +3953,56 @@ def _style_dna_codes(diag: dict, card_bits: dict) -> list[dict]:
     if fig and len(codes) < 5:
         codes.append({"code": fig, "note": "геометрия, под которую подобраны посадки"})
     return codes[:5]
+
+
+_SEASON_LABEL_SHORT = {"spring": "весне", "summer": "лету", "autumn": "осени", "winter": "зиме"}
+
+
+def _why_dropped(name: str, to_season: str) -> str:
+    """Почему вещь ушла из капсулы при смене сезона. Причина обязана быть конкретной:
+    «не по сезону» без объяснения выглядит как произвол алгоритма."""
+    if not _season_ok(name, to_season):
+        return f"не по {_SEASON_LABEL_SHORT.get(to_season, 'сезону')} — ткань и слой не те"
+    if _is_dated(name):
+        return "вышла из актуального кроя"
+    return "уступила место вещи, которая даёт больше сочетаний"
+
+
+def capsule_diff(old: list[dict], new: list[dict], to_season: str | None = None) -> dict:
+    """Что изменилось в капсуле между сезонами: убрано, добавлено, как изменилась комбинаторика.
+
+    Переключение сезона и раньше пересобирало капсулу, но клиентка видела просто другой набор
+    вещей. Не было видно ни что ушло, ни почему, ни что это дало — капсула не выглядела живой,
+    она выглядела случайной. Здесь считаем осознанность перехода.
+    """
+    def _key(it):
+        return " ".join(str(it.get("name") or "").lower().split())
+
+    old_by = {_key(i): i for i in (old or []) if _key(i)}
+    new_by = {_key(i): i for i in (new or []) if _key(i)}
+
+    removed = [{"name": it.get("name"), "why": _why_dropped(it.get("name") or "", to_season or "")}
+               for k, it in old_by.items() if k not in new_by]
+    # Для добавленных считаем вклад: на сколько комплектов вещь расширила капсулу.
+    kept = [it for k, it in new_by.items() if k in old_by]
+    added = []
+    for k, it in new_by.items():
+        if k in old_by:
+            continue
+        added.append({"name": it.get("name"),
+                      "adds_looks": adds_looks(it.get("name") or "", kept),
+                      "why": "закрывает слот " + (it.get("slot") or "капсулы").lower()})
+
+    before, after = _outfit_capacity(old or []), _outfit_capacity(new or [])
+    return {
+        "removed": removed,
+        "added": sorted(added, key=lambda a: -a["adds_looks"]),
+        "kept_count": len(kept),
+        "combinations_before": before,
+        "combinations_after": after,
+        "combinations_delta": after - before,
+        "changed": bool(removed or added),
+    }
 
 
 def _current_capsule(user: str) -> list[dict]:
