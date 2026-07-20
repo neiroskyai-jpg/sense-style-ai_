@@ -236,6 +236,7 @@ RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Твоя Формула стиля</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
 <style>
+*{box-sizing:border-box}
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
  body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;max-width:920px;margin:0 auto;padding:28px 20px 70px;background:var(--cream);color:var(--ink);line-height:1.55}
  /* Число индекса — «голос бренда»: сериф, как заголовки. Georgia здесь выбивалась из продукта. */
@@ -332,7 +333,8 @@ PRIVACY = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Политика конфиденциальности — Sense Style</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
-<style>body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;max-width:820px;margin:0 auto;padding:40px 22px 80px;background:#F5EFE3;color:#1f1d1b;line-height:1.6}
+<style>
+*{box-sizing:border-box}body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;max-width:820px;margin:0 auto;padding:40px 22px 80px;background:#F5EFE3;color:#1f1d1b;line-height:1.6}
  h1{font-weight:normal;font-size:30px} h2{font-weight:normal;font-size:20px;margin-top:30px} .muted{color:#777;font-size:14px} a{color:#2b2b2b}</style>
 </head><body>
 <p><a href="/">← на главную</a></p>
@@ -382,7 +384,7 @@ GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .group{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)} .group:first-of-type{border-top:0;padding-top:0}
  .gtitle{font-family:Arial,sans-serif;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--wine);margin-bottom:6px}
  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
- .chip{display:inline-flex;cursor:pointer} .chip input{position:absolute;opacity:0;pointer-events:none}
+ .chip{display:inline-flex;cursor:pointer} .chip input{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
  .chip span{display:inline-block;padding:9px 14px;border:1px solid #d9d2c7;border-radius:999px;font-size:13.5px;color:#4a443c;background:#fff;transition:.15s}
  .chip input:checked+span{background:var(--wine);color:#fff;border-color:var(--wine)}
  .note{background:#eef6ee;border:1px solid #cfe3cf;border-radius:10px;padding:11px 14px;font-size:13.5px;color:#3a5a3a;margin-top:8px}
@@ -1580,7 +1582,7 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  @media(max-width:760px){.chips,.chips.cols3,.chips.cols4{grid-template-columns:repeat(2,minmax(0,1fr))}}
  @media(max-width:520px){.chips,.chips.cols3,.chips.cols4{grid-template-columns:1fr}}
  .chip{position:relative;cursor:pointer;margin:0}
- .chip input{position:absolute;opacity:0;pointer-events:none}
+ .chip input{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
  .chip span{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;
             padding:10px 16px;border:1px solid #dfd5c6;border-radius:18px;
             font-size:13.5px;color:#4e473f;background:#fff;user-select:none;text-align:center;
@@ -1597,7 +1599,7 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .traitq{font-size:14px;color:#312c26;line-height:1.45;margin:0}
  .traitscale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}
  .scalechip{position:relative;cursor:pointer}
- .scalechip input{position:absolute;opacity:0;pointer-events:none}
+ .scalechip input{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
  .scalechip span{display:flex;align-items:center;justify-content:center;min-height:42px;border:1px solid #dfd5c6;
                  border-radius:14px;background:#fff;color:var(--muted);font-size:13px;transition:background .15s,color .15s,border-color .15s,box-shadow .15s}
  .scalechip input:checked+span{background:var(--wine);border-color:var(--wine);color:#fff}
@@ -1739,6 +1741,7 @@ CARD_BUILDING = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Собираем Карту стиля…</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
 <style>
+*{box-sizing:border-box}
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
  body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center}
  .box{max-width:440px;padding:30px}
