@@ -7,7 +7,8 @@ import os
 
 os.environ.setdefault("OPENROUTER_API_KEY", "dummy")  # импорт app.main не должен падать
 
-from app.main import (_card_stale, _daily_cabinet_advice, _daily_week_view, _diag_signature, _ensure_n_looks,
+from app.main import (_board_week_outfits, _card_stale, _core_capsule_from_looks, _daily_cabinet_advice,
+                      _daily_week_view, _diag_signature, _ensure_n_looks,
                       _starter_capsule_from_board)  # noqa: E402
 
 SCENARIOS = ["деловая встреча", "свидание", "выходные",
@@ -71,6 +72,33 @@ def test_starter_capsule_is_nine_items():
     assert {item["slot"] for item in picked} >= {"Верх", "Низ", "Обувь"}
 
 
+def test_core_capsule_does_not_take_photo_on_weak_name_overlap():
+    looks = [{"scenario": "деловая встреча", "items": ["Туфли-лодочки с острым носом"]}]
+    board = [{"slot": "Обувь", "items": [
+        {"name": "Сапоги с острым носом", "image": "https://example.com/boots.jpg", "url": "https://shop/boots"},
+        {"name": "Лоферы классические", "image": "https://example.com/loafers.jpg", "url": "https://shop/loafers"},
+    ]}]
+
+    out = _core_capsule_from_looks(looks, board)
+
+    assert out and out[0]["name"].startswith("Туфли")
+    assert out[0].get("image") in (None, ""), "слабое совпадение по одному слову не должно подменять фото вещи"
+
+
+def test_core_capsule_keeps_only_items_from_looks():
+    looks = [
+        {"scenario": "деловая встреча", "items": ["Жакет графитовый", "Брюки палаццо", "Лодочки"]},
+        {"scenario": "выходные", "items": ["Жакет графитовый", "Джинсы wide-leg", "Лодочки"]},
+    ]
+    board = [{"slot": "Верх", "items": [{"name": "Случайная рубашка", "image": "https://example.com/shirt.jpg"}]}]
+
+    out = _core_capsule_from_looks(looks, board)
+
+    names = {it["name"] for it in out}
+    assert "Случайная рубашка" not in names
+    assert "Жакет графитовый" in names
+
+
 def test_daily_cabinet_advice_uses_existing_card_not_new_formula():
     advice = _daily_cabinet_advice(
         {"formula": "Классика × Мягкость", "gap": 62,
@@ -100,6 +128,24 @@ def test_daily_week_view_builds_today_and_week_from_existing_looks():
     assert len(view["week"]) == 7
     assert "Сегодня" in view["today"]["title"]
     assert view["today"]["items"]
+
+
+def test_board_week_outfits_are_built_from_active_capsule():
+    board = [
+        {"slot": "Верхний слой", "items": [{"name": "Жакет графитовый"}]},
+        {"slot": "Верх", "items": [{"name": "Рубашка молочная"}, {"name": "Топ изумрудный"}]},
+        {"slot": "Низ", "items": [{"name": "Брюки палаццо"}, {"name": "Джинсы wide-leg"}]},
+        {"slot": "Платья и комбинезоны", "items": [{"name": "Платье миди"}]},
+        {"slot": "Обувь", "items": [{"name": "Лоферы"}, {"name": "Босоножки"}]},
+        {"slot": "Аксессуары", "items": [{"name": "Сумка багет"}]},
+    ]
+
+    week = _board_week_outfits(board)
+
+    assert len(week) >= 6
+    assert week[0]["title"] == "Деловая встреча"
+    assert "Жакет графитовый" in week[0]["items"]
+    assert any(row["title"] == "Свидание" and "Платье миди" in row["items"] for row in week)
 
 
 # --- инвалидация кэша Карты при новой диагностике (баг рассинхрона Gap квиз↔Карта) ---

@@ -247,9 +247,27 @@ _FORMULA_CATEGORIES = {
     "drama": ["жакет", "косуха", "пальто", "платье", "ботильоны", "сапоги", "брюки", "топ",
               "сумка", "мюли"],
 }
-# Силуэты/категории, которые для прямоугольника работают плохо (заглушка, уточнить по методу).
+# Силуэты/категории, которые спорят с фигурой. Это именно эвристика отбора базы: не заменяет
+# figure_rules для генерации, а страхует каталог от явно конфликтующих моделей.
 _FIGURE_AVOID = {
-    "rectangle": ["футляр", "балахон", "оверсайз-без-пояса"],
+    "rectangle": ["футляр", "балахон", "оверсайз-без-пояса", "бойфренд", "boyfriend", "низкая посадка", "занижен"],
+    "hourglass": ["бойфренд", "boyfriend", "низкая посадка", "занижен"],
+    "pear": ["скинни", "skinny", "низкая посадка", "карман на бедре", "карго"],
+    "inverted_triangle": ["жёстк подплеч", "жестк подплеч", "вырез лодочка", "boat neck"],
+    "apple": ["mom", "slouch", "банан", "boyfriend", "бойфренд", "низкая посадка", "занижен"],
+}
+
+_FIGURE_PREFER = {
+    "rectangle": ["mom", "wide leg", "палаццо", "клёш", "запах", "пояс", "асимметр", "драпир"],
+    "hourglass": ["mom", "straight", "regular", "wide leg", "палаццо", "клёш", "приталенн", "пояс"],
+    "pear": ["wide leg", "палаццо", "клёш", "а-силуэт", "приталенн", "подплеч", "v-вырез"],
+    "inverted_triangle": ["bootcut", "клёш", "straight", "regular", "mom", "а-силуэт", "миди"],
+    "apple": ["straight", "regular", "клёш", "запах", "а-силуэт", "ампир", "удлиненн", "v-вырез"],
+}
+
+_SEASON_PREFER = {
+    "fw": ["шерст", "кашемир", "трикотаж", "кардиган", "пальто", "тренч", "сапог", "ботил", "лофер"],
+    "ss": ["хлоп", "вискоз", "лён", "лен", "босонож", "сандал", "балет", "рубаш", "майк"],
 }
 
 # Цвето-семьи: имена палитры метода («Чёрная ночь», «Холодный тауп», «Рубиновый») и сырые цвета
@@ -305,9 +323,12 @@ def score_products(profile: dict, products: list[Product]) -> list[tuple[float, 
     stop = _names(profile.get("stop_list"))
     base = (profile.get("base_style") or "").lower()
     figure = (profile.get("figure_type") or "").lower()
+    colortype = (profile.get("colortype") or "").lower()
+    season = (profile.get("season") or "").lower()
     price_max = profile.get("price_max") or 0
     good_cats = _FORMULA_CATEGORIES.get(base, [])
     avoid = _FIGURE_AVOID.get(figure, [])
+    prefer = _FIGURE_PREFER.get(figure, [])
     # цвето-семьи палитры и стоп-цветов (имена метода → базовые семьи)
     palette_fams = set().union(*(_color_families(c) for c in palette)) if palette else set()
     stop_fams = set().union(*(_color_families(c) for c in stop)) if stop else set()
@@ -333,6 +354,12 @@ def score_products(profile: dict, products: list[Product]) -> list[tuple[float, 
             score += 2.0
         elif palette_fams and prod_fams:                       # есть цвет, но вне палитры — минус
             score -= 1.5
+        # Мягкие/светлые подтипы и тёплые сезоны без чёрного в палитре не должны получать базу
+        # в графите и чистом чёрном «просто потому, что это база магазина».
+        if ("black" in prod_fams and "black" not in palette_fams
+                and (colortype.endswith("_light") or colortype.endswith("_natural")
+                     or colortype.startswith(("spring_", "summer_", "autumn_")))):
+            score -= 2.0
         # Стиль САМОЙ вещи (по деталям кроя) важнее стиля бренда: у бренда один тег на весь
         # ассортимент, и строгий жакет Lichi числился таким же «romance», как юбка с воланами.
         # Тег бренда остаётся фолбэком для вещей без маркеров в названии (~30% каталога).
@@ -345,6 +372,10 @@ def score_products(profile: dict, products: list[Product]) -> list[tuple[float, 
                 score -= 1.5 if own_styles else 1.0
         if any(c and c in hay for c in good_cats):
             score += 1.5
+        if prefer and any(k and k in hay for k in prefer):
+            score += 1.2
+        if season and any(k and k in hay for k in _SEASON_PREFER.get(season, [])):
+            score += 0.4
         if price_max and p.price and p.price <= price_max:
             score += 0.5
         if p.old_price and p.price and p.price < p.old_price:  # на распродаже — небольшой буст

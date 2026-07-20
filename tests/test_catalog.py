@@ -4,7 +4,7 @@
 Когда придёт настоящий фид: подложить его в SAMPLE_FEED / поправить core.catalog._FIELD_TAGS.
 """
 from core.catalog import (Product, _color_families, match_products, parse_csv,
-                          parse_feed, products_to_csv)
+                          parse_feed, products_to_csv, score_products)
 
 SAMPLE_FEED = """<?xml version="1.0" encoding="utf-8"?>
 <yml_catalog>
@@ -129,6 +129,39 @@ def test_match_prefers_client_style_fields():
     profile = {"palette": [{"name": "Чёрная ночь"}], "styles": ["classic"], "gender": "женский"}
     picks = match_products(profile, prods, k=12)
     assert picks[0].id == "c"  # classic-вещь впереди drama при равном цвете
+
+
+def test_soft_colortype_penalizes_black_outside_palette():
+    prods = [
+        Product(id="b", name="Жакет классический", category="жакет", color="чёрный", gender="женский"),
+        Product(id="m", name="Жакет классический", category="жакет", color="молочный", gender="женский"),
+    ]
+    profile = {
+        "palette": [{"name": "молочный"}],
+        "colortype": "summer_natural",
+        "base_style": "classic",
+        "gender": "женский",
+    }
+
+    picks = match_products(profile, prods, k=12)
+
+    assert picks[0].id == "m"
+
+
+def test_figure_preference_promotes_better_bottom_model():
+    prods = [
+        Product(id="wide", name="Джинсы wide leg", category="джинсы", color="синий", gender="женский"),
+        Product(id="straight", name="Джинсы straight", category="джинсы", color="синий", gender="женский"),
+    ]
+    profile = {
+        "palette": [{"name": "синий"}],
+        "figure_type": "rectangle",
+        "gender": "женский",
+    }
+
+    scored = score_products(profile, prods)
+
+    assert [p.id for _, p in scored][:2] == ["wide", "straight"]
 
 
 def test_parse_csv_and_roundtrip(tmp_path):

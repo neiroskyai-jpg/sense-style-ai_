@@ -753,20 +753,21 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
  /* образы под роли жизни */
  .secttl{font-family:'Cormorant Garamond',Georgia,serif;font-size:25px;margin:0 0 11px;line-height:1.1}
- .looksgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
- .lookcard{display:grid;grid-template-columns:96px 1fr;background:#fff;border:1px solid var(--line);
-           border-radius:14px;overflow:hidden;text-decoration:none;color:inherit;min-height:148px}
+ .looksgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+ .lookcard{display:grid;grid-template-columns:132px minmax(0,1fr);background:#fff;border:1px solid var(--line);
+           border-radius:18px;overflow:hidden;text-decoration:none;color:inherit;min-height:182px}
  .lookcard:hover{border-color:#d5c9b6;box-shadow:0 8px 22px rgba(40,26,20,.06)}
  .lookpic{background:var(--sand);width:100%;height:100%;object-fit:cover;display:block}
  .lookpic.empty{display:block;background:var(--sand)}
- .lookbody{padding:11px 12px 10px;display:flex;flex-direction:column;min-width:0}
- .lookttl{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:var(--ink);min-width:0}
- .lookttl .lt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
- .lookttl .chev{margin-left:auto;color:var(--muted);font-size:13px}
- .lookdesc{font-size:11.5px;color:var(--muted);line-height:1.4;margin:6px 0 0;
-           display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
- .lookmatch{margin-top:auto;padding-top:8px;text-align:right;font-size:11px;color:var(--muted)}
- .lookmatch b{color:var(--wine);font-weight:500;font-size:12px}
+ .lookbody{padding:14px 15px 13px;display:flex;flex-direction:column;min-width:0}
+ .lookttl{display:flex;align-items:flex-start;gap:8px;font-size:14px;font-weight:500;color:var(--ink);min-width:0}
+ .lookttl .lt{min-width:0;flex:1 1 auto;font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;line-height:1.02;letter-spacing:-.01em;
+              display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .lookttl .chev{margin-left:auto;color:var(--muted);font-size:16px;line-height:1.1;padding-top:2px;flex:0 0 auto}
+ .lookdesc{font-size:13px;color:var(--muted);line-height:1.45;margin:9px 0 0;
+           display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+ .lookmatch{margin-top:auto;padding-top:12px;text-align:left;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+ .lookmatch b{display:block;margin-top:3px;color:var(--wine);font-weight:500;font-size:18px;letter-spacing:-.01em;text-transform:none}
  .noimg{background:var(--soft);border:1px solid var(--line);border-left:3px solid var(--wine);
         border-radius:12px;padding:14px 16px;margin:0 0 12px;font-size:13.5px}
  .noimg a{display:inline-block;margin-top:8px;background:var(--wine);color:#fff;text-decoration:none;
@@ -819,9 +820,9 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .capfind a{color:var(--wine);text-decoration:none}
 
  /* лента сочетаний */
- .combolane{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
- .combo{border:1px solid var(--line);border-radius:10px;padding:5px;background:var(--soft)}
- .combopics{display:flex;gap:3px}
+ .combolane{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+ .combo{border:1px solid var(--line);border-radius:12px;padding:8px;background:var(--soft);min-width:0}
+ .combopics{display:flex;gap:4px}
  /* flex:1 1 0 + min-width:0 обязательны: при width:100% на каждой из трёх картинок они
     суммарно втрое шире плитки и вылезали наружу вместе с буквами-заглушками. */
  .combopics img{flex:1 1 0;min-width:0;width:100%;height:52px;object-fit:cover;
@@ -829,6 +830,9 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .combodot{flex:1 1 0;min-width:0;height:52px;border-radius:5px;background:var(--sand);display:flex;
            align-items:center;justify-content:center;color:var(--wine);
            font-family:'Cormorant Garamond',serif;font-size:15px}
+ .combotitle{font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;line-height:1.08;margin-top:8px;color:var(--ink)}
+ .combodesc{font-size:11.5px;color:var(--muted);line-height:1.35;margin-top:5px;
+            display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 
  /* что уводит от формулы */
  .stopgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
@@ -915,7 +919,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
                  border-radius:10px;font:inherit;font-size:14.5px;cursor:pointer}
 
  /* ── адаптив ─────────────────────────────────────────────────────────────────────────── */
- @media(max-width:1280px){.cols{grid-template-columns:1.2fr 1fr}.combolane{grid-template-columns:repeat(3,1fr)}}
+ @media(min-width:1480px){.looksgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1280px){.cols{grid-template-columns:1.2fr 1fr}.combolane{grid-template-columns:repeat(2,minmax(0,1fr))}}
  @media(max-width:1080px){
   .shell{grid-template-columns:1fr}
   .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:14px}
@@ -931,6 +936,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   .footbtns{margin-left:0;width:100%}
   .btnfill,.btnline{flex:1;justify-content:center}
  }
+ @media(max-width:640px){.lookcard{grid-template-columns:1fr}.lookpic{aspect-ratio:4/4.8;height:auto}.lookbody{padding:13px 14px 14px}}
  @media(max-width:460px){.looksgrid,.capgrid,.buygrid{grid-template-columns:1fr}}
 
  /* ── печать: дашборд разворачиваем в один поток ──────────────────────────────────────── */
@@ -962,13 +968,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <nav class=sidenav>
   <a class=on href="#top"><svg viewBox="0 0 20 20"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M2.5 8h15M8 8v8.5"/></svg>Моя карта стиля</a>
   <a href="/cabinet"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>Стиль каждый день</a>
-  <a href="/cabinet#wardrobe"><svg viewBox="0 0 20 20"><path d="M10 4.5a1.6 1.6 0 1 1 1.6 1.6c0 1-1.6 1.2-1.6 2.4"/><path d="M2.5 14.5 10 8.5l7.5 6v2h-15z"/></svg>Гардероб</a>
   <a href="#capsule"><svg viewBox="0 0 20 20"><rect x="2.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.4"/></svg>Капсула</a>
-  <a href="#looks"><svg viewBox="0 0 20 20"><rect x="3" y="2.5" width="14" height="15" rx="2"/><circle cx="10" cy="7.5" r="2.2"/><path d="M5.5 16c1-2.6 2.6-4 4.5-4s3.5 1.4 4.5 4"/></svg>Образы</a>
+  <a href="#looks"><svg viewBox="0 0 20 20"><rect x="3" y="2.5" width="14" height="15" rx="2"/><circle cx="10" cy="7.5" r="2.2"/><path d="M5.5 16c1-2.6 2.6-4 4.5-4s3.5 1.4 4.5 4"/></svg>Образы и роли</a>
   <a href="#shopping"><svg viewBox="0 0 20 20"><path d="M4 6.5h12l-1 10.5H5z"/><path d="M7.2 6.5V5a2.8 2.8 0 0 1 5.6 0v1.5"/></svg>Покупки</a>
-  <a href="#looks"><svg viewBox="0 0 20 20"><circle cx="10" cy="6.5" r="3"/><path d="M3.5 17c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5"/></svg>Роли жизни</a>
-  <a href="/cabinet#track"><svg viewBox="0 0 20 20"><path d="M3 17h14"/><rect x="4.5" y="10" width="3" height="5" rx=".8"/><rect x="9" y="6" width="3" height="9" rx=".8"/><rect x="13.5" y="3" width="3" height="12" rx=".8"/></svg>Отчёты</a>
-  <a href="/cabinet#wardrobe-mine"><svg viewBox="0 0 20 20"><path d="M10 16.5S3.5 12.6 3.5 8.2A3.6 3.6 0 0 1 10 6a3.6 3.6 0 0 1 6.5 2.2c0 4.4-6.5 8.3-6.5 8.3z"/></svg>Избранное</a>
+  <a href="/cabinet#wardrobe"><svg viewBox="0 0 20 20"><path d="M10 4.5a1.6 1.6 0 1 1 1.6 1.6c0 1-1.6 1.2-1.6 2.4"/><path d="M2.5 14.5 10 8.5l7.5 6v2h-15z"/></svg>Конструктор</a>
+  <a href="/cabinet#week"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>План недели</a>
  </nav>
  <div class=sidetariff>
   <div class=st-k>Тариф</div>
@@ -1156,6 +1160,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
      {# Кадр из нашей библиотеки иллюстрирует ТИП вещи, а не её цвет: жакет графитового
         цвета показан бежевым. Молчать об этом нечестно — помечаем. #}
      {% set fromlib = (not it.image) and (it.name|item_img) %}
+     {% set isexample = it.image_is_example or fromlib %}
      {% set lib = it.image or fromlib %}
      {% if lib %}<img class=capimg src="{{ lib }}" alt="{{ it.name }}" loading=lazy>
      {% else %}<span class="capimg empty">{{ it.slot or 'вещь' }}<br>без фото</span>{% endif %}
@@ -1165,7 +1170,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
      {% elif loop.first %}<span class=capbadge>купить первой</span>{% endif %}
      <div class=capbody>
       <div class=capname>{{ it.name }}</div>
-      {% if fromlib %}<div class=capexample>пример типа вещи</div>{% endif %}
+      {% if isexample %}<div class=capexample>пример типа вещи</div>{% endif %}
       {% if it.brand %}<div class=capbrand>{{ it.brand }}</div>{% endif %}
       {% if it.price %}<div class=capprice>{{ '{:,}'.format(it.price).replace(',',' ') }} ₽</div>{% endif %}
       {% if it.search %}<div class=capfind><a href="{{ it.search.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.search.lamoda }}" target=_blank rel=noopener>Lamoda</a></div>{% endif %}
@@ -1188,6 +1193,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
        {% set ci = it.image or (it.name|item_img) %}{% if ci %}<img src="{{ ci }}" alt="{{ it.name }}" loading=lazy>{% else %}<span class=combodot title="{{ it.name }}"></span>{% endif %}
       {% endfor %}
      </div>
+     <div class=combotitle>{{ combo.title }}</div>
+     <div class=combodesc>{{ combo.summary or (combo['items']|map(attribute='name')|join(' · ')) }}</div>
     </div>
     {% endfor %}
    </div>
@@ -1469,10 +1476,11 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .wrap{max-width:900px;margin:0 auto;padding:30px 22px 110px}
  /* Вопросы парами на десктопе: анкета в одну колонку на широком экране выглядит
     бесконечной лентой, хотя половина вопросов — короткие наборы чипов. */
- .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 28px}
- .qgrid .q{min-width:0}
+ .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:22px 28px;align-items:start}
+ .qgrid .q{min-width:0;display:flex;flex-direction:column;gap:12px;background:var(--soft);
+           border:1px solid var(--line);border-radius:18px;padding:18px 18px 16px}
  .qwide{grid-column:1/-1}
- @media(max-width:760px){.qgrid{grid-template-columns:1fr}}
+ @media(max-width:760px){.qgrid{grid-template-columns:1fr}.qgrid .q{padding:16px}}
  .top{display:flex;justify-content:space-between;align-items:center} .logo{font-family:'Cormorant Garamond',serif;font-size:22px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
  .eyebrow{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--wine);margin:24px 0 9px}
  h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:40px;line-height:1.05;
@@ -1489,6 +1497,8 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
           padding:4px 10px;background:var(--soft)}
  .sectd{font-size:13px;color:var(--muted);margin:0 0 6px;line-height:1.5}
  label{display:block;margin:20px 0 8px;font-size:14px;font-weight:400;color:#3f3931;line-height:1.5}
+ .q > label{margin:0;min-height:4.4em;font-size:15px;color:#312c26;letter-spacing:-.01em}
+ @media(max-width:760px){.q > label{min-height:auto}}
  .fld{width:100%;padding:12px 13px;border:1px solid #d9d2c7;border-radius:10px;font-family:inherit;font-size:15px;color:var(--ink);background:#fff;transition:border-color .15s}
  .fld:focus{outline:0;border-color:var(--wine)} .fld::placeholder{color:#a89f92}
  select.fld{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b645c' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
@@ -1503,15 +1513,39 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .stylehint{color:var(--muted);font-size:11.5px;line-height:1.3}
  .stylecard:has(input:checked){border-color:var(--wine);box-shadow:0 0 0 2px var(--wine)}
  .stylecard:has(input:checked)::after{content:'✓';position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--wine);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px}
- .chips{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px}
+ .chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+ .chips.cols3{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .chips.cols4{grid-template-columns:repeat(4,minmax(0,1fr))}
+ @media(max-width:760px){.chips,.chips.cols3,.chips.cols4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+ @media(max-width:520px){.chips,.chips.cols3,.chips.cols4{grid-template-columns:1fr}}
  .chip{position:relative;cursor:pointer;margin:0}
  .chip input{position:absolute;opacity:0;pointer-events:none}
- .chip span{display:inline-block;padding:9px 15px;border:1px solid var(--line);border-radius:999px;
-            font-size:13.5px;color:#4e473f;background:var(--soft);user-select:none;
-            transition:background .15s,color .15s,border-color .15s}
- .chip span:hover{border-color:#c9bda9}
+ .chip span{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;
+            padding:10px 16px;border:1px solid #dfd5c6;border-radius:18px;
+            font-size:13.5px;color:#4e473f;background:#fff;user-select:none;text-align:center;
+            box-shadow:0 1px 0 rgba(93,34,48,.03);
+            transition:background .15s,color .15s,border-color .15s,box-shadow .15s,transform .15s}
+ .chip span:hover{border-color:#c9bda9;box-shadow:0 6px 16px rgba(93,34,48,.06);transform:translateY(-1px)}
  .chip input:checked+span{background:var(--wine);color:#fff;border-color:var(--wine)}
  .chip input:focus-visible+span{box-shadow:0 0 0 2px rgba(93,34,48,.35)}
+ .substep{margin:30px 0 10px;padding-top:6px;border-top:1px solid rgba(93,34,48,.08)}
+ .substep:first-of-type{margin-top:26px}
+ .subcopy{font-size:13px;color:var(--muted);margin:0 0 14px;line-height:1.55}
+ .traitlist{display:grid;grid-template-columns:1fr;gap:12px}
+ .traitcard{background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+ .traitq{font-size:14px;color:#312c26;line-height:1.45;margin:0}
+ .traitscale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}
+ .scalechip{position:relative;cursor:pointer}
+ .scalechip input{position:absolute;opacity:0;pointer-events:none}
+ .scalechip span{display:flex;align-items:center;justify-content:center;min-height:42px;border:1px solid #dfd5c6;
+                 border-radius:14px;background:#fff;color:var(--muted);font-size:13px;transition:background .15s,color .15s,border-color .15s,box-shadow .15s}
+ .scalechip input:checked+span{background:var(--wine);border-color:var(--wine);color:#fff}
+ .scalechip input:focus-visible+span{box-shadow:0 0 0 2px rgba(93,34,48,.35)}
+ .lifeg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+ .lifef{margin:0;font-size:13px;font-weight:400;color:var(--muted)}
+ .lifev{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--wine);margin-bottom:6px}
+ @media(max-width:760px){.lifeg{grid-template-columns:1fr}.traitscale{grid-template-columns:repeat(5,minmax(0,1fr))}}
+ @media(max-width:520px){.traitscale{grid-template-columns:repeat(3,minmax(0,1fr))}}
  /* Загрузка фото: своя зона вместо серой кнопки браузера — это первый экран продукта. */
  .file{position:relative;border:1.5px dashed #cdbfa6;border-radius:14px;padding:22px 18px;
        text-align:center;background:var(--soft);transition:border-color .15s,background .15s}
@@ -1533,7 +1567,7 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:8px}
  .notice{color:#5a4a2a;background:#f6efdf;border:1px solid #e3d3a8;padding:14px 16px;border-radius:10px;margin-bottom:8px;font-size:14.5px;line-height:1.5} .notice b{color:var(--wine)}
 </style></head><body><div class=wrap>
-{% macro chips(name, opts) %}<div class=chips>{% for o in opts %}<label class=chip><input type=checkbox name="{{ name }}" value="{{ o }}"><span>{{ o }}</span></label>{% endfor %}</div>{% endmacro %}
+{% macro chips(name, opts, cls='') %}<div class="chips {{ cls }}">{% for o in opts %}<label class=chip><input type=checkbox name="{{ name }}" value="{{ o }}"><span>{{ o }}</span></label>{% endfor %}</div>{% endmacro %}
 <div class=top><span class=logo>Чувство стиля</span><a href="/me">← мой профиль</a></div>
 <div class=eyebrow>Карта стиля</div>
 <h1>Покажем тебя в 6 образах</h1>
@@ -1576,7 +1610,7 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   </div>
   <div class=q>
    <label>На какой сезон собрать капсулу?</label>
-   <div class=chips>
+   <div class="chips cols4">
   <label class=chip><input type=radio name=season value=spring><span>Весна</span></label>
   <label class=chip><input type=radio name=season value=summer><span>Лето</span></label>
   <label class=chip><input type=radio name=season value=autumn checked><span>Осень</span></label>
@@ -1595,31 +1629,33 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   </div>
   <div class=q>
    <label>Что ты точно не носишь? Уберём из образов.</label>
-   {{ chips('taboo', ['мини','глубокое декольте','каблук выше 5 см','обтягивающее','яркие принты','красный','прозрачное','оверсайз']) }}
+   {{ chips('taboo', ['мини','глубокое декольте','каблук выше 5 см','обтягивающее','яркие принты','красный','прозрачное','оверсайз'], 'cols3') }}
   </div>
   <div class=q>
    <label>Чьё мнение учитываем в стиле?</label>
-   {{ chips('audience', ['только своё','партнёр','дети','коллеги','родители']) }}
+   {{ chips('audience', ['только своё','партнёр','дети','коллеги','родители'], 'cols3') }}
   </div>
  </div>
 
- <div class=secth style="margin:28px 0 4px"><i>ШАГ 3</i>Пара вопросов о тебе</div>
- <p style="font-size:13px;color:var(--muted);margin:0 0 10px">По шкале: 1 — совсем не про меня, 5 — точно про меня. Это поможет собрать образы под твою натуру.</p>
+ <div class="secth substep" style="margin-bottom:4px"><i>ШАГ 3</i>Пара вопросов о тебе</div>
+ <p class=subcopy>По шкале: 1 — совсем не про меня, 5 — точно про меня. Это поможет собрать образы под твою натуру, а не только под внешность.</p>
+ <div class=traitlist>
  {% for i, q in big5_questions %}
-  <div style="margin:12px 0">
-   <div style="font-size:14px">{{ q[2] }}</div>
-   <div style="display:flex;gap:16px;margin-top:6px">
-    {% for n in [1,2,3,4,5] %}<label style="font-size:13px;color:var(--muted);display:inline-flex;gap:4px;align-items:center;font-weight:normal;margin:0"><input type=radio name="b5_{{ i }}" value="{{ n }}" style="width:auto">{{ n }}</label>{% endfor %}
+  <div class=traitcard>
+   <p class=traitq>{{ q[2] }}</p>
+   <div class=traitscale>
+    {% for n in [1,2,3,4,5] %}<label class=scalechip><input type=radio name="b5_{{ i }}" value="{{ n }}"><span>{{ n }}</span></label>{% endfor %}
    </div>
   </div>
  {% endfor %}
+ </div>
 
- <div class=secth style="margin:28px 0 4px"><i>ШАГ 4</i>Твой круг жизни</div>
- <p style="font-size:13px;color:var(--muted);margin:0 0 8px">Сколько примерно времени в неделю (%) — чтобы образы попали в реальную жизнь.</p>
- <div style="display:flex;gap:10px">
-  <label style="flex:1;margin:6px 0 0;font-size:13px;font-weight:400;color:var(--muted)">Работа<input type=number name=life_work min=0 max=100 placeholder="%" class=fld style="margin-top:4px"></label>
-  <label style="flex:1;margin:6px 0 0;font-size:13px;font-weight:400;color:var(--muted)">Дом<input type=number name=life_home min=0 max=100 placeholder="%" class=fld style="margin-top:4px"></label>
-  <label style="flex:1;margin:6px 0 0;font-size:13px;font-weight:400;color:var(--muted)">Свободное<input type=number name=life_free min=0 max=100 placeholder="%" class=fld style="margin-top:4px"></label>
+ <div class="secth substep" style="margin-bottom:4px"><i>ШАГ 4</i>Твой круг жизни</div>
+ <p class=subcopy>Сколько примерно времени в неделю (%) занимает каждая зона. Так капсула попадёт в твою реальную жизнь, а не в абстрактный Pinterest.</p>
+ <div class=lifeg>
+  <label class=lifef><span class=lifev>Работа</span><input type=number name=life_work min=0 max=100 placeholder="%" class=fld></label>
+  <label class=lifef><span class=lifev>Дом</span><input type=number name=life_home min=0 max=100 placeholder="%" class=fld></label>
+  <label class=lifef><span class=lifev>Свободное время</span><input type=number name=life_free min=0 max=100 placeholder="%" class=fld></label>
  </div>
 
  <label>Бюджет на обновление гардероба (по желанию)</label>
@@ -2199,6 +2235,8 @@ def _visual_capsule(card: dict, diag: dict, n: int) -> list:
         "palette": card.get("palette") or [],
         "stop_list": stop_colors,
         "figure_type": diag.get("figure_type"),
+        "colortype": diag.get("colortype"),
+        "season": card.get("season"),
         "base_style": (diag.get("style_dominant") or diag.get("base_style") or ""),
         "styles": styles,
         "gender": "женский",
@@ -2252,7 +2290,7 @@ def _visual_capsule(card: dict, diag: dict, n: int) -> list:
 
     order = [s for s, _ in _CAPSULE_SLOTS] + [_SLOT_OTHER]
     return [{"slot": s, "items": [{"name": _ru_item_name(p.name), "image": p.image, "url": p.url, "brand": p.brand,
-                                   "price": int(p.price) if p.price else None} for p in picked[s]]}
+                                   "price": int(p.price) if p.price else None, "image_kind": p.image_kind} for p in picked[s]]}
             for s in order if picked.get(s)]
 
 
@@ -2308,9 +2346,10 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .sidelogo{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;line-height:1.12;padding:0 8px}
  .sidelogo span{display:block;font-family:Onest,sans-serif;font-size:9px;letter-spacing:.17em;
                 text-transform:uppercase;color:var(--muted);margin-top:5px;font-weight:400}
- .sidenav{display:flex;flex-direction:column;gap:2px}
+ .sidenav{display:flex;flex-direction:column;gap:4px}
  .sidenav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:11px;
-            color:#4e473f;text-decoration:none;font-size:14px;transition:background .12s,color .12s}
+            color:#4e473f;text-decoration:none;font-size:14px;transition:background .12s,color .12s;
+            min-width:0}
  .sidenav a svg{flex:0 0 auto;width:17px;height:17px;stroke:currentColor;fill:none;
                 stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
  .sidenav a:hover{background:rgba(255,255,255,.65)}
@@ -2360,7 +2399,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .profedit:hover{border-color:var(--wine);color:var(--wine)}
 
  /* ── ряд 1: конструктор капсулы + образ на сегодня ───────────────────────────────────── */
- .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+ .row2{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:16px;align-items:start}
  .seasons{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 0}
  .seasons a{padding:6px 13px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;
             color:var(--ink);text-decoration:none;background:var(--soft)}
@@ -2372,38 +2411,38 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .itemtoggle a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
  /* minmax(0,…), а не 1fr: у подписи вещи nowrap, и в обычном 1fr она задавала колонке
     min-content — колонки разъезжались по ширине, а плитки прыгали по высоте. */
- .slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:9px;margin-top:14px}
+ .slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin-top:14px}
  /* min-width:0 обязателен: у подписи вещи nowrap, и без него автоминимум grid-элемента равен
     ширине всей строки («Верхний слой · вариант 1») — плитки вылезали за экран телефона и
     страница ехала вбок. */
  .pitem{cursor:grab;border:1px solid var(--line);border-radius:11px;background:#fff;padding:5px;
         text-align:center;user-select:none;transition:border-color .12s,box-shadow .12s;
-        display:block;min-width:0;max-width:100%}
+        display:flex;flex-direction:column;min-width:0;max-width:100%;height:100%}
  .pitem:hover{border-color:var(--wine)}
  .pitem.on{border-color:var(--wine);box-shadow:0 0 0 2px rgba(93,34,48,.28)}
  .pitem img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:7px;display:block;background:var(--sand)}
  .pitem .ph0{width:100%;aspect-ratio:3/4;border-radius:7px;background:var(--sand);display:block}
- .pitem .pname{display:block;font-size:10.5px;color:#4a443c;margin-top:5px;line-height:1.2;
-               white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+ .pitem .pname{display:-webkit-box;font-size:10.5px;color:#4a443c;margin-top:6px;line-height:1.25;
+               -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%;min-height:2.6em}
  .checks{margin-top:14px;display:flex;flex-direction:column;gap:6px}
  .checks div{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
  .checks i{flex:0 0 auto;width:14px;height:14px;border-radius:4px;background:var(--wine);color:#fff;
            font-style:normal;font-size:9px;display:flex;align-items:center;justify-content:center}
 
  /* образ на сегодня */
- .todaygrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.8fr);gap:16px;margin-top:14px;align-items:start}
- .cells{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ .todaygrid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px;align-items:start}
+ .cells{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
  .cell{border:1.4px dashed #cdbfa6;border-radius:11px;padding:9px 11px;background:var(--soft);
        min-height:76px;display:flex;flex-direction:column;gap:5px;transition:border-color .12s,background .12s}
  .cell.filled{border-style:solid;border-color:var(--wine);background:#fff}
  .cell.drop{border-color:var(--wine);background:#fdeee2}
  .cellslot{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
- .cellbody{display:flex;align-items:center;gap:8px;min-height:40px}
+ .cellbody{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:40px}
  .cellbody .thumb{width:30px;aspect-ratio:3/4;object-fit:cover;border-radius:5px;background:var(--sand);flex:0 0 auto}
- .cellval{font-size:11.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-          flex:1 1 auto;min-width:0}
+ .cellval{font-size:11.5px;color:var(--ink);line-height:1.3;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-width:0}
  .cell.filled .cellval{font-weight:500}
- .cellbody .buy{font-size:10.5px;color:var(--wine);text-decoration:none;white-space:nowrap;flex:0 0 auto}
+ .cellbody .buy{font-size:10.5px;color:var(--wine);text-decoration:none;white-space:nowrap;align-self:start}
  .wbox{border:1px solid var(--line);border-radius:14px;padding:14px 15px;background:var(--soft)}
  .wtemp{display:flex;align-items:baseline;gap:9px;margin-top:6px}
  .wtemp b{font-family:'Cormorant Garamond',serif;font-size:32px;color:var(--wine);line-height:1}
@@ -2411,7 +2450,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .wd0{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4}
  .wrow2{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:12.5px;color:#4e473f}
  .wrow2 b{color:var(--wine);font-weight:500}
- .cityform{display:flex;gap:7px;margin-top:11px}
+ .cityform{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;margin-top:11px}
  .cityform input{flex:1;min-width:0;padding:8px 11px;border:1px solid var(--line);border-radius:9px;
                  font:inherit;font-size:12.5px;background:#fff}
  .cityform button{padding:8px 13px;border:0;border-radius:9px;background:var(--wine);color:#fff;
@@ -2432,22 +2471,20 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
             letter-spacing:.06em;text-transform:uppercase}
 
  /* план недели: лента из семи дней, сегодня выделен */
- .weekgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;margin-top:13px}
+ .weekgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px;margin-top:13px}
  .weekday{border:1px solid var(--line);border-radius:12px;padding:9px;background:var(--soft);
-          display:flex;flex-direction:column;min-width:0}
+          display:flex;flex-direction:column;min-width:0;min-height:100%}
  .weekday.on{border-color:var(--wine);background:#fff;box-shadow:0 0 0 1px rgba(93,34,48,.18)}
  .wdname{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
  .weekday.on .wdname{color:var(--wine)}
  .wdimg{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:var(--sand);display:block}
  .wdimg.empty{background:var(--sand)}
- .wdrole{font-size:11.5px;line-height:1.3;margin-top:7px;
-         display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .wdrole{font-size:11.5px;line-height:1.3;margin-top:7px;font-weight:500;
+         display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
  .wdtags{font-size:10px;color:var(--muted);line-height:1.3;margin-top:4px;
-         display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
- @media(max-width:1080px){.weekgrid{grid-template-columns:repeat(4,1fr)}}
- @media(max-width:600px){.weekgrid{grid-template-columns:repeat(2,1fr)}}
+         display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
  /* ── ряд 2: AI-помощник + докупки ────────────────────────────────────────────────────── */
- .row2b{display:grid;grid-template-columns:.8fr 1.2fr;gap:16px;margin-top:16px;align-items:start}
+ .row2b{display:grid;grid-template-columns:minmax(280px,.8fr) minmax(0,1.2fr);gap:16px;margin-top:16px;align-items:start}
  .helper{display:flex;flex-direction:column;gap:2px;margin-top:12px}
  .hrow{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);
        text-decoration:none;color:inherit}
@@ -2456,24 +2493,24 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
        display:flex;align-items:center;justify-content:center;font-size:14px}
  .hrow b{display:block;font-size:13.5px;font-weight:500}
  .hrow span{display:block;font-size:11.5px;color:var(--muted);line-height:1.4;margin-top:2px}
- .buygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:13px}
+ .buygrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:11px;margin-top:13px}
  .buycard{border:1px solid var(--line);border-radius:13px;padding:12px 13px;background:var(--soft);
-          display:flex;flex-direction:column}
- .buyname{font-size:13px;font-weight:500;line-height:1.3}
- .buywhy{font-size:11.5px;color:var(--muted);line-height:1.4;margin:7px 0 0}
+          display:flex;flex-direction:column;min-width:0}
+ .buyname{font-size:13px;font-weight:500;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+ .buywhy{font-size:11.5px;color:var(--muted);line-height:1.4;margin:7px 0 0;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
  .buyok{margin-top:auto;padding-top:9px;font-size:11px;color:#3a5a3a;display:flex;align-items:center;gap:6px}
  .buyok i{font-style:normal;color:#3a7a4a}
  .buyfoot{margin-top:12px;font-size:12px;color:var(--wine)}
  .buyfoot a{color:var(--wine);text-decoration:none}
 
  /* ── ряд 3: четыре плитки возможностей ───────────────────────────────────────────────── */
- .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px}
+ .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:16px}
  .tile{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 17px;
        display:flex;flex-direction:column}
  .tile .ti{width:30px;height:30px;border-radius:9px;background:#F1EEF8;color:var(--violet);
            display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:10px}
  .tile b{font-size:14px;font-weight:500}
- .tile p{font-size:12px;color:var(--muted);line-height:1.45;margin:5px 0 12px}
+ .tile p{font-size:12px;color:var(--muted);line-height:1.45;margin:5px 0 12px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
  .tile a{margin-top:auto;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
          color:var(--violet);text-decoration:none}
 
@@ -2502,15 +2539,15 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
            font-variant-numeric:tabular-nums}
  .mile .mn.win{color:#3a5a3a}
  .mile .ml{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:5px}
- .roles3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+ .roles3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
  .role3{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
  .roleimg{aspect-ratio:4/5;overflow:hidden;background:var(--sand)}
  .roleimg img{width:100%;height:100%;object-fit:cover;display:block}
  .rolebody{padding:13px 15px}
  .role3 .rb{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--wine)}
  .role3 .rn{font-family:'Cormorant Garamond',serif;font-size:18px;line-height:1.15;margin:5px 0 8px}
- .role3 ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
- .role3 li{font-size:12px;color:var(--muted);line-height:1.3}
+ .role3 ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+ .role3 li{font-size:12px;color:var(--muted);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
  .role3 li::before{content:"— ";color:var(--wine)}
  .minegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
  .mineitem{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;position:relative}
@@ -2539,18 +2576,21 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
             font:inherit;font-size:14.5px;cursor:pointer}
  .fb .done{margin:0;font-size:15px}
 
- @media(max-width:1280px){.slotgrid{grid-template-columns:repeat(3,1fr)}.tiles{grid-template-columns:1fr 1fr}}
+ @media(max-width:1360px){.row2{grid-template-columns:1fr}.row2b{grid-template-columns:1fr}.slotgrid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}}
+ @media(max-width:1280px){.tiles{grid-template-columns:1fr 1fr}}
  @media(max-width:1080px){
   .shell{grid-template-columns:1fr}
   .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:14px}
   .sidenav{flex-direction:row;flex-wrap:wrap} .sidetariff{margin:0;flex:1 1 240px}
-  .row2,.row2b,.todaygrid{grid-template-columns:1fr}
+  .todaygrid{grid-template-columns:1fr}
   .profchips{margin-left:0;width:100%}
  }
  @media(max-width:760px){
   .main{padding:18px 16px 50px}
   .buygrid,.roles3,.tiles{grid-template-columns:1fr}
-  .cells{grid-template-columns:1fr} .footbtn{margin-left:0;width:100%;text-align:center}
+  .cells{grid-template-columns:1fr}
+  .cityform{grid-template-columns:1fr}
+  .footbtn{margin-left:0;width:100%;text-align:center}
  }
  @media(prefers-reduced-motion:reduce){.tfill{transition:none}}
 </style></head><body>
@@ -2561,13 +2601,12 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <nav class=sidenav>
   <a href="/card"><svg viewBox="0 0 20 20"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M2.5 8h15M8 8v8.5"/></svg>Моя карта стиля</a>
   <a class=on href="#top"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>Стиль каждый день</a>
-  <a href="#wardrobe"><svg viewBox="0 0 20 20"><path d="M10 4.5a1.6 1.6 0 1 1 1.6 1.6c0 1-1.6 1.2-1.6 2.4"/><path d="M2.5 14.5 10 8.5l7.5 6v2h-15z"/></svg>Гардероб</a>
-  <a href="/card#capsule"><svg viewBox="0 0 20 20"><rect x="2.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.4"/></svg>Капсула</a>
-  <a href="#roles"><svg viewBox="0 0 20 20"><rect x="3" y="2.5" width="14" height="15" rx="2"/><circle cx="10" cy="7.5" r="2.2"/><path d="M5.5 16c1-2.6 2.6-4 4.5-4s3.5 1.4 4.5 4"/></svg>Образы</a>
+  <a href="#wardrobe"><svg viewBox="0 0 20 20"><rect x="2.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.4"/></svg>Конструктор</a>
+  <a href="#week"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>План недели</a>
+  <a href="#roles"><svg viewBox="0 0 20 20"><rect x="3" y="2.5" width="14" height="15" rx="2"/><circle cx="10" cy="7.5" r="2.2"/><path d="M5.5 16c1-2.6 2.6-4 4.5-4s3.5 1.4 4.5 4"/></svg>Образы и роли</a>
   <a href="#shopping"><svg viewBox="0 0 20 20"><path d="M4 6.5h12l-1 10.5H5z"/><path d="M7.2 6.5V5a2.8 2.8 0 0 1 5.6 0v1.5"/></svg>Покупки</a>
-  <a href="#roles"><svg viewBox="0 0 20 20"><circle cx="10" cy="6.5" r="3"/><path d="M3.5 17c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5"/></svg>Роли жизни</a>
-  <a href="#track"><svg viewBox="0 0 20 20"><path d="M3 17h14"/><rect x="4.5" y="10" width="3" height="5" rx=".8"/><rect x="9" y="6" width="3" height="9" rx=".8"/><rect x="13.5" y="3" width="3" height="12" rx=".8"/></svg>Отчёты</a>
-  <a href="#wardrobe-mine"><svg viewBox="0 0 20 20"><path d="M10 16.5S3.5 12.6 3.5 8.2A3.6 3.6 0 0 1 10 6a3.6 3.6 0 0 1 6.5 2.2c0 4.4-6.5 8.3-6.5 8.3z"/></svg>Избранное</a>
+  {% if track %}<a href="#track"><svg viewBox="0 0 20 20"><path d="M3 17h14"/><rect x="4.5" y="10" width="3" height="5" rx=".8"/><rect x="9" y="6" width="3" height="9" rx=".8"/><rect x="13.5" y="3" width="3" height="12" rx=".8"/></svg>Прогресс</a>{% endif %}
+  {% if mine %}<a href="#wardrobe-mine"><svg viewBox="0 0 20 20"><path d="M10 16.5S3.5 12.6 3.5 8.2A3.6 3.6 0 0 1 10 6a3.6 3.6 0 0 1 6.5 2.2c0 4.4-6.5 8.3-6.5 8.3z"/></svg>Мои вещи</a>{% endif %}
  </nav>
  <div class=sidetariff>
   <div class=st-k>Тариф</div>
@@ -3007,6 +3046,36 @@ def _daily_cabinet_advice(card: dict, diag: dict, track: dict | None,
     }
 
 
+def _board_week_outfits(board: list[dict]) -> list[dict]:
+    """Семь сценариев недели, собранных из текущей активной капсулы.
+
+    Кабинет не должен рассказывать про одну неделю в generated-образах и про другую в конструкторе.
+    Поэтому базовый источник правды для недельного плана — текущий `board` капсулы сезона.
+    """
+    by_slot = {grp.get("slot") or "": [it.get("name") for it in (grp.get("items") or []) if it.get("name")]
+               for grp in board or []}
+
+    def pick(slot: str, idx: int = 0) -> str | None:
+        items = by_slot.get(slot) or []
+        return items[idx] if idx < len(items) else (items[0] if items else None)
+
+    plans = [
+        ("Работа", "Деловая встреча", [pick("Верхний слой"), pick("Верх"), pick("Низ"), pick("Обувь")]),
+        ("Работа", "Презентация", [pick("Верхний слой"), pick("Верх", 1), pick("Низ"), pick("Обувь", 1)]),
+        ("Повседневное", "Выходные", [pick("Верх", 1), pick("Низ", 1), pick("Обувь"), pick("Аксессуары")]),
+        ("Выход", "Свидание", [pick("Платья и комбинезоны"), pick("Обувь", 1), pick("Аксессуары"), pick("Верхний слой")]),
+        ("Выход", "Корпоратив", [pick("Платья и комбинезоны"), pick("Обувь"), pick("Аксессуары"), pick("Верхний слой")]),
+        ("Повседневное", "Путешествие", [pick("Верхний слой"), pick("Верх"), pick("Низ", 1), pick("Обувь")]),
+        ("Повседневное", "Повседневное", [pick("Верх"), pick("Низ"), pick("Обувь"), pick("Аксессуары")]),
+    ]
+    out = []
+    for bucket, title, pieces in plans:
+        clean = [p for p in pieces if p]
+        if clean:
+            out.append({"bucket": bucket, "title": title, "items": clean[:4]})
+    return out
+
+
 def _daily_week_view(card: dict, board: list[dict], weekday: int | None = None) -> dict | None:
     """Практический слой кабинета: что надеть сегодня и как выглядит ритм недели."""
     looks = [lk for lk in (card.get("looks") or []) if lk.get("scenario") or lk.get("name")]
@@ -3023,14 +3092,8 @@ def _daily_week_view(card: dict, board: list[dict], weekday: int | None = None) 
     }
     bucket_cycle = ["Работа", "Работа", "Повседневное", "Работа", "Выход", "Повседневное", "Повседневное"]
 
-    fallback_items = []
-    for grp in board:
-        for it in (grp.get("items") or [])[:1]:
-            if it.get("name"):
-                fallback_items.append(it["name"])
-        if len(fallback_items) >= 3:
-            break
-    fallback_items = fallback_items[:3]
+    board_week = _board_week_outfits(board)
+    fallback_items = ((board_week[0]["items"] if board_week else []) or [])[:3]
 
     def _pick(bucket: str, used: set[int]) -> dict | None:
         for idx, lk in enumerate(looks):
@@ -3050,8 +3113,10 @@ def _daily_week_view(card: dict, board: list[dict], weekday: int | None = None) 
     week = []
     for i, day in enumerate(day_labels):
         lk = _pick(bucket_cycle[i], used)
-        title = (lk or {}).get("scenario") or (lk or {}).get("name") or bucket_cycle[i]
-        pieces = ((lk or {}).get("items") or fallback_items)[:3]
+        board_row = board_week[i] if i < len(board_week) else None
+        title = ((board_row or {}).get("title")
+                 or (lk or {}).get("scenario") or (lk or {}).get("name") or bucket_cycle[i])
+        pieces = ((board_row or {}).get("items") or (lk or {}).get("items") or fallback_items)[:4]
         text = (lk or {}).get("why_it_works") or (
             f"Опора на {bucket_cycle[i].lower()} сценарий: собери день из уже согласованных вещей капсулы."
         )
@@ -3142,10 +3207,16 @@ def cabinet():
     if track and track.get("points"):
         gap_now = track["points"][-1]["gap"]
     want3 = (diag.get("want_traits_top3") or [])[:3]
+    # Для несобранного сезона берём только текущую каталожную капсулу. Иначе в летнем кабинете
+    # показывались осенние generated-образы: палитра и вещи уже летние, а фото и роли — старые.
+    use_generated_looks = (card.get("season") or _DEFAULT_SEASON) == sel
+    view_card = dict(card)
+    if not use_generated_looks:
+        view_card["looks"] = []
     # «Роли твоей недели»: по одному образу на жизненную капсулу (Работа/Повседневное/Выход)
     roles = []
     seen_buckets = set()
-    for lk in (card.get("looks") or []):
+    for lk in (view_card.get("looks") or []):
         b = lk.get("bucket") or "Повседневное"
         if b in seen_buckets:
             continue
@@ -3153,6 +3224,8 @@ def cabinet():
         roles.append({"bucket": b, "scenario": lk.get("scenario") or b,
                       "name": lk.get("name"), "pieces": (lk.get("items") or [])[:4],
                       "img": lk.get("img")})  # сгенерированный образ на клиентке — фото в карточку роли
+    if not roles:
+        roles = _board_role_cards(board)
     roles.sort(key=lambda r: ["Работа", "Повседневное", "Выход"].index(r["bucket"])
                if r["bucket"] in ("Работа", "Повседневное", "Выход") else 9)
     # «Прогресс-вехи»: старт, текущий, лучший разрыв, суммарная дельта (из трекера)
@@ -3162,14 +3235,14 @@ def cabinet():
         milestones = {"start": gaps[0], "now": gaps[-1], "best": min(gaps),
                       "delta": (gaps[0] - gaps[-1]) if len(gaps) > 1 else 0,
                       "count": track.get("measurements", len(gaps))}
-    advice = _daily_cabinet_advice(card, diag, track, board, card.get("shopping") or [])
-    weekview = _daily_week_view(card, board)
+    advice = _daily_cabinet_advice(view_card, diag, track, board, card.get("shopping") or [])
+    weekview = _daily_week_view(view_card, board)
     # Погода: совет «что надеть сегодня» без неё одинаков в +25 и в −10. Город клиентка задаёт
     # сама, он живёт в профиле. Нет города или ключа OpenWeatherMap — блок просто не показываем.
     city = ((get_profile(email) or {}).get("style_profile") or {}).get("city") or ""
     weather = get_weather(city) if city else None
     dress = dress_advice(weather) if weather else {}
-    look_today = _look_of_the_day(card, weather)  # фото из уже готовых образов Карты
+    look_today = _look_of_the_day(view_card, weather)  # фото только если сезон уже собран визуально
     mine = wardrobe_items(email)  # личные вещи: что клиентка забрала после «брать / не брать»
     return render_template_string(
         CABINET_PAGE, email=email, roles=roles, milestones=milestones,
@@ -3704,11 +3777,18 @@ def _capsule_combos(capsule: list[dict], limit: int = 6) -> list[dict]:
                 pieces.append(shoes[(i + j) % len(shoes)])
             if bags and len(pieces) < 5:
                 pieces.append(bags[(i + j) % len(bags)])
-            combos.append({"items": pieces,
-                           "title": " + ".join(p["name"] for p in pieces[:2])})
+            combos.append({
+                "items": pieces,
+                "title": " + ".join(p["name"] for p in pieces[:2]),
+                "summary": " · ".join(p["name"] for p in pieces[:4]),
+            })
     for k, dress in enumerate(dresses):  # платье — готовый образ, добавляем обувь
         pieces = [dress] + ([shoes[k % len(shoes)]] if shoes else [])
-        combos.append({"items": pieces, "title": dress["name"]})
+        combos.append({
+            "items": pieces,
+            "title": dress["name"],
+            "summary": " · ".join(p["name"] for p in pieces[:4]),
+        })
     return combos[:limit]
 
 
@@ -3741,14 +3821,33 @@ def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]
 
     used_photos: set[str] = set()
 
+    slot_kind_markers = {
+        "Обувь": ("туф", "лодоч", "лофер", "сапог", "ботил", "босонож", "мюл", "балет", "кроссов", "сандал"),
+        "Верхний слой": ("жакет", "пиджак", "кардиган", "тренч", "пальто", "куртк", "жилет"),
+        "Верх": ("рубаш", "блуз", "топ", "джемпер", "свитер", "футбол", "майк", "водолаз"),
+        "Низ": ("брюк", "джинс", "юбк", "шорт"),
+        "Платья и комбинезоны": ("плать", "сарафан", "комбинез"),
+        "Аксессуары": ("сумк", "ремен", "шарф", "платок"),
+    }
+
+    def _kind_tokens(text: str, slot: str) -> set[str]:
+        hay = (text or "").lower()
+        return {m for m in slot_kind_markers.get(slot, ()) if m in hay}
+
     def _photo_for(name: str, slot: str) -> dict:
         exact = cat.get(" ".join(name.lower().split()))
-        if exact:
+        if exact and (exact.get("image_kind") or "") == "packshot":
             return exact
         words = {w for w in re.findall(r"[а-яёa-z]{4,}", name.lower())}
+        kind = _kind_tokens(name, slot)
         best = None
         for cand in by_slot.get(slot, []):
             if (cand.get("url") or "") in used_photos:
+                continue
+            if (cand.get("image_kind") or "") != "packshot":
+                continue
+            cand_kind = _kind_tokens(cand.get("name") or "", slot)
+            if kind and cand_kind and not (kind & cand_kind):
                 continue
             cw = {w for w in re.findall(r"[а-яёa-z]{4,}", (cand.get("name") or "").lower())}
             score = len(words & cw)
@@ -3759,7 +3858,7 @@ def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]
         # клетчатой рубашки, «Сумка структурированная, чёрная» — зелёный рекламный коллаж
         # «ТРЕНД 2025», «Приталенный жакет, красный» — белую вещь. Чужая картинка рядом с
         # названием хуже, чем её отсутствие: ниже подставится наш предметный кадр по типу вещи.
-        if best and best[0] >= 1 and best[1]:
+        if best and best[0] >= 2 and best[1]:
             used_photos.add(best[1].get("url") or "")
             return best[1]
         return {}
@@ -3799,9 +3898,20 @@ def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]
                     f"Держит образ «{rec['scenarios'][0]}»." if rec["scenarios"] else
                     "Поддерживает формулу."),
         })
-    # сначала то, что работает чаще — это и есть ядро
-    items.sort(key=lambda x: -x["outfits_count"])
-    return items[:9]
+    # Сначала ядро по повторяемости, затем добираем слоты без дублей сверх разумной квоты.
+    items.sort(key=lambda x: (0 if x["capsule_role"] == "core" else 1, -x["outfits_count"], x["name"]))
+    quota = _capsule_quota(9)
+    slot_counts: dict[str, int] = {}
+    chosen: list[dict] = []
+    for it in items:
+        slot = it.get("slot") or ""
+        if slot_counts.get(slot, 0) >= quota.get(slot, 1):
+            continue
+        chosen.append(it)
+        slot_counts[slot] = slot_counts.get(slot, 0) + 1
+        if len(chosen) >= 9:
+            break
+    return chosen
 
 
 def _starter_capsule_from_board(board: list[dict]) -> tuple[list[dict], int]:
@@ -3858,6 +3968,28 @@ def _starter_capsule_from_board(board: list[dict]) -> tuple[list[dict], int]:
     dresses = sum(1 for p in picked if p.get("slot") == "Платья и комбинезоны")
     combos = max(18, min(24, tops * max(1, bottoms) * 2 + dresses * 2))
     return picked[:9], combos
+
+
+def _board_role_cards(board: list[dict]) -> list[dict]:
+    """Роли недели из текущей капсулы, когда для сезона ещё нет новых generated-образов."""
+    by_slot = {grp.get("slot") or "": [it.get("name") for it in (grp.get("items") or []) if it.get("name")]
+               for grp in board or []}
+    plan = [
+        ("Работа", "Деловая встреча", ("Верхний слой", "Верх", "Низ", "Обувь")),
+        ("Повседневное", "Повседневный день", ("Верх", "Низ", "Обувь", "Аксессуары")),
+        ("Выход", "Свидание или выход", ("Платья и комбинезоны", "Обувь", "Аксессуары", "Верхний слой")),
+    ]
+    roles: list[dict] = []
+    for bucket, scenario, slots in plan:
+        pieces: list[str] = []
+        for slot in slots:
+            names = by_slot.get(slot) or []
+            if names:
+                pieces.append(names[0])
+        if pieces:
+            roles.append({"bucket": bucket, "scenario": scenario, "name": scenario,
+                          "pieces": pieces[:4], "img": None})
+    return roles
 
 
 def _is_provider_out(e: Exception) -> bool:
@@ -4005,7 +4137,9 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
     # Капсула-ядро собирается ИЗ ОБРАЗОВ клиентки: вещь, работающая в нескольких сценариях, и есть
     # ядро гардероба. Каталожная сборка остаётся запасной — если у образов нет состава вещей.
     starter_capsule = _core_capsule_from_looks(looks, visual_capsule)
-    if len(starter_capsule) >= 5:
+    if starter_capsule:
+        # Если образы уже собраны, капсула справа обязана быть ИХ ядром, а не соседним каталогом.
+        # Лучше показать 6-7 честных вещей из образов, чем добить блок до девяти посторонними.
         core_n = sum(1 for it in starter_capsule if it.get("capsule_role") == "core")
         starter_combos = max(core_n * 3, len(starter_capsule) * 2)
     else:

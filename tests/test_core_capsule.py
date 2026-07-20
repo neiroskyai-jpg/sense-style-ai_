@@ -59,8 +59,8 @@ def test_catalog_only_illustrates_and_never_adds_items():
     а фото из каталога — только иллюстрация типа вещи.
     """
     board = [{"slot": "Обувь", "items": [
-        {"name": "Лоферы кожаные", "image": "http://img", "url": "http://buy", "brand": "Nexude"},
-        {"name": "Кроссовки беговые", "image": "http://x", "url": "http://y"},
+        {"name": "Лоферы кожаные", "image": "http://img", "url": "http://buy", "brand": "Nexude", "image_kind": "packshot"},
+        {"name": "Кроссовки беговые", "image": "http://x", "url": "http://y", "image_kind": "model"},
     ]}]
     cap = m._core_capsule_from_looks(LOOKS, board)
     assert "Кроссовки беговые" not in [i["name"] for i in cap]   # в образах её нет
@@ -74,3 +74,12 @@ def test_catalog_only_illustrates_and_never_adds_items():
 def test_underwear_never_enters_capsule():
     cap = m._core_capsule_from_looks([{"scenario": "дом", "items": ["Пижама шёлковая", "Джемпер"]}], [])
     assert all("ижам" not in i["name"] for i in cap)
+
+
+def test_non_packshot_does_not_override_capsule_image():
+    board = [{"slot": "Обувь", "items": [
+        {"name": "Туфли-лодочки", "image": "http://promo", "url": "http://buy", "brand": "Brand", "image_kind": "model"},
+    ]}]
+    cap = m._core_capsule_from_looks([{"scenario": "вечер", "items": ["Туфли-лодочки"]}], board)
+    shoes = next(i for i in cap if "Туфли" in i["name"])
+    assert shoes.get("image") in (None, "")

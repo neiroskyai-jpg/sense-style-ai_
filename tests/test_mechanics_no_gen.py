@@ -120,6 +120,23 @@ def test_season_switch_rebuilds_capsule(client):
         assert r.status_code == 200, season
 
 
+def test_unbuilt_season_does_not_show_stale_generated_looks(client):
+    c, db = client
+    card = m.build_style_card(DIAG, season="autumn")
+    card["looks"] = [{
+        "scenario": "деловая встреча",
+        "bucket": "Работа",
+        "items": ["Тёмный жакет", "Брюки"],
+        "img": "AUTUMN-LOOK-SHOULD-NOT-LEAK",
+    }]
+    pr.save_card(USER, card, db)
+
+    html = c.get("/cabinet?season=spring").get_data(as_text=True)
+
+    assert "AUTUMN-LOOK-SHOULD-NOT-LEAK" not in html
+    assert "Повседневный день" in html or "Свидание или выход" in html
+
+
 def test_capsule_size_toggle_works(client):
     c, _ = client
 
