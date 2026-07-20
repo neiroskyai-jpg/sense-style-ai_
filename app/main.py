@@ -188,12 +188,15 @@ def _no_store_dynamic(resp):
 FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Sense Style AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
 <style>
- :root{--cream:#F5F1EA;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
- body{font-family:Georgia,serif;max-width:640px;margin:0 auto;padding:28px 20px 70px;background:var(--cream);color:var(--ink);line-height:1.55}
+ /* Бренд-шрифты, а не Georgia: эта страница показывается клиентке при ошибке загрузки, и
+    системный сериф рядом с остальным продуктом читается как чужой сайт. */
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
+ body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;max-width:640px;margin:0 auto;padding:28px 20px 70px;background:var(--cream);color:var(--ink);line-height:1.55}
  .top{display:flex;justify-content:space-between;align-items:center}
- .logo{font-size:18px;letter-spacing:.5px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
- h1{font-weight:normal;font-size:30px;margin:14px 0 4px}
+ .logo{font-family:'Cormorant Garamond',serif;font-size:20px;letter-spacing:.5px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
+ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:32px;margin:14px 0 4px}
  label{display:block;margin:16px 0 5px;font-size:14px;color:var(--muted)}
  input,select,textarea{width:100%;padding:11px;border:1px solid #d9d2c7;border-radius:6px;font:inherit;background:#fff;box-sizing:border-box}
  button{margin-top:24px;padding:14px 30px;background:var(--wine);color:#fff;border:0;border-radius:6px;font:inherit;font-size:16px;cursor:pointer}
@@ -231,10 +234,12 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Твоя Формула стиля</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
 <style>
- :root{--cream:#F5F1EA;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
- body{font-family:Georgia,serif;max-width:920px;margin:0 auto;padding:28px 20px 70px;background:var(--cream);color:var(--ink);line-height:1.55}
- h1,h2{font-weight:normal} .gap{font-size:42px;color:var(--wine)} .formula{font-size:22px}
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
+ body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;max-width:920px;margin:0 auto;padding:28px 20px 70px;background:var(--cream);color:var(--ink);line-height:1.55}
+ /* Число индекса — «голос бренда»: сериф, как заголовки. Georgia здесь выбивалась из продукта. */
+ h1,h2{font-family:'Cormorant Garamond',serif;font-weight:600} .gap{font-family:'Cormorant Garamond',serif;font-size:46px;color:var(--wine)} .formula{font-family:'Cormorant Garamond',serif;font-size:24px}
  .looks{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px}
  .look{flex:1 1 260px} .look img{width:100%;border-radius:8px} .desc{font-size:14px;color:#444}
  .meta{color:var(--muted);font-size:14px} a{color:var(--wine)}
@@ -267,8 +272,8 @@ LANDING = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Sense Style — стиль, в котором ты настоящая</title>
 <style>
- :root{--cream:#F5F1EA;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
- *{box-sizing:border-box} body{margin:0;font-family:Georgia,serif;background:var(--cream);color:var(--ink);line-height:1.6}
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
+ *{box-sizing:border-box} body{margin:0;font-family:Onest,-apple-system,Segoe UI,sans-serif;background:var(--cream);color:var(--ink);line-height:1.6}
  .wrap{max-width:880px;margin:0 auto;padding:0 22px}
  header{padding:22px 0;display:flex;justify-content:space-between;align-items:center}
  .logo{font-size:20px;letter-spacing:.5px}
@@ -326,7 +331,8 @@ LANDING = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 PRIVACY = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Политика конфиденциальности — Sense Style</title>
-<style>body{font-family:Georgia,serif;max-width:820px;margin:0 auto;padding:40px 22px 80px;color:#2b2b2b;line-height:1.6}
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
+<style>body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;max-width:820px;margin:0 auto;padding:40px 22px 80px;background:#F5EFE3;color:#1f1d1b;line-height:1.6}
  h1{font-weight:normal;font-size:30px} h2{font-weight:normal;font-size:20px;margin-top:30px} .muted{color:#777;font-size:14px} a{color:#2b2b2b}</style>
 </head><body>
 <p><a href="/">← на главную</a></p>
@@ -348,15 +354,16 @@ PRIVACY = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Брать или не брать — Чувство стиля</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
 <style>
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
  *{box-sizing:border-box}
- body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
  .wrap{max-width:600px;margin:0 auto;padding:22px 20px 70px}
  .top{display:flex;justify-content:space-between;align-items:center}
  .logo{font-size:18px;letter-spacing:.5px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
  .eyebrow{font-family:Arial,sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--wine);margin:30px 0 10px}
- h1{font-weight:normal;font-size:34px;line-height:1.12;margin:0 0 12px}
+ h1{font-family:'Cormorant Garamond',serif;font-weight:normal;font-size:34px;line-height:1.12;margin:0 0 12px}
  .lead{font-size:17px;color:var(--muted);margin:0 0 8px}
  .steps{display:flex;gap:10px;margin:22px 0 6px}
  .step{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:13px;color:#4a443c}
@@ -494,10 +501,11 @@ GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Вердикт по вещи — Чувство стиля</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
 <style>
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
  *{box-sizing:border-box}
- body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
  .wrap{max-width:600px;margin:0 auto;padding:22px 20px 70px}
  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
  .logo{font-size:18px;letter-spacing:.5px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
@@ -557,12 +565,13 @@ GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 LOGIN_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Вход — Чувство стиля</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
 <style>
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
- *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ *{box-sizing:border-box} body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
  .wrap{max-width:460px;margin:0 auto;padding:40px 22px 70px}
  .top{display:flex;justify-content:space-between;align-items:center} .logo{font-size:18px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
- h1{font-weight:normal;font-size:30px;margin:30px 0 8px} .lead{color:var(--muted);margin:0 0 22px}
+ h1{font-family:'Cormorant Garamond',serif;font-weight:normal;font-size:30px;margin:30px 0 8px} .lead{color:var(--muted);margin:0 0 22px}
  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px}
  label{display:block;font-size:14px;color:var(--muted);margin-bottom:6px}
  input{width:100%;padding:12px;border:1px solid #d9d2c7;border-radius:8px;font:inherit;background:#fff}
@@ -593,12 +602,13 @@ LOGIN_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Мой профиль — Чувство стиля</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
 <style>
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
- *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
+ *{box-sizing:border-box} body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);line-height:1.55}
  .wrap{max-width:860px;margin:0 auto;padding:34px 26px 70px}
  .top{display:flex;justify-content:space-between;align-items:center} .logo{font-size:18px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
- h1{font-weight:normal;font-size:30px;margin:26px 0 4px} .email{color:var(--muted);margin:0 0 22px}
+ h1{font-family:'Cormorant Garamond',serif;font-weight:normal;font-size:30px;margin:26px 0 4px} .email{color:var(--muted);margin:0 0 22px}
  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px}
  .card h3{font-weight:normal;font-size:18px;margin:0 0 6px} .card p{margin:0;color:var(--muted);font-size:14px}
  .badge{display:inline-block;font-size:12px;padding:3px 10px;border-radius:999px;margin-left:8px}
@@ -1725,11 +1735,12 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 CARD_BUILDING = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Собираем Карту стиля…</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
 <style>
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c}
- body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center}
+ body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center}
  .box{max-width:440px;padding:30px}
- h1{font-weight:normal;font-size:28px;margin:0 0 10px} p{color:var(--muted)}
+ h1{font-family:'Cormorant Garamond',serif;font-weight:normal;font-size:28px;margin:0 0 10px} p{color:var(--muted)}
  .sp{width:46px;height:46px;border:4px solid #e3dccf;border-top-color:var(--wine);border-radius:50%;margin:24px auto;animation:spin 1s linear infinite}
  @keyframes spin{to{transform:rotate(360deg)}}
  .err{color:#9b1c1c} a{color:var(--wine)}
@@ -1764,9 +1775,10 @@ setTimeout(poll, 3000);
 
 STYLIST_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Стилист — Чувство стиля</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
 <style>
  :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf}
- *{box-sizing:border-box} body{font-family:Georgia,serif;margin:0;background:var(--cream);color:var(--ink);height:100vh;display:flex;flex-direction:column}
+ *{box-sizing:border-box} body{font-family:Onest,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--cream);color:var(--ink);height:100vh;display:flex;flex-direction:column}
  .top{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);background:#fff}
  .top .logo{font-size:17px} .top a{color:var(--muted);font-size:14px;text-decoration:none}
  .feed{flex:1;overflow-y:auto;padding:20px;max-width:720px;width:100%;margin:0 auto}
@@ -1883,8 +1895,8 @@ _BLOG_FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">'
     '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">')
 
 _BLOG_CSS = (
-    ":root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#7A1C2E;--muted:#6b645c;--line:#e3dccf;--ph:#e9e0d0}"
-    "*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Onest,Georgia,serif;line-height:1.6}"
+    ":root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf;--ph:#e9e0d0}"
+    "*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Onest,-apple-system,Segoe UI,sans-serif;line-height:1.6}"
     ".wrap{max-width:1120px;margin:0 auto;padding:30px 26px 110px}.artwrap{max-width:680px}"
     ".top{display:flex;justify-content:space-between;align-items:center}.logo{font-family:'Cormorant Garamond',serif;font-size:20px}.top a{color:var(--muted);font-size:14px;text-decoration:none}"
     ".eyebrow{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--wine);margin:44px 0 12px}"
@@ -3360,7 +3372,7 @@ STYLEBOOK_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Персональный Style Book</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
- :root{--paper:#F5EFE3;--ink:#221f1d;--soft:#4c463f;--muted:#7a7168;--wine:#5D2230;--line:#e2dacd}
+ :root{--paper:#F5EFE3;--ink:#1f1d1b;--soft:#4c463f;--muted:#6b645c;--wine:#5D2230;--line:#e3dccf}
  *{box-sizing:border-box}body{font-family:Onest,-apple-system,sans-serif;background:var(--paper);color:var(--ink);margin:0;line-height:1.62}
  .wrap{max-width:820px;margin:0 auto;padding:0 26px 60px}
  .serif{font-family:'Cormorant Garamond',serif}
