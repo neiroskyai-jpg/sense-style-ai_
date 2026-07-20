@@ -90,6 +90,21 @@ def test_cabinet_page_opens_when_card_exists(client):
     assert "Конструктор капсулы" in html
 
 
+def test_dynamic_pages_are_not_cached(client):
+    c, store = client
+    store[USER] = {
+        "diagnosis": {"style_formula": "Классика × Драма", "gap_percentage": 41},
+        "card": {"formula": "Классика × Драма", "season": "autumn"},
+    }
+
+    for url in ("/card", "/cabinet"):
+        r = c.get(url)
+        assert r.headers["Cache-Control"] == "no-store, no-cache, must-revalidate, max-age=0"
+        assert r.headers["Pragma"] == "no-cache"
+        assert r.headers["Expires"] == "0"
+        assert "Cookie" in r.headers["Vary"]
+
+
 def test_tariff_entry_routes_stay_working(client):
     c, store = client
     store[USER] = {"diagnosis": {"style_formula": "Классика × Драма", "gap_percentage": 41}}

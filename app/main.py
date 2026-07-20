@@ -156,6 +156,35 @@ def _inject_widget(resp):
         pass
     return resp
 
+
+_NO_CACHE_PATHS = (
+    "/card",
+    "/cabinet",
+    "/build-card",
+    "/login",
+    "/me",
+    "/tariffs",
+    "/api/build-status",
+    "/api/card-feedback",
+)
+
+
+@app.after_request
+def _no_store_dynamic(resp):
+    """Динамические страницы Карты/кабинета нельзя кешировать.
+
+    После деплоя браузер и промежуточные прокси иногда держали старый HTML по cookie-сессии:
+    клиентка видела старое меню и старые блоки, хотя новый код уже был на сервере.
+    Для живых экранов продукта отдаём `no-store`, чтобы всегда брать актуальную версию.
+    """
+    path = request.path or ""
+    if path.startswith(_NO_CACHE_PATHS):
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+        resp.headers["Vary"] = "Cookie"
+    return resp
+
 FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Sense Style AI</title>
