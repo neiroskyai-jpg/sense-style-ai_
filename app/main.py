@@ -5590,12 +5590,12 @@ def api_quiz_diagnosis():
         "taboos": [],
         "colortype_known": None,
     }
-    try:
-        diag = diagnose(quiz, {}, mode="dev")  # без vision: цветотип и фигура остаются пустыми
-        if not diag.get("style_formula"):
-            raise ValueError("пустая формула")
-    except Exception:  # noqa: BLE001 — воронка важнее полноты диагноза
-        diag = _quiz_only_diag(quiz, data.get("gap"), data.get("direction"))
+    # Модель здесь НЕ зовём, сознательно. Без фото у diagnose нет входных данных для честного
+    # разрыва — на проде он выдавал вырожденные 99%, тогда как клиентка только что увидела в
+    # квизе 31%. Плюс синхронный вызов занимал ~20 секунд, и кнопка «Получить Карту» всё это
+    # время была мёртвой. Разрыв считает квиз, направление квиз тоже определяет сам (3 главные
+    # характеристики → поле по методу), а подстиль уточняется при сборке Карты, где есть фото.
+    diag = _quiz_only_diag(quiz, data.get("gap"), data.get("direction"))
 
     job_id = uuid.uuid4().hex
     _JOBS[job_id] = {"status": "done", "diag": diag}

@@ -135,3 +135,24 @@ def test_index_is_the_same_number_in_card_and_cabinet(client, monkeypatch):
 
     assert ">69%<" in cabinet, "кабинет обязан показывать индекс, а не сырой разрыв"
     assert ">31%<" not in cabinet
+
+
+def test_model_is_not_called_on_this_path(client, monkeypatch):
+    """Модель здесь не зовём вовсе: без фото она выдавала 99% вместо показанных клиентке 31%,
+    а синхронный вызов держал кнопку «Получить Карту» мёртвой ~20 секунд."""
+    def _boom(*a, **k):
+        raise AssertionError("diagnose не должен вызываться без фото")
+
+    monkeypatch.setattr(m, "diagnose", _boom)
+
+    assert client.post("/api/quiz-diagnosis", json=PAYLOAD).get_json()["gap"] == 31
+
+
+def test_endpoint_answers_fast(client):
+    """Ответ должен быть мгновенным — клиентка жмёт кнопку сразу, ждать нечего."""
+    import time
+
+    t0 = time.perf_counter()
+    client.post("/api/quiz-diagnosis", json=PAYLOAD)
+
+    assert time.perf_counter() - t0 < 1.0
