@@ -56,6 +56,9 @@ N_RENDER = 2  # сколько образов рендерим в квизе (к
 # памяти; на маленьком контейнере это кончается убитым процессом и потерянной Картой.
 RENDER_WORKERS = int(os.getenv("SENSE_RENDER_WORKERS", "3"))
 DEMO_DAILY_LIMIT = int(os.getenv("DEMO_DAILY_LIMIT", "40"))  # защита от слива ключа
+# Каждая вещь гардероба — отдельный vision-вызов. Пачку ограничиваем: 20 фото это и минуты
+# ожидания у экрана, и заметный расход квоты ключа за один клик.
+MAX_WARDROBE_UPLOAD = int(os.getenv("SENSE_MAX_WARDROBE_UPLOAD", "8"))
 
 # статика сайта раздаётся из web/ в корне; зарегистрированные роуты (/demo, /api…) важнее
 app = Flask(__name__, static_folder=str(WEB_DIR), static_url_path="")
@@ -1737,6 +1740,115 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </form></div></body></html>"""
 
 
+WARDROBE_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1"><title>Мой гардероб — Чувство стиля</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
+<style>
+*{box-sizing:border-box}
+ :root{--cream:#F5EFE3;--ink:#1f1d1b;--wine:#5D2230;--muted:#6b645c;--line:#e3dccf;--soft:#FBF6EC}
+ body{font-family:Onest,-apple-system,Segoe UI,sans-serif;font-weight:300;margin:0;background:var(--cream);color:var(--ink);line-height:1.6}
+ .wrap{max-width:940px;margin:0 auto;padding:26px 20px 80px}
+ .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
+ .logo{font-family:'Cormorant Garamond',serif;font-size:21px}
+ .top a{color:var(--muted);font-size:14px;text-decoration:none}
+ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:34px;margin:0 0 8px}
+ .lead{color:var(--muted);font-size:15px;margin:0 0 24px;max-width:620px}
+ .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-bottom:16px}
+ .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+ .kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+ .kpi b{display:block;font-family:'Cormorant Garamond',serif;font-size:32px;color:var(--wine);line-height:1}
+ .kpi span{display:block;font-size:12.5px;color:var(--muted);margin-top:5px}
+ .up{border:1.4px dashed #cdbfa6;border-radius:16px;padding:20px;background:var(--soft);text-align:center}
+ .up input[type=file]{display:block;margin:10px auto;max-width:100%}
+ .up button{margin-top:10px;padding:13px 26px;background:var(--wine);color:#fff;border:0;border-radius:10px;font:inherit;font-size:15px;cursor:pointer}
+ .hint{font-size:12.5px;color:var(--muted);margin-top:8px}
+ h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:23px;margin:26px 0 10px}
+ .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+ .item{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:#fff}
+ .item .slot{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+ .item .nm{font-size:13.5px;margin:4px 0 6px}
+ .item .vd{display:inline-block;font-size:11px;padding:3px 9px;border-radius:999px}
+ .keep .vd{background:#e6efe8;color:#3f7d54} .fix .vd{background:#f6eede;color:#9a6a2f}
+ .drop .vd{background:#f6e7e4;color:#a5453a}
+ .item .rs{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+ .sug{display:flex;gap:12px;align-items:flex-start;border:1px solid rgba(93,34,48,.14);border-radius:14px;
+      padding:13px 15px;background:linear-gradient(135deg,#fbf6ec,#fff);margin-bottom:9px}
+ .sug b{font-size:13.5px} .sug span{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+ .sug .plus{flex:0 0 auto;font-size:12px;color:var(--wine);font-weight:500;white-space:nowrap}
+ .empty{color:var(--muted);font-size:14px}
+ .note{background:#eef6ee;border:1px solid #cfe3cf;border-radius:12px;padding:12px 15px;font-size:13.5px;color:#3a5a3a}
+ @media(max-width:560px){.wrap{padding:20px 14px 70px}h1{font-size:27px}}
+</style></head><body><div class=wrap>
+<div class=top><span class=logo>Чувство стиля</span><a href="/cabinet">← в кабинет</a></div>
+<h1>Мой гардероб</h1>
+<p class=lead>Загрузи фото своих вещей — разберём каждую по твоей Формуле и покажем, сколько образов
+уже собирается из того, что есть. Без единой покупки.</p>
+
+{% if added %}<div class=note>Разобрано вещей: <b>{{ added }}</b>{% if failed and failed != '0' %} · не распознано: {{ failed }}{% endif %}.</div>{% endif %}
+
+<div class=kpis>
+ <div class=kpi><b>{{ s.looks_now }}</b><span>{{ 'образ' if s.looks_now == 1 else 'образа' if s.looks_now < 5 else 'образов' }} из твоих вещей</span></div>
+ <div class=kpi><b>{{ s.keep_count }}</b><span>работают на формулу</span></div>
+ <div class=kpi><b>{{ s.fix_count }}</b><span>носятся с оговоркой</span></div>
+ <div class=kpi><b>{{ s.drop_count }}</b><span>не в твоей формуле</span></div>
+</div>
+
+<div class=panel>
+ <form method=post action="/wardrobe/upload" enctype=multipart/form-data class=up>
+  <b>Добавить вещи</b>
+  <input type=file name=photos accept="image/*" multiple required>
+  <button type=submit>Разобрать по Формуле</button>
+  <p class=hint>До {{ limit }} фото за раз. Снимай вещь целиком на светлом фоне — так точнее.</p>
+ </form>
+</div>
+
+{% if s.keep %}
+<h2>Работают на формулу</h2>
+<div class=grid>
+ {% for it in s.keep %}
+ <div class="item keep"><div class=slot>{{ it.slot }}</div><div class=nm>{{ it.name }}</div>
+  <span class=vd>{{ it.bucket_label }}</span>{% if it.reason %}<div class=rs>{{ it.reason }}</div>{% endif %}</div>
+ {% endfor %}
+</div>
+{% endif %}
+
+{% if s.fix %}
+<h2>Носятся с оговоркой</h2>
+<div class=grid>
+ {% for it in s.fix %}
+ <div class="item fix"><div class=slot>{{ it.slot }}</div><div class=nm>{{ it.name }}</div>
+  <span class=vd>{{ it.bucket_label }}</span>{% if it.reason %}<div class=rs>{{ it.reason }}</div>{% endif %}</div>
+ {% endfor %}
+</div>
+{% endif %}
+
+{% if s.drop %}
+<h2>Не в твоей формуле</h2>
+<div class=grid>
+ {% for it in s.drop %}
+ <div class="item drop"><div class=slot>{{ it.slot }}</div><div class=nm>{{ it.name }}</div>
+  <span class=vd>{{ it.bucket_label }}</span>{% if it.reason %}<div class=rs>{{ it.reason }}</div>{% endif %}</div>
+ {% endfor %}
+</div>
+{% endif %}
+
+{% if suggestions %}
+<h2>Чего не хватает</h2>
+{% for x in suggestions %}
+<div class=sug><div><b>{{ x.name }}</b><span>{{ x.why }}</span></div>
+ <div class=plus>+{{ x.adds_looks }} {{ 'образ' if x.adds_looks == 1 else 'образа' if x.adds_looks < 5 else 'образов' }}</div></div>
+{% endfor %}
+{% elif s.total %}
+<h2>Чего не хватает</h2>
+<p class=empty>Ничего. Слоты капсулы закрыты — докупать нечего.</p>
+{% endif %}
+
+{% if not s.total %}
+<p class=empty>Пока пусто. Загрузи первые вещи — и увидишь, что из них уже собирается.</p>
+{% endif %}
+</div></body></html>"""
+
+
 CARD_BUILDING = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1"><title>Собираем Карту стиля…</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel=stylesheet>
@@ -2910,6 +3022,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <div class=helper>
    <a class=hrow href="/garment"><span class=hico>✓</span><span><b>Брать или не брать</b><span>Проверить вещь перед покупкой</span></span></a>
    <a class=hrow href="#week"><span class=hico>▦</span><span><b>План недели</b><span>Готовые образы на неделю под роли, погоду и твоё время</span></span></a>
+   <a class=hrow href="/wardrobe"><span class=hico>◫</span><span><b>Мой гардероб</b><span>Загрузи свои вещи — разберём по Формуле и покажем, сколько образов уже есть</span></span></a>
    <a class=hrow href="#wardrobe"><span class=hico>❋</span><span><b>Сезонные обновления</b><span>Переключи сезон — капсула пересоберётся под него</span></span></a>
    <a class=hrow href="#track"><span class=hico>◔</span><span><b>Трекер настройки образа</b><span>Видно, как образ догоняет то, какой ты себя хочешь</span></span></a>
   </div>
@@ -2941,6 +3054,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <div class=tile><span class=ti>◫</span><b>Капсульный конструктор образов</b><p>Создавай образы из своей капсулы. Все сочетания проверены под твою Формулу.</p><a href="#wardrobe">Открыть конструктор →</a></div>
  <div class=tile><span class=ti>✓</span><b>Брать или не брать</b><p>Проверь любую покупку: подойдёт ли она по стилю, цветотипу и фигуре.</p><a href="/garment">Проверить вещь →</a></div>
  <div class=tile><span class=ti>▦</span><b>План недели</b><p>Семь дней из твоей капсулы: у каждого своя роль и свой образ.</p><a href="#week">Посмотреть план →</a></div>
+ <div class=tile><span class=ti>◫</span><b>Мой гардероб</b><p>Разбери свои вещи по Формуле: что работает, что нет и сколько образов уже собирается.</p><a href="/wardrobe">Открыть гардероб →</a></div>
  <div class=tile><span class=ti>❋</span><b>Сезонные обновления</b><p>Капсула пересобирается под сезон: вещи, ткани и слои меняются.</p><a href="#wardrobe">Переключить сезон →</a></div>
 </div>
 
@@ -3680,6 +3794,77 @@ a.back{color:var(--muted);font-size:14px;text-decoration:none;display:inline-blo
 </div></body></html>"""
 
 
+@app.post("/wardrobe/upload")
+def wardrobe_upload():
+    """Загрузка своих вещей пачкой: каждое фото → vision-разбор → вещь в гардеробе.
+
+    Это ядро обещания «капсула из ТВОИХ вещей»: клиентка приходит не с пустым шкафом, и
+    продукт должен сначала показать, что у неё уже есть, а не сразу продавать покупки.
+
+    Каждая вещь — отдельный vision-вызов, поэтому пачку ограничиваем: и по квоте ключа, и
+    потому что разбор 20 фото занимал бы минуты, а клиентка ждёт у экрана.
+    """
+    email = _current_user()
+    diag = (get_profile(email) or {}).get("diagnosis") or {}
+    if not diag.get("style_formula"):
+        return redirect("/cabinet")           # без Формулы вердикт не с чем сверять
+
+    files = [f for f in request.files.getlist("photos") if f and f.filename][:MAX_WARDROBE_UPLOAD]
+    if not files:
+        return redirect("/wardrobe")
+
+    added, failed = 0, 0
+    for f in files:
+        if not _quota_left():
+            break
+        try:
+            photo_path = _validate_and_save(f)
+        except ValueError:
+            failed += 1
+            continue
+        record_call()
+        try:
+            v = evaluate_garment(str(photo_path), diag, mode="dev")
+        except Exception:  # noqa: BLE001 — одна нераспознанная вещь не валит всю загрузку
+            failed += 1
+            continue
+        name = (v.get("item") or "").strip()[:160]
+        if not name:
+            failed += 1
+            continue
+        add_wardrobe_item(email, {
+            "name": name,
+            "slot": _capsule_slot(name),
+            "verdict": (v.get("verdict") or "").strip()[:40],
+            "reason": (v.get("reason") or "").strip()[:400],
+        })
+        added += 1
+    record_event("wardrobe_uploaded", email, meta=f"{added}/{len(files)}")
+    return redirect(f"/wardrobe?added={added}&failed={failed}")
+
+
+@app.get("/wardrobe")
+def wardrobe_page():
+    """Мой гардероб: что оставляем, сколько образов уже собирается, чего не хватает."""
+    email = _current_user()
+    prof = get_profile(email) or {}
+    diag = prof.get("diagnosis") or {}
+    if not diag.get("style_formula"):
+        return render_template_string(
+            NEED_DIAGNOSIS, eyebrow="Шаг 1 из 3",
+            title="Гардероб разбирается после диагностики",
+            lead="Чтобы сказать, что из твоих вещей работает, а что нет, нужна Формула. "
+                 "Пройди диагностику — дальше разберём шкаф по ней.")
+    items = wardrobe_items(email)
+    summary = wardrobe_summary(items)
+    card = prof.get("card") or {}
+    catalog = card.get("visual_capsule") or card.get("capsule_board") or []
+    return render_template_string(
+        WARDROBE_PAGE, s=summary, suggestions=wardrobe_suggestions(items, catalog),
+        added=request.args.get("added"), failed=request.args.get("failed"),
+        limit=MAX_WARDROBE_UPLOAD)
+
+
 @app.post("/wardrobe/add")
 def wardrobe_add():
     """Вещь из проверки «брать / не брать» → в личный гардероб клиентки."""
@@ -4103,6 +4288,116 @@ def capsule_diff(old: list[dict], new: list[dict], to_season: str | None = None)
         "combinations_delta": after - before,
         "changed": bool(removed or added),
     }
+
+
+# ── Разбор личного гардероба ────────────────────────────────────────────────────────────────
+# Клиентка приходит не с пустым шкафом. Главный аргумент продукта — «из твоих вещей уже
+# собирается N образов», а не «купи ещё». Вся арифметика здесь детерминированная: LLM отвечает
+# за распознавание вещи по фото, решения о капсуле и числа считает код.
+
+# Вердикт vision-проверки → что с вещью делать. Формулировки клиентские: «убрать» звучит как
+# приговор шкафу, «не в твоей формуле» — как факт о конкретной вещи.
+_WARDROBE_BUCKETS = {
+    "take": ("keep", "Работает на формулу"),
+    "replace": ("fix", "Работает с оговоркой"),
+    "skip": ("drop", "Не в твоей формуле"),
+}
+
+
+def wardrobe_breakdown(items: list[dict]) -> dict:
+    """Разложить вещи гардероба на «оставить / доработать / не твоё».
+
+    Вещь без вердикта (добавлена руками, без проверки по фото) попадает в keep: не отбираем у
+    клиентки её вещи молча, пока не проверили.
+    """
+    out = {"keep": [], "fix": [], "drop": []}
+    for it in items or []:
+        verdict = (it.get("verdict") or "").strip().lower()
+        bucket, label = _WARDROBE_BUCKETS.get(verdict, ("keep", "В гардеробе"))
+        row = dict(it)
+        row["bucket_label"] = label
+        row["slot"] = it.get("slot") or _capsule_slot(it.get("name") or "")
+        out[bucket].append(row)
+    return out
+
+
+def wardrobe_gaps(keep_items: list[dict], target: int = 9) -> list[dict]:
+    """Каких слотов не хватает, чтобы из вещей собиралась капсула.
+
+    Считаем по квотам метода (_capsule_quota): верхов больше, чем низов, верхний слой один,
+    обувь и сумка обязательны. Возвращаем только реальные дыры, по убыванию важности.
+    """
+    quota = _capsule_quota(target)
+    have: dict[str, int] = {}
+    for it in keep_items or []:
+        slot = it.get("slot") or _capsule_slot(it.get("name") or "")
+        have[slot] = have.get(slot, 0) + 1
+    # Порядок важности: без низа и обуви образ не собрать вообще, аксессуар — завершение.
+    priority = ["Низ", "Верх", "Обувь", "Верхний слой", "Аксессуары"]
+    gaps = []
+    for slot in priority:
+        need = quota.get(slot, 0)
+        got = have.get(slot, 0)
+        if got < need:
+            gaps.append({"slot": slot, "have": got, "need": need, "missing": need - got})
+    return gaps
+
+
+def wardrobe_summary(items: list[dict], target: int = 9) -> dict:
+    """Сводка по гардеробу: что оставляем, сколько образов уже есть, чего не хватает.
+
+    `looks_now` — главное число продукта: сколько комплектов собирается БЕЗ единой покупки.
+    """
+    parts = wardrobe_breakdown(items)
+    keep = parts["keep"] + parts["fix"]      # «с оговоркой» тоже носится, просто аккуратнее
+    gaps = wardrobe_gaps(keep, target)
+    return {
+        **parts,
+        "keep_count": len(parts["keep"]),
+        "fix_count": len(parts["fix"]),
+        "drop_count": len(parts["drop"]),
+        "total": len(items or []),
+        "looks_now": _outfit_capacity(keep),
+        "gaps": gaps,
+    }
+
+
+def wardrobe_suggestions(items: list[dict], catalog: list[dict] | None = None,
+                         limit: int = 2) -> list[dict]:
+    """Что докупить: максимум 1-2 вещи, каждая закрывает конкретный пробел.
+
+    Правило метода — не покупки ради покупок: предлагаем только под реальную дыру в слоте и
+    показываем, сколько образов вещь добавляет. Нет пробелов — нет предложений.
+    """
+    parts = wardrobe_breakdown(items)
+    keep = parts["keep"] + parts["fix"]
+    out = []
+    for gap in wardrobe_gaps(keep, 9)[:limit]:
+        slot = gap["slot"]
+        pick = None
+        for grp in catalog or []:
+            if grp.get("slot") == slot and grp.get("items"):
+                pick = grp["items"][0]
+                break
+        name = (pick or {}).get("name") or f"{slot.lower()} под твою формулу"
+        # Вклад считаем по СЛОТУ, а не по имени: обобщённое «низ под твою формулу» слотом не
+        # распознаётся, и вещь показывала бы честные, но бессмысленные +0 образов.
+        after = _outfit_capacity(list(keep) + [{"name": name, "slot": slot}])
+        # Разные формулировки для пустого слота и для «есть, но мало»: сказать «нет вещи»
+        # там, где вещь есть, — прямая неправда, клиентка это видит по своему шкафу.
+        if gap["have"] == 0:
+            why = f"в гардеробе нет ни одной вещи в слоте «{slot.lower()}» — без неё образ не собрать"
+        else:
+            why = (f"в слоте «{slot.lower()}» пока {gap['have']} — "
+                   f"ещё одна вещь заметно расширит комбинаторику")
+        out.append({
+            "slot": slot,
+            "name": name,
+            "image": (pick or {}).get("image"),
+            "adds_looks": max(0, after - _outfit_capacity(keep)),
+            "why": why,
+        })
+    return out
 
 
 def _current_capsule(user: str) -> list[dict]:
