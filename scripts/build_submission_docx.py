@@ -50,12 +50,42 @@ def _add_runs(paragraph, text: str) -> None:
 
 def build(name: str):
     from docx import Document
-    from docx.shared import Pt, RGBColor
+    from docx.shared import Pt, RGBColor, Inches
 
-    md = (SRC / name).read_text(encoding="utf-8").split("\n")
+    # Служебные заметки самой себе (что дописать, как позиционировать) нужны в .md, но в документ
+    # для жюри попадать не должны: комиссия читала бы внутреннюю кухню вместо письма. Всё, что
+    # обёрнуто в <!-- -->, из сборки выбрасывается.
+    raw = re.sub(r"<!--.*?-->", "", (SRC / name).read_text(encoding="utf-8"), flags=re.S)
+    md = raw.split("\n")
     doc = Document()
     normal = doc.styles["Normal"].font
-    normal.name = "Times New Roman"; normal.size = Pt(12)
+    normal.name = "Times New Roman"; normal.size = Pt(11)
+
+    # Плотная вёрстка. Шаблон python-docx по умолчанию ставит 10pt после КАЖДОГО абзаца и
+    # межстрочный 1.15 — на документе в сотню абзацев это полторы страницы пустоты: описание
+    # проекта занимало 7 страниц при лимите конкурса в 3, хотя слов в нём меньше тысячи.
+    # Ужимаем вёрстку, а не текст — резать содержание ради формата было бы неправильно.
+    pf = doc.styles["Normal"].paragraph_format
+    pf.space_after = Pt(3)
+    pf.space_before = Pt(0)
+    pf.line_spacing = 1.0
+
+    # Заголовки в базовом шаблоне крупные и с большими отбивками сверху.
+    for level, size in ((1, 15), (2, 13), (3, 11), (4, 11)):
+        try:
+            style = doc.styles[f"Heading {level}"]
+        except KeyError:
+            continue
+        style.font.size = Pt(size)
+        style.font.name = "Times New Roman"
+        style.paragraph_format.space_before = Pt(8 if level == 1 else 6)
+        style.paragraph_format.space_after = Pt(2)
+        style.paragraph_format.line_spacing = 1.0
+
+    # Поля 1.25" по бокам — наследие старых версий Word: колонка текста всего 6" из 8.5".
+    for section in doc.sections:
+        section.top_margin = section.bottom_margin = Inches(0.7)
+        section.left_margin = section.right_margin = Inches(0.8)
 
     i = 0
     while i < len(md):

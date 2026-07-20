@@ -2573,6 +2573,11 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .wd0{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4}
  .wrow2{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:12.5px;color:#4e473f}
  .wrow2 b{color:var(--wine);font-weight:500}
+ .chipwhy{margin-top:12px;padding-top:11px;border-top:1px solid rgba(93,34,48,.10)}
+ .chipwhylab{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+ .chipwhyrow{display:flex;gap:8px;align-items:baseline;margin:5px 0;font-size:12px;line-height:1.4}
+ .chipwhyrow b{flex:0 0 auto;font-weight:500;color:var(--wine)}
+ .chipwhyrow span{color:var(--muted)}
  .cityform{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;margin-top:11px}
  .cityform input{flex:1;min-width:0;padding:8px 11px;border:1px solid var(--line);border-radius:9px;
                  font:inherit;font-size:12.5px;background:#fff}
@@ -2855,6 +2860,14 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
       {% if want_traits %}Настроение: <b>{{ want_traits[0] }}</b>{% endif %}
       {% if dress %}<br>Поверх: <b>{{ dress.layer }}</b>{% endif %}
      </div>
+     {# Explainable-слой: клиентка видит связь «условие → следствие», а не просто готовый образ.
+        Считается кодом (outfit_chips), поэтому при тех же входных данных объяснение то же. #}
+     {% if chips %}
+     <div class=chipwhy>
+      <div class=chipwhylab>Почему образ такой</div>
+      {% for c in chips %}<div class=chipwhyrow><b>{{ c.label }}</b><span>{{ c.why }}</span></div>{% endfor %}
+     </div>
+     {% endif %}
      {% if weather_on %}
      <form method=post action="/cabinet/city" class=cityform>
       <input name=city value="{{ city }}" placeholder="Город" aria-label="Город">
@@ -3228,6 +3241,74 @@ def _board_week_outfits(board: list[dict]) -> list[dict]:
     return out
 
 
+# Пороги температуры для объяснений. Границы бытовые, а не метеорологические: клиентка думает
+# «жарко / тепло / прохладно», а не в градусах.
+_TEMP_BANDS = [
+    (26, "жарко", "лёгкие ткани и открытая обувь, верхний слой не нужен"),
+    (18, "тепло", "один слой, лёгкий жакет или рубашка сверху по желанию"),
+    (10, "прохладно", "нужен полноценный верхний слой и закрытая обувь"),
+    (2, "холодно", "плотный слой, шерсть или кашемир, закрытая обувь"),
+    (-99, "мороз", "тёплое пальто или пуховик, многослойность обязательна"),
+]
+
+# Что роль требует от силуэта. Это и есть explainable-слой: клиентка видит, ПОЧЕМУ образ такой.
+_ROLE_CHIP = {
+    "Работа": "собранный силуэт и чёткая линия плеча",
+    "Выход": "акцентная деталь и более нарядная фактура",
+    "Повседневное": "свободнее в крое, упор на комфорт",
+}
+
+_MOOD_CHIP = {
+    "властная": "структура и контраст держат авторитет",
+    "открытая": "мягкая линия и светлый верх ближе к лицу",
+    "элегантная": "чистая линия без лишнего декора",
+    "дорогая": "качество ткани важнее количества деталей",
+    "женственная": "мягкий силуэт с обозначенной талией",
+    "незаурядная": "одна выразительная деталь на спокойной базе",
+}
+
+
+def _temp_band(temp) -> tuple[str, str] | None:
+    try:
+        t = float(temp)
+    except (TypeError, ValueError):
+        return None
+    for edge, label, advice in _TEMP_BANDS:
+        if t >= edge:
+            return label, advice
+    return None
+
+
+def outfit_chips(weather: dict | None, role: str | None, mood: str | None) -> list[dict]:
+    """Объяснения под образом дня: почему он собран именно так.
+
+    Считается кодом, а не моделью: клиентка должна видеть связь «условие → следствие», и эта
+    связь обязана быть одинаковой при одинаковых входных данных. Каждый чип — {label, why}.
+    """
+    chips: list[dict] = []
+    if weather:
+        band = _temp_band(weather.get("temp"))
+        if band:
+            label, advice = band
+            temp = weather.get("temp")
+            chips.append({"label": f"{round(float(temp))}° — {label}", "why": advice})
+        if weather.get("is_rain"):
+            chips.append({"label": "дождь", "why": "плотная обувь и верхний слой, замша сегодня не идёт"})
+        elif weather.get("is_snow"):
+            chips.append({"label": "снег", "why": "закрытая обувь на устойчивой подошве"})
+        if (weather.get("wind") or 0) >= 8:
+            chips.append({"label": "ветрено", "why": "верхний слой с плотной посадкой, лёгкий шёлк развевается"})
+    if role:
+        why = _ROLE_CHIP.get(role)
+        if why:
+            chips.append({"label": f"роль: {role.lower()}", "why": why})
+    if mood:
+        why = _MOOD_CHIP.get((mood or "").strip().lower())
+        if why:
+            chips.append({"label": f"настроение: {mood.lower()}", "why": why})
+    return chips
+
+
 def _daily_week_view(card: dict, board: list[dict], weekday: int | None = None) -> dict | None:
     """Практический слой кабинета: что надеть сегодня и как выглядит ритм недели."""
     looks = [lk for lk in (card.get("looks") or []) if lk.get("scenario") or lk.get("name")]
@@ -3275,7 +3356,9 @@ def _daily_week_view(card: dict, board: list[dict], weekday: int | None = None) 
         # фото образа — из уже готовых образов Карты, чтобы неделя была лентой кадров, а не
         # списком текста. Новых генераций не запускаем: кадр стоит ~30с и денег на ключе.
         week.append({"day": day, "title": title.capitalize(), "text": text, "tags": pieces,
-                     "img": (lk or {}).get("img")})
+                     # bucket нужен объяснениям: заголовок дня — это сценарий («деловая встреча»),
+                     # а требование к силуэту задаёт именно роль (Работа / Выход / Повседневное).
+                     "bucket": bucket_cycle[i], "img": (lk or {}).get("img")})
 
     today_row = week[weekday % 7]
     return {
@@ -3286,6 +3369,7 @@ def _daily_week_view(card: dict, board: list[dict], weekday: int | None = None) 
                 f"сценарий и собери день из вещей, которые поддерживают твою Формулу."
             ),
             "items": today_row["tags"],
+            "bucket": today_row["bucket"],
             "cta": "Собрать образ из капсулы",
         },
         "week": week,
@@ -3428,6 +3512,9 @@ def cabinet():
         gap=card.get("gap"), gap_now=gap_now, track=track,
         advice=advice, weekview=weekview,
         city=city, weather=weather, dress=dress, weather_on=weather_configured(),
+        chips=outfit_chips(weather,
+                           (weekview or {}).get("today", {}).get("bucket"),
+                           (want3 or [None])[0]),
         look_today=look_today, mine=mine,
         season_label=(card.get("season_label") or (_CARD_SEASONS[sel]["label"] if sel in _CARD_SEASONS else None)),
         n_items=n_items, combos_label=combos_label, items_n=items_n,

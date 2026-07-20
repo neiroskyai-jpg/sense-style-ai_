@@ -132,7 +132,8 @@ _TEMPLATE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 def build(name: str) -> Path:
     src = SRC / name
-    md = src.read_text(encoding="utf-8")
+    # Служебные заметки в <!-- --> — для .md, в документ для жюри не идут (см. build_submission_docx.py).
+    md = re.sub(r"<!--.*?-->", "", src.read_text(encoding="utf-8"), flags=re.S)
     m = re.search(r"^#\s+(.+)$", md, re.M)
     title = m.group(1).strip() if m else name
     html = _TEMPLATE.format(title=title, body=_md_to_html(md), src=name)
