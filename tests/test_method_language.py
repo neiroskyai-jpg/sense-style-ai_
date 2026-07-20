@@ -65,3 +65,43 @@ def test_diagnosis_prompt_carries_language(monkeypatch):
     p.diagnose({"now_traits": [], "want_traits_top3": []}, {})
 
     assert "ЯЗЫК ТЕКСТОВ ДЛЯ КЛИЕНТКИ" in seen["system"]
+
+
+def _app():
+    from app import main as m
+    return m
+
+
+def test_figure_labels_follow_the_method_dictionary():
+    """Метод запрещает показывать клиентке ярлык фигуры: не «Прямоугольник», а про пропорции."""
+    m = _app()
+
+    for code in ("rectangle", "hourglass", "inverted_triangle", "pear", "apple"):
+        label = m._FIGURE_SHORT[code]
+        assert label, code
+        for banned in ("прямоугольник", "песочные часы", "треугольник", "круг", "груша", "яблоко"):
+            assert banned not in label.lower(), f"{code}: {label}"
+
+
+def test_merge_boards_keeps_card_capsule_first():
+    """Капсула Карты — опора, каталог только добирает: вещи из образов не должны вытесняться."""
+    m = _app()
+    own = [{"slot": "Верх", "items": [{"name": "Рубашка шелковая"}]}]
+    extra = [{"slot": "Верх", "items": [{"name": "Топ из вискозы"}]},
+             {"slot": "Низ", "items": [{"name": "Брюки широкие"}]}]
+
+    board = m._merge_boards(own, extra, limit=2)
+    names = [it["name"] for grp in board for it in grp["items"]]
+
+    assert "Рубашка шелковая" in names
+    assert len(names) == 2
+
+
+def test_merge_boards_drops_duplicates():
+    m = _app()
+    own = [{"slot": "Верх", "items": [{"name": "Рубашка шелковая"}]}]
+    extra = [{"slot": "Верх", "items": [{"name": "рубашка  ШЕЛКОВАЯ"}]}]
+
+    board = m._merge_boards(own, extra, limit=5)
+
+    assert sum(len(g["items"]) for g in board) == 1

@@ -3257,9 +3257,17 @@ def cabinet():
         return redirect("/card")       # капсулы ещё нет — сначала собрать Карту
     card = _refresh_card_projection(card, diag)
     items_n = 6 if request.args.get("items") == "6" else 12  # капсула 6 / расширенная 12
-    # визуальная капсула из реального каталога (фото+ссылки); фолбэк — текстовый борд из Карты
-    board = _visual_capsule(card, diag, items_n) or \
-        card.get("capsule_board") or _capsule_board(card.get("base_capsule") or [])
+    # Капсула у Карты и кабинета должна быть ОДНА. Раньше кабинет всегда собирал свой набор из
+    # каталога, а Карта — из образов клиентки: на соседних экранах стояли разные вещи, и капсула
+    # выглядела случайной. Для собранного сезона берём опору из Карты, каталогом только добираем
+    # до нужного размера. Для несобранного сезона опоры ещё нет — там каталог как раньше.
+    catalog_board = _visual_capsule(card, diag, items_n)
+    own = card.get("starter_capsule") or []
+    if own and (card.get("season") or _DEFAULT_SEASON) == sel:
+        board = _merge_boards(_capsule_board(own), catalog_board, items_n)
+    else:
+        board = catalog_board or card.get("capsule_board") or \
+            _capsule_board(card.get("base_capsule") or [])
     # Показываем ВСЕ 4 сезона (было — только собранные, у клиентки их 2). Несобранные помечаем
     # флагом built=False: капсула на них подберётся из каталога под палитру/фигуру/стиль.
     season_tabs = [{"code": s, "label": _CARD_SEASONS[s]["label"],
@@ -4108,6 +4116,14 @@ def _refresh_card_projection(card: dict, diag: dict) -> dict:
     out["starter_capsule_count"] = len(starter)
     out["capsule_combos"] = _capsule_combos(starter)
     out["combination_count"] = combos_n
+    # Цветотип и фигуру Карта показывала из своего сохранённого снимка, а кабинет — из текущей
+    # диагностики. Стоило диагностике обновиться (пере-замер, ручная правка цветотипа), и на
+    # соседних экранах одного профиля стояло «Лето натуральное» против «Осень натуральная».
+    # Источник правды один — диагностика.
+    if diag.get("colortype"):
+        out["colortype"] = _colortype_label(diag.get("colortype"))
+    if diag.get("figure_type"):
+        out["figure"] = _figure_label(diag.get("figure_type"))
     return out
 
 
@@ -5261,12 +5277,15 @@ _FIGURE_LABEL = {
 # Короткое имя фигуры — для чипов и шапок, где длинное описание разносит вёрстку («Выраженная
 # талия, сбалансированные пропорции» занимало половину строки профиля). Описание остаётся в
 # подсказке и в разборе. Называем геометрией, а не «груша/яблоко»: клиентке не нужен ярлык-овощ.
+# Раздел 8 метода («Словарь языка») прямо запрещает показывать клиентке ярлык фигуры:
+# не «Тип фигуры: Прямоугольник», а «сбалансированные плечи и бёдра». Геометрия — наш рабочий
+# код для подбора, клиентка же читает про свои пропорции. Ярлыки остаются внутри движка.
 _FIGURE_SHORT = {
-    "rectangle": "Прямоугольник",
-    "hourglass": "Песочные часы",
-    "inverted_triangle": "Перевёрнутый треугольник",
-    "pear": "Треугольник",
-    "apple": "Круг",
+    "rectangle": "Плечи и бёдра в балансе",
+    "hourglass": "Выраженная талия",
+    "inverted_triangle": "Акцент в плечах",
+    "pear": "Акцент в бёдрах",
+    "apple": "Мягкая линия талии",
 }
 _COLORTYPE_LABEL = {
     "spring_light": "Весна светлая", "spring_natural": "Весна натуральная",
@@ -5379,6 +5398,31 @@ def _capsule_slot(*names: str) -> str:
         if best:
             return best[1]
     return _SLOT_OTHER
+
+
+def _merge_boards(primary: list, extra: list, limit: int) -> list:
+    """Борд из капсулы Карты, добранный вещами каталога до limit.
+
+    Вещи Карты идут первыми и не вытесняются: это опора, которую клиентка уже видела в образах.
+    Каталог только заполняет пустые слоты, чтобы в конструкторе было из чего собирать.
+    """
+    by_slot: dict[str, list] = {}
+    seen: set[str] = set()
+    total = 0
+    for board in (primary, extra or []):
+        for grp in board or []:
+            slot = grp.get("slot") or ""
+            for it in grp.get("items") or []:
+                name = " ".join((it.get("name") or "").lower().split())
+                if not name or name in seen:
+                    continue
+                if total >= limit:
+                    break
+                seen.add(name)
+                by_slot.setdefault(slot, []).append(it)
+                total += 1
+    order = [s for s, _ in _CAPSULE_SLOTS] + [_SLOT_OTHER]
+    return [{"slot": s, "items": by_slot[s]} for s in order if by_slot.get(s)]
 
 
 def _capsule_board(items: list) -> list:
