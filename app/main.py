@@ -538,6 +538,7 @@ GARMENT_RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div>
 
 {% if item %}<p class=item>На фото: {{ item }}</p>{% endif %}
+{% if adds %}<p class=item style="color:var(--wine)">Добавит <b>+{{ adds }}</b> {{ 'образ' if adds == 1 else 'образа' if adds < 5 else 'образов' }} к твоей капсуле.</p>{% endif %}
 <div class=chips>
  {% if figure %}<span class=chip><span>линии:</span> {{ figure }}</span>{% endif %}
  {% if style %}<span class=chip><span>стиль:</span> {{ style }}</span>{% endif %}
@@ -3701,40 +3702,71 @@ def _scenario_tokens(scenario: str) -> list[str]:
 
 
 def _scenario_formula_match(look: dict, diag: dict, scenario: str) -> int:
-    """Грубая explainable-оценка совпадения образа с формулой.
+    """Совпадение образа с Формулой, 0-100. Детерминированно и воспроизводимо.
 
-    Не заменяет LLM, а честно объясняет результат клиентке детерминированным числом:
-    учитываем формулу, сценарий, силуэт и наличие предметов в образе.
+    Веса заданы методологией (ТЗ фаундера): палитра 40, силуэт и длина 30, уместность роли 20,
+    баланс образа 10. Раньше здесь была сумма произвольных баллов от базы 54 — число выглядело
+    точным, но объяснить его состав было нельзя, и пять карточек из шести показывали 68%.
+
+    Каждая доля считается отдельно и возвращается вместе с числом (см. _match_breakdown) —
+    это explainable-слой: видно, за счёт чего образ набрал свой процент и где проседает.
     """
-    score = 54
+    return _match_breakdown(look, diag, scenario)["match"]
+
+
+def _match_breakdown(look: dict, diag: dict, scenario: str) -> dict:
+    """Разбор совпадения по четырём осям. Возвращает {match, palette, silhouette, role, balance}."""
     hay = " ".join([
         (look.get("name") or ""),
         (look.get("description") or ""),
-        " ".join(look.get("items") or []),
+        " ".join(str(i) for i in (look.get("items") or [])),
     ]).lower()
-    formula = (diag.get("style_formula") or "").lower()
     vf = diag.get("visual_formula") or {}
-    # Формула — несколько полей, и балл растёт за КАЖДОЕ, которое видно в образе. Раньше хватало
-    # одного совпадения на всю формулу, поэтому у образа с одним лишь «натуральным» и у образа,
-    # где собраны все три поля, выходило одинаковое число: на Карте пять карточек из шести
-    # показывали 68%, и процент читался как заглушка, а не как оценка.
-    fields = [t.strip().lower() for t in re.split(r"[×,/]| и ", formula) if t.strip()]
+
+    # 1. Палитра, 40%. Цвета образа должны быть из палитры клиентки; попадание в стоп-цвет
+    #    обнуляет ось целиком — вещь вне палитры не «частично подходит», она не подходит.
+    palette = [str((c.get("name") if isinstance(c, dict) else c) or "").lower()
+               for c in (vf.get("palette") or [])]
+    stop = [str((c.get("name") if isinstance(c, dict) else c) or "").lower()
+            for c in (vf.get("stop_list") or [])]
+    if any(c and c in hay for c in stop):
+        palette_score = 0.0
+    elif palette:
+        hits = sum(1 for c in palette if c and c in hay)
+        palette_score = min(1.0, hits / 2)      # два цвета из палитры — полный балл
+    else:
+        palette_score = 0.5                     # палитры нет — не наказываем и не хвалим
+
+    # 2. Силуэт и длина, 30%. Плюс поля Формулы: они задают характер кроя.
+    sils = [str(x).lower() for x in (vf.get("silhouettes") or [])]
+    fields = [t.strip().lower()
+              for t in re.split(r"[×,/]| и ", (diag.get("style_formula") or "")) if t.strip()]
+    sil_hits = sum(1 for x in sils if x and x in hay)
+    field_hits = sum(1 for t in fields if t in hay)
+    parts = []
+    if sils:
+        parts.append(min(1.0, sil_hits))
     if fields:
-        matched = sum(1 for t in fields if t in hay)
-        score += round(18 * matched / len(fields))
-    if any(tok in hay for tok in _scenario_tokens(scenario)):
-        score += 10
-    sils = [(s or "").lower() for s in (vf.get("silhouettes") or [])[:3]]
-    score += 4 * sum(1 for s in sils if s and s in hay)
-    # Полнота комплекта: образ без обуви и сумки собран наполовину, и это должно быть видно.
-    score -= 4 * len(_scenario_missing_items(look))
-    items = look.get("items") or []
-    score += min(10, len(items) * 2)
-    # Палитра приходит и списком строк, и списком словарей {name, hex} — поддерживаем оба вида.
-    palette = [str((p.get("name") if isinstance(p, dict) else p) or "").lower()
-               for p in (vf.get("palette") or [])[:6]]
-    score += 3 * sum(1 for c in palette if c and c in hay)
-    return max(48, min(96, score))
+        parts.append(field_hits / len(fields))
+    silhouette_score = sum(parts) / len(parts) if parts else 0.5
+
+    # 3. Уместность роли, 20%. Есть ли в образе вещи, характерные для сценария.
+    role_score = 1.0 if any(tok in hay for tok in _scenario_tokens(scenario)) else 0.0
+
+    # 4. Баланс образа, 10%. Полный комплект: верхний слой, низ или платье, обувь, сумка.
+    missing = _scenario_missing_items(look)
+    balance_score = max(0.0, 1 - len(missing) / 4)
+
+    match = round(100 * (0.40 * palette_score + 0.30 * silhouette_score
+                         + 0.20 * role_score + 0.10 * balance_score))
+    return {
+        "match": max(0, min(100, match)),
+        "palette": round(palette_score * 100),
+        "silhouette": round(silhouette_score * 100),
+        "role": round(role_score * 100),
+        "balance": round(balance_score * 100),
+        "missing": missing,
+    }
 
 
 def _scenario_missing_items(look: dict) -> list[str]:
@@ -3866,6 +3898,37 @@ def _style_dna_codes(diag: dict, card_bits: dict) -> list[dict]:
     if fig and len(codes) < 5:
         codes.append({"code": fig, "note": "геометрия, под которую подобраны посадки"})
     return codes[:5]
+
+
+def _current_capsule(user: str) -> list[dict]:
+    """Опорная капсула пользователя, если Карта уже собрана. Нет Карты — пустой список,
+    и метрика «+N образов» просто не показывается вместо того, чтобы врать числом."""
+    card = (get_profile(user) or {}).get("card") or {}
+    return card.get("starter_capsule") or card.get("base_capsule") or []
+
+
+def _outfit_capacity(capsule: list[dict]) -> int:
+    """Сколько комплектов даёт капсула: верх×низ + платья. Комбинаторика, а не оценка на глаз."""
+    by_slot: dict[str, int] = {}
+    for it in capsule or []:
+        slot = it.get("slot") or _capsule_slot(it.get("name") or "")
+        by_slot[slot] = by_slot.get(slot, 0) + 1
+    return by_slot.get("Верх", 0) * by_slot.get("Низ", 0) + by_slot.get("Платья и комбинезоны", 0)
+
+
+def adds_looks(item_name: str, capsule: list[dict]) -> int:
+    """Сколько НОВЫХ образов добавит вещь к капсуле.
+
+    Главный аргумент рекомендации: не «эта вещь тебе подойдёт», а «она даёт +6 образов».
+    Считаем детерминированно — разницей комбинаторики до и после. Число воспроизводимо и
+    проверяемо, в отличие от оценки модели.
+    """
+    if not item_name:
+        return 0
+    before = _outfit_capacity(capsule)
+    after = _outfit_capacity(list(capsule or []) + [{"name": item_name,
+                                                    "slot": _capsule_slot(item_name)}])
+    return max(0, after - before)
 
 
 def _capsule_combos(capsule: list[dict], limit: int = 6) -> list[dict]:
@@ -5161,6 +5224,8 @@ def garment_check():
         figure=_LINES_RU.get(v.get("lines_match")),
         style=_STYLE_RU.get(v.get("style_match")),
         dealbreaker=v.get("dealbreaker"),
+        # Главный аргумент покупки — измеримый: не «подойдёт», а «+N образов к твоей капсуле».
+        adds=adds_looks(v.get("item") or "", _current_capsule(email)),
     )
 
 
