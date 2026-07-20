@@ -1,53 +1,55 @@
-"""Направление — регистр прочтения Формулы, а не новый стиль.
+"""Названия направлений — человеческие, без нашего внутреннего жаргона.
 
-Фаундер, 19.07.2026: «что за такие названия откуда?» — на экране результата квиза стояли
-«Нежная Реформаторская» и «Структурный Романтизм». В методе 4 стиля и 25 подстилей, таких
-названий там нет. Клиентка только что получила свою Формулу, и чужой ярлык рядом с ней
-читается как вторая, другая диагностика.
+Жалоба фаундера по скриншоту с прода: клиентке показали «Спокойный регистр» и «Уверенный
+регистр». «Регистр» — термин методологии; на экране он читается как техническая пометка,
+а не как название её образа. Слово попало в клиентский текст прямо из промпта, где стояло
+в примерах допустимых названий.
 """
 import os
 
 os.environ.setdefault("OPENROUTER_API_KEY", "dummy")
 
-from core.pipeline import _canonical_direction_names as canon  # noqa: E402
+from core import pipeline as p  # noqa: E402
 
-DIAG = {
-    "style_formula": "Классика × Драма-акцент",
-    "primary_substyle": "Soft Classic",
-    "secondary_substyle": "Драма-акцент",
-}
+DIAG = {"style_formula": "Классика × Натуральность", "primary_substyle": "Чистая классика"}
 
 
-def test_invented_style_labels_are_replaced():
-    out = canon([{"name": "Нежная Реформаторская"}, {"name": "Структурный Романтизм"}], DIAG)
+def test_jargon_is_not_in_the_prompt_examples():
+    """Модель повторяет примеры из промпта — значит примеров с «регистром» там быть не должно.
 
-    assert [d["name"] for d in out] == ["Мягкая версия", "Собранная версия"]
+    Смотрим именно перечень допустимых названий, до блока с запретом: ниже слово «регистр»
+    встречается законно, в объяснении, почему его нельзя показывать.
+    """
+    allowed = p._DIRECTIONS_SYSTEM.split("СЛОВО «РЕГИСТР»")[0]
 
-
-def test_register_names_are_kept():
-    """«Мягкая версия», «Тихое прочтение» — это регистр, а не выдуманный стиль."""
-    out = canon([{"name": "Мягкая версия"}, {"name": "Тихое прочтение"}], DIAG)
-
-    assert [d["name"] for d in out] == ["Мягкая версия", "Тихое прочтение"]
-
-
-def test_her_own_substyles_are_kept():
-    """Подстиль из её Формулы — не выдумка, его оставляем."""
-    out = canon([{"name": "Soft Classic"}, {"name": "Драма-акцент"}], DIAG)
-
-    assert [d["name"] for d in out] == ["Soft Classic", "Драма-акцент"]
+    assert "СЛОВО «РЕГИСТР» КЛИЕНТКЕ НЕ ПОКАЗЫВАЕМ" in p._DIRECTIONS_SYSTEM, "запрет на месте"
+    assert "регистр" not in allowed.lower(), "в примерах допустимых названий жаргона быть не должно"
 
 
-def test_empty_name_gets_a_canonical_one():
-    out = canon([{"name": ""}, {}], DIAG)
+def test_register_in_name_is_repaired_keeping_the_meaning():
+    """«Спокойный регистр» → «Спокойный вариант»: характер направления сохраняем, термин убираем."""
+    out = p._canonical_direction_names(
+        [{"name": "Спокойный регистр"}, {"name": "Уверенный регистр"}], DIAG)
 
-    assert [d["name"] for d in out] == ["Мягкая версия", "Собранная версия"]
+    assert out[0]["name"] == "Спокойный вариант"
+    assert out[1]["name"] == "Уверенный вариант"
 
 
-def test_other_fields_are_untouched():
-    """Чиним только ярлык: состав образа и промпт рендера трогать нельзя."""
-    src = [{"name": "Мягкий Авангард", "items": ["жакет"], "image_generation_prompt": "p"}]
+def test_other_jargon_is_caught_too():
+    for bad in ("Семантический профиль", "Дескриптор образа"):
+        name = p._canonical_direction_names([{"name": bad}], DIAG)[0]["name"]
+        assert "регистр" not in name.lower()
+        assert bad.lower() not in name.lower()
 
-    out = canon(src, DIAG)
 
-    assert out[0]["items"] == ["жакет"] and out[0]["image_generation_prompt"] == "p"
+def test_human_names_are_left_alone():
+    """Нормальные названия не трогаем — иначе вычистим и то, что писать можно."""
+    for good in ("Мягкая версия", "Тихое прочтение", "Собранная версия"):
+        assert p._canonical_direction_names([{"name": good}], DIAG)[0]["name"] == good
+
+
+def test_client_own_substyle_survives():
+    """Название из её собственной Формулы — не выдумка и не жаргон, оставляем как есть."""
+    out = p._canonical_direction_names([{"name": "Чистая классика"}], DIAG)
+
+    assert out[0]["name"] == "Чистая классика"
