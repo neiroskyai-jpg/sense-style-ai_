@@ -4554,7 +4554,8 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
 
         def _render(lk):
             try:
-                return render_look_on_client(str(photo_path), _card_look_prompt(lk, diag))
+                return render_look_on_client(str(photo_path), _card_look_prompt(lk, diag),
+                                             season=card.get("season"))
             except Exception:  # noqa: BLE001 — один неудавшийся образ не валит карту
                 return None
 
@@ -5192,7 +5193,9 @@ def _run_analysis(photo_path: Path, quiz: dict) -> tuple[dict, dict, list]:
     looks_src = (capsule.get("looks") or [])[:N_RENDER]
 
     def _render(lk):
-        return {"img": render_look_on_client(str(photo_path), lk.get("image_generation_prompt", "")),
+        # Сезон капсулы прокидываем в картинку: без него модель одевала клиентку не по погоде.
+        return {"img": render_look_on_client(str(photo_path), lk.get("image_generation_prompt", ""),
+                                            season="fw"),
                 "desc": lk.get("description", "")}
 
     # образы рендерим ПАРАЛЛЕЛЬНО (одновременно) — это вдвое быстрее последовательного
@@ -5513,7 +5516,8 @@ def _run_fast(photo_path: Path, quiz: dict, season: str | None = None):
             "name": d.get("name", ""),
             "fits_if": d.get("fits_if", ""),
             "items": d.get("items") or [],
-            "img": render_look_on_client(str(photo_path), _look_prompt(d, diag, season)),
+            "img": render_look_on_client(str(photo_path), _look_prompt(d, diag, season),
+                                         season=season),
         }
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(directions))) as ex:

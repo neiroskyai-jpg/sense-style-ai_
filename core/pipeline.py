@@ -878,8 +878,7 @@ _TREND_CANON = (
     "Colour: about 70% neutral foundation (black, white, grey, beige, sand, milk, camel, navy, "
     "burgundy, olive, khaki, powder, denim) plus 2-3 accents. Season colours: hot chocolate as the "
     "key shade, cherry-burgundy, cranberry, umber, deep grown-up blue/green/purple, mustard, "
-    "powder pink. Leather in ripe cherry, velvet, croc texture, fur collars, oversized collars, "
-    "lace, checks, argyle, animal print. "
+    "powder pink. "
     # Стоп-лист. Конкретика важнее общих слов: без имён модель воспроизводит именно эти клише.
     "NEVER include these dated markers: 3/4 or rolled-up sleeves, skinny jeans, bleached or "
     "yellowed denim wash, rips, rhinestones, a built-in waist dart on a puffer or jacket, cheap fur "
@@ -893,6 +892,32 @@ _TREND_CANON = (
     "and evening-event scenarios. Where a trend conflicts with her formula, her formula wins."
 )
 
+# Сезонная часть канона. Раньше фактуры сезона висели в общем списке, и модель рисовала бархат,
+# мех и крупные воротники в летнем образе — а летняя капсула получала пальто. Погода в кадре
+# должна совпадать с сезоном капсулы, иначе образ невозможно надеть.
+_SEASON_CANON = {
+    "ss": (
+        " SEASON: spring/summer. Light layers only — no coats, no puffers, no fur, no velvet, "
+        "no heavy knits. Fabrics: cotton, linen, viscose, silk, fine jersey. Bare arms, short or "
+        "rolled-free full sleeves, open shoes (sandals, slingbacks, ballet flats, loafers). "
+        "A light trench, an unlined blazer or a fine cardigan is the heaviest layer allowed. "
+        "Daylight, warm season location."
+    ),
+    "fw": (
+        " SEASON: autumn/winter. Real outerwear required — structured wool coat, shearling, "
+        "faux fur or a clean-quilted puffer, worn with air for layers underneath. Fabrics: wool, "
+        "cashmere, tweed, leather, velvet, dense knit. Closed shoes: ankle boots, tall boots, "
+        "loafers with tights. No bare arms, no sandals, no linen sundresses. Cold season light."
+    ),
+}
+
+
+def _season_canon(season: str | None) -> str:
+    """Сезонная вставка для рендера. Неизвестный сезон — пусто, лучше молчать, чем врать."""
+    code = {"spring": "ss", "summer": "ss", "autumn": "fw", "fall": "fw", "winter": "fw",
+            "ss": "ss", "fw": "fw"}.get((season or "").strip().lower(), "")
+    return _SEASON_CANON.get(code, "")
+
 # Режиссура кадра. Без неё модель ставит человека в пустоту и получается карточка товара, а не
 # образ, который хочется примерить на себя.
 _EDITORIAL_DIRECTION = (
@@ -904,13 +929,17 @@ _EDITORIAL_DIRECTION = (
 )
 
 
-def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | None = None) -> str:
+def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | None = None,
+                          season: str | None = None) -> str:
     """Identity-preserving рендер: фото клиентки + промпт образа → она в этом образе.
 
     Gemini 3 Pro image-to-image: держит лицо/волосы/фигуру, меняет только одежду.
     (GPT image отпал — OpenAI отказывается воссоздавать реальные лица.)
     look_prompt — это look-generator.looks[].image_generation_prompt. Возвращает data-URL.
     Фото-финиш (плёнка/текстура кожи) + канон капсулы (актуальный крой) вшиты в инструкцию.
+
+    season обязателен по смыслу: без него модель рисовала бархат и мех в летнем образе, а зимой
+    оставляла голые руки. Образ, который нельзя надеть по погоде, бесполезен.
     """
     instruction = (
         "Photo editing task: dress the SAME real woman from the reference photos in a new outfit. "
@@ -936,7 +965,7 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
         "wider shot. Do NOT slim, lengthen, or idealise her body — keep her real silhouette.\n"
         "Change ONLY her clothing and the background. "
         "Place her in a new location that fits the outfit's setting (do not reuse the reference background). "
-        "Outfit and scene: " + look_prompt + _LOOK_CANON + _TREND_CANON
+        "Outfit and scene: " + look_prompt + _LOOK_CANON + _TREND_CANON + _season_canon(season)
         + _EDITORIAL_DIRECTION + " Full-body head to toe, vertical 3:4 ratio." + _PHOTO_FINISH
     )
     model = config.MODELS["image"]["dressing"]
