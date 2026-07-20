@@ -132,7 +132,10 @@ def diagnose(quiz_answers: dict, vision_result: dict, mode: str | None = None) -
     (цветотип/фигура/желаемое впечатление), а после — прикрепляем «сработавшие правила»
     по итоговому профилю (`retrieved_rules`) для блока объяснимости.
     """
-    system = load_system_prompt("formula-diagnostic") + "\n\n" + canon_rule()
+    # Словарь языка обязателен: диагностика пишет клиентке первый текст о ней самой, и «тип фигуры
+    # Прямоугольник» вместо «сбалансированные плечи и бёдра» задаёт тон всему продукту.
+    system = (load_system_prompt("formula-diagnostic") + "\n\n" + canon_rule()
+              + "\n\n# ЯЗЫК ТЕКСТОВ ДЛЯ КЛИЕНТКИ (обязательно)\n\n" + _language_reference())
     vis = _vision_to_diagnostic_input(vision_result)
     payload = {**quiz_answers, **vis}
 
@@ -289,7 +292,9 @@ def generate_directions(diagnosis: dict, quiz: dict | None = None,
         payload["season"] = SEASON_RU[season]
         payload["season_guidance"] = _SEASON_HINT[season]
     result = provider.chat_json(
-        config.model_for("text", mode), _DIRECTIONS_SYSTEM + "\n\n" + canon_rule(),
+        config.model_for("text", mode),
+        _DIRECTIONS_SYSTEM + "\n\n" + canon_rule()
+        + "\n\n# ЯЗЫК ТЕКСТОВ ДЛЯ КЛИЕНТКИ (обязательно)\n\n" + _language_reference(),
         json.dumps(payload, ensure_ascii=False), max_tokens=2048,
     )
     return _canonical_direction_names(
@@ -476,32 +481,61 @@ _CAPSULE_QUALITY_RULES = (
 )
 
 
-_SUBSTYLES_CACHE: str | None = None
+_METHOD_SECTION_CACHE: dict[int, str] = {}
 
 
-def _substyles_reference() -> str:
-    """Раздел метода «25 уточняющих подстилей» — маркеры, эталон, прототипы каждого подстиля.
+def _method_section(number: int) -> str:
+    """Один раздел sense-style-method.md по номеру.
 
-    Берём именно из sense-style-method.md: reference/style-typology — это МАППИНГ стилей курса на
-    наши 4 поля, описаний вещей там нет. Тянем один раздел, а не файл целиком (34 КБ): промпт и так
-    ~10 тыс. токенов, а генератору нужны подстили, не манифест и не теория.
+    Файл целиком — 34 КБ, а промпт и так ~10 тыс. токенов: подклеиваем ровно тот раздел, который
+    нужен конкретной задаче. Если метод переструктурировали и раздела нет — отдаём весь файл:
+    лучше лишний контекст, чем молча потерянная методология.
     """
-    global _SUBSTYLES_CACHE
-    if _SUBSTYLES_CACHE is not None:
-        return _SUBSTYLES_CACHE
+    if number in _METHOD_SECTION_CACHE:
+        return _METHOD_SECTION_CACHE[number]
     try:
         text = load_reference("sense-style-method.md")
     except FileNotFoundError:
-        _SUBSTYLES_CACHE = ""
+        _METHOD_SECTION_CACHE[number] = ""
         return ""
-    m = re.search(r"\n## 5\. 25 уточняющих подстилей\n", text)
-    if not m:                      # метод переструктурировали — лучше отдать всё, чем ничего
-        _SUBSTYLES_CACHE = text
+    m = re.search(rf"\n## {number}\. ", text)
+    if not m:
+        _METHOD_SECTION_CACHE[number] = text
         return text
     start = m.start()
-    nxt = re.search(r"\n## 6\.", text[start:])
-    _SUBSTYLES_CACHE = text[start:start + nxt.start()] if nxt else text[start:]
-    return _SUBSTYLES_CACHE
+    nxt = re.search(rf"\n## {number + 1}\. ", text[start:])
+    out = text[start:start + nxt.start()] if nxt else text[start:]
+    _METHOD_SECTION_CACHE[number] = out
+    return out
+
+
+def _substyles_reference() -> str:
+    """Раздел «25 уточняющих подстилей» — маркеры, эталон, прототипы каждого подстиля.
+
+    Берём именно из sense-style-method.md: reference/style-typology — это МАППИНГ стилей курса на
+    наши 4 поля, описаний вещей там нет.
+    """
+    return _method_section(5)
+
+
+def _pure_styles_reference() -> str:
+    """Раздел «Сводная карта 4 чистых стилей» — силуэт, плечо, ткани, цвета, длины, обувь, стоп.
+
+    В промпт ехали только подстили, а базовые характеристики чистых стилей — нет. Для формулы
+    вроде «Классика × Натуральный» модель знала ярлык, но не то, из чего этот стиль состоит:
+    какие ткани, какая линия плеча, что в стоп-листе. Отсюда образы «вообще не про то».
+    """
+    return _method_section(4)
+
+
+def _language_reference() -> str:
+    """Раздел «Словарь языка: что говорим, что не говорим».
+
+    Был проработан в методе, но не использовался в коде ни разу — поэтому тексты клиентке писались
+    обычным языком стилиста: «тип фигуры Прямоугольник», «скрыть недостатки», «тебе подходит
+    классика». Метод требует другого: бережный язык, формула вместо ярлыка (Mair, 2025).
+    """
+    return _method_section(8)
 
 
 def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None = None) -> dict:
@@ -522,6 +556,12 @@ def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None
         # эстетика 50-60-х, Одри Хепберн) — только в методе. Ярлык без содержания = стиль мимо.
         + "\n\n# 25 ПОДСТИЛЕЙ — ЧТО КАЖДЫЙ ЗНАЧИТ (обязательно к соблюдению)\n\n"
         + _substyles_reference()
+        # Подстиль уточняет, но собран он поверх чистого стиля. Без его характеристик модель знает
+        # ярлык «Классика», но не знает ни тканей, ни линии плеча, ни стоп-листа этого стиля.
+        + "\n\n# 4 ЧИСТЫХ СТИЛЯ — ИЗ ЧЕГО ОНИ СОСТОЯТ (ткани, цвета, силуэт, стоп)\n\n"
+        + _pure_styles_reference()
+        + "\n\n# ЯЗЫК ТЕКСТОВ ДЛЯ КЛИЕНТКИ (обязательно)\n\n"
+        + _language_reference()
     )
     # грунтуем подбор явными правилами посадки под фигуру (размеры/силуэты считываются при подборе)
     fit_prompt = fit_rules_prompt(diagnosis.get("figure_type"))
