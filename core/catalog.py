@@ -265,6 +265,9 @@ _FIGURE_PREFER = {
     "apple": ["straight", "regular", "клёш", "запах", "а-силуэт", "ампир", "удлиненн", "v-вырез"],
 }
 
+_SEASON_CODE_MAP = {"summer": "ss", "spring": "ss", "autumn": "fw", "fall": "fw",
+                    "winter": "fw", "ss": "ss", "fw": "fw"}
+
 _SEASON_PREFER = {
     "fw": ["шерст", "кашемир", "трикотаж", "кардиган", "пальто", "тренч", "сапог", "ботил", "лофер"],
     "ss": ["хлоп", "вискоз", "лён", "лен", "босонож", "сандал", "балет", "рубаш", "майк"],
@@ -324,7 +327,9 @@ def score_products(profile: dict, products: list[Product]) -> list[tuple[float, 
     base = (profile.get("base_style") or "").lower()
     figure = (profile.get("figure_type") or "").lower()
     colortype = (profile.get("colortype") or "").lower()
-    season = (profile.get("season") or "").lower()
+    # _SEASON_PREFER ключуется кодами ss/fw, а из интерфейса приходит «summer»/«winter» —
+    # без нормализации сезонное предпочтение тканей не срабатывало вовсе.
+    season = _SEASON_CODE_MAP.get((profile.get("season") or "").strip().lower(), "")
     price_max = profile.get("price_max") or 0
     good_cats = _FORMULA_CATEGORIES.get(base, [])
     avoid = _FIGURE_AVOID.get(figure, [])

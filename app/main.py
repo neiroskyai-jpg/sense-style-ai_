@@ -1192,9 +1192,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <div class=panel id=capsule>
    <h2 class=ph>Опорная капсула {{ c.starter_capsule_count or (c.starter_capsule|length if c.starter_capsule else 0) }} вещей<span class=dot>◈</span></h2>
    <p class=psub>Стилевая основа, которая собирает твои образы.</p>
+   {# Плашка обещала «эта капсула собрана из образов выше» — но капсула подбирается из каталога
+      под Формулу и палитру, а образы генерируются отдельно. Вещи закономерно не совпадали, и
+      обещание читалось как ошибка. Говорим то, что есть на самом деле. #}
    <div class=caporigin>
-    <i>↺</i>
-    <div><b>Эта капсула собрана из образов выше, а не отдельно от них.</b><span>Мы взяли повторяющиеся вещи из твоих сценариев и сделали из них опору гардероба. Сначала <a href="#looks">смотри образы</a>, потом возвращайся сюда как к собранной основе.</span></div>
+    <i>◈</i>
+    <div><b>Опора гардероба под твою Формулу.</b><span>Вещи подобраны по твоей палитре, силуэтам и сезону — из них собираются образы на каждый сценарий. <a href="#looks">Смотри образы</a>, чтобы увидеть капсулу в деле.</span></div>
    </div>
    {% if c.starter_capsule %}
    <div class=capgrid>
@@ -2183,10 +2186,23 @@ def _is_sporty_shoe(name: str) -> bool:
     return any(k in n for k in _SPORTY_SHOES)
 
 
+# Сезон в продукте живёт в двух видах: коды капсулы (ss/fw) и человеческие имена из интерфейса
+# (?season=summer в кабинете, radio-кнопки формы). Словари выше ключуются кодами, поэтому
+# «summer» в них просто не находился и сезонный фильтр молча отключался целиком: в летнюю
+# капсулу спокойно падали угги, пальто и зимняя водолазка.
+_SEASON_CODE = {"summer": "ss", "spring": "ss", "autumn": "fw", "fall": "fw", "winter": "fw",
+                "ss": "ss", "fw": "fw"}
+
+
+def season_code(season: str | None) -> str:
+    """Любое написание сезона → код капсулы ss/fw. Неизвестное — пустая строка (фильтр не душим)."""
+    return _SEASON_CODE.get((season or "").strip().lower(), "")
+
+
 def _season_ok(name: str, season: str | None) -> bool:
     """Вещь уместна в сезоне капсулы. Мягкий фильтр по названию — в фидах сезон отдельным полем
     не приходит."""
-    bad = _SEASON_WRONG.get((season or "").lower())
+    bad = _SEASON_WRONG.get(season_code(season))
     if not bad:
         return True
     n = (name or "").lower()

@@ -167,3 +167,27 @@ def test_brand_names_are_not_rendered_in_card():
     assert "it.brand" not in m.STYLE_CARD
     assert "it.name" in m.STYLE_CARD, "сама вещь остаётся на месте"
     assert "it.price" in m.STYLE_CARD, "цена показывает, что подбор реальный"
+
+
+def test_season_code_accepts_interface_names():
+    """Сезон приходит и кодом (ss/fw), и человеческим именем из интерфейса (?season=summer).
+
+    Словари сезонных фильтров ключуются кодами, поэтому «summer» в них не находился и фильтр
+    молча отключался: в летнюю капсулу падали угги, пальто и зимняя водолазка.
+    """
+    assert m.season_code("summer") == "ss"
+    assert m.season_code("winter") == "fw"
+    assert m.season_code("autumn") == "fw"
+    assert m.season_code("ss") == "ss"
+
+
+def test_winter_items_are_rejected_from_summer_capsule():
+    for name in ("Угги женские зимние", "Пуховик", "Пальто утеплённое", "Шуба"):
+        assert not m._season_ok(name, "summer"), name
+    assert m._season_ok("Льняное платье", "summer")
+
+
+def test_summer_items_are_rejected_from_winter_capsule():
+    for name in ("Льняной сарафан", "Шорты"):
+        assert not m._season_ok(name, "winter"), name
+    assert m._season_ok("Пальто шерстяное", "winter")
