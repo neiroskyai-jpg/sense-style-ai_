@@ -763,6 +763,11 @@ _LOOK_CANON = (
     "Modern silhouette cues: relaxed wide or straight trousers with proper break, elongated or "
     "softly structured tailoring, generous outerwear worn over slim layers, midi lengths, "
     "sculptural bag, refined footwear. Full-length sleeves (never 3/4). "
+    # Образ должен читаться как вещи ЭТОГО сезона, а не как вневременная база: клиентка приходит
+    # за «модно и мне идёт», и трендовая деталь — то, из-за чего образ хочется надеть сегодня.
+    "Include at least one distinctly of-the-moment 2026-2027 element — a current trouser or skirt "
+    "line, a fresh outerwear proportion, a seasonal colour or an unexpected texture pairing — "
+    "styled so it stays flattering and wearable, never a costume or a runway stunt. "
     "No dated styling: no skinny jeans with chunky boots, no cheap fur trim, no bulky mini-backpack, "
     "no logo-heavy fast-fashion pieces, no shiny synthetic fabrics."
 )
@@ -795,9 +800,16 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
         "Do NOT replace her with a generic or idealised model.\n"
         "- Face: copy the SAME face from the close-up — face shape, eyes (shape and colour), nose, "
         "lips, eyebrows, skin tone and complexion, freckles and age. Do NOT beautify or alter it.\n"
-        "- Age: she must look EXACTLY as old as in the close-up — neither older nor younger. "
+        "- Age: she must look EXACTLY as old as in the close-up — never older. "
         "Do NOT add wrinkles, fine lines, eye bags, sagging, dull skin or grey hair that are not "
-        "clearly visible in the reference. Ageing her is as wrong as beautifying her.\n"
+        "clearly visible in the reference. Ageing her is the worst possible error here.\n"
+        # Клиентка приходит за образом, в котором она себе нравится. Черты лица не трогаем —
+        # но показываем её в лучшей форме: отдохнувшей, с живой кожей и раскрытой осанкой.
+        # Это работа света и подачи, а не пластики: «фото у хорошего фотографа», не другое лицо.
+        "- Render her as the most vibrant, well-rested version of herself at her real age: "
+        "healthy luminous skin, bright clear eyes, relaxed open posture, subtle natural make-up "
+        "that suits the outfit. Flattering light and styling are welcome — changing her facial "
+        "features, making her thinner, or swapping in a younger face is NOT.\n"
         "- Hair: keep the same colour, length and texture.\n"
         "- Body: keep the same height, build, weight and body proportions (figure type) from the "
         "wider shot. Do NOT slim, lengthen, or idealise her body — keep her real silhouette.\n"

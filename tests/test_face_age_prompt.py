@@ -40,8 +40,13 @@ def test_instruction_forbids_ageing(monkeypatch):
 
     text = captured["instruction"].lower()
     assert "do not add wrinkles" in text
-    assert "neither older nor younger" in text
-    assert "do not beautify" in text  # запрет идеализации никуда не делся
+    assert "never older" in text
+    assert "do not beautify" in text  # черты лица не трогаем
+    # Запрос фаундера: образ должен молодить, а не старить. Симметрию «ни старше, ни моложе»
+    # сняли сознательно — клиентку показываем отдохнувшей и в лучшей форме. Но граница жёсткая:
+    # свет и подача, а не другое лицо и не подмена фигуры.
+    assert "well-rested version of herself at her real age" in text
+    assert "making her thinner, or swapping in a younger face is not" in text
 
 
 def test_face_and_body_references_both_passed(monkeypatch):

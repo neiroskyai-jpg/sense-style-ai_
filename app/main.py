@@ -1215,7 +1215,9 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
       <div class=capname>{{ it.name }}</div>
       {% if it.scenarios %}<div class=capscen>{% for sc in it.scenarios[:3] %}<span>{{ sc }}</span>{% endfor %}</div>{% endif %}
       {% if isexample %}<div class=capexample>пример типа вещи</div>{% endif %}
-      {% if it.brand %}<div class=capbrand>{{ it.brand }}</div>{% endif %}
+      {# Названия брендов не показываем: партнёрство с ними не согласовано, а Карта продаёт метод,
+         а не витрину конкретного магазина. Вещь, фото и цена остаются — по ним видно, что подобрано
+         реальное, а не абстрактное. Найти вещь помогает поиск по маркетплейсам ниже. #}
       {% if it.price %}<div class=capprice>{{ '{:,}'.format(it.price).replace(',',' ') }} ₽</div>{% endif %}
       {% if it.search %}<div class=capfind><a href="{{ it.search.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.search.lamoda }}" target=_blank rel=noopener>Lamoda</a></div>{% endif %}
      </div>

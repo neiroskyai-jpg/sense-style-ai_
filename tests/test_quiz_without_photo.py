@@ -156,3 +156,14 @@ def test_endpoint_answers_fast(client):
     client.post("/api/quiz-diagnosis", json=PAYLOAD)
 
     assert time.perf_counter() - t0 < 1.0
+
+
+def test_brand_names_are_not_rendered_in_card():
+    """Партнёрство с брендами не согласовано — их названия в Карте не показываем.
+
+    Вещь, фото и цена остаются: видно, что подобрано реальное. Но LICHI/USHATAVA на экране
+    выглядели бы как согласованная витрина, которой нет.
+    """
+    assert "it.brand" not in m.STYLE_CARD
+    assert "it.name" in m.STYLE_CARD, "сама вещь остаётся на месте"
+    assert "it.price" in m.STYLE_CARD, "цена показывает, что подбор реальный"
