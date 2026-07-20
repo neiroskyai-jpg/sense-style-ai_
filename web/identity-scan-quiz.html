@@ -2264,6 +2264,9 @@ function buildResult() {
   // кнопка ведёт на сборку Карты стиля; привязываем серверную диагностику по job_id
   var ctaBtn = document.getElementById('r-cta-btn');
   if (ctaBtn) ctaBtn.href = currentJobId ? '/card?from_job=' + currentJobId : '/card';
+  // Фото пропущено → job_id ещё нет. Без него /card развернёт клиентку на «сначала диагностика»,
+  // хотя квиз пройден. Досылаем ответы на сервер и подставляем job_id в кнопку.
+  if (!currentJobId) ensureQuizDiagnosis(clientGap, profileKey, ctaBtn);
 
   renderAIResult();
 
@@ -2473,6 +2476,44 @@ function skipUpload() {
   userPhotoDataUrl = null;
   buildResult();
 }
+
+// Диагностика без фото: сервер должен узнать ответы квиза, иначе путь обрывается на /card.
+let quizDiagPromise = null;
+
+function ensureQuizDiagnosis(clientGap, direction, ctaBtn) {
+  if (quizDiagPromise) return quizDiagPromise;
+  const traits = collectTraits();
+  quizDiagPromise = fetch('/api/quiz-diagnosis', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      now_traits: traits.now.join(','),
+      want_traits: traits.want.join(','),
+      gap: clientGap,
+      direction: direction,
+    }),
+  })
+    .then(r => r.json())
+    .then(d => {
+      if (d && d.job_id) {
+        currentJobId = d.job_id;
+        if (ctaBtn) ctaBtn.href = '/card?from_job=' + d.job_id;
+      }
+      return d;
+    })
+    .catch(() => null);
+  return quizDiagPromise;
+}
+
+// Клик может опередить ответ сервера — тогда ждём job_id и уходим уже с ним.
+document.addEventListener('click', function (e) {
+  const btn = e.target.closest && e.target.closest('#r-cta-btn');
+  if (!btn || currentJobId || !quizDiagPromise) return;
+  e.preventDefault();
+  btn.style.pointerEvents = 'none';
+  quizDiagPromise.then(() => {
+    window.location.href = currentJobId ? '/card?from_job=' + currentJobId : '/card';
+  });
+});
 
 // Захват почты на экране результата (лид + согласие на письма)
 function submitLead(e) {

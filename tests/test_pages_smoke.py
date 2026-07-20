@@ -87,7 +87,7 @@ def test_cabinet_page_opens_when_card_exists(client):
 
     assert r.status_code == 200
     assert "Стиль каждый день" in html
-    assert "Конструктор капсулы" in html
+    assert "Капсульный конструктор образов" in html
 
 
 def test_dynamic_pages_are_not_cached(client):

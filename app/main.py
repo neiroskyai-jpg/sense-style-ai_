@@ -224,7 +224,7 @@ FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <label style="font-weight:normal;font-size:13px;margin-top:16px;display:flex;gap:8px"><input type=checkbox name=consent_processing required style="width:auto"> Согласна на обработку персональных данных согласно <a href="/privacy" target="_blank" rel="noopener">Политике</a>.</label>
  <label style="font-weight:normal;font-size:13px;display:flex;gap:8px"><input type=checkbox name=consent_transfer required style="width:auto"> Согласна на трансграничную передачу фото в ИИ-сервисы (Google, США) для генерации образов.</label>
  <button>Построить образы</button>
- <p class=hint>Обработка занимает ~1–2 минуты: анализ фото, диагностика, генерация образов.</p>
+<p class=hint>Сборка занимает ~1–2 минуты: анализ фото, диагностика и лукбук образов.</p>
 </form>
 <p class=hint style="margin-top:24px;border-top:1px solid #e3dccf;padding-top:18px">Уже знаешь свою Формулу и стоишь в магазине? <a href="/garment" style="color:#5D2230">Проверь вещь по фото: брать или не брать →</a></p>
 </body></html>"""
@@ -242,7 +242,7 @@ RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <p><a href="/demo">← заново</a> · <a href="/">на главную</a></p>
 <h1>Твоя Формула стиля</h1>
 <p class=formula><b>{{ formula }}</b></p>
-<p>Identity Gap: <span class=gap>{{ gap }}%</span> — разрыв между тем, как тебя считывают сейчас, и тем, как ты хочешь.</p>
+<p>Индекс настройки образа: <span class=gap>{{ gap }}%</span> — зона между тем, как тебя считывают сейчас, и тем, как ты хочешь.</p>
 {% if prog and prog.sessions > 1 and prog.delta is not none %}
 <p class=meta>Динамика имиджа: было {{ prog.first_gap }}% → стало {{ prog.last_gap }}% ({{ '−' ~ prog.delta if prog.delta >= 0 else '+' ~ (-prog.delta) }} п.п. за {{ prog.sessions }} сессии).</p>
 {% endif %}
@@ -258,7 +258,7 @@ RESULT = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div style="margin-top:34px;padding-top:22px;border-top:1px solid #d9d2c7">
  <h2 style="margin:0 0 12px">Что дальше</h2>
  <a href="/card" style="display:inline-block;background:var(--wine);color:#fff;text-decoration:none;padding:14px 26px;border-radius:8px;font-size:16px;margin:0 10px 10px 0">Собрать полную Карту стиля →</a>
- <a href="/garment" style="display:inline-block;background:#fff;color:var(--wine);border:1px solid var(--wine);text-decoration:none;padding:14px 26px;border-radius:8px;font-size:16px;margin:0 10px 10px 0">Проверить вещь по фото</a>
+ <a href="/garment" style="display:inline-block;background:#fff;color:var(--wine);border:1px solid var(--wine);text-decoration:none;padding:14px 26px;border-radius:8px;font-size:16px;margin:0 10px 10px 0">Проверить вещь перед покупкой</a>
  <a href="/me" style="display:inline-block;color:var(--muted);text-decoration:none;padding:14px 0;font-size:15px">Мой профиль</a>
 </div></body></html>"""
 
@@ -293,24 +293,24 @@ LANDING = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <header><div class=logo>Sense&nbsp;Style</div><a class="btn sm" href="/demo">Пройти диагностику</a></header>
  <section class=hero>
   <h1>Стиль, в котором ты&nbsp;— настоящая</h1>
-  <p>Персональный стилист на основе психологии моды. Загрузи фото и ответь на несколько вопросов — определим твою Формулу стиля, измерим разрыв между тем, как тебя считывают сейчас и как ты хочешь, и покажем тебя в новых образах.</p>
+  <p>Персональный fashion-tech стилист на основе психологии моды. Загрузи фото и ответь на несколько вопросов — определим твою Формулу стиля, измерим индекс настройки образа и соберём для тебя визуальные сценарии.</p>
   <a class=btn href="/demo">Построить свои образы →</a>
  </section>
 
  <h2>Как это работает</h2>
  <div class=flow>
   <div>1. Фото + короткий квиз</div>
-  <div>2. <b>Identity Gap, %</b> — разрыв между «как считывают» и «как хочешь»</div>
+  <div>2. <b>Индекс настройки образа, %</b> — зона между «как считывают» и «как хочешь»</div>
   <div>3. Твоя <b>Формула стиля</b> по авторской методологии</div>
   <div>4. Капсула и образы — <b>на тебе</b>, с твоим лицом и фигурой</div>
   <div>5. Список покупок под бюджет и стоп-лист «не покупать»</div>
-  <div>6. Трекер: как Identity Gap закрывается со временем</div>
+  <div>6. Трекер: как индекс настройки образа меняется со временем</div>
  </div>
 
  <h2>Что нас отличает</h2>
  <div class=cols>
-  <div class=card><h3>Психология, не мода</h3><p>Образ работает на закрытие твоего разрыва идентичности, а не на тренд.</p></div>
-  <div class=card><h3>Измеримый результат</h3><p>Identity Gap в % — видно, как меняется впечатление о тебе.</p></div>
+  <div class=card><h3>Психология, не мода</h3><p>Образ работает на настройку твоего визуального впечатления, а не на тренд ради тренда.</p></div>
+  <div class=card><h3>Измеримый результат</h3><p>Индекс настройки образа в % — видно, как меняется впечатление о тебе.</p></div>
   <div class=card><h3>Это ты, а не модель</h3><p>Образы генерируются на твоём фото — лицо и фигура сохраняются.</p></div>
  </div>
  <p class=sci>В основе — исследования о связи одежды, восприятия и самоощущения (теория самонесоответствия Хиггинса, enclothed cognition).</p>
@@ -625,7 +625,7 @@ ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <p>{% if has_diag %}{{ formula }}{% else %}Пройди диагностику — Формула сохранится здесь.{% endif %}</p></div>
 {% if track %}
 <div class=card>
- <div class=trackhead><h3>Эволюция <span class=sub>стилевого разрыва</span></h3>
+ <div class=trackhead><h3>Эволюция <span class=sub>индекса настройки образа</span></h3>
   {% if track.delta is not none and track.delta > 0 %}<span class=tdelta>−{{ track.delta }} п.п.</span>{% endif %}</div>
  <div class=track>
   {% for p in track.points %}
@@ -637,7 +637,7 @@ ME_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% endfor %}
  </div>
  {% if track.measurements < 2 %}
- <p class=tnote>Это твоя точка отсчёта. Сделай пере-замер через время — увидишь, как разрыв закрывается. Он двигается только от настоящего замера: новых фото того, как ты одеваешься сейчас.</p>
+ <p class=tnote>Это твоя точка отсчёта. Сделай пере-замер через время — увидишь, как меняется индекс настройки образа. Он двигается только от настоящего замера: новых фото того, как ты одеваешься сейчас.</p>
  {% else %}
  <p class=tnote>Разрыв закрывается — и это видно. Двигается он только от реального пере-замера, поэтому цифре можно верить.</p>
  {% endif %}
@@ -845,8 +845,18 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .capexample{font-size:9.5px;color:#9a9086;margin-top:3px;font-style:italic}
  .capbrand{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:3px}
  .capprice{font-size:11.5px;color:#4e473f;margin-top:3px}
- .capfind{font-size:10.5px;color:var(--muted);margin-top:5px}
- .capfind a{color:var(--wine);text-decoration:none}
+.capfind{font-size:10.5px;color:var(--muted);margin-top:5px}
+.capfind a{color:var(--wine);text-decoration:none}
+.caporigin{display:flex;align-items:flex-start;gap:10px;margin-top:12px;padding:11px 12px;border:1px solid rgba(93,34,48,.12);
+           border-radius:12px;background:linear-gradient(135deg,#fbf6ec,#fff)}
+.caporigin i{flex:0 0 auto;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+             background:var(--wine);color:#fff;font-style:normal;font-size:12px;line-height:1}
+.caporigin b{display:block;font-size:12.5px;color:var(--ink);margin-bottom:2px}
+.caporigin span{display:block;font-size:11.5px;color:var(--muted);line-height:1.35}
+.caporigin a{color:var(--wine);text-decoration:none}
+.capscen{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.capscen span{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border-radius:999px;background:var(--soft);
+              border:1px solid rgba(93,34,48,.10);font-size:10.5px;color:#5b5249;line-height:1.2}
 
  /* лента сочетаний */
  .combolane{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
@@ -1032,9 +1042,9 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 {# Карта собрана без модели (кончились кредиты или выключена генерация). Молчать об этом
    нельзя: клиентка должна понимать, почему нет образов и текстов. #}
-{% if c.no_generation %}<div class=stale><b>Это каркас Карты — без генерации.</b> Формула, разрыв, палитра, силуэты и капсула из каталога уже здесь. Образы на тебе, тексты и лист покупок появятся, когда генерация снова будет доступна.<br><a href="/card?rebuild=1">Собрать с образами →</a></div>{% endif %}
+{% if c.no_generation %}<div class=stale><b>Это черновик Карты — без лукбука образов.</b> Формула, индекс настройки образа, палитра, силуэты и опорная капсула уже здесь. Визуальные сценарии, тексты и лист умных покупок появятся, когда сборка снова будет доступна.<br><a href="/card?rebuild=1">Собрать с образами →</a></div>{% endif %}
 
-{% if stale %}<div class=stale><b>Твоя диагностика обновилась.</b> Ты недавно заново прошла квиз, и разрыв изменился. Эта Карта собрана на прежней диагностике — числа и подборка ниже от неё.<br><a href="/card?rebuild=1">Собрать Карту заново →</a></div>{% endif %}
+{% if stale %}<div class=stale><b>Твоя диагностика обновилась.</b> Ты недавно заново прошла квиз, и индекс настройки образа изменился. Эта Карта собрана на прежней диагностике — числа и подборка ниже от неё.<br><a href="/card?rebuild=1">Собрать Карту заново →</a></div>{% endif %}
 
 {# ── верхний ряд: ДНК · индекс · желаемый эффект ─────────────────────────────────────── #}
 <div class=toprow>
@@ -1080,15 +1090,15 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    </svg>
    <div>
     {# Формулировка по величине индекса: не хвалим ради похвалы, а называем, где клиентка стоит. #}
-    <p class=idxtext>{% if idx >= 80 %}Ты уже близко. Образ почти совпадает с тем, как ты хочешь считываться.{% elif idx >= 60 %}Хороший результат, гармония близка. Основа собрана — осталось убрать то, что размывает.{% elif idx >= 40 %}Половина образа уже работает на тебя. Вторая половина — то, что мы закрываем ниже.{% else %}Разрыв большой, и это твой ресурс: изменения будут заметны сразу.{% endif %}</p>
+    <p class=idxtext>{% if idx >= 80 %}Ты уже близко. Образ почти совпадает с тем, как ты хочешь считываться.{% elif idx >= 60 %}Хороший результат, гармония близка. Стилевая основа уже собрана — осталось убрать то, что размывает впечатление.{% elif idx >= 40 %}Половина образа уже работает на тебя. Остальное — зона настройки, которую мы закрываем ниже.{% else %}Зона настройки большая, и это твой ресурс: изменения будут заметны сразу.{% endif %}</p>
     {# Разрыв называем числом, а не только кольцом: Карта обязана показывать тот же Gap,
        что посчитал квиз, иначе диагностика и результат расходятся. #}
-    <p class=idxtext>Оставшиеся {{ c.gap }}% закрываются выбранной<br>капсулой и точечными покупками.</p>
+    <p class=idxtext>Оставшиеся {{ c.gap }}% настраиваются через выбранную<br>капсулу и первые покупки под твою формулу.</p>
     <a class=idxmore href="#howto">Как повысить индекс →</a>
    </div>
   </div>
   {% else %}
-  <p class=psub style="margin-top:12px">Индекс появится после замера разрыва в квизе.</p>
+  <p class=psub style="margin-top:12px">Индекс появится после замера в квизе.</p>
   {% endif %}
  </div>
 
@@ -1180,8 +1190,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <div class=col>
 
   <div class=panel id=capsule>
-   <h2 class=ph>Капсула-ядро {{ c.starter_capsule_count or (c.starter_capsule|length if c.starter_capsule else 0) }} вещей<span class=dot>◈</span></h2>
-   <p class=psub>База, которая собирает твои образы.</p>
+   <h2 class=ph>Опорная капсула {{ c.starter_capsule_count or (c.starter_capsule|length if c.starter_capsule else 0) }} вещей<span class=dot>◈</span></h2>
+   <p class=psub>Стилевая основа, которая собирает твои образы.</p>
+   <div class=caporigin>
+    <i>↺</i>
+    <div><b>Эта капсула собрана из образов выше, а не отдельно от них.</b><span>Мы взяли повторяющиеся вещи из твоих сценариев и сделали из них опору гардероба. Сначала <a href="#looks">смотри образы</a>, потом возвращайся сюда как к собранной основе.</span></div>
+   </div>
    {% if c.starter_capsule %}
    <div class=capgrid>
     {% for it in c.starter_capsule[:6] %}
@@ -1193,12 +1207,13 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
      {% set lib = it.image or fromlib %}
      {% if lib %}<img class=capimg src="{{ lib }}" alt="{{ it.name }}" loading=lazy>
      {% else %}<span class="capimg empty">{{ it.slot or 'вещь' }}<br>без фото</span>{% endif %}
-     {# Бейдж говорит, ЗАЧЕМ вещь в ядре: ядро работает в нескольких образах, остальное — поддержка. #}
-     {% if it.capsule_role == 'core' %}<span class=capbadge>ядро</span>
+     {# Бейдж говорит, ЗАЧЕМ вещь в капсуле: опора работает в нескольких образах, остальное — дополняет образы. #}
+     {% if it.capsule_role == 'core' %}<span class=capbadge>опора</span>
      {% elif it.outfits_count and it.outfits_count > 1 %}<span class=capbadge>собирает {{ it.outfits_count }} образ{{ 'а' if it.outfits_count % 10 in [2,3,4] and it.outfits_count // 10 != 1 else 'ов' }}</span>
      {% elif loop.first %}<span class=capbadge>купить первой</span>{% endif %}
      <div class=capbody>
       <div class=capname>{{ it.name }}</div>
+      {% if it.scenarios %}<div class=capscen>{% for sc in it.scenarios[:3] %}<span>{{ sc }}</span>{% endfor %}</div>{% endif %}
       {% if isexample %}<div class=capexample>пример типа вещи</div>{% endif %}
       {% if it.brand %}<div class=capbrand>{{ it.brand }}</div>{% endif %}
       {% if it.price %}<div class=capprice>{{ '{:,}'.format(it.price).replace(',',' ') }} ₽</div>{% endif %}
@@ -1207,13 +1222,13 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     </div>
     {% endfor %}
    </div>
-   {% else %}<p class=psub style="margin-top:12px">Капсула соберётся вместе с образами.</p>{% endif %}
+   {% else %}<p class=psub style="margin-top:12px">Опорная капсула соберётся вместе с образами.</p>{% endif %}
   </div>
 
   {% if c.capsule_combos %}
   <div class=panel>
    <h2 class=ph>Из {{ c.starter_capsule_count }} вещей — {{ c.combination_count }} сочетаний<a class=more href="#combos">Показать все →</a></h2>
-   <p class=psub>Примеры готовых образов из твоей капсулы.</p>
+   <p class=psub>Примеры ready-to-wear сочетаний из твоей опорной капсулы.</p>
    <div class=combolane>
     {% for combo in c.capsule_combos[:6] %}
     <div class=combo title="{{ combo.title }}">
@@ -1293,7 +1308,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {# Закрыт по умолчанию: Карта — панель на один экран, а полный разбор образов раскрывается
    по клику (и принудительно раскрывается перед печатью в PDF). #}
 <details class=deep id=combos>
- <summary>Образы целиком <span>состав, сценарии и что докупить</span></summary>
+ <summary>Образы целиком <span>состав, сценарии и что добавить в капсулу</span></summary>
  <div class=deepbody>
   {% for lk in c.looks %}
   <div class=panel style="margin-bottom:12px" id="look{{ loop.index }}">
@@ -1302,12 +1317,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    {% if lk.why_it_works or lk.description %}<p>{{ lk.why_it_works or lk.description }}</p>{% endif %}
    {% set look_items = lk.get('items') %}
    {% if look_items %}<p style="color:var(--muted)">Состав: {{ look_items|join(' · ') }}</p>{% endif %}
-   {% if lk.missing_items %}<p style="color:var(--muted)">Если докупить: {{ lk.missing_items|join(' · ') }}</p>{% endif %}
+   {% if lk.missing_items %}<p style="color:var(--muted)">Если добавить в капсулу: {{ lk.missing_items|join(' · ') }}</p>{% endif %}
   </div>
   {% endfor %}
   {% if c.styling and c.styling.looks %}
   <h3>Одна вещь — два образа</h3>
-  <p>{% if c.styling.idea %}{{ c.styling.idea }}{% else %}Одна базовая вещь{% if c.styling.base_item %} ({{ c.styling.base_item }}){% endif %} — два разных образа.{% endif %} Так работает капсула: мало вещей, много решений.</p>
+  <p>{% if c.styling.idea %}{{ c.styling.idea }}{% else %}Одна опорная вещь{% if c.styling.base_item %} ({{ c.styling.base_item }}){% endif %} — два разных образа.{% endif %} Так работает капсула: меньше вещей, больше готовых решений.</p>
   {% for lk in c.styling.looks %}
   <div class=panel style="margin-bottom:12px">
    <h3 style="margin-top:0">{{ lk.title or lk.name or lk.scenario }}</h3>
@@ -1340,7 +1355,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% endif %}
   <h3>Как работает палитра</h3>
   {% if c.colortype %}<p>Твой цветотип — <b>{{ c.colortype }}</b>.{% if c.contrast %} Контраст {{ c.contrast }}.{% endif %} На нём построена палитра.</p>{% endif %}
-  <p>База — основа гардероба, на ней строится всё. Основные — цветные вещи, спокойно сочетаются с базой. Акценты — точечно: один на образ, не больше.</p>
+  <p>Основа гардероба — это спокойные вещи, на которых строится весь total look. Основные оттенки мягко сочетаются с основой, акценты работают точечно: один на образ, не больше.</p>
   {% for grp, title in [('base','База и нейтрали'),('main','Основные'),('accent','Акценты')] %}
    {% set items = c.palette|selectattr('group','equalto',grp)|list %}
    {% if items %}<div class=palgrp>{{ title }}</div><div class=swatches>
@@ -1484,9 +1499,9 @@ NEED_DIAGNOSIS = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <ul class=steps>
   <li class=done><span class=num>1</span><span>Диагностика — 14 вопросов и фото. Отсюда берётся твоя Формула стиля, цветотип и силуэт.</span></li>
   <li><span class=num>2</span><span>Карта стиля — палитра, капсула и образы на тебе. Строится на результатах диагностики.</span></li>
-  <li><span class=num>3</span><span>Стиль каждый день — кабинет, где формула работает в обычной жизни.</span></li>
+  <li><span class=num>3</span><span>Стиль каждый день — живой гардероб, где формула работает в обычной жизни.</span></li>
  </ul>
- <a class=btn href="/identity-scan-quiz.html">Пройти диагностику</a>
+ <a class=btn href="/quiz">Пройти диагностику</a>
  <p class=meta>5 минут, без регистрации. Результат сохранится за тобой.</p>
 </div>
 </div></body></html>"""
@@ -1598,9 +1613,9 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </style></head><body><div class=wrap>
 {% macro chips(name, opts, cls='') %}<div class="chips {{ cls }}">{% for o in opts %}<label class=chip><input type=checkbox name="{{ name }}" value="{{ o }}"><span>{{ o }}</span></label>{% endfor %}</div>{% endmacro %}
 <div class=top><span class=logo>Чувство стиля</span><a href="/me">← мой профиль</a></div>
-<div class=eyebrow>Карта стиля</div>
+<div class=eyebrow>Шаг 2 из 3 · Карта стиля</div>
 <h1>Покажем тебя в 6 образах</h1>
-<p class=lead>Загрузи фото в полный рост — соберём твою Карту стиля и покажем тебя в 6 образах под твои сценарии. Это занимает пару минут.</p>
+<p class=lead>Это первый платный слой после диагностики. Загрузи фото в полный рост — соберём твою Карту стиля и покажем тебя в 6 образах под твои сценарии, чтобы у тебя сразу появился готовый результат, а не очередная теория.</p>
 {% if notice %}<p class=notice>{{ notice|safe }}</p>{% endif %}
 {% if error %}<p class=err>{{ error }}</p>{% endif %}
 <form method=post action="/card/build" enctype="multipart/form-data">
@@ -2218,7 +2233,7 @@ def _capsule_quota(n: int) -> dict:
     if n <= 6:
         return {"Верхний слой": 1, "Верх": 2, "Низ": 1, "Обувь": 1, "Аксессуары": 1}
     # 9 — стартовая капсула Карты, ровно столько обещано в тарифе. Раньше этой ступени не было:
-    # любое n>6 давало 12, и клиентка за 3900 ₽ получала не то число, что прочитала на лендинге.
+    # любое n>6 давало 12, и клиентка в публичной Карте получала не то число, что прочитала на лендинге.
     if n <= 9:
         return {"Верхний слой": 1, "Верх": 3, "Низ": 2, "Платья и комбинезоны": 1,
                 "Обувь": 1, "Аксессуары": 1}
@@ -2656,7 +2671,9 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <div class=profchips>
   {% if season_label %}<div class=profchip><span class=pi>❦</span><span><span class=pk>Сезон</span><span class=pv>{{ season_label }}</span></span></div>{% endif %}
   {% if colortype %}<div class=profchip><span class=pi>✦</span><span><span class=pk>Цветотип</span><span class=pv>{{ colortype }}</span></span></div>{% endif %}
-  {% if gap_now is not none %}<div class=profchip><span class=pi>◔</span><span><span class=pk>Разрыв</span><span class=pv>{{ gap_now }}%</span></span></div>{% endif %}
+  {# Индекс = 100 − разрыв, ровно как в Карте. Здесь годами показывался сырой gap: Карта говорила
+     «индекс 69%», кабинет на соседнем экране — «Индекс 31%». Одна метрика, два обратных числа. #}
+  {% if gap_now is not none %}<div class=profchip><span class=pi>◔</span><span><span class=pk>Индекс</span><span class=pv>{{ 100 - gap_now }}%</span></span></div>{% endif %}
   <a class=profedit href="/me">Профиль <span>✎</span></a>
  </div>
 </div>
@@ -2665,15 +2682,15 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=row2>
 
  <div class=panel id=wardrobe>
-  <h2 class=ph>Конструктор капсулы<span class=tag>живой AI-кабинет</span></h2>
-  <p class=psub>Собери образ из своей капсулы: нажми или перетащи вещь в ячейку справа. Вещи настоящие — каждую можно купить.</p>
+  <h2 class=ph>Капсульный конструктор образов<span class=tag>живой гардероб</span></h2>
+  <p class=psub>Собери образ из своей капсулы: нажми или перетащи вещь в ячейку справа. Это вещи из базы брендов — каждую можно добавить в капсулу.</p>
   {% if season_tabs %}
   <div class=seasons>
    {% for s in season_tabs %}<a href="/cabinet?season={{ s.code }}" class="{{ 'on' if s.on else '' }}{{ ' notbuilt' if not s.built else '' }}" title="{{ 'капсула собрана' if s.built else 'подберётся из каталога' }}">{{ s.label }}</a>{% endfor %}
   </div>
   {% endif %}
   <div class=itemtoggle>
-   <a href="/cabinet?items=6{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 6 else '' }}">Капсула 6 вещей</a>
+   <a href="/cabinet?items=6{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 6 else '' }}">6 опорных вещей</a>
    <a href="/cabinet?items=12{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 12 else '' }}">Расширенная 12</a>
   </div>
   {% if board %}
@@ -2770,18 +2787,18 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=row2b>
 
  <div class=panel>
-  <h2 class=ph>AI-помощник гардероба</h2>
+  <h2 class=ph>Навигатор гардероба</h2>
   <div class=helper>
-   <a class=hrow href="/garment"><span class=hico>✓</span><span><b>Брать или не брать</b><span>Проверка вещи по фото до покупки</span></span></a>
+   <a class=hrow href="/garment"><span class=hico>✓</span><span><b>Брать или не брать</b><span>Проверить вещь перед покупкой</span></span></a>
    <a class=hrow href="#week"><span class=hico>▦</span><span><b>План недели</b><span>Готовые образы на неделю под роли, погоду и твоё время</span></span></a>
    <a class=hrow href="#wardrobe"><span class=hico>❋</span><span><b>Сезонные обновления</b><span>Переключи сезон — капсула пересоберётся под него</span></span></a>
-   <a class=hrow href="#track"><span class=hico>◔</span><span><b>Трекер разрыва</b><span>Видно, как образ догоняет то, какой ты себя хочешь</span></span></a>
+   <a class=hrow href="#track"><span class=hico>◔</span><span><b>Трекер настройки образа</b><span>Видно, как образ догоняет то, какой ты себя хочешь</span></span></a>
   </div>
  </div>
 
  <div class=panel id=shopping>
-  <h2 class=ph>Что докупить к капсуле<span class=tag>AI-подбор</span></h2>
-  <p class=psub>Точечные вещи, которые закрывают разрыв — под твою Формулу и сезон.</p>
+  <h2 class=ph>Что добавить в капсулу<span class=tag>точечные рекомендации</span></h2>
+  <p class=psub>Точечные вещи, которые усиливают капсулу под твою Формулу и сезон.</p>
   {% if shopping %}
   <div class=buygrid>
    {% for it in shopping[:3] %}
@@ -2802,7 +2819,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 {# ── ряд 3: что умеет кабинет ────────────────────────────────────────────────────────── #}
 <div class=tiles>
- <div class=tile><span class=ti>◫</span><b>Конструктор образов</b><p>Создавай образы из своей капсулы. Все сочетания проверены под твою Формулу.</p><a href="#wardrobe">Открыть конструктор →</a></div>
+ <div class=tile><span class=ti>◫</span><b>Капсульный конструктор образов</b><p>Создавай образы из своей капсулы. Все сочетания проверены под твою Формулу.</p><a href="#wardrobe">Открыть конструктор →</a></div>
  <div class=tile><span class=ti>✓</span><b>Брать или не брать</b><p>Проверь любую покупку: подойдёт ли она по стилю, цветотипу и фигуре.</p><a href="/garment">Проверить вещь →</a></div>
  <div class=tile><span class=ti>▦</span><b>План недели</b><p>Семь дней из твоей капсулы: у каждого своя роль и свой образ.</p><a href="#week">Посмотреть план →</a></div>
  <div class=tile><span class=ti>❋</span><b>Сезонные обновления</b><p>Капсула пересобирается под сезон: вещи, ткани и слои меняются.</p><a href="#wardrobe">Переключить сезон →</a></div>
@@ -2811,7 +2828,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=footband>
  <div class=mono>✦</div>
  <div class=foottext>
-  <b>Кабинет использует твою Формулу и капсулу из Карты стиля</b>
+  <b>Живой гардероб использует твою Формулу и опорную капсулу из Карты стиля</b>
   <span>Мы не пересобираем стиль заново — ты получаешь ежедневную поддержку, чтобы выглядеть уверенно без лишних трат и стресса.</span>
  </div>
  <a class=footbtn href="/card">Смотреть Карту стиля</a>
@@ -2819,7 +2836,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
 {# ── трекер разрыва ──────────────────────────────────────────────────────────────────── #}
 {% if track %}
-<h2 class=secttl id=track>Как закрывается разрыв</h2>
+<h2 class=secttl id=track>Как меняется индекс настройки образа</h2>
 <p class=hint>Измеримая трансформация: цифра двигается только от реального пере-замера.</p>
 <div class=trk>
  {% if milestones %}
@@ -2838,15 +2855,15 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  </div>
  {% endfor %}
  {% if track.measurements < 2 %}
- <p class=tnote>Это точка отсчёта. Сделай пере-замер через время — увидишь, как разрыв закрывается.</p>
+ <p class=tnote>Это точка отсчёта. Сделай пере-замер через время — увидишь, как меняется индекс настройки образа.</p>
  {% else %}
- <p class=tnote>Разрыв закрывается, и это видно. Двигается он только от настоящего пере-замера, поэтому цифре можно верить.</p>
+ <p class=tnote>Индекс настройки образа меняется, и это видно. Двигается он только от настоящего пере-замера, поэтому цифре можно верить.</p>
  {% endif %}
 </div>
 {% endif %}
 
 {% if days_since is not none and days_since >= 30 %}
-<div class=nudge><span>С последнего замера прошло {{ days_since }} дней. Пере-замер покажет, как разрыв закрылся за это время.</span><a href="/identity-scan-quiz.html?fresh=1">Сделать пере-замер</a></div>
+<div class=nudge><span>С последнего замера прошло {{ days_since }} дней. Пере-замер покажет, как изменился индекс настройки образа за это время.</span><a href="/identity-scan-quiz.html?fresh=1">Сделать пере-замер</a></div>
 {% endif %}
 
 {# ── роли недели ─────────────────────────────────────────────────────────────────────── #}
@@ -3364,8 +3381,8 @@ STYLEBOOK_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% if gap is not none %}<div class=ring><svg width=130 height=130 viewBox="0 0 130 130">
    <circle cx=65 cy=65 r=52 fill=none stroke="#efe8db" stroke-width=11></circle>
    <circle cx=65 cy=65 r=52 fill=none stroke="var(--wine)" stroke-width=11 stroke-linecap=round stroke-dasharray=327 stroke-dashoffset="{{ (327*(1-gap/100.0))|round(1) }}"></circle>
-  </svg><div class=v><span class=n>{{ gap }}%</span><span class=l>разрыв · до</span></div></div>{% endif %}
-  <p class=lead style="flex:1;min-width:260px">{{ dna or 'Твой образ догоняет то, кем ты становишься. Разрыв замеряется до и после — это ядро работы.' }}</p>
+  </svg><div class=v><span class=n>{{ gap }}%</span><span class=l>индекс · до</span></div></div>{% endif %}
+  <p class=lead style="flex:1;min-width:260px">{{ dna or 'Твой образ догоняет то, кем ты становишься. Индекс настройки образа помогает видеть это движение шаг за шагом.' }}</p>
  </div>
 </section>
 {% endif %}
@@ -3391,7 +3408,7 @@ STYLEBOOK_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% if board %}
 <section>
  <div class=snum>04</div><h2 class=st>Твоя капсула</h2>
- <p class=lead>Реальные вещи под твою Формулу — ядро, из которого собираются все образы.</p>
+ <p class=lead>Реальные вещи под твою Формулу — стилевая основа, из которой собираются все образы.</p>
  <div class=capg>
   {% for grp in board %}{% for it in grp['items'] %}<div class=cap>{% if it.image %}<img src="{{ it.image }}" alt="{{ it.name }}">{% endif %}<div class=nm>{{ it.name }}</div></div>{% endfor %}{% endfor %}
  </div>
@@ -3443,7 +3460,7 @@ a.back{color:var(--muted);font-size:14px;text-decoration:none;display:inline-blo
  <li>PDF к печати — держишь в руках, показываешь в шкафу</li>
 </ul>
 <a class=btn href="/premium.html">Узнать о «Преображении» →</a><br>
-<a class=back href="/cabinet">← Вернуться в кабинет</a>
+<a class=back href="/cabinet">← Вернуться в живой гардероб</a>
 </div></body></html>"""
 
 
@@ -4000,6 +4017,22 @@ def _starter_capsule_from_board(board: list[dict]) -> tuple[list[dict], int]:
     return picked[:9], combos
 
 
+def _sync_capsule_views(starter: list[dict], fallback: list[dict] | None = None) -> tuple[list[dict], list[dict]]:
+    """Один канон капсулы для всех экранов.
+
+    В Карте исторически жили три представления одновременно:
+    - `starter_capsule` — то, что показываем клиентке как ядро;
+    - `base_capsule` — то, от чего питается кабинет;
+    - `capsule_board` — группировка по слотам для конструктора.
+
+    Из-за этого капсула могла быть «из образов» только в одном блоке, а в кабинете и служебных
+    полях оставаться старой или каталожной. Канон такой: если ядро уже собрано из образов,
+    именно оно и является базовой капсулой продукта. `fallback` нужен только когда ядра ещё нет.
+    """
+    base = [dict(it) for it in (starter or fallback or []) if isinstance(it, dict) and it.get("name")]
+    return base, _capsule_board(base)
+
+
 def _refresh_card_projection(card: dict, diag: dict) -> dict:
     """Освежить производные блоки старой сохранённой Карты без новой генерации.
 
@@ -4028,7 +4061,10 @@ def _refresh_card_projection(card: dict, diag: dict) -> dict:
         combos_n = max(core_n * 3, len(starter) * 2)
     else:
         starter, combos_n = _starter_capsule_from_board(board)
+    base_capsule, capsule_board = _sync_capsule_views(starter, out.get("base_capsule") or [])
     out["visual_capsule"] = board
+    out["base_capsule"] = base_capsule
+    out["capsule_board"] = capsule_board
     out["starter_capsule"] = starter
     out["starter_capsule_count"] = len(starter)
     out["capsule_combos"] = _capsule_combos(starter)
@@ -4084,6 +4120,7 @@ def build_card_skeleton(diag: dict, season: str | None = None) -> dict:
     palette = [{"name": str(c), "hex": "", "group": "base"} for c in (vf.get("palette") or []) if c]
     board = _inline_capsule_images(_visual_capsule({"palette": palette, "stop_list": stop_list}, diag, 9))
     starter, combos = _starter_capsule_from_board(board)
+    base_capsule, capsule_board = _sync_capsule_views(starter)
     looks = [{"scenario": sc, "bucket": _SCENARIO_BUCKET.get(sc, "Повседневное"),
               "title": sc.capitalize(), "items": [], "effect": _SCENARIO_EFFECT.get(sc, ""),
               "why_it_works": "Образ соберётся, когда включим генерацию."}
@@ -4099,7 +4136,7 @@ def build_card_skeleton(diag: dict, season: str | None = None) -> dict:
         "palette": palette,
         "stop_colors": [],
         "silhouettes": vf.get("silhouettes") or [],
-        "base_capsule": [], "capsule_board": [], "visual_capsule": board,
+        "base_capsule": base_capsule, "capsule_board": capsule_board, "visual_capsule": board,
         "starter_capsule": starter,
         "starter_capsule_count": len(starter),
         "capsule_combos": _capsule_combos(starter),
@@ -4210,6 +4247,10 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         starter_combos = max(core_n * 3, len(starter_capsule) * 2)
     else:
         starter_capsule, starter_combos = _starter_capsule_from_board(visual_capsule)
+    base_capsule, capsule_board = _sync_capsule_views(
+        starter_capsule,
+        [it for it in cap_items if isinstance(it, dict) and it.get("name")][:9],
+    )
     return {
         "formula": diag.get("style_formula"),
         "gap": diag.get("gap_percentage"),
@@ -4222,9 +4263,9 @@ def build_style_card(diag: dict, season: str | None = None) -> dict:
         "palette": palette.get("palette") or [],
         "stop_colors": palette.get("stop_colors") or [],
         "silhouettes": vf.get("silhouettes") or [],
-        # базовая капсула (ядро) — вещи, из которых собираются все образы
-        "base_capsule": [it for it in cap_items if isinstance(it, dict) and it.get("name")][:9],
-        "capsule_board": _capsule_board([it for it in cap_items if isinstance(it, dict) and it.get("name")][:14]),
+        # базовая капсула (ядро) обязана совпадать с тем, что мы вывели из образов клиентки.
+        "base_capsule": base_capsule,
+        "capsule_board": capsule_board,
         # визуальная капсула: реальные вещи каталога с ФОТО (вшиты в data-URL, чтобы жили и в PDF).
         # Берём 9 вещей как честную стартовую капсулу для продукта «Карта стиля».
         "visual_capsule": visual_capsule,
@@ -5499,11 +5540,87 @@ def api_analyze():
     return jsonify({"job_id": job_id}), 202
 
 
+_DIRECTION_RU = {"classic": "Классика", "drama": "Драма",
+                 "romance": "Романтика", "natural": "Натуральность"}
+
+
+def _quiz_only_diag(quiz: dict, gap_hint, direction_hint) -> dict:
+    """Диагноз из одних ответов квиза, без модели.
+
+    Страховка на случай, когда provider недоступен (кончился ключ, лимит, сеть). Без неё
+    клиентка, пропустившая фото, теряет диагностику и на /card упирается в «сначала диагностика» —
+    то есть проходит квиз впустую. Лучше отдать честный диагноз по ответам, чем развернуть её.
+    """
+    code = direction_hint if direction_hint in _DIRECTION_RU else "classic"
+    gap = gap_hint if isinstance(gap_hint, int) and 0 <= gap_hint <= 100 else 50
+    # base_style читает каталог (_FORMULA_CATEGORIES) и ждёт КОД, не русское название: с «Классика»
+    # словарь категорий молча возвращал пустой список, фильтр по формуле отключался — и в капсулу
+    # «Классики» приходили кружевные накидки и юбки с воланами. Русское имя живёт в style_formula.
+    return {
+        "style_formula": _DIRECTION_RU[code],
+        "base_style": code,
+        "style_dominant": code,
+        # Доминанта нужна _visual_capsule: без распределения список styles пуст и стилевого
+        # совпадения в скоринге не происходит вовсе.
+        "semantic_field_distribution": {
+            k: (60 if k == code else 40 // 3) for k in _DIRECTION_RU
+        },
+        "gap_percentage": gap,
+        "now_traits": quiz.get("now_traits") or [],
+        "want_traits_top3": quiz.get("want_traits_top3") or [],
+        "quiz_only": True,  # фото не было: цветотип и фигуру уточняем позже, при сборке Карты
+    }
+
+
+@app.post("/api/quiz-diagnosis")
+def api_quiz_diagnosis():
+    """Диагностика по ответам квиза, когда клиентка пропустила фото.
+
+    Раньше job_id заводился только в /api/analyze, то есть только вместе с фото. Кто нажимал
+    «Пропустить · показать результат без фото», уходил на /card без диагноза — и продукт
+    разворачивал его на «Сначала — диагностика», хотя квиз был пройден целиком.
+    """
+    data = request.get_json(silent=True) or {}
+    quiz = {
+        "context": {},
+        "now_traits": _split(data.get("now_traits")),
+        "want_traits_top3": _split(data.get("want_traits"))[:3],
+        "physical": {"height": None, "figure_type_self_assessed": None},
+        "price_segment": "middle",
+        "taboos": [],
+        "colortype_known": None,
+    }
+    try:
+        diag = diagnose(quiz, {}, mode="dev")  # без vision: цветотип и фигура остаются пустыми
+        if not diag.get("style_formula"):
+            raise ValueError("пустая формула")
+    except Exception:  # noqa: BLE001 — воронка важнее полноты диагноза
+        diag = _quiz_only_diag(quiz, data.get("gap"), data.get("direction"))
+
+    job_id = uuid.uuid4().hex
+    _JOBS[job_id] = {"status": "done", "diag": diag}
+    _save_pending_diag(job_id, diag)
+    session["last_job"] = job_id  # чтобы /card нашёл диагноз и без ?from_job=
+    return jsonify({"job_id": job_id, "gap": diag.get("gap_percentage")})
+
+
 @app.get("/api/result/<job_id>")
 def api_result(job_id):
     """Статус/результат фоновой генерации (без внутреннего diag — он только на сервере)."""
     j = _JOBS.get(job_id) or {"status": "unknown"}
     return jsonify({k: v for k, v in j.items() if k != "diag"})
+
+
+@app.get("/favicon.ico")
+def favicon():
+    # Браузер просит /favicon.ico на каждой странице. Без него — 404 в консоли и пустая вкладка.
+    # Отдаём SVG-монограмму бренда: файл заводить не нужно, вкладка перестаёт быть безымянной.
+    svg = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
+           "<rect width='64' height='64' rx='14' fill='#5D2230'/>"
+           "<text x='32' y='44' text-anchor='middle' font-family='Georgia,serif' "
+           "font-size='36' fill='#F5EFE3'>S</text></svg>")
+    return app.response_class(svg, mimetype="image/svg+xml",
+                              headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.get("/healthz")

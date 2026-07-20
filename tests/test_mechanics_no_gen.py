@@ -84,17 +84,17 @@ def test_card_page_opens_and_admits_it_is_a_skeleton(client):
 
     html = c.get("/card").get_data(as_text=True)
 
-    assert "Это каркас Карты" in html, "клиентка должна понимать, почему нет образов"
+    assert "Это черновик Карты" in html, "клиентка должна понимать, почему нет образов"
     assert "Классика" in html
 
 
 def test_cabinet_opens_with_working_constructor(client):
-    """Конструктор капсулы — ядро второго тарифа: вещи и ячейки должны быть на месте."""
+    """Капсульный конструктор образов — ядро второго тарифа: вещи и ячейки должны быть на месте."""
     c, _ = client
 
     html = c.get("/cabinet").get_data(as_text=True)
 
-    assert "Конструктор капсулы" in html
+    assert "Капсульный конструктор образов" in html
     assert "data-cell=" in html, "ячейки образа"
     assert "class=pitem" in html, "вещи для перетаскивания"
 

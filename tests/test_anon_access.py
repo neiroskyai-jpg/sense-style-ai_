@@ -51,7 +51,7 @@ def test_card_does_not_ask_for_login(client):
     html = r.get_data(as_text=True)
     assert "/login" not in html
     assert "Сначала — диагностика" in html
-    assert "identity-scan-quiz.html" in html  # кнопка ведёт в квиз, но человек жмёт её сам
+    assert "/quiz" in html  # кнопка ведёт в квиз, но человек жмёт её сам
 
 
 def test_cabinet_does_not_ask_for_login(client):

@@ -9,7 +9,7 @@ os.environ.setdefault("OPENROUTER_API_KEY", "dummy")  # импорт app.main н
 
 from app.main import (_board_week_outfits, _card_stale, _core_capsule_from_looks, _daily_cabinet_advice,
                       _daily_week_view, _diag_signature, _ensure_n_looks, _refresh_card_projection,
-                      _starter_capsule_from_board)  # noqa: E402
+                      _starter_capsule_from_board, _sync_capsule_views)  # noqa: E402
 
 SCENARIOS = ["деловая встреча", "свидание", "выходные",
              "презентация", "корпоратив", "путешествие"]
@@ -119,6 +119,37 @@ def test_refresh_card_projection_rebuilds_legacy_starter_from_looks():
     assert "ТРЕНД 2026" not in names
     assert "Жакет графитовый" in names
     assert all("старый набор" != combo["title"] for combo in out["capsule_combos"])
+
+
+def test_refresh_card_projection_syncs_base_capsule_and_board_with_starter():
+    card = {
+        "season": "autumn",
+        "palette": [{"name": "графит", "hex": "#50545c"}],
+        "looks": [
+            {"scenario": "деловая встреча", "items": ["Жакет графитовый", "Брюки палаццо", "Лодочки"]},
+            {"scenario": "выходные", "items": ["Жакет графитовый", "Джинсы wide-leg", "Лодочки"]},
+        ],
+        "base_capsule": [{"name": "Старый каталог", "slot": "Верх"}],
+        "capsule_board": [{"slot": "Верх", "items": [{"name": "Старый каталог"}]}],
+    }
+
+    out = _refresh_card_projection(card, {"style_formula": "Классика × Драма"})
+
+    assert {it["name"] for it in out["base_capsule"]} == {it["name"] for it in out["starter_capsule"]}
+    board_names = {it["name"] for grp in out["capsule_board"] for it in grp["items"]}
+    assert board_names == {it["name"] for it in out["starter_capsule"]}
+
+
+def test_sync_capsule_views_uses_starter_as_single_source():
+    starter = [
+        {"name": "Жакет графитовый", "slot": "Верхний слой"},
+        {"name": "Брюки палаццо", "slot": "Низ"},
+    ]
+
+    base, board = _sync_capsule_views(starter, [{"name": "Старый каталог", "slot": "Верх"}])
+
+    assert [it["name"] for it in base] == ["Жакет графитовый", "Брюки палаццо"]
+    assert {grp["slot"] for grp in board} == {"Верхний слой", "Низ"}
 
 
 def test_daily_cabinet_advice_uses_existing_card_not_new_formula():
