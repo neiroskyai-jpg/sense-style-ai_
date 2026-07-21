@@ -875,6 +875,20 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
               border:1px solid rgba(93,34,48,.10);font-size:10.5px;color:#5b5249;line-height:1.2}
 
  /* лента сочетаний */
+ /* Матрица «база × слой»: одна база — несколько ролей. */
+ .matrix{margin:14px 0 6px;border:1px solid rgba(93,34,48,.12);border-radius:13px;overflow:hidden}
+ .matrixhead{padding:10px 13px;background:linear-gradient(135deg,#fbf6ec,#fff);font-size:13px;
+             border-bottom:1px solid rgba(93,34,48,.10)}
+ .matrixhead span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+ .matrixrow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr);gap:10px;
+            padding:9px 13px;border-bottom:1px solid var(--line)}
+ .matrixrow:last-child{border-bottom:0}
+ .matrixbase{font-size:12px;color:var(--ink);line-height:1.35}
+ .matrixcells{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:7px}
+ .matrixcell{background:var(--soft);border-radius:9px;padding:7px 9px}
+ .mcrole{display:block;font-size:11.5px;color:var(--wine);font-weight:500}
+ .mcwhy{display:block;font-size:10.5px;color:var(--muted);line-height:1.3;margin-top:2px}
+ @media(max-width:560px){.matrixrow{grid-template-columns:1fr}}
  .econ{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 4px}
  .econcell{border:1px solid rgba(93,34,48,.12);border-radius:12px;padding:11px 13px;
            background:linear-gradient(135deg,#fbf6ec,#fff)}
@@ -1274,6 +1288,26 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    <div class=econ>
     {% if econ.has_prices %}<div class=econcell><b>{{ '{:,}'.format(econ.cost_per_look).replace(',', ' ') }} ₽</b><span>стоит один собранный образ</span></div>{% endif %}
     <div class=econcell><b>{{ econ.saved_items }}</b><span>вещей не пришлось покупать: на {{ econ.looks }} отдельных {{ 'комплект' if econ.looks % 10 == 1 and econ.looks % 100 != 11 else 'комплекта' if econ.looks % 10 in [2,3,4] and econ.looks % 100 not in [12,13,14] else 'комплектов' }} ушло бы {{ econ.standalone_items }}</span></div>
+   </div>
+   {% endif %}
+   {# Матрица «база × слой»: капсула списком читается как шопинг-лист, а здесь видно, ради чего
+      она собрана — одни и те же вещи дают разные образы под разные роли. Считается кодом. #}
+   {% if matrix %}
+   <div class=matrix>
+    <div class=matrixhead>Из {{ matrix.items_count }} вещей — {{ matrix.total }} {{ 'образ' if matrix.total % 10 == 1 and matrix.total % 100 != 11 else 'образа' if matrix.total % 10 in [2,3,4] and matrix.total % 100 not in [12,13,14] else 'образов' }}<span>одна база — разные роли</span></div>
+    {% for row in matrix.rows[:4] %}
+    <div class=matrixrow>
+     <div class=matrixbase>{{ row.base }}</div>
+     <div class=matrixcells>
+      {% for cell in row.cells %}
+      <div class=matrixcell>
+       <span class=mcrole>{{ cell.role }}</span>
+       <span class=mcwhy>{{ cell.why }}</span>
+      </div>
+      {% endfor %}
+     </div>
+    </div>
+    {% endfor %}
    </div>
    {% endif %}
    <div class=combolane>
@@ -4603,6 +4637,87 @@ def _capsule_combos(capsule: list[dict], limit: int = 6) -> list[dict]:
     return combos[:limit]
 
 
+# Роль образа по его составу. Слой собирает силуэт и добавляет статуса, платье — готовый выход,
+# голая пара «верх + низ» живёт в повседневном. Это правило метода, а не украшение: клиентка
+# должна видеть не «ещё одно сочетание», а куда его надеть.
+_MATRIX_ROLE = {
+    ("pair", True): ("Работа", "слой держит собранный силуэт"),
+    ("pair", False): ("Повседневное", "без слоя — легче и свободнее"),
+    ("dress", True): ("Выход", "платье со слоем читается статуснее"),
+    ("dress", False): ("Свидание", "платье само по себе — готовый образ"),
+}
+
+
+def build_outfit_matrix(capsule: list[dict], max_bases: int = 6) -> dict | None:
+    """Матрица «база × слой»: из каких вещей собираются образы.
+
+    Капсула списком вещей читается как шопинг-лист. Матрица показывает то, ради чего она
+    собрана: одни и те же вещи в разных сочетаниях дают разные образы. Строки — базы образа
+    (верх + низ либо платье), колонки — со слоем и без. Каждая ячейка это готовый комплект.
+
+    Считается кодом из существующей капсулы: ни одной генерации, ни одного вызова модели.
+    """
+    by_slot: dict[str, list] = {}
+    for it in capsule or []:
+        by_slot.setdefault(it.get("slot") or _capsule_slot(it.get("name") or ""), []).append(it)
+
+    tops = by_slot.get("Верх") or []
+    bottoms = by_slot.get("Низ") or []
+    dresses = by_slot.get("Платья и комбинезоны") or []
+    layers = by_slot.get("Верхний слой") or []
+    shoes = by_slot.get("Обувь") or []
+    bags = by_slot.get("Аксессуары") or []
+
+    bases: list[dict] = []
+    for bottom in bottoms:
+        for top in tops:
+            bases.append({"kind": "pair", "items": [top, bottom],
+                          "label": f"{top['name']} + {bottom['name']}"})
+    for dress in dresses:
+        bases.append({"kind": "dress", "items": [dress], "label": dress["name"]})
+    if not bases:
+        return None
+    bases = bases[:max_bases]
+
+    # Колонки: без слоя всегда, плюс каждый верхний слой капсулы. Слоёв в капсуле 1-2 — больше
+    # колонок сделало бы таблицу нечитаемой на телефоне.
+    columns = [{"label": "Без слоя", "item": None}]
+    for lay in layers[:2]:
+        columns.append({"label": lay["name"], "item": lay})
+
+    rows = []
+    for i, base in enumerate(bases):
+        cells = []
+        for j, col in enumerate(columns):
+            pieces = list(base["items"])
+            if col["item"]:
+                pieces.append(col["item"])
+            # Обувь и сумка — из правила метода: они держат образ и подбираются в тон друг другу,
+            # поэтому берём их одной парой по одному индексу, а не двумя независимыми.
+            pair_idx = (i + j)
+            if shoes:
+                pieces.append(shoes[pair_idx % len(shoes)])
+            if bags:
+                pieces.append(bags[pair_idx % len(bags)])
+            role, why = _MATRIX_ROLE[(base["kind"], bool(col["item"]))]
+            cells.append({
+                "items": [p["name"] for p in pieces],
+                "images": [p.get("image") for p in pieces if p.get("image")][:4],
+                "role": role,
+                "why": why,
+            })
+        rows.append({"base": base["label"], "kind": base["kind"], "cells": cells})
+
+    return {
+        "columns": [c["label"] for c in columns],
+        "rows": rows,
+        "total": len(rows) * len(columns),
+        # НЕ «items»: Jinja резолвит matrix.items в метод словаря, и в Карту попадал
+        # «<built-in method items of dict>» вместо числа.
+        "items_count": len(capsule or []),
+    }
+
+
 def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]:
     """Капсула-ядро ИЗ ОБРАЗОВ клиентки, а не отдельным набором из каталога.
 
@@ -5372,6 +5487,7 @@ def style_card():
                                       figure_short=_figure_short(diag.get("figure_type")),
                                       dna_fields=_dna_fields(diag),
                                       card_link=_card_link_url(email),
+                                      matrix=build_outfit_matrix(card.get("starter_capsule") or []),
                                       econ=capsule_economics(card.get("starter_capsule"),
                                                              card.get("combination_count")),
                                       thanks=request.args.get("fb"), stale=False)
@@ -5383,6 +5499,7 @@ def style_card():
                                           figure_short=_figure_short(diag.get("figure_type")),
                                           dna_fields=_dna_fields(diag),
                                           card_link=_card_link_url(email),
+                                          matrix=build_outfit_matrix(card.get("starter_capsule") or []),
                                           econ=capsule_economics(card.get("starter_capsule"),
                                                                  card.get("combination_count")),
                                           thanks=None)
@@ -5401,6 +5518,7 @@ def style_card():
                                       figure_short=_figure_short(diag.get("figure_type")),
                                       dna_fields=_dna_fields(diag),
                                       card_link=_card_link_url(email),
+                                      matrix=build_outfit_matrix(card.get("starter_capsule") or []),
                                       econ=capsule_economics(card.get("starter_capsule"),
                                                              card.get("combination_count")))
     record_event("card_form_view", email)
@@ -5440,6 +5558,7 @@ def card_by_link(token):
     html = render_template_string(STYLE_CARD, c=card, name=_display_name(owner),
                                   figure_short=_figure_short(diag.get("figure_type")),
                                   dna_fields=_dna_fields(diag),
+                                  matrix=build_outfit_matrix(card.get("starter_capsule") or []),
                                   econ=capsule_economics(card.get("starter_capsule"),
                                                          card.get("combination_count")),
                                   shared=True, thanks=None, stale=False)
