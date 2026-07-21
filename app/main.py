@@ -3278,6 +3278,13 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 // outfit — всегда образ ТЕКУЩЕГО дня; переключение дня меняет, какой образ показан/редактируется.
 var byKey={}, week={}, curDay='mon';
 try { week = JSON.parse(localStorage.getItem('senseWeek') || '{}') || {}; } catch(e) { week={}; }
+// Стартовый образ с сервера: пустые ячейки читались как поломка, а «образ на сегодня» должен
+// быть уже собран — клиентка его меняет, а не собирает с нуля. Свой выбор не трогаем.
+var STARTER = {{ starter_outfit|tojson }};
+(function(){
+ var d = curDay;
+ if (!week[d] || !Object.keys(week[d]).length) { week[d] = JSON.parse(JSON.stringify(STARTER)); }
+})();
 function saveWeek(){ try { localStorage.setItem('senseWeek', JSON.stringify(week)); } catch(e){} }
 function dayOutfit(){ if(!week[curDay]) week[curDay]={}; return week[curDay]; }
 var outfit;
@@ -3755,7 +3762,8 @@ def cabinet():
         # часового пояса браузера
         today_label=["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"][datetime.now().weekday()],
         board=board, palette=palette, shopping=card.get("shopping") or [],
-        season_tabs=season_tabs, season_diff=season_diff, outfit_cells=_outfit_cells(board), sel_season=sel)
+        season_tabs=season_tabs, season_diff=season_diff, outfit_cells=_outfit_cells(board),
+        starter_outfit=_starter_outfit(board), sel_season=sel)
 
 
 STYLEBOOK_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
@@ -6356,6 +6364,28 @@ _OUTFIT_CELL_GROUPS = [
     ("Основа образа", ["Верх", "Низ", "Платья и комбинезоны"]),
     ("Завершение", ["Верхний слой", "Обувь", "Аксессуары"]),
 ]
+
+
+def _starter_outfit(board: list[dict]) -> dict:
+    """Готовый образ дня из капсулы: по одной вещи на слот основы и завершения.
+
+    Конструктор встречал клиентку пустыми ячейками с прочерками — «Твой образ на сегодня»
+    выглядел сломанным, и было непонятно, что делать. Образ должен быть УЖЕ собран: его
+    показывают, а клиентка меняет. Пустой холст — это работа, а не сервис.
+    """
+    by_slot: dict[str, dict] = {}
+    for grp in board or []:
+        items = grp.get("items") or []
+        if items:
+            by_slot[grp.get("slot") or ""] = items[0]
+    # Платье исключает пару «верх + низ»: это самостоятельная основа образа.
+    order = ["Верх", "Низ", "Верхний слой", "Обувь", "Аксессуары"]
+    out = {}
+    for slot in order:
+        it = by_slot.get(slot)
+        if it:
+            out[slot] = {"name": it.get("name"), "img": it.get("image"), "url": it.get("url")}
+    return out
 
 
 def _outfit_cells(board: list[dict]) -> list[dict]:

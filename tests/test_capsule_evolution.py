@@ -122,3 +122,27 @@ def test_constructor_skips_items_without_photo():
 
     assert "Топ без фото" not in names
     assert names == ["Блузка", "Брюки"]
+
+
+def test_day_outfit_is_prefilled_not_empty():
+    """«Твой образ на сегодня» должен быть УЖЕ собран, а не встречать пустыми ячейками.
+
+    На проде конструктор показывал прочерки во всех слотах — читалось как поломка, и было
+    непонятно, что делать. Пустой холст это работа, а не сервис: образ показывают, клиентка
+    его меняет.
+    """
+    board = [
+        {"slot": "Верх", "items": [{"name": "Блузка", "image": "data:a"}]},
+        {"slot": "Низ", "items": [{"name": "Брюки", "image": "data:b"}]},
+        {"slot": "Обувь", "items": [{"name": "Лоферы", "image": "data:c"}]},
+    ]
+
+    outfit = m._starter_outfit(board)
+
+    assert set(outfit) == {"Верх", "Низ", "Обувь"}
+    assert outfit["Верх"]["name"] == "Блузка"
+    assert outfit["Верх"]["img"] == "data:a", "вещь без картинки в конструкторе бесполезна"
+
+
+def test_empty_board_gives_empty_outfit():
+    assert m._starter_outfit([]) == {}
