@@ -1278,7 +1278,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     </div>
     {% endfor %}
    </div>
-   <a class=idxmore href="#stoplist">Смотреть стоп-лист целиком →</a>
+   {# Раньше отсюда вела ссылка в отдельный спойлер «Стоп-лист целиком» — тот же список второй
+      раз, только подробнее. Одно и то же на одном экране дважды читается как недоделка,
+      поэтому «что не носить» показываем прямо здесь. #}
+   {% if c.stop_list %}
+   <ul class="clean stop stopfull">{% for s in c.stop_list %}<li>{{ s }}</li>{% endfor %}</ul>
+   {% endif %}
   </div>
   {% endif %}
 
@@ -1428,19 +1433,6 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </details>
 {% endif %}
 
-{% if c.stop_list or c.stop_colors %}
-<details class=deep id=stoplist>
- <summary>Стоп-лист целиком <span>что гасит тебя и почему</span></summary>
- <div class=deepbody>
-  {% if c.stop_colors %}
-  <h3>Стоп-цвета</h3>
-  <div class=swatches>
-   {% for p in c.stop_colors %}<div class=sw><div class=chip style="background:{{ p.hex }}"></div><div class=nm><b>{{ p.name }}</b><br>{{ p.why }}</div></div>{% endfor %}
-  </div>{% endif %}
-  {% if c.stop_list %}<h3>Что не носить</h3><ul class="clean stop">{% for s in c.stop_list %}<li>{{ s }}</li>{% endfor %}</ul>{% endif %}
- </div>
-</details>
-{% endif %}
 
 {% if not shared %}<div class=fbblock id=fbblock>
 {% if thanks %}
@@ -3103,23 +3095,8 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 <div class=nudge><span>С последнего замера прошло {{ days_since }} дней. Пере-замер покажет, как изменился индекс настройки образа за это время.</span><a href="/identity-scan-quiz.html?fresh=1">Сделать пере-замер</a></div>
 {% endif %}
 
-{# ── роли недели ─────────────────────────────────────────────────────────────────────── #}
-{% if roles %}
-<h2 class=secttl id=roles>Роли твоей недели</h2>
-<p class=hint>Одна капсула — разные роли твоего дня. Так формула работает под каждую жизненную ситуацию.</p>
-<div class=roles3>
- {% for r in roles %}
- <div class=role3>
-  {% if r.img %}<div class=roleimg><img src="{{ r.img }}" alt="Образ · {{ r.bucket }}" loading=lazy></div>{% endif %}
-  <div class=rolebody>
-   <div class=rb>{{ r.bucket }}</div>
-   <div class=rn>{% if r.name %}{{ r.name }}{% else %}{{ r.scenario }}{% endif %}</div>
-   {% if r.pieces %}<ul>{% for it in r.pieces %}<li>{{ it }}</li>{% endfor %}</ul>{% endif %}
-  </div>
- </div>
- {% endfor %}
-</div>
-{% endif %}
+{# Блок «Роли твоей недели» убран: он показывал те же образы, что и план недели, только
+   другой раскладкой. Одна и та же неделя дважды на одном экране — не польза, а шум. #}
 
 {# ── вещи, которые клиентка забрала после проверки «брать / не брать» ─────────────────── #}
 {% if mine %}

@@ -134,7 +134,9 @@ def test_unbuilt_season_does_not_show_stale_generated_looks(client):
     html = c.get("/cabinet?season=spring").get_data(as_text=True)
 
     assert "AUTUMN-LOOK-SHOULD-NOT-LEAK" not in html
-    assert "Повседневный день" in html or "Свидание или выход" in html
+    # Раньше здесь проверялся текст блока «Роли твоей недели» — он убран как дубль плана недели.
+    # Смысл проверки тот же: кабинет несобранного сезона живой, а не пустой.
+    assert "План недели" in html
 
 
 def test_capsule_size_toggle_works(client):
