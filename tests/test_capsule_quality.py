@@ -81,8 +81,11 @@ def test_real_capsule_reads_as_classic():
     assert board, "капсула не собралась"
     by_slot = {g["slot"]: [i["name"] for i in g["items"]] for g in board}
 
+    # Обуви в капсуле нет и не должно быть: в брендовых фидах со студийной съёмкой её нет вовсе,
+    # а маркетплейсная приходила с рекламным текстом поверх фото («ТРЕНД 2026», логотипы) и
+    # уггами в летней капсуле. Обувь называется в составе образа текстом — без чужого фото.
+    # Но если она когда-нибудь появится, спортивной в капсуле классики быть всё равно нельзя.
     shoes = by_slot.get("Обувь") or []
-    assert shoes, "слот обуви пуст"
     assert not any(m._is_sporty_shoe(s) for s in shoes), f"кроссовки в капсуле классики: {shoes}"
 
     all_names = [n for names in by_slot.values() for n in names]

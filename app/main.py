@@ -2351,10 +2351,17 @@ def _catalog_products() -> list:
     base = Path(__file__).resolve().parent.parent / "data" / "fashion-base"
     brand_styles = _brand_styles()
     prods: list = []
-    # products_wb.csv — обувь, сумки и верхняя одежда (у Lichi/Ushatava их нет вовсе, слот «Обувь»
-    # в капсуле пустовал). Файл собирается scripts/scrape_wb.py; если его нет — каталог работает
-    # на том, что есть.
-    for fname in ("products_ushatava.csv", "products_lichi.csv", "products_wb.csv"):
+    # Только брендовые фиды со студийной съёмкой. products_wb.csv (маркетплейс) отключён
+    # сознательно: там на фото нарисован рекламный текст поверх вещи — «ТРЕНД 2026», логотипы
+    # магазинов, коллажи «мега вместительная». По типу изображения это честный packshot, и
+    # отличить его нельзя, а клиентка видит чужие картинки вместо своей капсулы.
+    # Цена: слот «Обувь» остаётся без фото — обуви в брендовых фидах нет вовсе. Это осознанный
+    # размен: обувь называется в составе образа текстом, но чужого фото под неё не подставляем.
+    # Вернуть маркетплейс можно через SENSE_CATALOG_WB=1, когда появится своя база с фото.
+    sources = ["products_ushatava.csv", "products_lichi.csv"]
+    if os.getenv("SENSE_CATALOG_WB") == "1":
+        sources.append("products_wb.csv")
+    for fname in sources:
         fp = base / fname
         if fp.exists():
             try:
