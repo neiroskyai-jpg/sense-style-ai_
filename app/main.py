@@ -875,6 +875,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
               border:1px solid rgba(93,34,48,.10);font-size:10.5px;color:#5b5249;line-height:1.2}
 
  /* лента сочетаний */
+ .econ{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 4px}
+ .econcell{border:1px solid rgba(93,34,48,.12);border-radius:12px;padding:11px 13px;
+           background:linear-gradient(135deg,#fbf6ec,#fff)}
+ .econcell b{display:block;font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;color:var(--wine);line-height:1}
+ .econcell span{display:block;font-size:11px;color:var(--muted);margin-top:5px;line-height:1.35}
  .combolane{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
  .combo{border:1px solid var(--line);border-radius:12px;padding:8px;background:var(--soft);min-width:0}
  .combopics{display:flex;gap:4px}
@@ -1261,8 +1266,16 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
   {% if c.capsule_combos %}
   <div class=panel>
-   <h2 class=ph>Из {{ c.starter_capsule_count }} вещей — {{ c.combination_count }} сочетаний<a class=more href="#combos">Показать все →</a></h2>
+   <h2 class=ph>Из {{ c.starter_capsule_count }} вещей — {{ c.combination_count }} {{ 'сочетание' if c.combination_count % 10 == 1 and c.combination_count % 100 != 11 else 'сочетания' if c.combination_count % 10 in [2,3,4] and c.combination_count % 100 not in [12,13,14] else 'сочетаний' }}<a class=more href="#combos">Показать все →</a></h2>
    <p class=psub>Примеры ready-to-wear сочетаний из твоей опорной капсулы.</p>
+   {# Экономика капсулы: главный ответ на «дорого». Числа считаются кодом и проверяются на
+      бумаге — вся капсула ÷ число образов, и сколько вещей не понадобилось. #}
+   {% if econ %}
+   <div class=econ>
+    {% if econ.has_prices %}<div class=econcell><b>{{ '{:,}'.format(econ.cost_per_look).replace(',', ' ') }} ₽</b><span>стоит один собранный образ</span></div>{% endif %}
+    <div class=econcell><b>{{ econ.saved_items }}</b><span>вещей не пришлось покупать: на {{ econ.looks }} отдельных {{ 'комплект' if econ.looks % 10 == 1 and econ.looks % 100 != 11 else 'комплекта' if econ.looks % 10 in [2,3,4] and econ.looks % 100 not in [12,13,14] else 'комплектов' }} ушло бы {{ econ.standalone_items }}</span></div>
+   </div>
+   {% endif %}
    <div class=combolane>
     {% for combo in c.capsule_combos[:6] %}
     <div class=combo title="{{ combo.title }}">
@@ -4474,6 +4487,50 @@ def wardrobe_suggestions(items: list[dict], catalog: list[dict] | None = None,
     return out
 
 
+# Сколько вещей нужно на один самостоятельный комплект, если НЕ строить капсулу: верх, низ и
+# обувь. Это консервативная оценка — сумку и верхний слой не считаем, хотя в жизни они тоже
+# докупаются. Занижаем осознанно: лучше скромное честное число, чем красивое завышенное.
+_PIECES_PER_STANDALONE_LOOK = 3
+
+
+def capsule_economics(capsule: list[dict], combos: int | None = None) -> dict | None:
+    """Что капсула даёт в деньгах и вещах. Всё считается кодом и проверяется на бумаге.
+
+    Три числа:
+    - `cost_per_look` — сколько стоит один собранный образ (вся капсула ÷ число сочетаний).
+      Это ответ на «дорого»: вещь покупается один раз, а работает в нескольких образах.
+    - `saved_items` — сколько вещей НЕ пришлось купить: чтобы закрыть столько же образов
+      отдельными комплектами, нужно было бы по 3 вещи на каждый.
+    - `cost_without_capsule` — во что обошлись бы те же образы при той же средней цене вещи.
+
+    Возвращаем None, если считать не из чего: выдуманное число хуже отсутствующего.
+    """
+    items = [it for it in (capsule or []) if isinstance(it, dict)]
+    if not items:
+        return None
+    looks = combos or _outfit_capacity(items)
+    if looks < 1:
+        return None
+
+    priced = [it for it in items if isinstance(it.get("price"), (int, float)) and it["price"] > 0]
+    total = sum(int(it["price"]) for it in priced)
+    standalone_items = looks * _PIECES_PER_STANDALONE_LOOK
+
+    # Денежную «экономию» (средняя цена × вещи, которые не купили) сознательно НЕ считаем: на
+    # реальной капсуле выходило больше миллиона рублей. Арифметика верна, но стоит на двойном
+    # допущении — что клиентка купила бы все эти вещи и по той же средней цене. Такое число
+    # рассыпается от первого вопроса «откуда миллион» и подрывает доверие к остальным.
+    return {
+        "items": len(items),
+        "looks": looks,
+        "total": total,
+        "cost_per_look": round(total / looks) if total else 0,
+        "saved_items": max(0, standalone_items - len(items)),
+        "standalone_items": standalone_items,
+        "has_prices": bool(priced),
+    }
+
+
 def _current_capsule(user: str) -> list[dict]:
     """Опорная капсула пользователя, если Карта уже собрана. Нет Карты — пустой список,
     и метрика «+N образов» просто не показывается вместо того, чтобы врать числом."""
@@ -4639,7 +4696,10 @@ def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]
         # договорённостей с брендами, а клиентка ищет вещь по характеристикам в любом магазине.
         # Фото из каталога — только иллюстрация типа вещи, поэтому помечаем его как пример.
         items.append({
-            **{k: v for k, v in extra.items() if k in ("image", "brand")},
+            # price переносим вместе с фото: вещь капсулы взята из образа, а иллюстрирует её
+            # каталожная вещь того же типа — её цена и есть ОРИЕНТИР стоимости. Без этого
+            # экономика капсулы молчала: цены не доезжали, и «сколько стоит образ» не считалось.
+            **{k: v for k, v in extra.items() if k in ("image", "brand", "price")},
             "search": _shop_search_links(rec["name"]),
             "image_is_example": bool(extra.get("image")),
             "name": _ru_item_name(rec["name"]),
@@ -5312,6 +5372,8 @@ def style_card():
                                       figure_short=_figure_short(diag.get("figure_type")),
                                       dna_fields=_dna_fields(diag),
                                       card_link=_card_link_url(email),
+                                      econ=capsule_economics(card.get("starter_capsule"),
+                                                             card.get("combination_count")),
                                       thanks=request.args.get("fb"), stale=False)
     # бесплатная генерация — один раз на email; пересборку/повтор блокируем (защита токенов).
     # Исключение: диагностика реально изменилась (новый квиз) — даём пересобрать Карту под неё.
@@ -5320,7 +5382,10 @@ def style_card():
             return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
                                           figure_short=_figure_short(diag.get("figure_type")),
                                           dna_fields=_dna_fields(diag),
-                                          card_link=_card_link_url(email), thanks=None)
+                                          card_link=_card_link_url(email),
+                                          econ=capsule_economics(card.get("starter_capsule"),
+                                                                 card.get("combination_count")),
+                                          thanks=None)
         return render_template_string(CARD_BUILD_FORM, error=_GEN_LIMIT_MSG), 429
     if request.args.get("text"):  # текстовая карта без образов (синхронно)
         if not _quota_left():
@@ -5335,7 +5400,9 @@ def style_card():
         return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
                                       figure_short=_figure_short(diag.get("figure_type")),
                                       dna_fields=_dna_fields(diag),
-                                      card_link=_card_link_url(email))
+                                      card_link=_card_link_url(email),
+                                      econ=capsule_economics(card.get("starter_capsule"),
+                                                             card.get("combination_count")))
     record_event("card_form_view", email)
     return render_template_string(CARD_BUILD_FORM, error=None)
 
@@ -5373,6 +5440,8 @@ def card_by_link(token):
     html = render_template_string(STYLE_CARD, c=card, name=_display_name(owner),
                                   figure_short=_figure_short(diag.get("figure_type")),
                                   dna_fields=_dna_fields(diag),
+                                  econ=capsule_economics(card.get("starter_capsule"),
+                                                         card.get("combination_count")),
                                   shared=True, thanks=None, stale=False)
     resp = make_response(html)
     # Карта содержит образы на фото клиентки — в поисковой выдаче ей делать нечего.

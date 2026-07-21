@@ -4,7 +4,7 @@
 
 ## Что это за проект
 
-**Sense Style AI** — персональный AI-стилист с Vision-анализом для женщин 30–50 в точках перехода (карьера, материнство, эмиграция, статус). Анализирует одежду через психологический профиль клиентки, а не абстрактно. Методология — psychology-first, опирается на Self-Discrepancy Theory (Higgins, 1987) и Enclothed Cognition (Adam & Galinsky, 2012).
+**Sense Style AI** — персональный AI-стилист с Vision-анализом для женщин 25–45 в точках перехода (карьера, материнство, эмиграция, статус). Анализирует одежду через психологический профиль клиентки, а не абстрактно. Методология — psychology-first, опирается на Self-Discrepancy Theory (Higgins, 1987) и Enclothed Cognition (Adam & Galinsky, 2012).
 
 **Источники правды:**
 - **По продукту:** [`architecture/2026-04-27-mvp-spec.md`](architecture/2026-04-27-mvp-spec.md)
