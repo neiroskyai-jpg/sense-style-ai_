@@ -966,9 +966,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .deep{margin-top:26px}
  /* Раскладка образа: он на клиентке + flat-lay вещей, из которых собран. */
  /* Пара «одна вещь — два образа»: слева она в образе, справа раскладка его вещей. */
- .pairrow{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:14px;align-items:start;margin-bottom:10px}
+ /* Раскладка — главное в карточке образа: по ней видно, из чего он собран. Поэтому она
+    крупнее фото на клиентке, а не наравне с ним. Фото задаёт «как это выглядит», раскладка
+    отвечает на «что это за вещи» — и разглядывать нужно именно её. */
+ .pairrow{display:grid;grid-template-columns:minmax(0,190px) minmax(0,2.1fr);gap:18px;align-items:start;margin-bottom:12px}
  .pairmodel{width:100%;border-radius:12px;display:block}
- .pairflat{width:100%;border-radius:12px;display:block;background:#faf6ee}
+ .pairflat{width:100%;border-radius:14px;display:block;background:#faf6ee}
  .pairitems{font-size:12px;color:var(--muted);margin:0 0 8px}
  @media(max-width:620px){.pairrow{grid-template-columns:1fr}}
  .lookflat{display:grid;grid-template-columns:minmax(0,200px) 1fr;gap:16px;align-items:start}
@@ -1241,6 +1244,39 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     {% if rest %}<div class=palgrp>Ещё в палитре</div>
     <div class=palrow>{% for p in rest %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>{% endif %}
     <a class=idxmore href="#howto">Как использовать палитру →</a>
+    {# Стоп-цвета живут в той же панели, что палитра: «что подходит» и «что нет» —
+       один вопрос, и разносить их по разным блокам значит заставлять клиентку
+       сравнивать через полэкрана. #}
+    {% set stopn = (c.stop_colors|length if c.stop_colors else 0) + (c.stop_list|length if c.stop_list else 0) %}
+    {% if stopn %}
+    <div class=panel>
+     <h2 class=ph>Что уводит от твоей Формулы</h2>
+     <p class=psub>Избегай этих элементов — они нарушают твою гармонию.</p>
+     <div class=stopgrid>
+      {% for p in (c.stop_colors or [])[:5] %}
+      <div class=stopcell>
+       <div class=stopbox><span class=sw style="background:{{ p.hex }}"></span></div>
+       <span class=stopx>✕</span>
+       <div class=stopcap title="{{ p.why }}">{{ p.name }}</div>
+      </div>
+      {% endfor %}
+      {# Стоп-цвет показываем плашкой цвета, а запрет из стоп-листа — текстом внутри плитки:
+         картинок «чего не носить» у нас нет, а пустая бежевая рамка читается как поломка. #}
+      {% for s in (c.stop_list or [])[:5 - (c.stop_colors|length if c.stop_colors else 0)] %}
+      <div class=stopcell>
+       <div class="stopbox text"><span title="{{ s }}">{{ s }}</span></div>
+       <span class=stopx>✕</span>
+      </div>
+      {% endfor %}
+     </div>
+     {# Раньше отсюда вела ссылка в отдельный спойлер «Стоп-лист целиком» — тот же список второй
+        раз, только подробнее. Одно и то же на одном экране дважды читается как недоделка,
+        поэтому «что не носить» показываем прямо здесь. #}
+     {% if c.stop_list %}
+     <ul class="clean stop stopfull">{% for s in c.stop_list %}<li>{{ s }}</li>{% endfor %}</ul>
+     {% endif %}
+    </div>
+    {% endif %}
    </div>
   </div>
 
@@ -1255,7 +1291,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
      спорил с образами. Раскладка рисуется вместе с ними, поэтому спорить больше нечему. #}
   {% if c.capsule_flatlay or c.capsule_items %}
   <div class=panel id=capsule>
-   <h2 class=ph>Твоя капсула{% if c.capsule_items %} · {{ c.capsule_items|length }} вещей{% endif %}<span class=dot>◈</span></h2>
+   {% set capn = c.capsule_items|length if c.capsule_items else 0 %}
+   <h2 class=ph>Твоя капсула{% if capn %} · {{ capn }} {{ 'вещь' if capn % 10 == 1 and capn % 100 != 11 else 'вещи' if capn % 10 in [2,3,4] and capn % 100 not in [12,13,14] else 'вещей' }}{% endif %}<span class=dot>◈</span></h2>
    <p class=psub>Собрана из образов выше. Из этих вещей ты соберёшь свои комплекты в конструкторе.</p>
    {% if c.capsule_flatlay %}<img class=capshot src="{{ c.capsule_flatlay }}" alt="Твоя капсула">{% endif %}
    {% if c.capsule_items %}
@@ -1278,36 +1315,6 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
   {# «Что уводит» — стоп-цвета и стоп-лист в одном месте: клиентке важнее увидеть запрет
      рядом с капсулой, чем отдельной главой в конце. #}
-  {% set stopn = (c.stop_colors|length if c.stop_colors else 0) + (c.stop_list|length if c.stop_list else 0) %}
-  {% if stopn %}
-  <div class=panel>
-   <h2 class=ph>Что уводит от твоей Формулы</h2>
-   <p class=psub>Избегай этих элементов — они нарушают твою гармонию.</p>
-   <div class=stopgrid>
-    {% for p in (c.stop_colors or [])[:5] %}
-    <div class=stopcell>
-     <div class=stopbox><span class=sw style="background:{{ p.hex }}"></span></div>
-     <span class=stopx>✕</span>
-     <div class=stopcap title="{{ p.why }}">{{ p.name }}</div>
-    </div>
-    {% endfor %}
-    {# Стоп-цвет показываем плашкой цвета, а запрет из стоп-листа — текстом внутри плитки:
-       картинок «чего не носить» у нас нет, а пустая бежевая рамка читается как поломка. #}
-    {% for s in (c.stop_list or [])[:5 - (c.stop_colors|length if c.stop_colors else 0)] %}
-    <div class=stopcell>
-     <div class="stopbox text"><span title="{{ s }}">{{ s }}</span></div>
-     <span class=stopx>✕</span>
-    </div>
-    {% endfor %}
-   </div>
-   {# Раньше отсюда вела ссылка в отдельный спойлер «Стоп-лист целиком» — тот же список второй
-      раз, только подробнее. Одно и то же на одном экране дважды читается как недоделка,
-      поэтому «что не носить» показываем прямо здесь. #}
-   {% if c.stop_list %}
-   <ul class="clean stop stopfull">{% for s in c.stop_list %}<li>{{ s }}</li>{% endfor %}</ul>
-   {% endif %}
-  </div>
-  {% endif %}
 
  </div>
 </div>

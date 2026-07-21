@@ -980,6 +980,51 @@ _EDITORIAL_DIRECTION = (
 )
 
 
+# Типы вещей, которых в одном образе не может быть двух: пара обуви одна, сумка одна, низ один.
+# Именно ГРУППЫ синонимов, а не отдельные слова: «Лодочки» и «Туфли-лодочки» — одна и та же
+# пара, названная по-разному, и по разным словам они прошли бы как две разные вещи.
+_FLATLAY_ONE_PER_KIND = {
+    "обувь": ("обув", "туфл", "лодочк", "ботильон", "ботинк", "челси", "сапог", "балетк",
+              "лофер", "мокасин", "кроссовк", "кед", "босонож", "сандал", "мюли", "слингбэк"),
+    "сумка": ("сумк", "клатч", "шоппер", "тоут", "рюкзак", "хобо", "багет"),
+    "низ": ("брюк", "джинс", "юбк", "шорт", "палаццо", "легинс"),
+    "платье": ("плать", "сарафан", "комбинезон"),
+}
+
+
+def _flatlay_kind(name: str) -> str:
+    low = (name or "").lower()
+    for kind, variants in _FLATLAY_ONE_PER_KIND.items():
+        if any(v in low for v in variants):
+            return kind
+    return ''
+
+
+def _dedupe_for_flatlay(items: list[str]) -> list[str]:
+    """Убрать повторы и вторые вещи одного типа перед генерацией раскладки.
+
+    На живой генерации в кадр попали ДВЕ одинаковые пары лодочек: в составе образа обувь
+    упоминалась дважды (разными словами), и модель честно нарисовала обе. Раскладка обязана
+    повторять образ, а в образе одна пара обуви и одна сумка.
+    """
+    seen_exact: set[str] = set()
+    seen_kind: set[str] = set()
+    out: list[str] = []
+    for raw in items or []:
+        name = " ".join(str(raw or "").split())
+        low = name.lower()
+        if not name or low in seen_exact:
+            continue
+        kind = _flatlay_kind(low)
+        if kind and kind in seen_kind:
+            continue
+        seen_exact.add(low)
+        if kind:
+            seen_kind.add(kind)
+        out.append(name)
+    return out
+
+
 def render_flatlay(items: list[str], palette: str = "", season: str | None = None) -> str:
     """Раскладка вещей образа одной картинкой (flat-lay, вид сверху).
 
@@ -989,9 +1034,10 @@ def render_flatlay(items: list[str], palette: str = "", season: str | None = Non
 
     Личности в кадре нет, поэтому фото клиентки не нужно и identity-рендер не задействован.
     """
+    items = _dedupe_for_flatlay(items)
     if not items:
         return ""
-    listed = "; ".join(str(i).strip() for i in items if str(i).strip())
+    listed = "; ".join(items)
     instruction = (
         "Professional flat-lay layout, strict top-down view, of an elegant women's outfit on a "
         "light beige-cream background. Soft diffused daylight, gentle natural shadows, minimalist "
@@ -1026,9 +1072,11 @@ def render_capsule_flatlay(items: list[str], palette: str = "", season: str | No
 
     Отличается от раскладки одного образа сеткой: вещей больше, они выстраиваются рядами.
     """
+    # В капсуле несколько пар обуви допустимы, но точные повторы — нет.
+    items = list(dict.fromkeys(" ".join(str(i or "").split()) for i in (items or []) if str(i).strip()))
     if not items:
         return ""
-    listed = "; ".join(str(i).strip() for i in items if str(i).strip())
+    listed = "; ".join(items)
     instruction = (
         "Professional flat-lay of a complete capsule wardrobe, strict top-down view, on a light "
         "beige-cream background. Items arranged in tidy even ROWS like a style-book spread, "
