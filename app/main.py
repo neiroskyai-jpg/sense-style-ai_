@@ -31,7 +31,7 @@ from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_directions, generate_personality_portrait,
                            generate_shopping_list, generate_styling_pair,
                            refine_colortype_subtype, refine_substyle,
-                           render_look_on_client)
+                           render_flatlay, render_look_on_client)
 from core.tracking import (approved_feedback, chat_log, count_generations, count_generations_ip,
                            count_today, feedback_list, funnel, gap_progress, gap_summary, leads,
                            progress, record_call, record_chat, record_consent, record_event,
@@ -953,6 +953,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  /* разделы «разбор» — глубина, которая не помещается в панель */
  .deep{margin-top:26px}
  /* Раскладка образа: он на клиентке + flat-lay вещей, из которых собран. */
+ /* Пара «одна вещь — два образа»: слева она в образе, справа раскладка его вещей. */
+ .pairrow{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:14px;align-items:start;margin-bottom:10px}
+ .pairmodel{width:100%;border-radius:12px;display:block}
+ .pairflat{width:100%;border-radius:12px;display:block;background:#faf6ee}
+ .pairitems{font-size:12px;color:var(--muted);margin:0 0 8px}
+ @media(max-width:620px){.pairrow{grid-template-columns:1fr}}
  .lookflat{display:grid;grid-template-columns:minmax(0,200px) 1fr;gap:16px;align-items:start}
  .lookflat-noimg{grid-template-columns:1fr}
  .lookmodel img{width:100%;border-radius:12px;display:block}
@@ -1427,7 +1433,14 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% for lk in c.styling.looks %}
   <div class=panel style="margin-bottom:12px">
    <h3 style="margin-top:0">{{ lk.title or lk.name or lk.scenario }}</h3>
-   {% if lk.img %}<img src="{{ lk.img }}" alt="Образ" style="max-width:280px;width:100%;border-radius:12px;display:block;margin-bottom:10px">{% endif %}
+   {# Образ на клиентке + раскладка его вещей одной картинкой. Раскладка генерируется вместе
+      с образом, поэтому вещи на ней ИМЕННО ТЕ, что в составе, — в отличие от коллажа
+      каталожных фото с разными фонами и рекламным текстом поверх вещи. #}
+   <div class=pairrow>
+    {% if lk.img %}<img class=pairmodel src="{{ lk.img }}" alt="Образ на тебе">{% endif %}
+    {% if lk.flatlay %}<img class=pairflat src="{{ lk.flatlay }}" alt="Вещи этого образа">{% endif %}
+   </div>
+   {% if lk.items %}<p class=pairitems>{{ lk.items|join(' · ') }}</p>{% endif %}
    {% if lk.description %}<p>{{ lk.description }}</p>{% endif %}
   </div>
   {% endfor %}
@@ -5435,6 +5448,21 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
             if img:
                 lk["img"] = img
         ok_imgs = sum(1 for i in imgs if i)
+
+        # Раскладка вещей для пары «одна вещь — два образа». Только для неё: там приём и живёт,
+        # а на все шесть образов это удвоило бы расход ключа. Коллаж из каталожных фото собирался
+        # из разных источников — разные фоны и рекламный текст поверх вещи; здесь вещи именно те,
+        # что в образе, на одном фоне. Сбой раскладки не должен ронять Карту.
+        pal = ", ".join(str((c.get("name") if isinstance(c, dict) else c) or "")
+                        for c in (card.get("palette") or [])[:3])
+        for lk in ((card.get("styling") or {}).get("looks") or []):
+            try:
+                flat = render_flatlay(lk.get("items") or [], palette=pal,
+                                      season=card.get("season"))
+                if flat:
+                    lk["flatlay"] = flat
+            except Exception:  # noqa: BLE001
+                pass
         port = (card.get("personality") or {}).get("portrait")
         if port:  # портрет личности — в профиль, чтобы видел чат-стилист
             d2 = (get_profile(email) or {}).get("diagnosis") or {}

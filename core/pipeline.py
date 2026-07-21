@@ -969,6 +969,37 @@ _EDITORIAL_DIRECTION = (
 )
 
 
+def render_flatlay(items: list[str], palette: str = "", season: str | None = None) -> str:
+    """Раскладка вещей образа одной картинкой (flat-lay, вид сверху).
+
+    Зачем: коллаж из каталожных фото собирался из разных источников — разные фоны, ракурсы,
+    рекламный текст поверх вещи. Здесь вещи ИМЕННО ТЕ, что в образе, на одном фоне и в одном
+    свете. Промпт-основа — от фаундера (проверен на реальной генерации).
+
+    Личности в кадре нет, поэтому фото клиентки не нужно и identity-рендер не задействован.
+    """
+    if not items:
+        return ""
+    listed = "; ".join(str(i).strip() for i in items if str(i).strip())
+    instruction = (
+        "Professional flat-lay layout, strict top-down view, of an elegant women's outfit on a "
+        "light beige-cream background. Soft diffused daylight, gentle natural shadows, minimalist "
+        "fashion mood-board aesthetic. Each item is neatly arranged separately with plenty of "
+        "negative space, nothing overlapping. Trousers and skirts are laid flat fully extended to "
+        "full length with legs stretched straight; jackets laid flat and open; shoes placed as a "
+        "pair; bags upright. Items: " + listed + ". "
+        + (f"Unified {palette} palette. " if palette else "")
+        + "Premium smooth fabric and leather textures, balanced elegant composition. "
+        "Realistic photography, high detail, 4k. "
+        "No people, no faces, no hands, no mannequins. No text, no logos, no watermark, no collage."
+    )
+    model = config.MODELS["image"]["dressing"]
+    # Кеш общий с рендером образов: ключ строится по инструкции, а фото тут нет — подставляем
+    # пустой путь, отпечаток вырождается в «nophoto» и не мешает.
+    return imgcache.cached_render("", instruction, season, model,
+                                  lambda: provider.generate_image(instruction, model=model)[0])
+
+
 def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | None = None,
                           season: str | None = None) -> str:
     """Identity-preserving рендер: фото клиентки + промпт образа → она в этом образе.

@@ -38,3 +38,48 @@ def test_appearance_is_never_described_in_image_prompt():
 def test_season_consistency_between_the_pair():
     """Босоножки к шерстяному костюму — видимый конфликт."""
     assert "Сезон и обувь держи согласованными" in p._STYLING_SYSTEM
+
+
+def test_flatlay_prompt_has_no_people_and_no_text():
+    """Раскладка — это вещи, а не съёмка на модели. И без рекламного текста, из-за которого
+    пришлось отказаться от маркетплейсных фото."""
+    seen = {}
+
+    def fake(instruction, model=None, ref_images=None):
+        seen["p"] = instruction
+        return ["data:img"]
+
+    orig = p.provider.generate_image
+    p.provider.generate_image = fake
+    try:
+        p.render_flatlay(["прямые брюки", "жакет"], palette="graphite")
+    finally:
+        p.provider.generate_image = orig
+
+    low = seen["p"].lower()
+    assert "no people" in low and "no faces" in low
+    assert "no text" in low and "no logos" in low
+    assert "top-down" in low, "раскладка снимается строго сверху"
+
+
+def test_flatlay_lays_trousers_full_length():
+    """Правка фаундера: брюки не «сложены», а разложены ровно во всю длину — как жакет."""
+    seen = {}
+
+    def fake(instruction, model=None, ref_images=None):
+        seen["p"] = instruction
+        return ["data:img"]
+
+    orig = p.provider.generate_image
+    p.provider.generate_image = fake
+    try:
+        p.render_flatlay(["брюки"])
+    finally:
+        p.provider.generate_image = orig
+
+    assert "fully extended to full length" in seen["p"]
+
+
+def test_flatlay_needs_no_client_photo():
+    """В кадре нет человека, поэтому identity-рендер и фото клиентки не нужны."""
+    assert p.render_flatlay([]) == ""
