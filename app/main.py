@@ -31,7 +31,8 @@ from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
                            generate_directions, generate_personality_portrait,
                            generate_shopping_list, generate_styling_pair,
                            refine_colortype_subtype, refine_substyle,
-                           render_flatlay, render_look_on_client)
+                           render_capsule_flatlay, render_flatlay,
+                           render_look_on_client)
 from core.tracking import (approved_feedback, chat_log, count_generations, count_generations_ip,
                            count_today, feedback_list, funnel, gap_progress, gap_summary, leads,
                            progress, record_call, record_chat, record_consent, record_event,
@@ -894,6 +895,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .mcrole{display:block;font-size:11.5px;color:var(--wine);font-weight:500}
  .mcwhy{display:block;font-size:10.5px;color:var(--muted);line-height:1.3;margin-top:2px}
  @media(max-width:560px){.matrixrow{grid-template-columns:1fr}}
+ .capshot{width:100%;border-radius:14px;display:block;margin:12px 0 10px;background:#faf6ee}
+ .capnames{list-style:none;padding:0;margin:0;display:grid;
+           grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:4px 16px}
+ .capnames li{font-size:12px;color:#5b5249;line-height:1.5;padding-left:12px;position:relative;
+              overflow-wrap:anywhere}
+ .capnames li:before{content:'—';position:absolute;left:0;color:var(--wine)}
  .econ{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 4px}
  .econcell{border:1px solid rgba(93,34,48,.12);border-radius:12px;padding:11px 13px;
            background:linear-gradient(135deg,#fbf6ec,#fff)}
@@ -1242,7 +1249,22 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  {# ── правая: на чём это держится ─────────────────────────────────────────────────── #}
  <div class=col>
 
-  {# Панель «Опорная капсула» и блок сочетаний убраны из Карты.
+  {# Капсула = вещи ТЕХ ЖЕ образов, одной раскладкой. Клиентка видит свой гардероб целиком:
+     из этих вещей собраны образы выше, и из них же она соберёт свои комплекты в конструкторе.
+     Раньше здесь был список карточек из каталога — вещи подбирались похожие, не те, и блок
+     спорил с образами. Раскладка рисуется вместе с ними, поэтому спорить больше нечему. #}
+  {% if c.capsule_flatlay or c.capsule_items %}
+  <div class=panel id=capsule>
+   <h2 class=ph>Твоя капсула{% if c.capsule_items %} · {{ c.capsule_items|length }} вещей{% endif %}<span class=dot>◈</span></h2>
+   <p class=psub>Собрана из образов выше. Из этих вещей ты соберёшь свои комплекты в конструкторе.</p>
+   {% if c.capsule_flatlay %}<img class=capshot src="{{ c.capsule_flatlay }}" alt="Твоя капсула">{% endif %}
+   {% if c.capsule_items %}
+   <ul class=capnames>{% for n in c.capsule_items %}<li>{{ n }}</li>{% endfor %}</ul>
+   {% endif %}
+  </div>
+  {% endif %}
+
+  {# Прежняя панель «Опорная капсула» со списком карточек и блок сочетаний убраны.
 
      Капсула собиралась из вещей образов, но ФОТО к ним подтягивались похожие из каталога:
      под «Лодочки» вставали угги, под «Сумку структурированную» — рекламный коллаж. Вещи на
@@ -3515,9 +3537,14 @@ def cabinet():
     # выглядела случайной. Для собранного сезона берём опору из Карты, каталогом только добираем
     # до нужного размера. Для несобранного сезона опоры ещё нет — там каталог как раньше.
     catalog_board = _visual_capsule(card, diag, items_n)
-    own = card.get("starter_capsule") or []
+    # Приоритет — вещи ИЗ ОБРАЗОВ Карты (capsule_items): из них собрана капсула, и клиентка
+    # должна собирать комплекты именно из них, а не из похожих вещей каталога. Каталог даёт
+    # только фото к этим названиям и добирает недостающие слоты.
+    own = ([{"name": n, "slot": _capsule_slot(n)} for n in (card.get("capsule_items") or [])]
+           or card.get("starter_capsule") or [])
     if own and (card.get("season") or _DEFAULT_SEASON) == sel:
-        board = _merge_boards(_capsule_board(own), catalog_board, items_n)
+        board = _merge_boards(_capsule_board(_with_catalog_photos(own, catalog_board)),
+                              catalog_board, items_n)
     else:
         board = catalog_board or card.get("capsule_board") or \
             _capsule_board(card.get("base_capsule") or [])
@@ -4650,6 +4677,29 @@ def build_outfit_matrix(capsule: list[dict], max_bases: int = 6) -> dict | None:
     }
 
 
+def capsule_items_from_looks(looks: list[dict], limit: int = 12) -> list[str]:
+    """Вещи капсулы = уникальные вещи всех образов, по частоте появления.
+
+    Логика продукта: образы собираются под формулу и цветотип, из ИХ вещей складывается
+    капсула, а из капсулы клиентка собирает свои комплекты. Значит капсула не подбирается
+    из каталога, а вырастает из того, что уже надето в образах — тогда она честно «собрана
+    из образов», а вещи в ней те самые, а не похожие.
+
+    Сначала идут вещи, работающие в нескольких образах: это и есть опора гардероба.
+    """
+    seen: dict[str, dict] = {}
+    for lk in looks or []:
+        for raw in (lk.get("items") or []):
+            name = " ".join(str(raw or "").split())
+            if not name or not _is_capsule_worthy(name):
+                continue
+            key = name.lower()
+            rec = seen.setdefault(key, {"name": name, "n": 0})
+            rec["n"] += 1
+    ordered = sorted(seen.values(), key=lambda r: (-r["n"], r["name"]))
+    return [r["name"] for r in ordered[:limit]]
+
+
 def _core_capsule_from_looks(looks: list[dict], board: list[dict]) -> list[dict]:
     """Капсула-ядро ИЗ ОБРАЗОВ клиентки, а не отдельным набором из каталога.
 
@@ -5373,6 +5423,20 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
         for lk, flat in zip(flat_targets, flats):
             if flat:
                 lk["flatlay"] = flat
+
+        # Капсула одной раскладкой — из вещей тех же образов. Это то, ради чего собираются
+        # образы: клиентка видит свой гардероб целиком, а из него собирает комплекты в
+        # конструкторе. Вещи те же, что в образах, поэтому капсула не спорит с ними.
+        cap_names = capsule_items_from_looks(card.get("looks") or [])
+        if cap_names:
+            card["capsule_items"] = cap_names
+            try:
+                shot = render_capsule_flatlay(cap_names, palette=pal, season=card.get("season"))
+                if shot:
+                    card["capsule_flatlay"] = shot
+            except Exception as e:  # noqa: BLE001 — Карта важнее одной картинки
+                print(f"[card] раскладка капсулы пропущена: {type(e).__name__}: {e}",
+                      file=sys.stderr)
         port = (card.get("personality") or {}).get("portrait")
         if port:  # портрет личности — в профиль, чтобы видел чат-стилист
             d2 = (get_profile(email) or {}).get("diagnosis") or {}
@@ -6274,6 +6338,22 @@ def _outfit_cells(board: list[dict]) -> list[dict]:
         cells = [s for s in slots if s in have]
         if cells:
             out.append({"title": title, "slots": cells})
+    return out
+
+
+def _with_catalog_photos(items: list[dict], board: list[dict]) -> list[dict]:
+    """Подставить вещам капсулы фото из каталога по типу вещи.
+
+    Названия приходят из образов («Жакет молочный»), а картинок у них нет. Ищем в каталоге
+    вещь ТОГО ЖЕ типа — лодочки к лодочкам, жакет к жакету. Не нашли — вещь остаётся без фото
+    и в конструктор не попадёт: перетаскивать пустую карточку бессмысленно.
+    """
+    out = []
+    for it in items or []:
+        name = it.get("name") or ""
+        pic = _look_pieces([name], board)
+        img = (pic[0].get("image") if pic else None)
+        out.append({**it, "image": img})
     return out
 
 

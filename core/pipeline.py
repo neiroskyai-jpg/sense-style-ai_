@@ -1016,6 +1016,38 @@ def render_flatlay(items: list[str], palette: str = "", season: str | None = Non
                                   lambda: provider.generate_image(instruction, model=model)[0])
 
 
+def render_capsule_flatlay(items: list[str], palette: str = "", season: str | None = None) -> str:
+    """Капсула одной раскладкой: ВСЕ вещи образов вместе, как разворот стайл-бука.
+
+    Логика продукта (объяснена фаундером): ИИ собирает образы под формулу и цветотип, из вещей
+    этих образов складывается капсула, а уже из капсулы клиентка собирает свои комплекты в
+    конструкторе. Значит капсула — не список карточек из каталога, а раскладка ТЕХ ЖЕ вещей,
+    что в образах: тогда она честно «собрана из образов», а не подобрана похожей.
+
+    Отличается от раскладки одного образа сеткой: вещей больше, они выстраиваются рядами.
+    """
+    if not items:
+        return ""
+    listed = "; ".join(str(i).strip() for i in items if str(i).strip())
+    instruction = (
+        "Professional flat-lay of a complete capsule wardrobe, strict top-down view, on a light "
+        "beige-cream background. Items arranged in tidy even ROWS like a style-book spread, "
+        "evenly spaced, nothing overlapping, generous negative space. Soft diffused daylight, "
+        "gentle natural shadows, minimalist fashion mood-board aesthetic. "
+        "Trousers and skirts laid flat fully extended to full length; jackets laid flat and open; "
+        "knitwear folded neatly; shoes as a pair; bags upright. Items: " + listed + ". "
+        "Follow the colour named for EACH item exactly as written — do not substitute or "
+        "harmonise colours between items. "
+        + (f"Overall palette: {palette}. " if palette else "")
+        + "Premium fabric and leather textures, balanced elegant composition. "
+        "Realistic photography, high detail, 4k. "
+        "No people, no faces, no hands, no mannequins. No text, no logos, no watermark."
+    )
+    model = config.MODELS["image"].get("flatlay") or config.MODELS["image"]["dressing"]
+    return imgcache.cached_render("", instruction, season, model,
+                                  lambda: provider.generate_image(instruction, model=model)[0])
+
+
 def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | None = None,
                           season: str | None = None) -> str:
     """Identity-preserving рендер: фото клиентки + промпт образа → она в этом образе.
