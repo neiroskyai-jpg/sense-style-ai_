@@ -9,7 +9,7 @@ import re
 import sys
 from urllib.parse import quote_plus
 
-from . import config, provider
+from . import config, imgcache, provider
 from .canon import canon_rule, enforce_substyles
 from .figure_rules import fit_rules_prompt
 from .prompts import load_knowledge, load_reference, load_system_prompt
@@ -972,10 +972,17 @@ def render_look_on_client(client_photo: str, look_prompt: str, ref_image: str | 
     # ДВА референса личности: (1) крупный кадр головы — чтобы лицо было в высоком разрешении и
     # модель не «додумывала» чужое (на ростовом фото лицо ~150px, этого мало); (2) фигура целиком
     # в 1536px. Если explicit ref_image передан — используем его как раньше (обратная совместимость).
-    body = ref_image or provider.encode_image(client_photo, max_side=1536)
-    face = provider.head_crop(client_photo, max_side=1024) if ref_image is None else None
-    refs = [face, body] if face else [body]
-    return provider.generate_image(instruction, model=model, ref_images=refs)[0]
+    def _generate() -> str:
+        body = ref_image or provider.encode_image(client_photo, max_side=1536)
+        face = provider.head_crop(client_photo, max_side=1024) if ref_image is None else None
+        refs = [face, body] if face else [body]
+        return provider.generate_image(instruction, model=model, ref_images=refs)[0]
+
+    # Кеш: тот же человек в том же образе и сезоне не генерируется дважды. Пересборка Карты и
+    # повторный прогон демо переставали быть бесплатными только из-за отсутствия этой проверки —
+    # одна Карта это 8 обращений к модели. Ключ строим по ИНСТРУКЦИИ целиком (в неё уже вошли
+    # вещи, тренды, сезон и режиссура), поэтому любая правка промпта честно даёт новый кадр.
+    return imgcache.cached_render(client_photo, instruction, season, model, _generate)
 
 
 def render_capsule_on_client(client_photo: str, look_prompts: list[str]) -> list[str]:

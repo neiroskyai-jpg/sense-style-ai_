@@ -6419,7 +6419,12 @@ def favicon():
 def healthz():
     # Флаги настройки внешних сервисов — чтобы проверять прод, не проходя весь путь до кабинета.
     # Секретов не раскрываем: только «задан / не задан».
+    # Кеш образов: сколько кадров лежит и сколько генераций он уже сэкономил. Это и метрика
+    # экономии ключа для защиты, и способ увидеть, что кеш вообще работает на проде.
+    from core import imgcache
+    cache = imgcache.stats()
     return {"status": "ok", "calls_today": count_today(), "limit": DEMO_DAILY_LIMIT,
+            "img_cache": {**cache, "saved_calls": imgcache.HITS["n"]},
             "weather": weather_configured(), "email": email_configured()}
 
 
