@@ -993,7 +993,7 @@ def render_flatlay(items: list[str], palette: str = "", season: str | None = Non
         "Realistic photography, high detail, 4k. "
         "No people, no faces, no hands, no mannequins. No text, no logos, no watermark, no collage."
     )
-    model = config.MODELS["image"]["dressing"]
+    model = config.MODELS["image"].get("flatlay") or config.MODELS["image"]["dressing"]
     # Кеш общий с рендером образов: ключ строится по инструкции, а фото тут нет — подставляем
     # пустой путь, отпечаток вырождается в «nophoto» и не мешает.
     return imgcache.cached_render("", instruction, season, model,

@@ -83,3 +83,13 @@ def test_flatlay_lays_trousers_full_length():
 def test_flatlay_needs_no_client_photo():
     """В кадре нет человека, поэтому identity-рендер и фото клиентки не нужны."""
     assert p.render_flatlay([]) == ""
+
+
+def test_flatlay_model_is_separate_from_identity_render():
+    """Раскладку можно менять свободно: людей в кадре нет, и эксперимент с моделью не задевает
+    персональные образы, где Gemini единственный держит лицо клиентки (GPT отказывает)."""
+    from core import config
+
+    assert config.MODELS["image"]["flatlay"] != "" 
+    assert "gemini" in config.MODELS["image"]["dressing"], \
+        "identity-рендер обязан остаться на Gemini: OpenAI отказывается воссоздавать реальные лица"
