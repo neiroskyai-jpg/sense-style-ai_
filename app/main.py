@@ -1065,6 +1065,9 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <a href="#capsule"><svg viewBox="0 0 20 20"><rect x="2.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.4"/></svg>Капсула</a>
   <a href="#looks"><svg viewBox="0 0 20 20"><rect x="3" y="2.5" width="14" height="15" rx="2"/><circle cx="10" cy="7.5" r="2.2"/><path d="M5.5 16c1-2.6 2.6-4 4.5-4s3.5 1.4 4.5 4"/></svg>Образы и роли</a>
   <a href="#shopping"><svg viewBox="0 0 20 20"><path d="M4 6.5h12l-1 10.5H5z"/><path d="M7.2 6.5V5a2.8 2.8 0 0 1 5.6 0v1.5"/></svg>Покупки</a>
+  {# «Мой гардероб» переехал в меню: раньше единственный вход был в блоке «Навигатор», который
+     убран как дублирующий. Функция рабочая — без ссылки страница стала бы недостижимой. #}
+  <a href="/wardrobe"><svg viewBox="0 0 20 20"><path d="M10 3v6M4 9h12l-1.5 8h-9z"/><path d="M10 3a2 2 0 0 0-2 2"/></svg>Мой гардероб</a>
   <a href="/cabinet#wardrobe"><svg viewBox="0 0 20 20"><path d="M10 4.5a1.6 1.6 0 1 1 1.6 1.6c0 1-1.6 1.2-1.6 2.4"/><path d="M2.5 14.5 10 8.5l7.5 6v2h-15z"/></svg>Конструктор</a>
   <a href="/cabinet#week"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>План недели</a>
  </nav>
@@ -2964,6 +2967,9 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <a href="#week"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>План недели</a>
   <a href="#roles"><svg viewBox="0 0 20 20"><rect x="3" y="2.5" width="14" height="15" rx="2"/><circle cx="10" cy="7.5" r="2.2"/><path d="M5.5 16c1-2.6 2.6-4 4.5-4s3.5 1.4 4.5 4"/></svg>Образы и роли</a>
   <a href="#shopping"><svg viewBox="0 0 20 20"><path d="M4 6.5h12l-1 10.5H5z"/><path d="M7.2 6.5V5a2.8 2.8 0 0 1 5.6 0v1.5"/></svg>Покупки</a>
+  {# «Мой гардероб» переехал в меню: единственный вход был в блоке «Навигатор», убранном как
+     дублирующий. Функция рабочая — без ссылки страница стала бы недостижимой. #}
+  <a href="/wardrobe"><svg viewBox="0 0 20 20"><path d="M4 8h12l-1.2 9H5.2z"/><path d="M8 8V6a2 2 0 0 1 4 0v2"/></svg>Мой гардероб</a>
   {% if track %}<a href="#track"><svg viewBox="0 0 20 20"><path d="M3 17h14"/><rect x="4.5" y="10" width="3" height="5" rx=".8"/><rect x="9" y="6" width="3" height="9" rx=".8"/><rect x="13.5" y="3" width="3" height="12" rx=".8"/></svg>Прогресс</a>{% endif %}
   {% if mine %}<a href="#wardrobe-mine"><svg viewBox="0 0 20 20"><path d="M10 16.5S3.5 12.6 3.5 8.2A3.6 3.6 0 0 1 10 6a3.6 3.6 0 0 1 6.5 2.2c0 4.4-6.5 8.3-6.5 8.3z"/></svg>Мои вещи</a>{% endif %}
  </nav>
@@ -3133,49 +3139,11 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 </div>
 {% endif %}
 
-{# ── ряд 2: AI-помощник · что докупить ───────────────────────────────────────────────── #}
-<div class=row2b>
-
- <div class=panel>
-  <h2 class=ph>Навигатор гардероба</h2>
-  <div class=helper>
-   <a class=hrow href="/garment"><span class=hico>✓</span><span><b>Брать или не брать</b><span>Проверить вещь перед покупкой</span></span></a>
-   <a class=hrow href="#week"><span class=hico>▦</span><span><b>План недели</b><span>Готовые образы на неделю под роли, погоду и твоё время</span></span></a>
-   <a class=hrow href="/wardrobe"><span class=hico>◫</span><span><b>Мой гардероб</b><span>Загрузи свои вещи — разберём по Формуле и покажем, сколько образов уже есть</span></span></a>
-   <a class=hrow href="#wardrobe"><span class=hico>❋</span><span><b>Сезонные обновления</b><span>Переключи сезон — капсула пересоберётся под него</span></span></a>
-   <a class=hrow href="#track"><span class=hico>◔</span><span><b>Трекер настройки образа</b><span>Видно, как образ догоняет то, какой ты себя хочешь</span></span></a>
-  </div>
- </div>
-
- <div class=panel id=shopping>
-  <h2 class=ph>Что добавить в капсулу<span class=tag>точечные рекомендации</span></h2>
-  <p class=psub>Точечные вещи, которые усиливают капсулу под твою Формулу и сезон.</p>
-  {% if shopping %}
-  <div class=buygrid>
-   {% for it in shopping[:3] %}
-   <div class=buycard>
-    {# В покупках Карты поле называется item_name; шаблон читал it.name и печатал пустоту —
-       клиентка видела «почему подходит» без самой вещи. #}
-    {% set bn = it.item_name or it.name or '' %}<div class=buyname>{{ bn[0]|upper }}{{ bn[1:] }}</div>
-    {% if it.closes_gap %}<p class=buywhy>{{ it.closes_gap }}</p>{% endif %}
-    <div class=buyok><i>✓</i>Подходит к твоей капсуле и палитре</div>
-   </div>
-   {% endfor %}
-  </div>
-  <div class=buyfoot><a href="/card#shopping">Весь список покупок из Карты →</a></div>
-  {% else %}<p class=empty style="margin-top:12px">Лист покупок появится вместе с собранной Картой.</p>{% endif %}
- </div>
-
-</div>
-
-{# ── ряд 3: что умеет кабинет ────────────────────────────────────────────────────────── #}
-<div class=tiles>
- <div class=tile><span class=ti>◫</span><b>Капсульный конструктор образов</b><p>Создавай образы из своей капсулы. Все сочетания проверены под твою Формулу.</p><a href="#wardrobe">Открыть конструктор →</a></div>
- <div class=tile><span class=ti>✓</span><b>Брать или не брать</b><p>Проверь любую покупку: подойдёт ли она по стилю, цветотипу и фигуре.</p><a href="/garment">Проверить вещь →</a></div>
- <div class=tile><span class=ti>▦</span><b>План недели</b><p>Семь дней из твоей капсулы: у каждого своя роль и свой образ.</p><a href="#week">Посмотреть план →</a></div>
- <div class=tile><span class=ti>◫</span><b>Мой гардероб</b><p>Разбери свои вещи по Формуле: что работает, что нет и сколько образов уже собирается.</p><a href="/wardrobe">Открыть гардероб →</a></div>
- <div class=tile><span class=ti>❋</span><b>Сезонные обновления</b><p>Капсула пересобирается под сезон: вещи, ткани и слои меняются.</p><a href="#wardrobe">Переключить сезон →</a></div>
-</div>
+{# Ряды «Навигатор гардероба», «Что добавить в капсулу» и плитки «что умеет кабинет»
+   убраны. Первый был набором ссылок на пункты, которые и так есть в меню слева;
+   второй дублировал лист покупок Карты; третий повторял тот же навигатор третий раз.
+   Кабинет — про сегодня: образ дня, конструктор, план недели. Стратегия и покупки
+   живут в Карте, и повторять их здесь незачем. #}
 
 <div class=footband>
  <div class=mono>✦</div>
