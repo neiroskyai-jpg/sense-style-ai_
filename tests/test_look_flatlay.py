@@ -74,8 +74,15 @@ def test_skeleton_looks_carry_pieces(monkeypatch):
 
 
 def test_template_renders_flatlay():
-    assert "class=lookflat" in m.STYLE_CARD or 'class="lookflat' in m.STYLE_CARD
-    assert "lookpiece" in m.STYLE_CARD
+    """Раскладка — сгенерированная картинка, карточки из каталога остались запасным вариантом.
+
+    Прежний коллаж каталожных фото собирался из разных источников: под «Лодочки» вставало фото
+    угг, фоны и ракурсы не совпадали. Теперь раскладка рисуется вместе с образом и вещи на ней
+    те самые; карточки показываются, только если раскладка не сгенерировалась.
+    """
+    assert "lk.flatlay" in m.STYLE_CARD, "раскладка образа обязана выводиться"
+    assert "class=pairflat" in m.STYLE_CARD
+    assert "lookpiece" in m.STYLE_CARD, "запасной вариант с карточками должен остаться"
 
 
 def test_photo_matches_the_item_kind_not_just_the_slot():

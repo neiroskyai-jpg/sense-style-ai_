@@ -77,6 +77,8 @@ def test_key_does_not_collide_with_dict_methods():
     assert mx["items_count"] == len(CAPSULE)
 
 
-def test_card_renders_the_matrix():
-    assert "class=matrix" in m.STYLE_CARD
-    assert "matrix.items_count" in m.STYLE_CARD
+def test_matrix_is_computed_but_not_shown_on_card():
+    """Матрица убрана из Карты вместе с опорной капсулой: она строилась от той же капсулы и
+    повторяла то, что теперь видно прямо в образе. Движок остался рабочим."""
+    assert "class=matrix" not in m.STYLE_CARD
+    assert m.build_outfit_matrix(CAPSULE) is not None

@@ -1252,95 +1252,17 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  {# ── правая: на чём это держится ─────────────────────────────────────────────────── #}
  <div class=col>
 
-  <div class=panel id=capsule>
-   <h2 class=ph>Опорная капсула {{ c.starter_capsule_count or (c.starter_capsule|length if c.starter_capsule else 0) }} вещей<span class=dot>◈</span></h2>
-   <p class=psub>Стилевая основа, которая собирает твои образы.</p>
-   {# Плашка обещала «эта капсула собрана из образов выше» — но капсула подбирается из каталога
-      под Формулу и палитру. На самом деле капсула ЧЕСТНО собирается из вещей образов
-      (_core_capsule_from_looks) — терялись только сценарии, поэтому связь была не видна.
-      Теперь под каждой вещью написано, в каких образах она работает. #}
-   <div class=caporigin>
-    <i>↺</i>
-    <div><b>Собрана из твоих образов, а не отдельно от них.</b><span>Мы разложили образы выше на вещи и оставили те, что работают сразу в нескольких сценариях — это и есть опора гардероба. Под каждой вещью видно, где она работает.</span></div>
-   </div>
-   {% if c.starter_capsule %}
-   <div class=capgrid>
-    {% for it in c.starter_capsule[:6] %}
-    <div class=capcard>
-     {# Кадр из нашей библиотеки иллюстрирует ТИП вещи, а не её цвет: жакет графитового
-        цвета показан бежевым. Молчать об этом нечестно — помечаем. #}
-     {% set fromlib = (not it.image) and (it.name|item_img) %}
-     {% set isexample = it.image_is_example or fromlib %}
-     {% set lib = it.image or fromlib %}
-     {% if lib %}<img class=capimg src="{{ lib }}" alt="{{ it.name }}" loading=lazy>
-     {% else %}<span class="capimg empty">{{ it.slot or 'вещь' }}<br>без фото</span>{% endif %}
-     {# Бейдж говорит, ЗАЧЕМ вещь в капсуле: опора работает в нескольких образах, остальное — дополняет образы. #}
-     {% if it.capsule_role == 'core' %}<span class=capbadge>опора</span>
-     {% elif it.outfits_count and it.outfits_count > 1 %}<span class=capbadge>собирает {{ it.outfits_count }} образ{{ 'а' if it.outfits_count % 10 in [2,3,4] and it.outfits_count // 10 != 1 else 'ов' }}</span>
-     {% elif loop.first %}<span class=capbadge>купить первой</span>{% endif %}
-     <div class=capbody>
-      <div class=capname>{{ it.name }}</div>
-      {% if it.scenarios %}<div class=capscen>{% for sc in it.scenarios[:3] %}<span>{{ sc }}</span>{% endfor %}</div>{% endif %}
-      {% if isexample %}<div class=capexample>пример типа вещи</div>{% endif %}
-      {# Названия брендов не показываем: партнёрство с ними не согласовано, а Карта продаёт метод,
-         а не витрину конкретного магазина. Вещь, фото и цена остаются — по ним видно, что подобрано
-         реальное, а не абстрактное. Найти вещь помогает поиск по маркетплейсам ниже. #}
-      {% if it.price %}<div class=capprice>{{ '{:,}'.format(it.price).replace(',',' ') }} ₽</div>{% endif %}
-      {% if it.search %}<div class=capfind><a href="{{ it.search.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.search.lamoda }}" target=_blank rel=noopener>Lamoda</a></div>{% endif %}
-     </div>
-    </div>
-    {% endfor %}
-   </div>
-   {% else %}<p class=psub style="margin-top:12px">Опорная капсула соберётся вместе с образами.</p>{% endif %}
-  </div>
+  {# Панель «Опорная капсула» и блок сочетаний убраны из Карты.
 
-  {% if c.capsule_combos %}
-  <div class=panel>
-   <h2 class=ph>Из {{ c.starter_capsule_count }} вещей — {{ c.combination_count }} {{ 'сочетание' if c.combination_count % 10 == 1 and c.combination_count % 100 != 11 else 'сочетания' if c.combination_count % 10 in [2,3,4] and c.combination_count % 100 not in [12,13,14] else 'сочетаний' }}<a class=more href="#combos">Показать все →</a></h2>
-   <p class=psub>Примеры ready-to-wear сочетаний из твоей опорной капсулы.</p>
-   {# Экономика капсулы: главный ответ на «дорого». Числа считаются кодом и проверяются на
-      бумаге — вся капсула ÷ число образов, и сколько вещей не понадобилось. #}
-   {% if econ %}
-   <div class=econ>
-    {% if econ.has_prices %}<div class=econcell><b>{{ '{:,}'.format(econ.cost_per_look).replace(',', ' ') }} ₽</b><span>стоит один собранный образ</span></div>{% endif %}
-    <div class=econcell><b>{{ econ.saved_items }}</b><span>вещей не пришлось покупать: на {{ econ.looks }} отдельных {{ 'комплект' if econ.looks % 10 == 1 and econ.looks % 100 != 11 else 'комплекта' if econ.looks % 10 in [2,3,4] and econ.looks % 100 not in [12,13,14] else 'комплектов' }} ушло бы {{ econ.standalone_items }}</span></div>
-   </div>
-   {% endif %}
-   {# Матрица «база × слой»: капсула списком читается как шопинг-лист, а здесь видно, ради чего
-      она собрана — одни и те же вещи дают разные образы под разные роли. Считается кодом. #}
-   {% if matrix %}
-   <div class=matrix>
-    <div class=matrixhead>Из {{ matrix.items_count }} вещей — {{ matrix.total }} {{ 'образ' if matrix.total % 10 == 1 and matrix.total % 100 != 11 else 'образа' if matrix.total % 10 in [2,3,4] and matrix.total % 100 not in [12,13,14] else 'образов' }}<span>одна база — разные роли</span></div>
-    {% for row in matrix.rows[:4] %}
-    <div class=matrixrow>
-     <div class=matrixbase>{{ row.base }}</div>
-     <div class=matrixcells>
-      {% for cell in row.cells %}
-      <div class=matrixcell>
-       <span class=mcrole>{{ cell.role }}</span>
-       <span class=mcwhy>{{ cell.why }}</span>
-      </div>
-      {% endfor %}
-     </div>
-    </div>
-    {% endfor %}
-   </div>
-   {% endif %}
-   <div class=combolane>
-    {% for combo in c.capsule_combos[:6] %}
-    <div class=combo title="{{ combo.title }}">
-     <div class=combopics>
-      {% for it in combo['items'][:3] %}
-       {% set ci = it.image or (it.name|item_img) %}{% if ci %}<img src="{{ ci }}" alt="{{ it.name }}" loading=lazy>{% else %}<span class=combodot title="{{ it.name }}"></span>{% endif %}
-      {% endfor %}
-     </div>
-     <div class=combotitle>{{ combo.title }}</div>
-     <div class=combodesc>{{ combo.summary or (combo['items']|map(attribute='name')|join(' · ')) }}</div>
-    </div>
-    {% endfor %}
-   </div>
-  </div>
-  {% endif %}
+     Капсула собиралась из вещей образов, но ФОТО к ним подтягивались похожие из каталога:
+     под «Лодочки» вставали угги, под «Сумку структурированную» — рекламный коллаж. Вещи на
+     экране не совпадали с вещами на образе, и блок читался как случайный набор.
+
+     Теперь состав виден прямо в образе: раскладка рисуется вместе с ним, поэтому вещи на
+     ней те самые. Отдельная панель стала лишней, а вместе с ней ушли матрица «база × слой»
+     и экономика — обе считались от той же капсулы и повторяли то, что и так видно.
+
+     Данные капсулы остаются в Карте: на них работает конструктор кабинета. #}
 
   {# «Что уводит» — стоп-цвета и стоп-лист в одном месте: клиентке важнее увидеть запрет
      рядом с капсулой, чем отдельной главой в конце. #}
@@ -1410,11 +1332,14 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% for lk in c.looks %}
   <div class=panel style="margin-bottom:12px" id="look{{ loop.index }}">
    <h3 style="margin-top:0">{{ lk.scenario or lk.title or lk.name }}</h3>
-   {# Раскладка образа: слева он на клиентке, справа — вещи, из которых собран (flat-lay).
-      Это связывает образ с капсулой: клиентка видит, что образ собран из её же вещей. #}
-   <div class="lookflat{% if not lk.img %} lookflat-noimg{% endif %}">
-    {% if lk.img %}<div class=lookmodel><img src="{{ lk.img }}" alt="Образ на тебе"></div>{% endif %}
-    {% if lk.pieces %}
+   {# Слева она в образе, справа — раскладка его вещей одной картинкой. Раскладка рисуется
+      вместе с образом, поэтому вещи на ней ТЕ САМЫЕ. Прежний коллаж собирался из каталожных
+      фото: разные фоны и ракурсы, а под «Лодочки» вставало фото угг. Карточки из каталога
+      остаются запасным вариантом, если раскладка не сгенерировалась. #}
+   <div class=pairrow>
+    {% if lk.img %}<img class=pairmodel src="{{ lk.img }}" alt="Образ на тебе">{% endif %}
+    {% if lk.flatlay %}<img class=pairflat src="{{ lk.flatlay }}" alt="Вещи этого образа">
+    {% elif lk.pieces %}
     <div class=lookpieces>
      {% for pc in lk.pieces %}
      <div class=lookpiece>
@@ -1426,6 +1351,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     </div>
     {% endif %}
    </div>
+   {% set look_items = lk['items'] %}
+   {% if look_items %}<p class=pairitems>{{ look_items|join(' · ') }}</p>{% endif %}
    {% if lk.why_it_works or lk.description %}<p style="margin-top:12px">{{ lk.why_it_works or lk.description }}</p>{% endif %}
    {% if lk.missing_items %}<p style="color:var(--muted)">Если добавить в капсулу: {{ lk.missing_items|join(' · ') }}</p>{% endif %}
   </div>
@@ -5449,20 +5376,28 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
                 lk["img"] = img
         ok_imgs = sum(1 for i in imgs if i)
 
-        # Раскладка вещей для пары «одна вещь — два образа». Только для неё: там приём и живёт,
-        # а на все шесть образов это удвоило бы расход ключа. Коллаж из каталожных фото собирался
-        # из разных источников — разные фоны и рекламный текст поверх вещи; здесь вещи именно те,
-        # что в образе, на одном фоне. Сбой раскладки не должен ронять Карту.
+        # Раскладка вещей для КАЖДОГО образа. Раньше коллаж собирался из каталожных фото: разные
+        # фоны, ракурсы, рекламный текст поверх вещи, а под «Лодочки» вставало фото угг — вещи
+        # были похожие, но не те. Здесь вещи рисуются вместе с образом, поэтому совпадают всегда.
+        # Это заменяет опорную капсулу как отдельный блок: состав виден прямо в образе.
+        # Сбой раскладки не должен ронять Карту — каждая обёрнута отдельно.
         pal = ", ".join(str((c.get("name") if isinstance(c, dict) else c) or "")
                         for c in (card.get("palette") or [])[:3])
-        for lk in ((card.get("styling") or {}).get("looks") or []):
+
+        def _flat(lk):
             try:
-                flat = render_flatlay(lk.get("items") or [], palette=pal,
+                return render_flatlay(lk.get("items") or [], palette=pal,
                                       season=card.get("season"))
-                if flat:
-                    lk["flatlay"] = flat
             except Exception:  # noqa: BLE001
-                pass
+                return None
+
+        flat_targets = (list(card.get("looks") or [])
+                        + list((card.get("styling") or {}).get("looks") or []))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=RENDER_WORKERS) as ex:
+            flats = list(ex.map(_flat, flat_targets))
+        for lk, flat in zip(flat_targets, flats):
+            if flat:
+                lk["flatlay"] = flat
         port = (card.get("personality") or {}).get("portrait")
         if port:  # портрет личности — в профиль, чтобы видел чат-стилист
             d2 = (get_profile(email) or {}).get("diagnosis") or {}

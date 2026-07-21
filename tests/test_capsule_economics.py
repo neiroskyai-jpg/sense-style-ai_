@@ -68,9 +68,13 @@ def test_capsule_without_combinations_is_not_divided_by_zero():
     assert m.capsule_economics([{"name": "Сумка", "slot": "Аксессуары", "price": 5000}]) is None
 
 
-def test_card_shows_the_block():
-    assert "class=econ" in m.STYLE_CARD
-    assert "стоит один собранный образ" in m.STYLE_CARD
+def test_economics_is_computed_but_not_shown_on_card():
+    """Блок экономики убран из Карты вместе с опорной капсулой: он считался от той же капсулы,
+    вещи которой не совпадали с образами. Сама функция осталась — числа честные и пригодятся,
+    когда появится своя база вещей."""
+    assert "class=econ" not in m.STYLE_CARD
+    assert m.capsule_economics([{"name": "Блузка", "slot": "Верх", "price": 5000},
+                                {"name": "Брюки", "slot": "Низ", "price": 5000}]) is not None
 
 
 def test_price_hidden_when_known_for_minority():

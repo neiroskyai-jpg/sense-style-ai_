@@ -73,7 +73,12 @@ def test_capsule_item_shows_where_it_works():
     assert item["capsule_role"] == "core"
 
 
-def test_card_plate_states_capsule_origin():
-    """Плашка обязана говорить правду: капсула действительно из образов."""
-    assert "Собрана из твоих образов" in m.STYLE_CARD
-    assert "it.scenarios" in m.STYLE_CARD, "связь со сценариями должна быть на карточке"
+def test_look_shows_its_own_pieces():
+    """Панель капсулы убрана: состав виден прямо в образе, и раскладка рисуется вместе с ним,
+    поэтому вещи на ней те самые — а не похожие из каталога."""
+    import re
+
+    assert "lk.flatlay" in m.STYLE_CARD
+    # Комментарии Jinja в вывод не попадают — ищем только то, что увидит клиентка.
+    visible = re.sub(r"\{#.*?#\}", "", m.STYLE_CARD, flags=re.S)
+    assert "Опорная капсула" not in visible

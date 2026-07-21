@@ -165,8 +165,7 @@ def test_brand_names_are_not_rendered_in_card():
     выглядели бы как согласованная витрина, которой нет.
     """
     assert "it.brand" not in m.STYLE_CARD
-    assert "it.name" in m.STYLE_CARD, "сама вещь остаётся на месте"
-    assert "it.price" in m.STYLE_CARD, "цена показывает, что подбор реальный"
+    assert "pc.name" in m.STYLE_CARD, "вещь образа остаётся названной"
 
 
 def test_season_code_accepts_interface_names():
