@@ -105,3 +105,19 @@ def test_merge_boards_drops_duplicates():
     board = m._merge_boards(own, extra, limit=5)
 
     assert sum(len(g["items"]) for g in board) == 1
+
+
+def test_client_colortype_is_never_overridden_by_measurement():
+    """Клиентка видит себя вживую, а мы — сжатое фото при неизвестном освещении.
+
+    Автоуточнение подтипа перебивало её выбор: «Зима натуральная» превращалась в «Зима
+    светлая», и в Карте оказывался чужой цветотип.
+    """
+    from core.pipeline import refine_colortype_subtype
+
+    chosen = {"colortype": "winter_natural", "colortype_source": "client",
+              "tonal_characteristics": {"contrast": "low"}}
+    auto = {"colortype": "winter_natural", "tonal_characteristics": {"contrast": "low"}}
+
+    assert refine_colortype_subtype(chosen, "нет-файла")["colortype"] == "winter_natural"
+    assert refine_colortype_subtype(auto, "нет-файла")["colortype"] == "winter_light"

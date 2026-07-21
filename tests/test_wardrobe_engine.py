@@ -113,3 +113,30 @@ def test_upload_is_capped(monkeypatch):
 def test_cabinet_links_to_wardrobe():
     """Страница без входа бесполезна: из кабинета до неё должен быть путь."""
     assert '/wardrobe"' in m.CABINET_PAGE
+
+
+def test_upload_survives_broken_file_and_db_failure(monkeypatch):
+    """Одна проблемная вещь не должна стоить всей загрузки.
+
+    На проде /wardrobe/upload отдавал Internal Server Error: под защитой стояло только
+    распознавание, а валидация файла (кидает и OSError), запись в базу и счётчик вызовов —
+    снаружи. Любая из них роняла запрос, и клиентка вместо гардероба видела 500.
+    """
+    import io as _io
+
+    m.app.config["TESTING"] = True
+    monkeypatch.setattr(m, "get_profile", lambda e: {"diagnosis": {"style_formula": "Power Woman"}})
+    monkeypatch.setattr(m, "_current_user", lambda: "u")
+    monkeypatch.setattr(m, "record_event", lambda *a, **k: None)
+
+    def boom(*a, **k):
+        raise OSError("диск недоступен")
+
+    monkeypatch.setattr(m, "add_wardrobe_item", boom)
+
+    r = m.app.test_client().post(
+        "/wardrobe/upload",
+        data={"photos": (_io.BytesIO(b"not-an-image"), "x.jpg")},
+        content_type="multipart/form-data")
+
+    assert r.status_code == 302, "загрузка обязана вернуть страницу, а не 500"

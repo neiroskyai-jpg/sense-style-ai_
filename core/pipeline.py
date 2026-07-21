@@ -35,6 +35,11 @@ def refine_colortype_subtype(diagnosis: dict, photo_path: str) -> dict:
     пикселям ненадёжен (его оставляем LLM/Vision = СЕЗОН), а контраст устойчив → ставит ПОДТИП.
     Любая ошибка — возвращаем диагноз как есть, чтобы не ронять генерацию.
     """
+    # Цветотип, выбранный клиенткой вручную, не трогаем: она видит себя вживую, а мы — сжатое
+    # фото при неизвестном освещении. Автоуточнение подтипа перебивало её выбор («Зима
+    # натуральная» → «Зима светлая»), и в Карте оказывался чужой цветотип.
+    if diagnosis.get("colortype_source") == "client":
+        return diagnosis
     ct = diagnosis.get("colortype")
     season = ct.split("_")[0] if isinstance(ct, str) and "_" in ct else ""
     if season not in _SEASONS:

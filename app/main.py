@@ -3839,29 +3839,33 @@ def wardrobe_upload():
     for f in files:
         if not _quota_left():
             break
+        # ВСЯ обработка вещи под защитой, а не только распознавание. Раньше сохранение в базу,
+        # счётчик вызовов и валидация файла (кидает не только ValueError, но и OSError на битом
+        # файле) стояли снаружи — любая из них роняла запрос целиком, и клиентка вместо своего
+        # гардероба получала Internal Server Error. Одна проблемная вещь не должна стоить всей
+        # загрузки: её просто считаем нераспознанной.
         try:
             photo_path = _validate_and_save(f)
-        except ValueError:
-            failed += 1
-            continue
-        record_call()
-        try:
+            record_call()
             v = evaluate_garment(str(photo_path), diag, mode="dev")
-        except Exception:  # noqa: BLE001 — одна нераспознанная вещь не валит всю загрузку
+            name = (v.get("item") or "").strip()[:160]
+            if not name:
+                failed += 1
+                continue
+            add_wardrobe_item(email, {
+                "name": name,
+                "slot": _capsule_slot(name),
+                "verdict": (v.get("verdict") or "").strip()[:40],
+                "reason": (v.get("reason") or "").strip()[:400],
+            })
+            added += 1
+        except Exception as e:  # noqa: BLE001
+            print(f"[wardrobe] вещь пропущена: {type(e).__name__}: {e}", file=sys.stderr)
             failed += 1
-            continue
-        name = (v.get("item") or "").strip()[:160]
-        if not name:
-            failed += 1
-            continue
-        add_wardrobe_item(email, {
-            "name": name,
-            "slot": _capsule_slot(name),
-            "verdict": (v.get("verdict") or "").strip()[:40],
-            "reason": (v.get("reason") or "").strip()[:400],
-        })
-        added += 1
-    record_event("wardrobe_uploaded", email, meta=f"{added}/{len(files)}")
+    try:
+        record_event("wardrobe_uploaded", email, meta=f"{added}/{len(files)}")
+    except Exception:  # noqa: BLE001 — метрика не должна стоить клиентке результата
+        pass
     return redirect(f"/wardrobe?added={added}&failed={failed}")
 
 
@@ -5271,6 +5275,10 @@ def _save_deep_intake(email: str, form) -> None:
         diag["deep_intake"] = {**(diag.get("deep_intake") or {}), **deep}
     if override_ct:
         diag["colortype"] = override_ct  # перебиваем → палитра пересоберётся под него
+        # Помечаем, что цветотип задан ЧЕЛОВЕКОМ. Иначе автоуточнение подтипа по замеру
+        # контраста перебивало выбор обратно: клиентка ставила «Зима натуральная», а в Карте
+        # оказывалась «Зима светлая». Замер — подсказка, выбор клиентки — решение.
+        diag["colortype_source"] = "client"
     save_diagnosis(email, diag)
 
 
