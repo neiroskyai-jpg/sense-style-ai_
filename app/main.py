@@ -6303,6 +6303,11 @@ def _merge_boards(primary: list, extra: list, limit: int) -> list:
                 name = " ".join((it.get("name") or "").lower().split())
                 if not name or name in seen:
                     continue
+                # Конструктор — визуальный инструмент: вещь без картинки в нём бесполезна,
+                # её нельзя перетащить в образ и увидеть результат. Раньше такие вещи давали
+                # ряд пустых бежевых плиток, и половина капсулы выглядела недогруженной.
+                if not it.get("image"):
+                    continue
                 if total >= limit:
                     break
                 seen.add(name)

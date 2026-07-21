@@ -105,3 +105,20 @@ def test_cells_show_only_slots_present_in_capsule():
 
 def test_empty_board_gives_no_cells():
     assert m._outfit_cells([]) == []
+
+
+def test_constructor_skips_items_without_photo():
+    """Конструктор — визуальный инструмент: вещь без картинки в нём бесполезна.
+
+    На проде половина плиток была пустыми бежевыми прямоугольниками — вещи капсулы, которым
+    не нашлось фото. Перетащить такую в образ и увидеть результат нельзя.
+    """
+    own = [{"slot": "Верх", "items": [{"name": "Блузка", "image": "data:x"},
+                                      {"name": "Топ без фото"}]}]
+    extra = [{"slot": "Низ", "items": [{"name": "Брюки", "image": "data:y"}]}]
+
+    board = m._merge_boards(own, extra, limit=10)
+    names = [it["name"] for grp in board for it in grp["items"]]
+
+    assert "Топ без фото" not in names
+    assert names == ["Блузка", "Брюки"]

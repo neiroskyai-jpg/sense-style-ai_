@@ -86,9 +86,9 @@ def test_figure_labels_follow_the_method_dictionary():
 def test_merge_boards_keeps_card_capsule_first():
     """Капсула Карты — опора, каталог только добирает: вещи из образов не должны вытесняться."""
     m = _app()
-    own = [{"slot": "Верх", "items": [{"name": "Рубашка шелковая"}]}]
-    extra = [{"slot": "Верх", "items": [{"name": "Топ из вискозы"}]},
-             {"slot": "Низ", "items": [{"name": "Брюки широкие"}]}]
+    own = [{"slot": "Верх", "items": [{"name": "Рубашка шелковая", "image": "data:a"}]}]
+    extra = [{"slot": "Верх", "items": [{"name": "Топ из вискозы", "image": "data:b"}]},
+             {"slot": "Низ", "items": [{"name": "Брюки широкие", "image": "data:c"}]}]
 
     board = m._merge_boards(own, extra, limit=2)
     names = [it["name"] for grp in board for it in grp["items"]]
@@ -99,8 +99,8 @@ def test_merge_boards_keeps_card_capsule_first():
 
 def test_merge_boards_drops_duplicates():
     m = _app()
-    own = [{"slot": "Верх", "items": [{"name": "Рубашка шелковая"}]}]
-    extra = [{"slot": "Верх", "items": [{"name": "рубашка  ШЕЛКОВАЯ"}]}]
+    own = [{"slot": "Верх", "items": [{"name": "Рубашка шелковая", "image": "data:a"}]}]
+    extra = [{"slot": "Верх", "items": [{"name": "рубашка  ШЕЛКОВАЯ", "image": "data:b"}]}]
 
     board = m._merge_boards(own, extra, limit=5)
 
