@@ -820,7 +820,10 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
  /* нижняя пара левой колонки: покупки + палитра */
  .buyrow{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start}
- .buygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:13px}
+ /* auto-fit вместо жёстких трёх колонок: в узкой панели три карточки сжимались до полосок,
+    и названия резались посреди слова («Свободн брючн…»). Теперь колонок столько, сколько
+    влезает без сжатия. */
+ .buygrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-top:13px}
  .buycard{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--soft);
           display:flex;flex-direction:column;min-width:0}
  /* Названия из генерации длинные («жакет полуприлегающего силуэта серо-синего цвета»).
@@ -828,9 +831,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     и текст обрывается многоточием, а не на полуслове посреди строки. */
  .buyimg{width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:9px;background:#F7F2E9;
          border:1px solid var(--line);margin-bottom:9px;display:block}
- .buyname{font-size:13px;font-weight:500;line-height:1.3;
+ /* overflow-wrap обязателен: без него длинное слово не переносится и обрезается по ширине
+    карточки — на экране оставалось «Свободн брючн…» вместо названия вещи. */
+ .buyname{font-size:13px;font-weight:500;line-height:1.3;overflow-wrap:anywhere;
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
- .buywhy{font-size:11.5px;color:var(--muted);line-height:1.4;margin:8px 0 0;
+ .buywhy{font-size:11.5px;color:var(--muted);line-height:1.4;margin:8px 0 0;overflow-wrap:anywhere;
          display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
  .buywhy b{color:var(--wine);font-weight:500}
  .buylinks{margin-top:auto;padding-top:9px;font-size:11px;color:var(--muted)}
@@ -1212,26 +1217,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    {% endif %}
   </div>
 
+  {# Блок «Первые покупки» убран. Рекомендации строились от опорной капсулы, которой в
+     Карте больше нет: вещи подбирались из каталога и не совпадали с образами, а карточки
+     с длинными названиями резались посреди слова. Карта — про стиль, а не про магазин;
+     проверить конкретную вещь перед покупкой можно в «Брать или не брать». #}
   <div class=buyrow>
-   <div class=panel>
-    <h2 class=ph>Первые покупки под твою Формулу<a class=more href="#shopping">Смотреть все рекомендации →</a></h2>
-    <p class=psub>Точечные вещи, которые усиливают капсулу и закрывают пробелы.</p>
-    {% if c.shopping %}
-    <div class=buygrid>
-     {% for it in c.shopping[:3] %}
-     <div class=buycard>
-      {% set bimg = it.item_name|item_img %}
-      {% if bimg %}<img class=buyimg src="{{ bimg }}" alt="{{ it.item_name }}" loading=lazy>
-      <div class=capexample style="margin:-4px 0 6px">пример типа вещи</div>{% endif %}
-      <div class=buyname>{{ it.item_name[0]|upper }}{{ it.item_name[1:] }}</div>
-      {% if it.closes_gap %}<p class=buywhy><b>Почему подходит:</b> {{ it.closes_gap }}</p>{% endif %}
-      {% if it.links %}<div class=buylinks><a href="{{ it.links.wildberries }}" target=_blank rel=noopener>WB</a> · <a href="{{ it.links.lamoda }}" target=_blank rel=noopener>Lamoda</a> · <a href="{{ it.links.ozon }}" target=_blank rel=noopener>Ozon</a></div>{% endif %}
-     </div>
-     {% endfor %}
-    </div>
-    {% else %}<p class=psub style="margin-top:12px">Список покупок появится вместе со сборкой Карты.</p>{% endif %}
-   </div>
-
    <div class=panel id=palette>
     <h2 class=ph>Твоя палитра</h2>
     <p class=psub>Базовые, акцентные и нейтральные цвета.</p>

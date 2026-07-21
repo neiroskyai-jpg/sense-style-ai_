@@ -999,7 +999,12 @@ def render_flatlay(items: list[str], palette: str = "", season: str | None = Non
         "negative space, nothing overlapping. Trousers and skirts are laid flat fully extended to "
         "full length with legs stretched straight; jackets laid flat and open; shoes placed as a "
         "pair; bags upright. Items: " + listed + ". "
-        + (f"Unified {palette} palette. " if palette else "")
+        # Цвет берём ИЗ НАЗВАНИЯ каждой вещи, а не из общей палитры Карты. Раньше в промпт
+        # шла палитра целиком, и модель красила вещи в её оттенки: на раскладке обувь и одежда
+        # не совпадали по цвету с образом, хотя в составе были названы точно.
+        "Follow the colour named for EACH item exactly as written — do not substitute or "
+        "harmonise colours between items. "
+        + (f"Overall the outfit sits in a {palette} range. " if palette else "")
         + "Premium smooth fabric and leather textures, balanced elegant composition. "
         "Realistic photography, high detail, 4k. "
         "No people, no faces, no hands, no mannequins. No text, no logos, no watermark, no collage."
