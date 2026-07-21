@@ -41,11 +41,23 @@ def test_photo_is_marked_as_example():
     assert pieces[0]["image_is_example"] is True
 
 
-def test_skeleton_looks_carry_pieces():
+def test_skeleton_looks_carry_pieces(monkeypatch):
     """Без генерации фото на клиентке раскладка вещей всё равно собирается из капсулы.
 
     Это то, что видит жюри, проходя квиз без своего фото: образ = реальные вещи капсулы.
+
+    Капсулу подаём фиксированную. Раньше тест опирался на живой каталог и падал через раз:
+    если подбор возвращал вещи не тех слотов, раскладка законно оказывалась пустой — тест
+    проверял состояние каталога, а не логику, которую должен стеречь.
     """
+    board = [
+        {"slot": "Верх", "items": [{"name": "Блузка шёлковая", "image": "data:x"}]},
+        {"slot": "Низ", "items": [{"name": "Брюки палаццо", "image": "data:y"}]},
+        {"slot": "Обувь", "items": [{"name": "Ботильоны", "image": "data:z"}]},
+        {"slot": "Аксессуары", "items": [{"name": "Сумка-тоут", "image": "data:w"}]},
+    ]
+    monkeypatch.setattr(m, "_visual_capsule", lambda *a, **k: board)
+    monkeypatch.setattr(m, "_inline_capsule_images", lambda b: b)
     diag = {
         "style_formula": "Классика × Натуральность", "gap_percentage": 38,
         "colortype": "autumn_natural", "figure_type": "hourglass",
@@ -56,6 +68,7 @@ def test_skeleton_looks_carry_pieces():
 
     with_pieces = [lk for lk in card["looks"] if lk.get("pieces")]
     assert with_pieces, "у скелетных образов должна быть раскладка из капсулы"
+    assert any(pc.get("image") for lk in with_pieces for pc in lk["pieces"]),         "раскладка обязана нести фото вещей, иначе это снова текстовый список"
     first = with_pieces[0]
     assert all(p["image"] for p in first["pieces"]), "вещи капсулы идут с фото"
 

@@ -6396,6 +6396,9 @@ def _run_fast(photo_path: Path, quiz: dict, season: str | None = None):
         return {
             "name": d.get("name", ""),
             "fits_if": d.get("fits_if", ""),
+            # Куда надеть — главное, что клиентка хочет знать про образ. Список вещей отвечает
+            # на «как повторить», а поводы — на «зачем мне это».
+            "wear_to": [w for w in (d.get("wear_to") or []) if w][:3],
             "items": d.get("items") or [],
             "img": render_look_on_client(str(photo_path), _look_prompt(d, diag, season),
                                          season=season),
@@ -6452,9 +6455,12 @@ def _fallback_directions(diag: dict) -> list[dict]:
     formula = diag.get("style_formula") or "твоя Формула стиля"
     return [
         {"name": "Мягкая версия", "fits_if": "Подходит, если хочется спокойствия и уместности.",
+         # Поводы и в фолбэке: без них карточка теряет главное — куда этот образ надеть.
+         "wear_to": ["встреча с друзьями", "рабочий день без дресс-кода", "прогулка по городу"],
          "items": sils[:3] or ["мягкий жакет", "прямые брюки", "блуза"],
          "image_generation_prompt": f"Спокойный образ по формуле «{formula}», мягкие чистые линии."},
         {"name": "Собранная версия", "fits_if": "Подходит, если хочется уверенности и статуса.",
+         "wear_to": ["переговоры", "презентация проекта", "деловой ужин"],
          "items": sils[1:4] or ["структурный жакет", "юбка-карандаш", "рубашка"],
          "image_generation_prompt": f"Собранный образ по формуле «{formula}», структура и один акцент."},
     ]
