@@ -1440,7 +1440,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     {% if lk.img %}<img class=pairmodel src="{{ lk.img }}" alt="Образ на тебе">{% endif %}
     {% if lk.flatlay %}<img class=pairflat src="{{ lk.flatlay }}" alt="Вещи этого образа">{% endif %}
    </div>
-   {% if lk.items %}<p class=pairitems>{{ lk.items|join(' · ') }}</p>{% endif %}
+   {# ТОЛЬКО lk['items'], не lk.items: в Jinja точечная запись резолвится в метод словаря
+      dict.items, и шаблон падает с «builtin_function_or_method is not iterable» — Карта
+      отдавала 500. Та же ловушка была с matrix.items, здесь я наступила на неё второй раз. #}
+   {% set pair_items = lk['items'] %}
+   {% if pair_items %}<p class=pairitems>{{ pair_items|join(' · ') }}</p>{% endif %}
    {% if lk.description %}<p>{{ lk.description }}</p>{% endif %}
   </div>
   {% endfor %}

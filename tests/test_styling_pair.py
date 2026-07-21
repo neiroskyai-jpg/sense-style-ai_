@@ -93,3 +93,20 @@ def test_flatlay_model_is_separate_from_identity_render():
     assert config.MODELS["image"]["flatlay"] != "" 
     assert "gemini" in config.MODELS["image"]["dressing"], \
         "identity-рендер обязан остаться на Gemini: OpenAI отказывается воссоздавать реальные лица"
+
+
+def test_no_dotted_items_access_in_templates():
+    """`x.items` в Jinja резолвится в МЕТОД словаря, а не в список вещей.
+
+    Наступали дважды: сначала matrix.items выводил «<built-in method items of dict>» в Карту,
+    потом lk.items|join уронил всю страницу в 500 («builtin_function_or_method is not iterable»).
+    Доступ к ключу «items» — только через квадратные скобки.
+    """
+    import io
+    import re
+
+    app_src = io.open("app/main.py", encoding="utf-8").read()
+    bad = re.findall(r"\{\{[^}]*\b\w+\.items\b[^}]*\}\}", app_src)
+    bad += re.findall(r"\{%[^%]*\b\w+\.items\b[^%]*%\}", app_src)
+
+    assert not bad, f"точечный доступ к .items в шаблоне: {bad[:3]}"
