@@ -114,3 +114,19 @@ def test_packshot_wins_over_marketplace_collage():
     pieces = m._look_pieces(["Сумка структурированная"], board)
 
     assert pieces[0]["image"] == "CLEAN"
+
+
+def test_clean_brand_sources_win_over_marketplace():
+    """На фото маркетплейса часто нарисован рекламный текст поверх вещи («ТРЕНД 2026», логотип
+    магазина). По типу изображения это честный packshot — распознать его нельзя, поэтому
+    решаем источником: брендовая студийная съёмка идёт вперёд.
+    """
+    assert m._CLEAN_SOURCES, "список чистых источников не должен быть пустым"
+
+    class P:
+        def __init__(self, brand): self.brand = brand
+
+    assert m._is_clean_source(P("Lichi"))
+    assert m._is_clean_source(P("USHATAVA"))
+    assert not m._is_clean_source(P("CAMILLE-OSENSA"))
+    assert not m._is_clean_source(P(""))

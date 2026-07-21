@@ -959,7 +959,9 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .lookpieces{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px}
  .lookpiece{display:flex;flex-direction:column;gap:5px;text-align:center}
  .lookpiece img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:9px;border:1px solid var(--line);background:#faf6ee}
- .lookpiece-ph{display:flex;align-items:center;justify-content:center;aspect-ratio:3/4;border-radius:9px;
+ .lookpiece-ph i{display:block;font-style:normal;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#a89c8c;margin-bottom:5px}
+ .lookpiece-ph b{display:block;font-weight:400;font-size:10.5px;color:#6b645c;line-height:1.3}
+ .lookpiece-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px;aspect-ratio:3/4;border-radius:9px;
                border:1px dashed #cdbfa6;background:var(--soft);font-size:10px;color:var(--muted)}
  .lookpiece-nm{font-size:10.5px;color:#5b5249;line-height:1.3}
  .lookmatchsm{font-family:Onest,sans-serif;font-size:11px;font-weight:400;color:var(--wine);margin-left:10px;letter-spacing:.04em}
@@ -1407,7 +1409,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     <div class=lookpieces>
      {% for pc in lk.pieces %}
      <div class=lookpiece>
-      {% if pc.image %}<img src="{{ pc.image }}" alt="{{ pc.name }}" loading=lazy>{% else %}<span class="lookpiece-ph">{{ pc.slot }}</span>{% endif %}
+      {% if pc.image %}<img src="{{ pc.image }}" alt="{{ pc.name }}" loading=lazy>
+      {% else %}<span class="lookpiece-ph"><i>{{ pc.slot }}</i><b>{{ pc.name }}</b></span>{% endif %}
       <span class=lookpiece-nm>{{ pc.name }}</span>
      </div>
      {% endfor %}
@@ -2507,6 +2510,16 @@ def _dedup_products(items: list) -> list:
     return list(best.values())
 
 
+# Фиды с чистой студийной съёмкой. Всё остальное (маркетплейсы) — только когда в слоте нет
+# альтернативы: например обуви в брендовых фидах нет вовсе, и без них слот остался бы пустым.
+_CLEAN_SOURCES = ("lichi", "ushatava")
+
+
+def _is_clean_source(product) -> bool:
+    brand = (getattr(product, "brand", "") or "").strip().lower()
+    return any(src in brand for src in _CLEAN_SOURCES)
+
+
 def _visual_capsule(card: dict, diag: dict, n: int) -> list:
     """Визуальная капсула для конструктора: реальные вещи каталога, подобранные под Формулу
     (палитра/табу/фигура), сгруппированные по слотам. Каждая вещь — с фото и ссылкой купить.
@@ -2556,9 +2569,15 @@ def _visual_capsule(card: dict, diag: dict, n: int) -> list:
     # перекрывал релевантность: нерелевантный packshot вставал впереди подходящей вещи на модели —
     # так в капсулу «Классики» попадали кроссовки. Теперь это фора в несколько позиций, не приоритет.
     _PACKSHOT_BONUS = 8
+    # Брендовые фиды идут вперёд маркетплейсных. На фото маркетплейса часто нарисован рекламный
+    # текст поверх вещи («ТРЕНД 2026», логотип магазина, коллаж «мега вместительная») — по типу
+    # изображения это честный packshot, и никакой фильтр его не отличит. У брендовых фидов
+    # съёмка студийная и чистая, поэтому решаем источником, а не попыткой распознать картинку.
+    _BRAND_BONUS = 40
     for slot in by_slot:
         by_slot[slot].sort(key=lambda p: rank[id(p)]
-                           - (_PACKSHOT_BONUS if (p.image_kind or "") == "packshot" else 0))
+                           - (_PACKSHOT_BONUS if (p.image_kind or "") == "packshot" else 0)
+                           - (_BRAND_BONUS if _is_clean_source(p) else 0))
     # Обувь: кроссовки — не база капсулы. Клиентке-классике доставались две пары кроссовок, хотя в
     # каталоге десятки лоферов. Спортивную опускаем в конец слота: она возьмётся, только если
     # неспортивной обуви под её палитру не нашлось вовсе.
@@ -4540,6 +4559,10 @@ def capsule_economics(capsule: list[dict], combos: int | None = None) -> dict | 
     priced = [it for it in items if isinstance(it.get("price"), (int, float)) and it["price"] > 0]
     total = sum(int(it["price"]) for it in priced)
     standalone_items = looks * _PIECES_PER_STANDALONE_LOOK
+    # Цену показываем, только если она известна у БОЛЬШИНСТВА вещей капсулы. Иначе сумма делится
+    # на все образы и выходит абсурд: на проде цена нашлась у одной вещи из девяти, и клиентка
+    # увидела «378 ₽ стоит один собранный образ». Неполные данные хуже отсутствующих.
+    enough_prices = len(priced) >= max(2, round(len(items) * 0.6))
 
     # Денежную «экономию» (средняя цена × вещи, которые не купили) сознательно НЕ считаем: на
     # реальной капсуле выходило больше миллиона рублей. Арифметика верна, но стоит на двойном
@@ -4549,10 +4572,10 @@ def capsule_economics(capsule: list[dict], combos: int | None = None) -> dict | 
         "items": len(items),
         "looks": looks,
         "total": total,
-        "cost_per_look": round(total / looks) if total else 0,
+        "cost_per_look": round(total / looks) if (total and enough_prices) else 0,
         "saved_items": max(0, standalone_items - len(items)),
         "standalone_items": standalone_items,
-        "has_prices": bool(priced),
+        "has_prices": enough_prices,
     }
 
 

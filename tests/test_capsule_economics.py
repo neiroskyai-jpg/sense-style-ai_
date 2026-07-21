@@ -71,3 +71,29 @@ def test_capsule_without_combinations_is_not_divided_by_zero():
 def test_card_shows_the_block():
     assert "class=econ" in m.STYLE_CARD
     assert "стоит один собранный образ" in m.STYLE_CARD
+
+
+def test_price_hidden_when_known_for_minority():
+    """На проде цена нашлась у одной вещи из девяти, и клиентка увидела «378 ₽ за образ».
+
+    Сумма делилась на все образы — арифметика верная, смысл абсурдный. Неполные данные хуже
+    отсутствующих: показываем цену, только если она известна у большинства вещей капсулы.
+    """
+    thin = [{"name": "A", "slot": "Верх", "price": 6799},
+            {"name": "B", "slot": "Верх"},
+            {"name": "C", "slot": "Низ"},
+            {"name": "D", "slot": "Низ"}]
+
+    e = m.capsule_economics(thin)
+
+    assert e["has_prices"] is False
+    assert e["cost_per_look"] == 0
+    assert e["saved_items"] > 0, "метрика вещей от цен не зависит и остаётся"
+
+
+def test_price_shown_when_known_for_most():
+    full = [{"name": "A", "slot": "Верх", "price": 6000},
+            {"name": "B", "slot": "Верх", "price": 4000},
+            {"name": "C", "slot": "Низ", "price": 8000}]
+
+    assert m.capsule_economics(full)["cost_per_look"] == 9000
