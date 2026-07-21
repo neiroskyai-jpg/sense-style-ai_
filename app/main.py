@@ -4561,6 +4561,21 @@ def wardrobe_suggestions(items: list[dict], catalog: list[dict] | None = None,
 _PIECES_PER_STANDALONE_LOOK = 3
 
 
+def _safe_extra(fn, *args):
+    """Дополнительный блок Карты не имеет права ронять Карту.
+
+    Экономика и матрица — надстройки над капсулой. Данные в базе переживают деплой и бывают
+    старого формата, а падение такого блока отдавало клиентке Internal Server Error вместо
+    всего продукта. Лучше Карта без одного блока, чем 500 вместо Карты.
+    """
+    try:
+        return fn(*args)
+    except Exception as e:  # noqa: BLE001
+        print(f"[card] блок {getattr(fn, '__name__', fn)} пропущен: {type(e).__name__}: {e}",
+              file=sys.stderr)
+        return None
+
+
 def capsule_economics(capsule: list[dict], combos: int | None = None) -> dict | None:
     """Что капсула даёт в деньгах и вещах. Всё считается кодом и проверяется на бумаге.
 
@@ -4696,7 +4711,12 @@ def build_outfit_matrix(capsule: list[dict], max_bases: int = 6) -> dict | None:
     Считается кодом из существующей капсулы: ни одной генерации, ни одного вызова модели.
     """
     by_slot: dict[str, list] = {}
+    # Старые Карты в базе хранят капсулу списком СТРОК, а не словарей: пользовательские данные
+    # переживают деплой, и код обязан их пережить тоже. Без этой проверки Карта, собранная до
+    # изменения формата, роняла всю страницу в 500 — блок-новичок ломал продукт целиком.
     for it in capsule or []:
+        if not isinstance(it, dict):
+            continue
         by_slot.setdefault(it.get("slot") or _capsule_slot(it.get("name") or ""), []).append(it)
 
     tops = by_slot.get("Верх") or []
@@ -5540,8 +5560,8 @@ def style_card():
                                       figure_short=_figure_short(diag.get("figure_type")),
                                       dna_fields=_dna_fields(diag),
                                       card_link=_card_link_url(email),
-                                      matrix=build_outfit_matrix(card.get("starter_capsule") or []),
-                                      econ=capsule_economics(card.get("starter_capsule"),
+                                      matrix=_safe_extra(build_outfit_matrix, card.get("starter_capsule") or []),
+                                      econ=_safe_extra(capsule_economics, card.get("starter_capsule"),
                                                              card.get("combination_count")),
                                       thanks=request.args.get("fb"), stale=False)
     # бесплатная генерация — один раз на email; пересборку/повтор блокируем (защита токенов).
@@ -5552,8 +5572,8 @@ def style_card():
                                           figure_short=_figure_short(diag.get("figure_type")),
                                           dna_fields=_dna_fields(diag),
                                           card_link=_card_link_url(email),
-                                          matrix=build_outfit_matrix(card.get("starter_capsule") or []),
-                                          econ=capsule_economics(card.get("starter_capsule"),
+                                          matrix=_safe_extra(build_outfit_matrix, card.get("starter_capsule") or []),
+                                          econ=_safe_extra(capsule_economics, card.get("starter_capsule"),
                                                                  card.get("combination_count")),
                                           thanks=None)
         return render_template_string(CARD_BUILD_FORM, error=_GEN_LIMIT_MSG), 429
@@ -5571,8 +5591,8 @@ def style_card():
                                       figure_short=_figure_short(diag.get("figure_type")),
                                       dna_fields=_dna_fields(diag),
                                       card_link=_card_link_url(email),
-                                      matrix=build_outfit_matrix(card.get("starter_capsule") or []),
-                                      econ=capsule_economics(card.get("starter_capsule"),
+                                      matrix=_safe_extra(build_outfit_matrix, card.get("starter_capsule") or []),
+                                      econ=_safe_extra(capsule_economics, card.get("starter_capsule"),
                                                              card.get("combination_count")))
     record_event("card_form_view", email)
     return render_template_string(CARD_BUILD_FORM, error=None)
@@ -5611,8 +5631,8 @@ def card_by_link(token):
     html = render_template_string(STYLE_CARD, c=card, name=_display_name(owner),
                                   figure_short=_figure_short(diag.get("figure_type")),
                                   dna_fields=_dna_fields(diag),
-                                  matrix=build_outfit_matrix(card.get("starter_capsule") or []),
-                                  econ=capsule_economics(card.get("starter_capsule"),
+                                  matrix=_safe_extra(build_outfit_matrix, card.get("starter_capsule") or []),
+                                  econ=_safe_extra(capsule_economics, card.get("starter_capsule"),
                                                          card.get("combination_count")),
                                   shared=True, thanks=None, stale=False)
     resp = make_response(html)

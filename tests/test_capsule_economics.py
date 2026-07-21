@@ -97,3 +97,25 @@ def test_price_shown_when_known_for_most():
             {"name": "C", "slot": "Низ", "price": 8000}]
 
     assert m.capsule_economics(full)["cost_per_look"] == 9000
+
+
+def test_extras_survive_legacy_capsule_format():
+    """Данные в базе переживают деплой: старые Карты хранят капсулу списком СТРОК.
+
+    Из-за этого Карта на проде отдавала Internal Server Error — блок-новичок ронял весь
+    продукт. Надстройки над капсулой обязаны переживать любой формат.
+    """
+    legacy = ["Жакет чёрный", "Брюки прямые"]
+    mixed = ["Жакет", {"name": "Брюки", "slot": "Низ"}, None]
+
+    for capsule in (legacy, mixed):
+        m.build_outfit_matrix(capsule)      # не должно падать
+        m.capsule_economics(capsule)
+
+
+def test_broken_extra_never_takes_down_the_card():
+    """Лучше Карта без одного блока, чем 500 вместо Карты."""
+    def boom(*_a):
+        raise ValueError("сломался блок")
+
+    assert m._safe_extra(boom, []) is None
