@@ -1186,7 +1186,12 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
      <div class=lookbody>
       <div class=lookttl>{% set ltl = lk.scenario or lk.title or lk.name or '' %}<span class=lt>{{ ltl[0]|upper }}{{ ltl[1:] }}</span><span class=chev>›</span></div>
       <p class=lookdesc>{{ lk.why_it_works or lk.description or (lk['items']|join(' · ') if lk.get('items') else '') }}</p>
-      {% if lk.formula_match %}<div class=lookmatch>совпадение <b>{{ lk.formula_match }}%</b></div>{% endif %}
+      {# Процент совпадения убран: считать его честно не на чем. Метрика сверяла палитру и
+         силуэт ПО ТЕКСТУ названия вещи, а вещи каталога называются как в фиде («Приталенный
+         двубортный жакет из лёгкой ткани») — ни цвета палитры, ни термина силуэта там нет.
+         Все оси давали ноль, и система ставила собственному образу 8%. Показываем то, что
+         правда: чего в образе не хватает до полного комплекта. #}
+      {% if lk.missing_items %}<div class=lookmatch>добавить: {{ lk.missing_items|join(', ') }}</div>{% endif %}
      </div>
     </a>
     {% endfor %}
@@ -1393,7 +1398,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <div class=deepbody>
   {% for lk in c.looks %}
   <div class=panel style="margin-bottom:12px" id="look{{ loop.index }}">
-   <h3 style="margin-top:0">{{ lk.scenario or lk.title or lk.name }}{% if lk.formula_match %}<span class=lookmatchsm>совпадение {{ lk.formula_match }}%</span>{% endif %}</h3>
+   <h3 style="margin-top:0">{{ lk.scenario or lk.title or lk.name }}</h3>
    {# Раскладка образа: слева он на клиентке, справа — вещи, из которых собран (flat-lay).
       Это связывает образ с капсулой: клиентка видит, что образ собран из её же вещей. #}
    <div class="lookflat{% if not lk.img %} lookflat-noimg{% endif %}">
@@ -4112,74 +4117,6 @@ def _scenario_tokens(scenario: str) -> list[str]:
     return [scenario] + _SCENARIO_ALIASES.get(scenario, [])
 
 
-def _scenario_formula_match(look: dict, diag: dict, scenario: str) -> int:
-    """Совпадение образа с Формулой, 0-100. Детерминированно и воспроизводимо.
-
-    Веса заданы методологией (ТЗ фаундера): палитра 40, силуэт и длина 30, уместность роли 20,
-    баланс образа 10. Раньше здесь была сумма произвольных баллов от базы 54 — число выглядело
-    точным, но объяснить его состав было нельзя, и пять карточек из шести показывали 68%.
-
-    Каждая доля считается отдельно и возвращается вместе с числом (см. _match_breakdown) —
-    это explainable-слой: видно, за счёт чего образ набрал свой процент и где проседает.
-    """
-    return _match_breakdown(look, diag, scenario)["match"]
-
-
-def _match_breakdown(look: dict, diag: dict, scenario: str) -> dict:
-    """Разбор совпадения по четырём осям. Возвращает {match, palette, silhouette, role, balance}."""
-    hay = " ".join([
-        (look.get("name") or ""),
-        (look.get("description") or ""),
-        " ".join(str(i) for i in (look.get("items") or [])),
-    ]).lower()
-    vf = diag.get("visual_formula") or {}
-
-    # 1. Палитра, 40%. Цвета образа должны быть из палитры клиентки; попадание в стоп-цвет
-    #    обнуляет ось целиком — вещь вне палитры не «частично подходит», она не подходит.
-    palette = [str((c.get("name") if isinstance(c, dict) else c) or "").lower()
-               for c in (vf.get("palette") or [])]
-    stop = [str((c.get("name") if isinstance(c, dict) else c) or "").lower()
-            for c in (vf.get("stop_list") or [])]
-    if any(c and c in hay for c in stop):
-        palette_score = 0.0
-    elif palette:
-        hits = sum(1 for c in palette if c and c in hay)
-        palette_score = min(1.0, hits / 2)      # два цвета из палитры — полный балл
-    else:
-        palette_score = 0.5                     # палитры нет — не наказываем и не хвалим
-
-    # 2. Силуэт и длина, 30%. Плюс поля Формулы: они задают характер кроя.
-    sils = [str(x).lower() for x in (vf.get("silhouettes") or [])]
-    fields = [t.strip().lower()
-              for t in re.split(r"[×,/]| и ", (diag.get("style_formula") or "")) if t.strip()]
-    sil_hits = sum(1 for x in sils if x and x in hay)
-    field_hits = sum(1 for t in fields if t in hay)
-    parts = []
-    if sils:
-        parts.append(min(1.0, sil_hits))
-    if fields:
-        parts.append(field_hits / len(fields))
-    silhouette_score = sum(parts) / len(parts) if parts else 0.5
-
-    # 3. Уместность роли, 20%. Есть ли в образе вещи, характерные для сценария.
-    role_score = 1.0 if any(tok in hay for tok in _scenario_tokens(scenario)) else 0.0
-
-    # 4. Баланс образа, 10%. Полный комплект: верхний слой, низ или платье, обувь, сумка.
-    missing = _scenario_missing_items(look)
-    balance_score = max(0.0, 1 - len(missing) / 4)
-
-    match = round(100 * (0.40 * palette_score + 0.30 * silhouette_score
-                         + 0.20 * role_score + 0.10 * balance_score))
-    return {
-        "match": max(0, min(100, match)),
-        "palette": round(palette_score * 100),
-        "silhouette": round(silhouette_score * 100),
-        "role": round(role_score * 100),
-        "balance": round(balance_score * 100),
-        "missing": missing,
-    }
-
-
 def _scenario_missing_items(look: dict) -> list[str]:
     """Каких блоков не хватает до полного комплекта."""
     items = [str(x).lower() for x in (look.get("items") or [])]
@@ -4242,43 +4179,98 @@ def _look_preview_images(looks: list[dict]) -> list[str]:
     return previews
 
 
+# Тип вещи внутри слота — группы синонимов. Слот слишком широк: «Лодочки» и «Угги» оба Обувь,
+# и подбор по слоту ставил под лодочки фото угг. Но и голое сравнение слов не годится: «жакет»
+# и «пиджак» — одна вещь, названная по-разному в разных фидах. Поэтому синонимы сведены к
+# каноническому типу: жакет находит пиджак, лодочки не находят угги.
+_ITEM_KIND_SYNONYMS = {
+    "жакет": ("жакет", "пиджак", "блейзер"),
+    "пальто": ("пальто", "плащ", "тренч"),
+    "куртка": ("куртк", "косух", "бомбер", "ветровк"),
+    "шуба": ("шуба", "дублён", "дубленк", "пуховик"),
+    "кардиган": ("кардиган", "жилет"),
+    "рубашка": ("рубашк", "блуз", "сорочк"),
+    "джемпер": ("джемпер", "свитер", "пуловер", "водолазк", "бадлон", "свитшот", "худи"),
+    "футболка": ("футболк", "майк", "лонгслив", "поло"),
+    "топ": ("топ", "боди", "корсет", "бюстье"),
+    "брюки": ("брюк", "палаццо", "чинос", "кюлот", "легинс"),
+    "джинсы": ("джинс",),
+    "юбка": ("юбк",),
+    "шорты": ("шорт",),
+    "платье": ("плать", "сарафан"),
+    "комбинезон": ("комбинезон",),
+    "лодочки": ("лодочк", "туфл"),
+    "лоферы": ("лофер", "мокасин", "оксфорд", "броги", "дерби"),
+    "ботинки": ("ботильон", "ботинк", "челси"),
+    "сапоги": ("сапог", "ботфорт"),
+    "угги": ("угг", "дутик"),
+    "босоножки": ("босонож", "сандал", "шлепанц", "сланц", "эспадрил"),
+    "балетки": ("балетк", "слингбэк", "мюли", "сабо"),
+    "кроссовки": ("кроссовк", "кед", "слипон"),
+    "сумка": ("сумк", "клатч", "шоппер", "тоут", "рюкзак"),
+    "ремень": ("ремен", "пояс"),
+    "шарф": ("шарф", "платок", "косынк", "палантин"),
+    "украшение": ("кулон", "цепочк", "серьг", "браслет", "брошь"),
+    "очки": ("очки",),
+    "шляпа": ("шляп", "берет", "кепк", "панам"),
+    "перчатки": ("перчатк",),
+}
+
+
+def _item_kind(name: str) -> str:
+    """Канонический тип вещи: «жакет», «лодочки», «сумка». Пусто — тип не распознан."""
+    n = (name or "").lower()
+    for canon, variants in _ITEM_KIND_SYNONYMS.items():
+        if any(v in n for v in variants):
+            return canon
+    return ""
+
+
 def _look_pieces(item_names: list[str], board: list[dict]) -> list[dict]:
     """Вещи образа с фото из каталога — для визуальной раскладки состава (flat-lay).
 
-    Идея фаундера: рядом с образом на клиентке показать, ИЗ ЧЕГО он собран — фото каждой вещи,
-    как раскладка в модном разборе. Текст «Состав: жакет · брюки» этого не даёт: клиентка не
-    видит вещи и не понимает, что это её капсула. Фото берём из board (визуальной капсулы) по
-    слоту: точное совпадение имён редко, но вещь того же слота с фото — верная иллюстрация типа.
+    Рядом с образом на клиентке показываем, ИЗ ЧЕГО он собран. Фото ищем в board по ТИПУ вещи
+    (лодочки к лодочкам), а не по слоту: подбор по слоту подставлял под «Лодочки» фото угг,
+    и раскладка выглядела набором случайных вещей из интернета.
+
+    Нет вещи того же типа — оставляем пустую карточку. Чужое фото под правильным названием
+    хуже отсутствующего: клиентка видит вещь, которой в её образе нет.
     """
-    by_slot: dict[str, list] = {}
+    by_kind: dict[str, list] = {}
     exact: dict[str, dict] = {}
     for grp in board or []:
         for it in grp.get("items") or []:
             name = (it.get("name") or "").strip()
-            if not name:
+            if not name or not it.get("image"):
                 continue
-            rec = {"name": name, "image": it.get("image"), "slot": grp.get("slot")}
+            rec = {"name": name, "image": it.get("image"), "slot": grp.get("slot"),
+                   "kind_img": (it.get("image_kind") or "")}
             exact.setdefault(" ".join(name.lower().split()), rec)
-            by_slot.setdefault(grp.get("slot") or "", []).append(rec)
+            kind = _item_kind(name)
+            if kind:
+                by_kind.setdefault(kind, []).append(rec)
+    # Чистое предметное фото вперёд: у маркетплейсных кадров «на модели» часто рекламный коллаж
+    # с текстом поверх картинки — в раскладке образа он выглядит как вещь с чужого сайта.
+    for lst in by_kind.values():
+        lst.sort(key=lambda r: 0 if r["kind_img"] == "packshot" else 1)
 
-    used: set[str] = set()
+    used: set[int] = set()
     pieces = []
     for raw in item_names or []:
         name = (raw or "").strip()
         if not name:
             continue
-        slot = _capsule_slot(name)
         hit = exact.get(" ".join(name.lower().split()))
-        if not hit:                                   # нет точного — берём вещь того же слота с фото
-            for cand in by_slot.get(slot, []):
-                if cand["image"] and id(cand) not in used:
+        if not hit:
+            for cand in by_kind.get(_item_kind(name), []):
+                if id(cand) not in used:
                     hit = cand
                     used.add(id(cand))
                     break
         pieces.append({
             "name": _ru_item_name(name),
-            "slot": slot,
-            # Фото — иллюстрация типа вещи, а не именно эта модель: помечаем, чтобы не выдавать
+            "slot": _capsule_slot(name),
+            # Фото — иллюстрация ТИПА вещи, а не именно эта модель: помечаем, чтобы не выдавать
             # за конкретный товар (продукт не привязан к фиду бренда).
             "image": (hit or {}).get("image"),
             "image_is_example": bool((hit or {}).get("image")),
@@ -4303,7 +4295,6 @@ def _enrich_card_looks(looks: list[dict], diag: dict) -> list[dict]:
         enriched["scenario"] = scenario
         enriched["bucket"] = _SCENARIO_BUCKET.get(scenario, "Повседневное")
         enriched["effect"] = _SCENARIO_EFFECT.get(scenario, "собранно и уместно")
-        enriched["formula_match"] = _scenario_formula_match(enriched, diag, scenario)
         enriched["why_it_works"] = _scenario_why_it_works(enriched, diag, scenario)
         missing = _scenario_missing_items(enriched)
         if missing:

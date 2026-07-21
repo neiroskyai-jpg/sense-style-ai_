@@ -76,3 +76,41 @@ def test_skeleton_looks_carry_pieces(monkeypatch):
 def test_template_renders_flatlay():
     assert "class=lookflat" in m.STYLE_CARD or 'class="lookflat' in m.STYLE_CARD
     assert "lookpiece" in m.STYLE_CARD
+
+
+def test_photo_matches_the_item_kind_not_just_the_slot():
+    """Слот слишком широк: «Лодочки» и «Угги» оба Обувь.
+
+    Реальный провал на проде: под названием «Лодочки на устойчивом каблуке» стояло фото угг,
+    под «Сумка структурированная» — рекламный коллаж «СУМКА ШОППЕР». Клиентка видела правильные
+    названия и чужие картинки, и вся раскладка читалась как случайные вещи из интернета.
+    """
+    board = [{"slot": "Обувь", "items": [
+        {"name": "Угги женские зимние", "image": "UGG"},
+        {"name": "Лодочки кожаные", "image": "PUMPS"}]}]
+
+    pieces = m._look_pieces(["Лодочки на устойчивом каблуке"], board)
+
+    assert pieces[0]["image"] == "PUMPS", "под лодочки нельзя подставлять угги"
+
+
+def test_missing_kind_leaves_empty_card():
+    """Чужое фото под правильным названием хуже отсутствующего: клиентка видит вещь,
+    которой в её образе нет."""
+    board = [{"slot": "Аксессуары", "items": [{"name": "Сумка-тоут", "image": "BAG"}]}]
+
+    pieces = m._look_pieces(["Шарф шёлковый"], board)
+
+    assert pieces[0]["image"] is None
+    assert pieces[0]["name"]
+
+
+def test_packshot_wins_over_marketplace_collage():
+    """У маркетплейсных кадров «на модели» часто рекламный коллаж с текстом поверх картинки."""
+    board = [{"slot": "Аксессуары", "items": [
+        {"name": "Сумка шоппер мешок", "image": "COLLAGE", "image_kind": "model"},
+        {"name": "Сумка структурная", "image": "CLEAN", "image_kind": "packshot"}]}]
+
+    pieces = m._look_pieces(["Сумка структурированная"], board)
+
+    assert pieces[0]["image"] == "CLEAN"

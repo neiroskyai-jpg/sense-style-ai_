@@ -1,8 +1,12 @@
 """Метрики должны быть воспроизводимыми, а не «числом от модели».
 
-Из ТЗ фаундера: match считается по фиксированным весам (палитра 40, силуэт и длина 30,
-уместность роли 20, баланс образа 10), adds_looks — разницей комбинаторики. Жюри должно
-уметь пересчитать любое число на экране руками.
+adds_looks считается разницей комбинаторики — жюри может пересчитать его на бумаге.
+
+Процент совпадения образа с формулой отсюда УБРАН вместе с самой метрикой: она сверяла
+палитру и силуэт по тексту названия вещи, а вещи каталога называются как в фиде
+(«Приталенный двубортный жакет из лёгкой ткани») — ни цвета палитры, ни термина силуэта
+там нет. Все оси давали ноль, и система ставила собственному образу 8%. Считать честно
+не на чем, поэтому метрики больше нет.
 """
 import os
 
@@ -22,41 +26,6 @@ DIAG = {
 
 def _look(items, desc=""):
     return {"items": items, "description": desc, "name": ""}
-
-
-def test_match_is_deterministic():
-    """Одни и те же входные данные — одно и то же число. Всегда."""
-    look = _look(["Жакет мокко", "Брюки кремовый", "Ботильоны", "Сумка"])
-    first = m._scenario_formula_match(look, DIAG, "деловая встреча")
-
-    assert all(m._scenario_formula_match(look, DIAG, "деловая встреча") == first for _ in range(5))
-
-
-def test_breakdown_explains_the_number():
-    """Explainable-слой: видно, из чего сложился процент."""
-    look = _look(["Жакет мокко", "Брюки кремовый", "Ботильоны", "Сумка-багет"],
-                 "полуприлегающий силуэт, драма и романтика")
-    b = m._match_breakdown(look, DIAG, "деловая встреча")
-
-    assert set(b) == {"match", "palette", "silhouette", "role", "balance", "missing"}
-    recomputed = round(0.40 * b["palette"] + 0.30 * b["silhouette"]
-                       + 0.20 * b["role"] + 0.10 * b["balance"])
-    assert abs(recomputed - b["match"]) <= 1, (recomputed, b)
-
-
-def test_stop_colour_zeroes_the_palette_axis():
-    """Вещь в стоп-цвете не «частично подходит» — по палитре она не подходит вовсе."""
-    bad = _look(["Платье чисто-чёрный", "Ботильоны", "Сумка", "Жакет"])
-
-    assert m._match_breakdown(bad, DIAG, "свидание")["palette"] == 0
-
-
-def test_incomplete_look_loses_balance_points():
-    full = _look(["Жакет мокко", "Брюки кремовый", "Ботильоны", "Сумка-багет"])
-    half = _look(["Жакет мокко", "Брюки кремовый"])
-
-    assert m._match_breakdown(full, DIAG, "деловая встреча")["balance"] > \
-        m._match_breakdown(half, DIAG, "деловая встреча")["balance"]
 
 
 def test_adds_looks_counts_new_combinations():
