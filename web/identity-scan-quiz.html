@@ -58,6 +58,14 @@ body {
   margin-top: 40px;
 }
 
+/* Экран РЕЗУЛЬТАТА шире вопросов. Вопрос требует фокуса — узкая колонка правильна. Но результат
+   это разбор: разрыв, формула, два образа, стоп-лист. На десктопе он оставался колонкой 580px
+   посреди пустого поля и выглядел сжатой полоской, а блоки читались как куски. */
+@media (min-width: 900px) {
+  .card.is-result { max-width: 980px; }
+  .card.is-result .ai-dirs { gap: 22px; }
+}
+
 .screen { display: none; }
 .screen.active { display: block; animation: rise .45s cubic-bezier(.4,0,.2,1); }
 @keyframes rise {
@@ -2391,6 +2399,11 @@ function renderAIResult() {
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  // Экран результата шире вопросов: вопрос требует фокуса, разбор — простора. Класс ставим
+  // здесь, а не через :has() в CSS: :has() поддержан не везде, а тихо сломанная вёрстка на
+  // чужом браузере хуже лишней строки кода.
+  const card = document.querySelector('.card');
+  if (card) card.classList.toggle('is-result', id === 's-result');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
