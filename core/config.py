@@ -11,6 +11,7 @@
 from __future__ import annotations
 import os
 import secrets
+import sys
 from pathlib import Path
 
 try:
@@ -40,16 +41,26 @@ def secret_key() -> str:
     env = os.getenv("SENSE_SECRET_KEY")
     if env:
         return env
-    f = data_dir() / "secret_key"
     try:
+        # data_dir() внутри try: он сам ходит в файловую систему, и его сбой ронял приложение
+        # на старте — до этой строки было не дойти
+        f = data_dir() / "secret_key"
         if f.exists():
             return f.read_text(encoding="utf-8").strip()
         key = secrets.token_urlsafe(48)
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text(key, encoding="utf-8")
         return key
-    except OSError:
-        return "dev-insecure-secret-change-in-prod"
+    except OSError as e:
+        # БЕЗОПАСНОСТЬ. Раньше здесь возвращалась зашитая константа — она лежит в публичном
+        # репозитории, то есть при недоступном томе (том не примонтирован, нет прав на запись)
+        # сессии молча подписывались известным всему миру ключом. Подделать cookie с почтой
+        # админа и открыть /metrics со всей базой клиенток мог кто угодно; проверено 22.07.2026.
+        # Случайный ключ в памяти: сессии слетят при рестарте — это заметно и чинится, в отличие
+        # от тихой подделки.
+        print(f"[secret] том недоступен ({e}); ключ сессий — временный, вход слетит при рестарте. "
+              f"Задай SENSE_SECRET_KEY.", file=sys.stderr)
+        return secrets.token_urlsafe(48)
 
 MODE = os.getenv("SENSE_MODE", "dev").lower()
 

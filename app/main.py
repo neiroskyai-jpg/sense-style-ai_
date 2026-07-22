@@ -9,6 +9,7 @@ from __future__ import annotations
 import base64
 import concurrent.futures
 import hashlib
+import hmac
 import io
 import requests
 import json
@@ -484,7 +485,9 @@ GARMENT_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  }
  try{
   // профиль из аккаунта (если вошла) важнее локального; иначе — localStorage
-  var server={{ profile_json|default('null')|safe }};
+  // |tojson, не |safe: json.dumps не экранирует «</script>», и строка из анкеты закрывала тег —
+  // хранимая XSS в сессии клиентки. Фильтр Jinja экранирует < > & и отдаёт валидный JS-литерал.
+  var server={{ profile|default(none)|tojson }};
   var saved=server||JSON.parse(localStorage.getItem(KEY)||'null');
   if(saved){ Object.keys(saved).forEach(function(k){ setVal(k, saved[k]); });
    var n=document.getElementById('savednote'); if(n) n.style.display='block'; }
@@ -2220,14 +2223,19 @@ def login_send():
     # режим теста: не гоняем клиентку в почту — впускаем сразу, письмо шлём фоном (для возврата)
     if _open_access():
         session["email"] = email
+        # почта не подтверждена — снимаем прежнюю отметку, иначе подтвердившийся раньше человек
+        # сменил бы почту на админскую и унёс права вместе с флагом
+        session.pop("verified", None)
         threading.Thread(target=send_magic_link, args=(email, link), daemon=True).start()
         return redirect(nxt or "/card")
     sent = send_magic_link(email, link)
-    # БЕЗОПАСНОСТЬ: ссылка входа = рабочий токен. НЕ показываем её на экране для произвольной почты
-    # (иначе любой ввёл бы чужой email и вошёл в её аккаунт — захват аккаунта). Показываем ТОЛЬКО:
-    # админу (самотест фаундера) или в локальном dev по флагу SENSE_DEV_LINK. На публичном проде без
-    # настроенной почты вход не сработает — это сигнал задать UNISENDER_API_KEY/FROM, а не дыра.
-    dev_ok = email.lower() in _ADMIN_EMAILS or os.getenv("SENSE_DEV_LINK") == "1"
+    # БЕЗОПАСНОСТЬ: ссылка входа = рабочий токен. На экране её показываем ТОЛЬКО в локальном dev по
+    # флагу SENSE_DEV_LINK. Прежнее условие «или введена админская почта» защиты не давало: почта
+    # приходит из формы, её вводит кто угодно, — то есть посетитель набирал адрес фаундера и получал
+    # рабочую ссылку прямо на экране. Права админа теперь висят на подтверждённом входе (см.
+    # _is_admin), и такая ссылка отдала бы их целиком. Доступ фаундера к метрикам на проде без
+    # настроенной почты — через SENSE_METRICS_KEY.
+    dev_ok = os.getenv("SENSE_DEV_LINK") == "1"
     return render_template_string(LOGIN_PAGE, error=None, sent=True, email=email,
                                   dev_link=(None if sent else (link if dev_ok else None)), next=nxt or "")
 
@@ -2243,6 +2251,9 @@ def auth_verify():
     if anon:
         merge_profile(anon, email)   # анонимная сессия не должна пропадать при входе
     session["email"] = email
+    # Единственное место, где почта считается подтверждённой: сюда попадают только по ссылке из
+    # письма, а токен подписан секретом сервера. Права админа висят именно на этом флаге.
+    session["verified"] = True
     session.permanent = True
     return redirect(_safe_next(session.pop("next_url", None)) or "/me")
 
@@ -5780,6 +5791,7 @@ def capture_lead():
         if anon:
             merge_profile(anon, email)
         session["email"] = email
+        session.pop("verified", None)   # почта введена, но не подтверждена — см. _is_admin
     return jsonify({"ok": True})
 
 
@@ -5821,10 +5833,20 @@ def _open_access() -> bool:
 
 
 def _is_admin() -> bool:
-    if (session.get("email") or "").lower() in _ADMIN_EMAILS:
+    """Права админа: метрики со всеми ПДн клиенток, выгрузки, снятие лимитов.
+
+    БЕЗОПАСНОСТЬ. Одной почты в сессии мало. При SENSE_OPEN_ACCESS=1 (режим тестов, включён по
+    умолчанию) почта попадает в сессию БЕЗ подтверждения — достаточно ввести её в форму. Адрес
+    фаундера лежит в коде значением по умолчанию, то есть любой посетитель вводил его на /login
+    и получал /metrics/leads.csv со всей базой: почты, Формулы, цветотипы, разрывы. Проверено
+    эксплойтом 22.07.2026. Поэтому админом считаем только ПОДТВЕРЖДЁННЫЙ вход — по ссылке из
+    письма (`session["verified"]` ставится в /auth и больше нигде).
+    """
+    if session.get("verified") and (session.get("email") or "").lower() in _ADMIN_EMAILS:
         return True
     key = os.getenv("SENSE_METRICS_KEY")
-    return bool(key) and request.args.get("key") == key
+    # constant-time: обычное == выдаёт длину и позицию первого расхождения по времени ответа
+    return bool(key) and hmac.compare_digest(request.args.get("key") or "", key)
 
 
 # Кого нельзя показывать клиентке как «стилевой ориентир». Реальный баг (кейс Марины, 16.07.2026):
@@ -6102,18 +6124,21 @@ def _garment_profile(form) -> dict:
     return {k: v for k, v in diag.items() if v}
 
 
-def _server_profile_json() -> str:
-    """JSON профиля «Примерочной» из аккаунта (если вошёл) — для префилла формы; иначе null."""
+def _server_profile() -> dict | None:
+    """Профиль «Примерочной» из аккаунта (если вошла) — для префилла формы; иначе None.
+
+    Отдаём объект, а не готовый JSON: сериализует шаблон через |tojson, и экранирование
+    происходит там же, где вставка. Раньше строка склеивалась здесь и вставлялась |safe.
+    """
     email = _current_user()
     if not email:
-        return "null"
-    sp = (get_profile(email) or {}).get("style_profile") or None
-    return json.dumps(sp, ensure_ascii=False)
+        return None
+    return (get_profile(email) or {}).get("style_profile") or None
 
 
 @app.get("/garment")
 def garment():
-    return render_template_string(GARMENT_FORM, error=None, profile_json=_server_profile_json())
+    return render_template_string(GARMENT_FORM, error=None, profile=_server_profile())
 
 
 @app.post("/garment/check")
@@ -6168,7 +6193,12 @@ def _validate_and_save(file) -> Path:
     except (UnidentifiedImageError, OSError, ValueError):
         raise ValueError("Файл не похож на изображение.")
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    path = UPLOAD_DIR / secure_filename(file.filename or "photo.jpg")
+    # ПРИВАТНОСТЬ. Имя файла телефона неуникально: камеры отдают photo.jpg, image.jpg, IMG_0001.jpg,
+    # и две клиентки писали в один и тот же путь. Генерация уходит в фоновый поток и читает файл
+    # через минуты — за это время его успевала перезаписать другая женщина, и её лицо попадало
+    # в чужую Карту. Проверено 22.07.2026. Префикс делает путь личным.
+    safe = secure_filename(file.filename or "") or "photo.jpg"
+    path = UPLOAD_DIR / f"{uuid.uuid4().hex}-{safe}"
     path.write_bytes(raw)
     return path
 
