@@ -972,6 +972,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .pairrow{display:grid;grid-template-columns:minmax(0,190px) minmax(0,2.1fr);gap:18px;align-items:start;margin-bottom:12px}
  .pairmodel{width:100%;border-radius:12px;display:block}
  .pairflat{width:100%;border-radius:14px;display:block;background:#faf6ee}
+ .pairrow-noimg{grid-template-columns:1fr}
  .pairitems{font-size:12px;color:var(--muted);margin:0 0 8px}
  @media(max-width:620px){.pairrow{grid-template-columns:1fr}}
  .lookflat{display:grid;grid-template-columns:minmax(0,200px) 1fr;gap:16px;align-items:start}
@@ -1360,7 +1361,10 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
       вместе с образом, поэтому вещи на ней ТЕ САМЫЕ. Прежний коллаж собирался из каталожных
       фото: разные фоны и ракурсы, а под «Лодочки» вставало фото угг. Карточки из каталога
       остаются запасным вариантом, если раскладка не сгенерировалась. #}
-   <div class=pairrow>
+   {# Без фото на клиентке колонка под него оставалась пустой на 190px, и карточки вещей
+      жались справа — страница выглядела сломанной, хотя данные на месте. Когда генерации нет
+      (кончился ключ, идёт сборка), состав занимает всю ширину. #}
+   <div class="pairrow{% if not lk.img %} pairrow-noimg{% endif %}">
     {% if lk.img %}<img class=pairmodel src="{{ lk.img }}" alt="Образ на тебе">{% endif %}
     {% if lk.flatlay %}<img class=pairflat src="{{ lk.flatlay }}" alt="Вещи этого образа">
     {% elif lk.pieces %}
@@ -1390,7 +1394,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    {# Образ на клиентке + раскладка его вещей одной картинкой. Раскладка генерируется вместе
       с образом, поэтому вещи на ней ИМЕННО ТЕ, что в составе, — в отличие от коллажа
       каталожных фото с разными фонами и рекламным текстом поверх вещи. #}
-   <div class=pairrow>
+   <div class="pairrow{% if not lk.img %} pairrow-noimg{% endif %}">
     {% if lk.img %}<img class=pairmodel src="{{ lk.img }}" alt="Образ на тебе">{% endif %}
     {% if lk.flatlay %}<img class=pairflat src="{{ lk.flatlay }}" alt="Вещи этого образа">{% endif %}
    </div>
@@ -5047,6 +5051,10 @@ def build_card_skeleton(diag: dict, season: str | None = None) -> dict:
                                              "palette": palette,
                                              "figure": _figure_label(diag.get("figure_type"))}),
         "looks": looks, "styling": {}, "shopping": [], "budget": {},
+        # Капсула и в скелете: вещи те же, что в образах, только без сгенерированной раскладки.
+        # Без этого блок исчезал целиком, когда генерация недоступна, — и структура Карты
+        # выглядела иначе, чем в полной версии.
+        "capsule_items": capsule_items_from_looks(looks),
         "style_reference": None,
         "stop_list": stop_list,
         "emphasize": deep.get("adv"),
