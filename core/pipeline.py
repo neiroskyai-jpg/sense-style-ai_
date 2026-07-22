@@ -13,6 +13,7 @@ from . import config, imgcache, provider
 from .canon import canon_rule, enforce_substyles
 from .figure_rules import fit_rules_prompt
 from .prompts import load_knowledge, load_reference, load_system_prompt
+from .style_cards import style_cards_prompt
 
 try:
     from . import rag
@@ -338,6 +339,12 @@ def generate_directions(diagnosis: dict, quiz: dict | None = None,
     result = provider.chat_json(
         config.model_for("text", mode),
         _DIRECTIONS_SYSTEM + "\n\n" + canon_rule()
+        # Направление задаёт стиль всей выдачи. Без карточек стилей модель знала ярлык подстиля,
+        # но не его состав — и «Милитари» выходил просто набором хаки-оттенков без единой
+        # знаковой вещи стиля.
+        + "\n\n# СТИЛИ: ИЗ ЧЕГО ОНИ СОСТОЯТ И КАК МИКСУЮТСЯ (обязательно)\n\n"
+        + style_cards_prompt(diagnosis.get("primary_substyle"),
+                             diagnosis.get("secondary_substyle"))
         + "\n\n# ЯЗЫК ТЕКСТОВ ДЛЯ КЛИЕНТКИ (обязательно)\n\n" + _language_reference(),
         json.dumps(payload, ensure_ascii=False), max_tokens=2048,
     )
@@ -615,6 +622,12 @@ def generate_capsule(diagnosis: dict, generation_request: dict, mode: str | None
         # ярлык «Классика», но не знает ни тканей, ни линии плеча, ни стоп-листа этого стиля.
         + "\n\n# 4 ЧИСТЫХ СТИЛЯ — ИЗ ЧЕГО ОНИ СОСТОЯТ (ткани, цвета, силуэт, стоп)\n\n"
         + _pure_styles_reference()
+        # Коммерческие и исторические стили (модуль 4 курса) — цвета, принты, ткани, конкретные
+        # вещи и обувь каждого. Плюс правила микса: 1-2 стиля, третий точечно, современное
+        # прочтение вместо цитирования «в лоб», и пары, которые не смешиваются вовсе.
+        + "\n\n# КОММЕРЧЕСКИЕ И ИСТОРИЧЕСКИЕ СТИЛИ (обязательно к соблюдению)\n\n"
+        + style_cards_prompt(diagnosis.get("primary_substyle"),
+                             diagnosis.get("secondary_substyle"))
         + "\n\n# ЯЗЫК ТЕКСТОВ ДЛЯ КЛИЕНТКИ (обязательно)\n\n"
         + _language_reference()
     )
