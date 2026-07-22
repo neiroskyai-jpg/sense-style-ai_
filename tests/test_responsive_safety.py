@@ -57,3 +57,37 @@ def test_no_rigid_min_width_blocks_the_phone():
             if int(value) > 380:
                 rigid.append((name, value))
     assert not rigid, rigid
+
+
+def test_css_never_puts_a_brace_next_to_a_hash():
+    """`{#` внутри CSS Jinja читает как начало СВОЕГО комментария и съедает остаток шаблона.
+
+    Реальный случай 23.07.2026: правило `@media(max-width:900px){#palette .palcols{...}}`
+    проглотило всё до конца файла вместе с закрывающим тегом style. Страница отдалась с кодом
+    200 и осталась пустой: тело документа уехало внутрь стиля. Ошибка бесшумная — ни исключения,
+    ни предупреждения, и заметна только глазами в браузере.
+
+    Проверяем именно CSS-блоки: в разметке `{#` — это законный комментарий Jinja.
+    """
+    bad = []
+    pos = 0
+    while True:
+        a = APP.find("<style>", pos)
+        if a < 0:
+            break
+        b = APP.find("</style>", a)
+        css = APP[a:b if b > a else a + 40000]
+        if "{#" in css:
+            line = APP[:a + css.index("{#")].count(chr(10)) + 1
+            bad.append(f"строка {line}")
+        pos = (b if b > a else a) + 1
+
+    assert not bad, ("скобка вплотную к решётке в CSS — шаблон обрежется: " + "; ".join(bad))
+
+
+def test_every_template_closes_its_style_block():
+    """Незакрытый style утягивает в себя всю страницу — тело документа остаётся пустым."""
+    src = APP
+
+    assert src.count("<style>") == src.count("</style>"), \
+        "число открывающих и закрывающих тегов style разошлось"

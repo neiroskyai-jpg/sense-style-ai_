@@ -811,7 +811,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
            border-radius:18px;overflow:hidden;text-decoration:none;color:inherit;min-height:206px}
  .lookcard:hover{border-color:#d5c9b6;box-shadow:0 8px 22px rgba(40,26,20,.06)}
  .lookpic{background:var(--sand);width:100%;height:100%;object-fit:cover;display:block}
- .lookpic.empty{display:block;background:var(--sand)}
+ .lookpic.empty{display:flex;flex-direction:column;justify-content:center;gap:5px;
+                background:var(--sand);padding:12px 11px;border-right:1px dashed rgba(93,34,48,.16)}
+ .lookpic.empty i{font-style:normal;font-size:10.5px;line-height:1.3;color:#5a5249;
+                  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .lookpic.empty.flat{display:block}
  .lookbody{padding:15px 16px 14px;display:flex;flex-direction:column;min-width:0;gap:2px}
  .lookttl{display:flex;align-items:flex-start;gap:8px;font-size:14px;font-weight:500;color:var(--ink);min-width:0}
  .lookttl .lt{min-width:0;flex:1 1 auto;font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;line-height:1.02;letter-spacing:-.01em;
@@ -827,7 +831,17 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
           padding:9px 16px;border-radius:8px;font-size:13px}
 
  /* нижняя пара левой колонки: покупки + палитра */
- .buyrow{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start}
+ /* Вторая колонка держала блок «Первые покупки». Его убрали, а колонка осталась — палитра
+    жалась в полторы трети экрана, справа зияла пустота в треть ширины. Ряд стал одним блоком:
+    палитра и стоп-лист делят его между собой по-настоящему. */
+ .buyrow{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+ #palette .palcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+                   gap:18px 26px;align-items:start}
+ #palette .palcols > .panel{margin:0;border:1px solid var(--line)}
+ /* Пробел после открывающей скобки обязателен. Скобка вплотную к решётке — это для Jinja
+    начало её собственного комментария: она съедает остаток шаблона вместе с закрытием style,
+    и страница уходит в белый экран. */
+ @media(max-width:900px){ #palette .palcols{grid-template-columns:1fr}}
  /* auto-fit вместо жёстких трёх колонок: в узкой панели три карточки сжимались до полосок,
     и названия резались посреди слова («Свободн брючн…»). Теперь колонок столько, сколько
     влезает без сжатия. */
@@ -1219,7 +1233,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     <a class=lookcard href="#look{{ loop.index }}">
      {% set li = lk.img or lk.get('preview_img') %}
      {% if li %}<img class=lookpic src="{{ li }}" alt="Образ · {{ lk.scenario or lk.title }}" loading=lazy>
-     {% else %}<span class="lookpic empty"></span>{% endif %}
+     {# Без картинки колонка была глухим бежевым прямоугольником во всю высоту карточки, и ряд
+        выглядел рваным. Показываем состав образа — он известен и без генерации. #}
+     {% elif lk.get('items') %}<span class="lookpic empty">
+      {% for t in lk['items'][:4] %}<i>{{ t.split(',')[0] }}</i>{% endfor %}</span>
+     {% else %}<span class="lookpic empty flat"></span>{% endif %}
      <div class=lookbody>
       <div class=lookttl>{% set ltl = lk.scenario or lk.title or lk.name or '' %}<span class=lt>{{ ltl[0]|upper }}{{ ltl[1:] }}</span><span class=chev>›</span></div>
       <p class=lookdesc>{{ lk.why_it_works or lk.description or (lk['items']|join(' · ') if lk.get('items') else '') }}</p>
@@ -1246,6 +1264,8 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    <div class=panel id=palette>
     <h2 class=ph>Твоя палитра</h2>
     <p class=psub>Базовые, акцентные и нейтральные цвета.</p>
+    <div class=palcols>
+    <div>
     {% for grp, title in [('base','Базовые'),('main','Основные'),('accent','Акцентные')] %}
      {% set items = c.palette|selectattr('group','equalto',grp)|list %}
      {% if items %}<div class=palgrp>{{ title }}</div>
@@ -1255,6 +1275,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     {% if rest %}<div class=palgrp>Ещё в палитре</div>
     <div class=palrow>{% for p in rest %}<span class=c style="background:{{ p.hex }}" title="{{ p.name }}"></span>{% endfor %}</div>{% endif %}
     <a class=idxmore href="#howto">Как использовать палитру →</a>
+    </div>
     {# Стоп-цвета живут в той же панели, что палитра: «что подходит» и «что нет» —
        один вопрос, и разносить их по разным блокам значит заставлять клиентку
        сравнивать через полэкрана. #}
@@ -1288,6 +1309,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
      {% endif %}
     </div>
     {% endif %}
+    </div>
    </div>
   </div>
 
