@@ -913,6 +913,13 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
   margin: 0;
 }
 .gallery-headline h2 em { color: var(--red); font-style: italic; font-weight: 500; }
+.gallery-lead {
+  max-width: 560px;
+  margin: 0;
+  text-align: center;
+  font-size: 15px; line-height: 1.65;
+  color: var(--ink-muted);
+}
 .gallery-all-link {
   font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
   color: var(--ink-muted); font-weight: 500; text-decoration: none;
@@ -1689,7 +1696,13 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 }
 .case-meta-col p { margin-bottom: 14px; }
 .case-meta-col strong { color: #FFFFFF; font-weight: 500; }
-.case-meta-col .case-formula {
+.case-meta-col .case-note {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+.case-formula {
   color: rgba(255, 255, 255, 0.92);
   font-family: var(--serif); font-style: italic; font-size: 15px;
   line-height: 1.5; margin-top: 4px;
@@ -2154,26 +2167,26 @@ footer {
 
       <div class="case-heading-col">
         <p class="case-eyebrow">Кейс из практики</p>
-        <h3>Реальная клиентка,<br><em>реальная трансформация</em></h3>
+        <h3>Реальная клиентка,<br><em>образы от системы</em></h3>
       </div>
 
       <div class="case-comparison">
         <div class="case-before">
-          <div class="case-side-label">ДО</div>
+          <div class="case-side-label">Её фото</div>
           <div class="case-before-photo">
-            <img loading="lazy" src="photos/client-case/before.jpg" alt="Клиентка ДО — образ не отражает желаемое впечатление">
+            <img loading="lazy" src="photos/client-case/before.jpg" alt="Фото клиентки до работы с Формулой стиля">
           </div>
         </div>
         <div class="case-arrow-wrap" aria-hidden="true">
           <div class="case-arrow">→</div>
         </div>
         <div class="case-after">
-          <div class="case-side-label">ПОСЛЕ</div>
+          <div class="case-side-label">Что собрала система</div>
           <div class="case-after-grid">
-            <div class="photo-slot"><img loading="lazy" src="photos/client-case/1.webp" alt="Кейс клиентки К. — образ 1"></div>
-            <div class="photo-slot"><img loading="lazy" src="photos/client-case/2.webp" alt="Кейс клиентки К. — образ 2"></div>
-            <div class="photo-slot"><img loading="lazy" src="photos/client-case/3.webp" alt="Кейс клиентки К. — образ 3"></div>
-            <div class="photo-slot"><img loading="lazy" src="photos/client-case/4.webp" alt="Кейс клиентки К. — образ 4"></div>
+            <div class="photo-slot"><img loading="lazy" src="photos/client-case/1.webp" alt="Образ 1, собранный системой по формуле клиентки"></div>
+            <div class="photo-slot"><img loading="lazy" src="photos/client-case/2.webp" alt="Образ 2, собранный системой по формуле клиентки"></div>
+            <div class="photo-slot"><img loading="lazy" src="photos/client-case/3.webp" alt="Образ 3, собранный системой по формуле клиентки"></div>
+            <div class="photo-slot"><img loading="lazy" src="photos/client-case/4.webp" alt="Образ 4, собранный системой по формуле клиентки"></div>
           </div>
         </div>
       </div>
@@ -2182,6 +2195,7 @@ footer {
         <p><strong>Запрос:</strong> выглядеть сильнее, дороже и увереннее, но не потерять женственность.</p>
         <p><strong>Формула:</strong></p>
         <p class="case-formula">Сильная женщина × Минимализм × Драматический акцент</p>
+        <p class="case-note">Образы справа собраны системой под эту формулу и отрисованы на ней самой — не на модели из стока. Так видно, как формула выглядит на конкретном человеке.</p>
       </div>
 
     </div>
@@ -2339,6 +2353,8 @@ footer {
   <div class="container">
     <div class="gallery-headline">
       <h2>Образы под твою фигуру<br>и <em>сценарии жизни</em></h2>
+      <p class="gallery-lead">Каждый образ система собирает и отрисовывает на тебе — по твоей формуле,
+        фигуре и палитре. Не подборка со стока и не «похожая модель».</p>
       <a href="identity-scan-quiz.html" class="gallery-all-link">Смотреть все направления <span class="arrow">→</span></a>
     </div>
     <div class="gallery-strip">

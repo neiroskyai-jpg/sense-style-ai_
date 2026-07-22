@@ -3969,6 +3969,7 @@ def wardrobe_upload():
         # файле) стояли снаружи — любая из них роняла запрос целиком, и клиентка вместо своего
         # гардероба получала Internal Server Error. Одна проблемная вещь не должна стоить всей
         # загрузки: её просто считаем нераспознанной.
+        photo_path = None
         try:
             photo_path = _validate_and_save(f)
             record_call()
@@ -3987,6 +3988,8 @@ def wardrobe_upload():
         except Exception as e:  # noqa: BLE001
             print(f"[wardrobe] вещь пропущена: {type(e).__name__}: {e}", file=sys.stderr)
             failed += 1
+        finally:
+            _discard_photo(photo_path)
     try:
         record_event("wardrobe_uploaded", email, meta=f"{added}/{len(files)}")
     except Exception:  # noqa: BLE001 — метрика не должна стоить клиентке результата
@@ -6163,6 +6166,8 @@ def garment_check():
         v = evaluate_garment(str(photo_path), diag, mode="dev")
     except Exception as e:  # noqa: BLE001
         return render_template_string(GARMENT_FORM, error=f"Не удалось проверить: {e}"), 500
+    finally:
+        _discard_photo(photo_path)
 
     verdict_ru, color, icon = _VERDICT_RU.get(v.get("verdict"), ("Спорно", "#6b645c", "?"))
     palette = _PALETTE_RU.get(v.get("palette_match"))
@@ -6201,6 +6206,19 @@ def _validate_and_save(file) -> Path:
     path = UPLOAD_DIR / f"{uuid.uuid4().hex}-{safe}"
     path.write_bytes(raw)
     return path
+
+
+def _discard_photo(path) -> None:
+    """Стереть загруженное фото сразу после обработки.
+
+    Политика и FAQ обещают клиентке, что фотография не хранится. Обещание держал ровно один путь
+    из шести — сборка Карты; после «проверить вещь», разбора гардероба и квиза с фото снимки
+    оставались на диске. Это и обман в тексте, и лишние ПДн на сервере (152-ФЗ).
+    """
+    try:
+        Path(path).unlink()
+    except (OSError, TypeError):
+        pass
 
 
 def _build_quiz(form) -> dict:
@@ -6269,6 +6287,8 @@ def analyze():
         diag, capsule, looks = _run_analysis(photo_path, quiz)
     except Exception as e:  # noqa: BLE001 — понятная ошибка, не страница 500
         return render_template_string(FORM, error=f"Не удалось обработать: {e}"), 500
+    finally:
+        _discard_photo(photo_path)
 
     client = (request.form.get("client") or "").strip()
     prog = None
@@ -6753,6 +6773,8 @@ def _job_worker(job_id: str, photo_path: Path, quiz: dict, client: str,
         }}
     except Exception as e:  # noqa: BLE001
         _JOBS[job_id] = {"status": "error", "error": str(e)}
+    finally:
+        _discard_photo(photo_path)
 
 
 @app.post("/api/analyze")

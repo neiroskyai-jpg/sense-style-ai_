@@ -7,6 +7,7 @@
 import hashlib
 import io
 import os
+from pathlib import Path
 
 os.environ.setdefault("OPENROUTER_API_KEY", "dummy")
 
@@ -151,3 +152,40 @@ def test_metrics_key_still_lets_the_founder_in(client, monkeypatch):
 
     assert client.get("/metrics?key=s3cret-key").status_code == 200
     assert client.get("/metrics?key=wrong").status_code == 302
+
+
+def test_no_upload_path_leaves_the_photo_on_disk():
+    """Политика и FAQ обещают: фотография не хранится. Обещание должно держать КАЖДЫЙ путь.
+
+    Держал ровно один из шести — сборка Карты. После «проверить вещь», разбора гардероба и квиза
+    с фото снимки оставались в user-photos навсегда: и текст на сайте становился неправдой, и на
+    сервере копились чужие лица (152-ФЗ).
+
+    Сохранил — убери за собой сам либо передай в фоновый воркер, который уберёт (воркеры проверяем
+    отдельным утверждением ниже).
+    """
+    import re
+
+    src = Path(m.__file__).read_text(encoding="utf-8")
+    blocks = re.split(r"\n(?=def |@app\.)", src)
+
+    leaky = []
+    for b in blocks:
+        head = b.split("\n")[0][:70]
+        if "_validate_and_save(" not in b or "def _validate_and_save" in b:
+            continue
+        hands_off = "threading.Thread(" in b and "photo_path" in b.split("threading.Thread(")[1][:200]
+        if "_discard_photo(" not in b and not hands_off:
+            leaky.append(head)
+
+    assert not leaky, f"фото сохраняется, но не удаляется: {leaky}"
+
+    for worker in ("_job_worker", "_card_job_worker"):
+        body = src.split(f"def {worker}(", 1)[1].split("\n@app.", 1)[0]
+        assert "unlink" in body or "_discard_photo" in body, f"{worker} не убирает фото"
+
+
+def test_discard_photo_survives_a_missing_file():
+    """Уборка стоит в finally — она не имеет права ронять ответ клиентке."""
+    m._discard_photo(Path("нет-такого-файла.jpg"))
+    m._discard_photo(None)
