@@ -2765,6 +2765,9 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .pcombos{display:block;margin-top:3px;font-size:9.5px;letter-spacing:.02em;color:var(--wine);
           opacity:.85}
  .pcombos.thin{color:#a5652a}
+ .wdtake{margin-top:8px;width:100%;padding:6px 8px;font:inherit;font-size:11px;cursor:pointer;
+          background:#fff;color:var(--wine);border:1px solid rgba(93,34,48,.28);border-radius:8px}
+ .wdtake:hover{background:var(--soft)}
  .verdict{display:flex;gap:9px;align-items:flex-start;border-radius:11px;padding:10px 13px;
           font-size:12.5px;line-height:1.45;margin-top:12px}
  .verdict .vic{flex:0 0 auto;font-size:14px;line-height:1.2}
@@ -3094,6 +3097,9 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    {% else %}<span class="wdimg empty"></span>{% endif %}
    <div class=wdrole>{{ row['title'] }}</div>
    {% if row['tags'] %}<div class=wdtags>{{ row['tags']|join(' · ') }}</div>{% endif %}
+   {# Готовый образ дня → в конструктор одним кликом. Без этого связь «вот образы» и
+      «собери свой» терялась: клиентка смотрела план недели и начинала сборку с нуля. #}
+   {% if row['tags'] %}<button type=button class=wdtake data-items="{{ row['tags']|join('|') }}">Собрать этот образ</button>{% endif %}
   </div>
   {% endfor %}
  </div>
@@ -3223,6 +3229,29 @@ function cellHtml(o){
  if(o.url) h+='<a class=buy href="'+esc(o.url)+'" target="_blank" rel="noopener">купить →</a>';
  return h;
 }
+// «Собрать этот образ»: раскладываем вещи дня по ячейкам конструктора. Ищем каждую вещь
+// среди карточек капсулы по имени — так в ячейку попадает та же вещь с фото и ссылкой,
+// а не просто текст.
+document.addEventListener('click', function(e){
+ var b = e.target.closest && e.target.closest('.wdtake');
+ if(!b) return;
+ var names = (b.getAttribute('data-items')||'').split('|').filter(Boolean);
+ outfit = {};
+ names.forEach(function(n){
+  var el = [].slice.call(document.querySelectorAll('.pitem')).find(function(i){
+   return (i.getAttribute('data-name')||'').toLowerCase() === n.trim().toLowerCase();
+  });
+  if(el){
+   var slot = el.getAttribute('data-slot');
+   outfit[slot] = {name: el.getAttribute('data-name'), img: el.getAttribute('data-img'),
+                   url: el.getAttribute('data-url')};
+  }
+ });
+ saveWeek(); render();
+ var c = document.getElementById('wardrobe') || document.querySelector('.cells');
+ if(c) c.scrollIntoView({behavior:'smooth', block:'center'});
+});
+
 function render(){
  document.querySelectorAll('[data-cell]').forEach(function(c){
   var s=c.getAttribute('data-cell'); var o=outfit[s]; var body=c.querySelector('.cellbody');

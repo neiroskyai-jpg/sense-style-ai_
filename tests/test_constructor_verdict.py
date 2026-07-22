@@ -80,3 +80,15 @@ def test_counter_is_rendered_and_flags_weak_items():
     assert "combos_per_item" in m.CABINET_PAGE
     assert "pcombos" in m.CABINET_PAGE
     assert "n < 3" in m.CABINET_PAGE, "вещь слабее трёх комплектов должна помечаться"
+
+
+def test_week_outfit_can_be_loaded_into_constructor():
+    """«Собрать этот образ»: готовый день дня переносится в конструктор одним кликом.
+
+    Без этого связь «вот образы» и «собери свой» терялась — клиентка смотрела план недели,
+    а сборку начинала с нуля.
+    """
+    assert "wdtake" in m.CABINET_PAGE
+    assert "Собрать этот образ" in m.CABINET_PAGE
+    # вещь ищется среди карточек капсулы по имени: так в ячейку попадает та же вещь с фото
+    assert "data-name" in m.CABINET_PAGE and "querySelectorAll('.pitem')" in m.CABINET_PAGE
