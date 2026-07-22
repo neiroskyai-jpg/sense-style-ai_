@@ -43,7 +43,7 @@ from core.figure_rules import fit_rules_client
 from core.chat import stylist_reply
 from core.catalog import match_products, parse_csv, score_products
 from core.weather import configured as weather_configured, dress_advice, get_weather
-from core.canon import enforce_substyles
+from core.canon import enforce_substyles, ru_display
 from core.item_images import item_image_url, item_type
 from core.profiles import (add_wardrobe_item, card_link_token, current_card_by_season,
                            delete_wardrobe_item, get_profile, merge_profile, save_card,
@@ -67,6 +67,9 @@ app = Flask(__name__, static_folder=str(WEB_DIR), static_url_path="")
 # Предметное фото по названию вещи. Фильтр, а не поле Карты: у собранных ранее Карт поля нет,
 # а картинка нужна и им. Генерации здесь не происходит — только поиск готового кадра.
 app.jinja_env.filters["item_img"] = item_image_url
+# Русские имена трёх англоязычных подстилей — на экране, не в данных. Новые генерации
+# модель уже пишет по-русски (правило 5 канона), фильтр чинит показ ранее собранных Карт.
+app.jinja_env.filters["ru"] = ru_display
 app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # лимит загрузки 15 МБ
 # секрет сессий/magic-link: env SENSE_SECRET_KEY или стабильный файл на постоянном томе
 from core.config import secret_key as _secret_key, data_dir as _data_dir  # noqa: E402
@@ -1131,11 +1134,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
  <div class=panel>
   <h2 class=ph>Твоя ДНК стиля</h2>
-  <div class=dnaformula>{{ flead }}{% for p in fmore %}<span class=b><span class=x>&times;</span>{{ p }}</span>{% endfor %}</div>
+  <div class=dnaformula>{{ flead|ru }}{% for p in fmore %}<span class=b><span class=x>&times;</span>{{ p|ru }}</span>{% endfor %}</div>
   {% if c.substyles %}
   {# Подстиль приходит машинным кодом (smart_casual) — на экране клиентки это выглядит как
      утечка внутренностей. Подчёркивания в пробелы, первая буква заглавная. #}
-  <div class=subchips>{% for sub in c.substyles %}<span class=subchip>{{ sub|replace('_',' ')|capitalize }}</span>{% endfor %}</div>
+  <div class=subchips>{% for sub in c.substyles %}<span class=subchip>{{ sub|replace('_',' ')|capitalize|ru }}</span>{% endfor %}</div>
   {% endif %}
   {# Доли четырёх полей метода — это и есть результат ДНК-теста: формула называет направление,
      а полоса показывает, из чего оно собрано. #}

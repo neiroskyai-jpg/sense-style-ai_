@@ -75,3 +75,30 @@ def test_every_generative_step_carries_the_rule(monkeypatch):
     assert len(seen) == 3
     for system in seen:
         assert "КАНОН МЕТОДА" in system
+
+
+def test_english_substyles_are_shown_in_russian():
+    """Три подстиля метода названы по-английски — клиентке их показываем по-русски.
+
+    В данных остаётся канон: по нему работают enforce_substyles и промпты. Но «Мягкое прочтение
+    Power Woman» на экране читается как чужое, а лендинг давно говорит «Сильная женщина».
+    """
+    from core.canon import ru_display, substyles
+
+    assert ru_display("Чистая классика × Power Woman") == "Чистая классика × Сильная женщина"
+    assert ru_display("Quiet Luxury") == "Тихая роскошь"
+    assert ru_display("Smart Casual") == "Смарт-кэжуал"
+    assert ru_display(None) == ""
+    # канон не тронут: в списке подстилей имена остаются английскими
+    assert "Power Woman" in substyles()
+
+
+def test_canon_rule_tells_the_model_to_write_those_names_in_russian():
+    """Подстановка задним числом ломает падеж («прочтение Сильная женщина»), поэтому русское
+    имя должна писать сама модель — фразу она строит целиком."""
+    from core.canon import canon_rule
+
+    rule = canon_rule()
+
+    assert "Сильная женщина" in rule and "Сильной женщины" in rule
+    assert "primary_substyle" in rule, "служебные поля обязаны остаться каноническими"

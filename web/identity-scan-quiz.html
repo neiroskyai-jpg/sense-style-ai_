@@ -2370,7 +2370,7 @@ function renderAIResult() {
           (d.wear_to || []).map(w => `<i>${esc(w)}</i>`).join('')}</div>`
       : '';
     const parts = items
-      ? `<details class="ai-dir-parts"><summary>Из чего собран</summary>
+      ? `<details class="ai-dir-parts"><summary>Из чего собран образ</summary>
          <ul class="ai-dir-items">${items}</ul></details>`
       : '';
     html += `<div class="ai-dir">${img}<div class="ai-dir-body">
