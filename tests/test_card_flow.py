@@ -61,7 +61,12 @@ def test_quiz_gap_reaches_card_even_after_server_restart(client):
 
 
 def test_repeat_quiz_shows_new_gap_not_old_card(client):
-    """Прошла квиз заново (44 → 55): старую Карту не показываем, ведём на пересборку с новым Gap."""
+    """Прошла квиз заново (44 → 55): показываем новый Gap и предлагаем пересборку.
+
+    Карту при этом НЕ прячем. Раньше вместо неё показывалась форма загрузки фото — со стороны
+    клиентки это читалось как петля: прошла диагностику и вернулась в начало. Числа на экране
+    берутся из свежей диагностики, а баннер честно говорит, что подборка ниже собрана на прежней.
+    """
     c, store = client
     old = _diag(44)
     store[EMAIL] = {"diagnosis": old, "card": {"gap": 44, "_diag_sig": m._diag_signature(old)}}
@@ -75,8 +80,9 @@ def test_repeat_quiz_shows_new_gap_not_old_card(client):
 
     assert r.status_code == 200
     assert "55" in html, "показан новый Gap из свежего квиза"
-    assert "Собери её заново" in html, "предложена пересборка Карты"
-    assert "44" not in html.split("Собери её заново")[0], "старый Gap не подсовывается"
+    assert "Твоя диагностика обновилась" in html, "клиентка знает, что Карта на прежней"
+    assert "Собрать Карту заново" in html, "предложена пересборка"
+    assert "Покажем тебя в 6 образах" not in html, "форма загрузки фото — это возврат в начало"
 
 
 def test_legacy_card_without_signature_gap_mismatch_forces_rebuild(client):
@@ -91,4 +97,4 @@ def test_legacy_card_without_signature_gap_mismatch_forces_rebuild(client):
     html = r.get_data(as_text=True)
 
     assert "55" in html, "показан актуальный Gap"
-    assert "Собери её заново" in html
+    assert "Собрать Карту заново" in html

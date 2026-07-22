@@ -354,3 +354,22 @@ def test_saved_outfits_are_scoped_to_their_owner(client, monkeypatch):
 
     assert len(pr.saved_outfits(USER, db_path=db)) == 1, "чужой удалил мой образ"
     assert pr.saved_outfits("someone-else", db_path=db) == []
+
+
+def test_repeat_quiz_shows_the_card_not_the_upload_form(client, monkeypatch):
+    """Пройти диагностику ещё раз — не значит вернуться в начало.
+
+    Устаревшая Карта пряталась, и вместо неё показывалась форма загрузки фото. Замысел был
+    «не выдавать прошлый результат за свежий», но со стороны клиентки это читалось как петля:
+    прошла квиз — и снова просят фото, хотя Карта у неё есть. Теперь Карту показываем всегда,
+    а поверх — баннер о том, что диагностика новее.
+    """
+    c, db = client
+    monkeypatch.setattr(m, "_card_stale", lambda prof: True)
+
+    html = c.get("/card").get_data(as_text=True)
+
+    assert "Твоя ДНК стиля" in html, "Карта должна быть на экране"
+    assert "Твоя диагностика обновилась" in html, "но с честной пометкой"
+    assert "Собрать Карту заново" in html, "и с выходом вперёд"
+    assert "Покажем тебя в 6 образах" not in html, "форма загрузки фото — это возврат в начало"

@@ -55,6 +55,12 @@ UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitig
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"  # дизайнерский сайт (статика)
 ALLOWED = {"image/jpeg", "image/png", "image/webp"}
 N_RENDER = 2  # сколько образов рендерим в квизе (контроль стоимости/времени)
+# Сколько образов Карты рисуем бесплатному посетителю. Полная Карта — 17 обращений к
+# image-модели, и пока платного тарифа нет, столько получал каждый зашедший: 22.07.2026 на
+# этом кончился баланс провайдера и продукт встал целиком. Текстовая Карта отдаётся вся,
+# режется только генерация. Подтверждённый админ (см. _is_admin) рисует всё — демо и прогоны
+# на клиентках лимитом не задеваются.
+FREE_LOOKS = int(os.getenv("SENSE_FREE_LOOKS", "2"))
 # Сколько образов генерим одновременно. Больше — быстрее, но каждый воркер держит картинку в
 # памяти; на маленьком контейнере это кончается убитым процессом и потерянной Картой.
 RENDER_WORKERS = int(os.getenv("SENSE_RENDER_WORKERS", "3"))
@@ -5731,8 +5737,24 @@ def _card_look_prompt(lk: dict, diag: dict) -> str:
     return ". ".join(parts) or (diag.get("style_formula") or "современный стильный образ")
 
 
-def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | None = None) -> None:
-    """Фоновая сборка карты + рендер 6 образов на клиентке. Фото удаляем после."""
+def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | None = None,
+                     full_render: bool = False) -> None:
+    """Фоновая сборка карты + рендер образов на клиентке. Фото удаляем после.
+
+    full_render — рисовать все образы или бесплатную часть (SENSE_FREE_LOOKS).
+
+    Полная Карта это 17 обращений к image-модели: 6 образов + 2 стилизации, раскладка на
+    каждый из них и раскладка капсулы. Платного тарифа в коде ещё нет, поэтому столько
+    получал КАЖДЫЙ зашедший — 22.07.2026 на этом кончился баланс провайдера, и продукт встал
+    целиком: ни диагностики, ни Карты, ни превью после квиза.
+
+    Режем только генерацию картинок. Текстовая часть отдаётся полностью — формула, палитра,
+    стоп-лист, капсула и описания ВСЕХ образов: карточка без картинки показывает состав образа,
+    это тот же вид, что при неудавшейся генерации.
+
+    Флаг считает обработчик запроса: `_is_admin` читает сессию, а тут отдельный поток, где
+    контекста запроса уже нет.
+    """
     try:
         prof = get_profile(email) or {}
         diag = prof.get("diagnosis") or {}
@@ -5740,6 +5762,8 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
         card = build_style_card(diag, season=season)
         # рендерим 6 образов карты + 2 образа стилизации (одна вещь → два образа)
         targets = list(card.get("looks") or []) + list((card.get("styling") or {}).get("looks") or [])
+        if not full_render:
+            targets = targets[:FREE_LOOKS]
 
         def _render(lk):
             try:
@@ -5779,8 +5803,9 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
                       f"{type(e).__name__}: {e}", file=sys.stderr)
                 return None
 
-        flat_targets = (list(card.get("looks") or [])
-                        + list((card.get("styling") or {}).get("looks") or []))
+        # Раскладку рисуем только тем образам, что получили картинку: без образа она показывает
+        # вещи, которые клиентка и так видит списком в карточке, а стоит столько же.
+        flat_targets = [lk for lk in targets if lk.get("img")]
         with concurrent.futures.ThreadPoolExecutor(max_workers=RENDER_WORKERS) as ex:
             flats = list(ex.map(_flat, flat_targets))
         for lk, flat in zip(flat_targets, flats):
@@ -5861,15 +5886,12 @@ def style_card():
                  "как ты выглядишь и как хочешь считываться. Без диагностики её не из чего собрать.")
     card = prof.get("card") or {}
     stale = _card_stale(prof)  # диагностика обновилась (новый квиз), а Карта на прежней
-    # Новый квиз → НЕ показываем старую Карту (путает: «прошлый результат»). Ведём вперёд: новый Gap
-    # + пересборка под свежую диагностику. Только Gap переходит из квиза, дальше собираем заново.
-    if stale and not request.args.get("rebuild") and not request.args.get("text"):
-        gap = diag.get("gap_percentage")
-        notice = ("<b>Твой разрыв обновился по новому квизу"
-                  + (f": {gap}%" if gap is not None else "") + ".</b> "
-                  "Старая Карта осталась на прежней диагностике. Собери её заново под свежий результат.")
+    # Раньше устаревшая Карта пряталась, и вместо неё показывалась форма загрузки фото. Замысел
+    # был «не выдавать прошлый результат за свежий», но со стороны клиентки это читалось как
+    # возврат в начало: прошла диагностику — и снова просят фото, хотя Карта у неё есть.
+    # Теперь Карту показываем всегда, а поверх неё — баннер о том, что диагностика новее.
+    if stale:
         record_event("card_stale_rebuild_prompt", email)
-        return render_template_string(CARD_BUILD_FORM, error=None, notice=notice)
     if card:
         card = _refresh_card_projection(card, diag)
     if card and not request.args.get("rebuild") and not request.args.get("text"):
@@ -5880,7 +5902,7 @@ def style_card():
                                       matrix=_safe_extra(build_outfit_matrix, card.get("starter_capsule") or []),
                                       econ=_safe_extra(capsule_economics, card.get("starter_capsule"),
                                                              card.get("combination_count")),
-                                      thanks=request.args.get("fb"), stale=False)
+                                      thanks=request.args.get("fb"), stale=stale)
     # бесплатная генерация — один раз на email; пересборку/повтор блокируем (защита токенов).
     # Исключение: диагностика реально изменилась (новый квиз) — даём пересобрать Карту под неё.
     if (request.args.get("rebuild") or request.args.get("text")) and not _gen_allowed(email) and not stale:
@@ -5990,7 +6012,10 @@ def card_build():
     season = (request.form.get("season") or "").strip() or None  # ss|fw — сезон капсулы
     job_id = uuid.uuid4().hex
     _JOBS[job_id] = {"status": "processing"}
-    threading.Thread(target=_card_job_worker, args=(job_id, photo_path, email, season),
+    # Флаг считаем ЗДЕСЬ: в потоке воркера контекста запроса уже нет, и _is_admin вернул бы False
+    # даже для подтверждённого админа — то есть демо на защите резалось бы вместе с гостями.
+    threading.Thread(target=_card_job_worker,
+                     args=(job_id, photo_path, email, season, _is_admin()),
                      daemon=True).start()
     return render_template_string(CARD_BUILDING, job_id=job_id)
 
