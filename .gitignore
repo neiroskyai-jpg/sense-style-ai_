@@ -88,3 +88,6 @@ tmp_visual/
 tmp_realcard/
 tmp_nogen/
 data/cache/
+
+# резервные копии, которые оставляет сборщик документов заявки
+*.bak
