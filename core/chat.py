@@ -59,8 +59,11 @@ def _profile_block(profile: dict | None) -> str:
     lines = [f"\n\nФОРМУЛА КЛИЕНТКИ (опирайся на неё в советах):",
              f"- Формула: {diag.get('style_formula')}",
              f"- Цветотип: {diag.get('colortype')}",
-             f"- Фигура: {diag.get('figure_type')}",
-             f"- Identity Gap: {diag.get('gap_percentage')}%"]
+             f"- Фигура: {diag.get('figure_type')}"]
+    # Gap может быть None, когда распределения негодны (см. _recompute_gap): «None%» в подсказке
+    # стилисту — мусор, лучше строку опустить, чем печатать несуществующее число.
+    if isinstance(diag.get("gap_percentage"), (int, float)):
+        lines.append(f"- Identity Gap: {diag['gap_percentage']}%")
     vf = diag.get("visual_formula") or {}
     if vf.get("stop_list"):
         lines.append("- Стоп-лист: " + ", ".join(vf["stop_list"][:5]))

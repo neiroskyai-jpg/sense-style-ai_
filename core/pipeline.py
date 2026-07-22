@@ -108,14 +108,23 @@ def _recompute_gap(diag: dict) -> dict:
     now_sum = sum(_num(now, k) for k in _GAP_FIELDS)
     want_sum = sum(_num(want, k) for k in _GAP_FIELDS)
     if not (90 <= now_sum <= 110 and 90 <= want_sum <= 110):
+        # Распределения негодны — считать нечем. Раньше здесь оставалось gap_percentage от модели:
+        # то самое «основание метрики на вероятностной модели», которое докстринг запрещает. Теперь
+        # число модели снимаем и помечаем диагноз неполным, а не выдаём догадку LLM за расчёт.
         diag["gap_distribution_broken"] = {"now_sum": round(now_sum), "want_sum": round(want_sum)}
+        diag["gap_percentage"] = None
+        diag["gap_source"] = "unavailable"
         return diag
 
     field_gap = sum(abs(_num(want, k) - _num(now, k)) for k in _GAP_FIELDS) / 2
     breakdown = diag.get("gap_breakdown") if isinstance(diag.get("gap_breakdown"), dict) else {}
-    expression = breakdown.get("expression_gap")
-    if expression not in _EXPRESSION_STEPS:      # модель обязана выбрать одну из трёх ступеней
-        expression = 0
+    raw_expression = breakdown.get("expression_gap")
+    expression = raw_expression if raw_expression in _EXPRESSION_STEPS else 0
+    if raw_expression not in _EXPRESSION_STEPS:
+        # expression_gap — до 25 баллов, четверть шкалы. Молча заменяя негодное значение нулём, мы
+        # не отличили бы «модель честно выбрала 0» от «модель вернула мусор». Помечаем подмену: у
+        # 6 из 12 старых прогонов expression был вне ступеней и тихо обнулялся.
+        diag["expression_gap_defaulted"] = {"raw": raw_expression, "used": 0}
     gap = min(99, round(field_gap + expression))
 
     llm_gap = diag.get("gap_percentage")
