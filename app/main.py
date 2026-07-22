@@ -2762,6 +2762,12 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
                  font:inherit;font-size:12.5px;background:#fff}
  .cityform button{padding:8px 13px;border:0;border-radius:9px;background:var(--wine);color:#fff;
                   font:inherit;font-size:12px;cursor:pointer}
+ .verdict{display:flex;gap:9px;align-items:flex-start;border-radius:11px;padding:10px 13px;
+          font-size:12.5px;line-height:1.45;margin-top:12px}
+ .verdict .vic{flex:0 0 auto;font-size:14px;line-height:1.2}
+ .v-ok{background:#eef4ef;border:1px solid #d7e6da;color:#31543f}
+ .v-warn{background:#fdf3e8;border:1px solid #f1ddc0;color:#8a5a20}
+ .v-empty{background:var(--soft);border:1px solid var(--line);color:var(--muted)}
  .ctrls{display:flex;gap:9px;align-items:center;margin-top:12px;flex-wrap:wrap}
  .ctrls button{font:inherit;font-size:12.5px;padding:8px 14px;border-radius:9px;cursor:pointer;
                border:1px solid var(--line);background:#fff;color:var(--wine)}
@@ -3025,6 +3031,9 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
      <button type=button class=wd data-day=sat>Сб</button>
      <button type=button class=wd data-day=sun>Вс</button>
     </div>
+    {# Вердикт: правила капсулы, проверяемые на лету. Без него конструктор — коллаж: вещи
+       перетаскиваются, но непонятно, получился образ или набор. #}
+    <div class="verdict v-empty" id=verdict><span class=vic>·</span><span>Начни собирать образ — выбери верх и низ или платье.</span></div>
     <div class=ctrls><button type=button onclick=clearOutfit()>Очистить образ</button><span class=cnt>вещей: <b id=count>0</b></span></div>
    </div>
    <div>
@@ -3218,6 +3227,47 @@ function render(){
   i.classList.toggle('on', outfit[s] && outfit[s].name===i.getAttribute('data-name'));
  });
  var cnt=document.getElementById('count'); if(cnt) cnt.textContent=Object.keys(outfit).length;
+ renderVerdict();
+}
+
+// Правила капсулы, проверяемые на лету. Конструктор без них — коллаж: клиентка перетаскивает
+// вещи и не понимает, получился образ или набор. Правила из методологии: один цвет-герой на
+// образ, законченный комплект (верх+низ либо платье), обувь как завершение.
+var ACCENT_WORDS = ['красн','алый','изумруд','бордов','фукси','сапфир','горчич','оранж','розов',
+                    'жёлт','желт','лайм','бирюз','пурпур','винн','малин','коралл'];
+function accentOf(name){
+ var n=(name||'').toLowerCase();
+ for(var i=0;i<ACCENT_WORDS.length;i++){ if(n.indexOf(ACCENT_WORDS[i])>=0) return ACCENT_WORDS[i]; }
+ return '';
+}
+function renderVerdict(){
+ var box=document.getElementById('verdict'); if(!box) return;
+ var names=Object.keys(outfit).map(function(k){ return (outfit[k]||{}).name||''; });
+ var has=function(slot){ return !!outfit[slot]; };
+ var complete = has('Платья и комбинезоны') || (has('Верх') && has('Низ'));
+ var accents=[];
+ names.forEach(function(n){ var a=accentOf(n); if(a && accents.indexOf(a)<0) accents.push(a); });
+
+ var cls='v-empty', ic='·', txt='Начни собирать образ — выбери верх и низ или платье.';
+ if(names.length){
+  if(accents.length>1){
+   cls='v-warn'; ic='!';
+   txt='Два ярких цвета спорят между собой. По правилу капсулы оставь один цвет-герой, остальное — база.';
+  } else if(!complete){
+   cls='v-warn'; ic='◐';
+   txt='Добавь пару верх + низ или платье — иначе образ не закончен.';
+  } else if(!has('Обувь')){
+   cls='v-warn'; ic='◐';
+   txt='Основа собрана. Добавь обувь — она задаёт градус образа.';
+  } else {
+   cls='v-ok'; ic='✓';
+   txt = accents.length===1
+    ? 'Образ собран. Один цвет-герой держит акцент, остальное работает базой.'
+    : 'Образ собран на спокойной базе — без ярких акцентов, всё сочетается.';
+  }
+ }
+ box.className='verdict '+cls;
+ box.innerHTML='<span class=vic>'+ic+'</span><span>'+txt+'</span>';
 }
 function pickKey(key){ var o=byKey[key]; if(!o) return;
  if(outfit[o.slot] && outfit[o.slot].name===o.name){ delete outfit[o.slot]; } else { outfit[o.slot]=o; }
