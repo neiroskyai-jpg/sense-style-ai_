@@ -235,3 +235,30 @@ def test_submission_never_calls_the_full_card_a_one_minute_job():
         text = path.read_text(encoding="utf-8")
         for bad in ("полная Карта стиля за 66", "полную Карту за 66", "Карта за 66"):
             assert bad not in text, f"{path.name}: «{bad}»"
+
+
+# Слова, которыми сервис говорит сам с собой, а не с клиенткой: механика продаж, коды фаз,
+# англицизмы. Клиентке они ничего не объясняют, а тон уводят в «контент-маркетолога».
+JARGON = ["не продаётся", "не продаёт", "в P2", "digital-разбор", "premium-слой",
+          "до платной подписки"]
+
+
+def test_tariffs_speak_to_the_client_not_about_the_funnel():
+    """Тариф объясняет, как устроено, а не как мы это продаём.
+
+    «Живой гардероб не продаётся в отрыве от Карты» — про наш прайс, хотя уровень бесплатный.
+    «Довести механику до платной подписки» — про наши задачи. «P2» — внутренний код фазы.
+    """
+    html = Path("web/index.html").read_text(encoding="utf-8")
+
+    found = [w for w in JARGON if w in html]
+
+    assert not found, f"язык не для клиентки: {found}"
+
+
+def test_landing_uses_russian_quotation_marks():
+    """Ёлочки везде — кроме одного места лапки уже были, и это читалось как чужая вставка."""
+    html = Path("web/index.html").read_text(encoding="utf-8")
+    body = html.split("</head>", 1)[1]
+
+    assert "“" not in body and "”" not in body, "лапки вместо «ёлочек»"
