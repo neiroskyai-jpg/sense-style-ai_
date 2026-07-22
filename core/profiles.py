@@ -45,6 +45,14 @@ def _conn(db_path: Path = DB_PATH) -> sqlite3.Connection:
         " id INTEGER PRIMARY KEY AUTOINCREMENT,"
         " email TEXT, ts TEXT, name TEXT, slot TEXT, verdict TEXT, reason TEXT, image TEXT)"
     )
+    # Собранные в конструкторе образы. Хранение на сервере, а не в браузере: неделя планируется
+    # один раз, и терять её при чистке кэша или смене устройства нельзя — тариф называется
+    # «Стиль каждый день», а не «стиль до перезагрузки».
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS saved_outfits ("
+        " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        " email TEXT, ts TEXT, title TEXT, items TEXT)"
+    )
     # Постоянная ссылка на Карту. Без неё Карта достижима только из того браузера, где её
     # собрали: клиентка со сменой устройства теряет результат, а дать ссылку в мессенджер нечего.
     # Токен привязан к ПОЛЬЗОВАТЕЛЮ, а не к версии Карты — пересборка ссылку не ломает.
@@ -137,6 +145,46 @@ def add_wardrobe_item(email: str, item: dict, db_path: Path = DB_PATH) -> None:
              item.get("slot") or "", item.get("verdict") or "", item.get("reason") or "",
              item.get("image") or ""),
         )
+        con.commit()
+
+
+def save_outfit(email: str, title: str, items: list[dict], db_path: Path = DB_PATH) -> None:
+    """Сохранить собранный образ. Пустой набор не сохраняем — это не образ."""
+    if not _norm(email) or not items:
+        return
+    with _conn(db_path) as con:
+        con.execute(
+            "INSERT INTO saved_outfits (email, ts, title, items) VALUES (?,?,?,?)",
+            (_norm(email), datetime.now(timezone.utc).isoformat(),
+             (title or "").strip()[:80], json.dumps(items, ensure_ascii=False)),
+        )
+        con.commit()
+
+
+def saved_outfits(email: str, limit: int = 24, db_path: Path = DB_PATH) -> list[dict]:
+    """Сохранённые образы, новые сверху."""
+    if not _norm(email):
+        return []
+    with _conn(db_path) as con:
+        rows = con.execute(
+            "SELECT id, ts, title, items FROM saved_outfits WHERE email=? "
+            "ORDER BY id DESC LIMIT ?", (_norm(email), limit)).fetchall()
+    out = []
+    for r in rows:
+        try:
+            items = json.loads(r[3]) or []
+        except (ValueError, TypeError):   # битая строка не должна ронять кабинет
+            items = []
+        out.append({"id": r[0], "ts": r[1], "title": r[2] or "", "items": items})
+    return out
+
+
+def delete_outfit(email: str, outfit_id: int, db_path: Path = DB_PATH) -> None:
+    """Убрать сохранённый образ. Область по email — чужой чужим не удалить."""
+    if not _norm(email):
+        return
+    with _conn(db_path) as con:
+        con.execute("DELETE FROM saved_outfits WHERE email=? AND id=?", (_norm(email), outfit_id))
         con.commit()
 
 

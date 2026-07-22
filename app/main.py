@@ -46,9 +46,9 @@ from core.weather import configured as weather_configured, dress_advice, get_wea
 from core.canon import enforce_substyles, ru_display
 from core.item_images import item_image_url, item_type
 from core.profiles import (add_wardrobe_item, card_link_token, current_card_by_season,
-                           delete_wardrobe_item, get_profile, merge_profile, save_card,
-                           save_diagnosis, save_style_profile, user_by_card_token,
-                           wardrobe_items)
+                           delete_outfit, delete_wardrobe_item, get_profile, merge_profile,
+                           save_card, save_diagnosis, save_outfit, save_style_profile,
+                           saved_outfits, user_by_card_token, wardrobe_items)
 
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "user-photos"  # в .gitignore
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"  # дизайнерский сайт (статика)
@@ -2804,6 +2804,27 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
                -webkit-box-orient:vertical;overflow:hidden}
  .pitem .pname{display:-webkit-box;font-size:10.5px;color:#4a443c;margin-top:6px;line-height:1.25;
                -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%;min-height:2.6em}
+ /* «Мои образы»: сохранённые комплекты под конструктором. */
+ .myoutfits{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+ .myoutfits h3{margin:0 0 10px;font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;
+               font-size:19px;color:var(--ink)}
+ .moempty{margin:0;font-size:13px;color:var(--muted);line-height:1.55}
+ .mogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+ .mocard{border:1px solid var(--line);border-radius:12px;background:#fff;padding:11px 12px}
+ .motop{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+ .motop b{font-size:13px;font-weight:500;color:var(--ink);min-width:0;overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap}
+ .motop form{margin-left:auto;line-height:1}
+ .motop button{border:0;background:none;color:var(--muted);font-size:17px;cursor:pointer;padding:0 2px}
+ .motop button:hover{color:var(--wine)}
+ .morow{display:flex;flex-wrap:wrap;gap:5px}
+ .mopill{display:inline-flex;align-items:center;gap:5px;font-size:11px;line-height:1.3;
+         color:#4a443c;background:var(--soft);border:1px solid var(--line);border-radius:20px;
+         padding:3px 9px 3px 4px;max-width:100%}
+ .mopill:not(.withimg){padding-left:9px}
+ .mopill img{width:20px;height:20px;border-radius:50%;object-fit:cover;flex:0 0 auto}
+ .ctrls .primary{background:var(--wine);color:#fff;border-color:var(--wine)}
+ .ctrls .primary:disabled{opacity:.45;cursor:default}
  .checks{margin-top:14px;display:flex;flex-direction:column;gap:6px}
  .checks div{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
  .checks i{flex:0 0 auto;width:14px;height:14px;border-radius:4px;background:var(--wine);color:#fff;
@@ -3110,6 +3131,34 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    <div><i>✓</i>Собирай образ на каждый день недели</div>
    <div><i>✓</i>Вещи подобраны под твою Формулу и палитру</div>
   </div>
+  {# «Мои образы» — идея из прототипа фаундера. Раньше собранный образ жил до перезагрузки. #}
+  <div class=myoutfits id=myoutfits>
+   <h3>Мои образы</h3>
+   {% if my_outfits %}
+   <div class=mogrid>
+    {% for o in my_outfits %}
+    <div class=mocard>
+     <div class=motop>
+      <b>{{ o.title or 'Образ' }}</b>
+      <form method=post action="/outfits/remove" onsubmit="return confirm('Убрать этот образ?')">
+       <input type=hidden name=id value="{{ o.id }}"><button type=submit title="убрать">×</button>
+      </form>
+     </div>
+     <div class=morow>
+      {% for it in o['items'] %}
+      <span class=mopill{% if it.img %} withimg{% endif %}>
+       {% if it.img %}<img src="{{ it.img }}" alt="" loading=lazy>{% endif %}{{ it.name }}</span>
+      {% endfor %}
+     </div>
+    </div>
+    {% endfor %}
+   </div>
+   {% else %}
+   <p class=moempty>Пока пусто. Собери образ слева и нажми «Сохранить образ» — он останется здесь
+    и переживёт закрытие браузера.</p>
+   {% endif %}
+  </div>
+
   {% else %}
   <p class=empty style="margin-top:14px">Капсула ещё не собрана. <a href="/card">Собери Карту стиля</a> — вещи появятся здесь.</p>
   {% endif %}
@@ -3143,7 +3192,17 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     {# Вердикт: правила капсулы, проверяемые на лету. Без него конструктор — коллаж: вещи
        перетаскиваются, но непонятно, получился образ или набор. #}
     <div class="verdict v-empty" id=verdict><span class=vic>·</span><span>Начни собирать образ — выбери верх и низ или платье.</span></div>
-    <div class=ctrls><button type=button onclick=clearOutfit()>Очистить образ</button><span class=cnt>вещей: <b id=count>0</b></span></div>
+    {# Собранный образ надо куда-то деть. Без сохранения конструктор заставлял собирать заново
+       каждое утро — для тарифа «Стиль каждый день» это и есть главная работа клиентки. #}
+    <div class=ctrls>
+     <form method=post action="/outfits/save" id=saveform style="display:contents">
+      <input type=hidden name=items id=saveitems>
+      <input type=hidden name=title id=savetitle>
+      <button type=submit class=primary id=savebtn disabled>Сохранить образ</button>
+     </form>
+     <button type=button onclick=clearOutfit()>Очистить образ</button>
+     <span class=cnt>вещей: <b id=count>0</b></span>
+    </div>
    </div>
    <div>
     <div class=wbox>
@@ -3363,6 +3422,19 @@ function render(){
  });
  var cnt=document.getElementById('count'); if(cnt) cnt.textContent=Object.keys(outfit).length;
  renderVerdict();
+ syncSave();
+}
+
+// Форма сохранения наполняется из текущего образа. Кнопка неактивна на пустом наборе:
+// сохранять нечего, а нажатие «вроде сработало» без результата хуже отсутствия кнопки.
+var DAY_RU={mon:'Понедельник',tue:'Вторник',wed:'Среда',thu:'Четверг',fri:'Пятница',
+            sat:'Суббота',sun:'Воскресенье'};
+function syncSave(){
+ var btn=document.getElementById('savebtn'); if(!btn) return;
+ var list=Object.keys(outfit).map(function(k){ return outfit[k]; });
+ btn.disabled = list.length===0;
+ document.getElementById('saveitems').value=JSON.stringify(list);
+ document.getElementById('savetitle').value=DAY_RU[curDay]||'';
 }
 
 // Правила капсулы, проверяемые на лету. Конструктор без них — коллаж: клиентка перетаскивает
@@ -3865,7 +3937,7 @@ def cabinet():
         season_tabs=season_tabs, season_diff=season_diff, outfit_cells=_outfit_cells(board),
         starter_outfit=_starter_outfit(board),
         combos_per_item=outfits_per_item(board), sel_season=sel,
-        season_built=season_built)
+        season_built=season_built, my_outfits=saved_outfits(email))
 
 
 STYLEBOOK_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
@@ -4115,6 +4187,38 @@ def wardrobe_add():
         })
         record_event("wardrobe_item_added", email)
     return redirect("/cabinet#wardrobe-mine")
+
+
+@app.post("/outfits/save")
+def outfit_save():
+    """Сохранить собранный в конструкторе образ.
+
+    Хранение на сервере, а не в браузере: неделя планируется один раз, и терять её при чистке
+    кэша или смене устройства нельзя. Идея из прототипа фаундера — «Мои образы».
+    """
+    email = _current_user()
+    try:
+        items = json.loads(request.form.get("items") or "[]")
+    except ValueError:
+        items = []
+    # с фронта приходит что угодно — оставляем только нужные поля и режем длины
+    clean = [{"slot": str(i.get("slot") or "")[:40], "name": str(i.get("name") or "")[:160],
+              "img": str(i.get("img") or "")[:400], "url": str(i.get("url") or "")[:400]}
+             for i in items if isinstance(i, dict) and i.get("name")][:12]
+    if clean:
+        save_outfit(email, request.form.get("title") or "", clean)
+        record_event("outfit_saved", email, meta=str(len(clean)))
+    return redirect("/cabinet#myoutfits")
+
+
+@app.post("/outfits/remove")
+def outfit_remove():
+    email = _current_user()
+    try:
+        delete_outfit(email, int(request.form.get("id") or 0))
+    except ValueError:
+        pass
+    return redirect("/cabinet#myoutfits")
 
 
 @app.post("/wardrobe/remove")

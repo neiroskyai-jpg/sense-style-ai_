@@ -296,3 +296,61 @@ def test_capsule_item_without_a_photo_gets_a_designed_tile(client):
 
     assert re.search(r"<span class=ph0><i>[^<]+</i><b>палантин", html), \
         "у вещи без фото должны быть слот и название на плитке"
+
+
+def test_assembled_outfit_survives_a_reload(client, monkeypatch):
+    """«Мои образы» — последняя невзятая идея из прототипа фаундера.
+
+    Собранный образ жил до перезагрузки: конструктор заставлял собирать заново каждое утро.
+    Для тарифа «Стиль каждый день» это и есть главная работа клиентки, поэтому храним на
+    сервере, а не в браузере — чистка кэша и смена устройства не должны стирать неделю.
+    """
+    import json as _json
+
+    c, db = client
+    monkeypatch.setattr(m, "saved_outfits", lambda e, **k: pr.saved_outfits(e, db_path=db))
+    monkeypatch.setattr(m, "save_outfit", lambda e, t, i: pr.save_outfit(e, t, i, db))
+    monkeypatch.setattr(m, "delete_outfit", lambda e, i: pr.delete_outfit(e, i, db))
+
+    assert "Пока пусто. Собери образ слева" in c.get("/cabinet").get_data(as_text=True)
+
+    items = _json.dumps([{"slot": "Верх", "name": "жакет структурный"},
+                         {"slot": "Низ", "name": "брюки прямого кроя"}], ensure_ascii=False)
+    c.post("/outfits/save", data={"items": items, "title": "Понедельник"})
+
+    html = c.get("/cabinet").get_data(as_text=True)
+    assert "Понедельник" in html and "жакет структурный" in html
+
+    saved = pr.saved_outfits(USER, db_path=db)
+    c.post("/outfits/remove", data={"id": str(saved[0]["id"])})
+    assert pr.saved_outfits(USER, db_path=db) == []
+
+
+def test_empty_outfit_is_not_saved(client, monkeypatch):
+    """Пустой набор — не образ. Кнопка на пустом состоянии заблокирована, сервер тоже не верит."""
+    c, db = client
+    monkeypatch.setattr(m, "saved_outfits", lambda e, **k: pr.saved_outfits(e, db_path=db))
+    monkeypatch.setattr(m, "save_outfit", lambda e, t, i: pr.save_outfit(e, t, i, db))
+
+    c.post("/outfits/save", data={"items": "[]", "title": "Пусто"})
+    c.post("/outfits/save", data={"items": "не json", "title": "Мусор"})
+
+    assert pr.saved_outfits(USER, db_path=db) == []
+    assert "id=savebtn disabled" in c.get("/cabinet").get_data(as_text=True)
+
+
+def test_saved_outfits_are_scoped_to_their_owner(client, monkeypatch):
+    """Чужой образ чужим не удалить и не увидеть — область по пользователю в самом SQL."""
+    import json as _json
+
+    c, db = client
+    monkeypatch.setattr(m, "save_outfit", lambda e, t, i: pr.save_outfit(e, t, i, db))
+    c.post("/outfits/save", data={"items": _json.dumps([{"slot": "Верх", "name": "Блуза"}]),
+                                  "title": "Мой"})
+    mine = pr.saved_outfits(USER, db_path=db)
+    assert len(mine) == 1
+
+    pr.delete_outfit("someone-else", mine[0]["id"], db)
+
+    assert len(pr.saved_outfits(USER, db_path=db)) == 1, "чужой удалил мой образ"
+    assert pr.saved_outfits("someone-else", db_path=db) == []
