@@ -2762,6 +2762,9 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
                  font:inherit;font-size:12.5px;background:#fff}
  .cityform button{padding:8px 13px;border:0;border-radius:9px;background:var(--wine);color:#fff;
                   font:inherit;font-size:12px;cursor:pointer}
+ .pcombos{display:block;margin-top:3px;font-size:9.5px;letter-spacing:.02em;color:var(--wine);
+          opacity:.85}
+ .pcombos.thin{color:#a5652a}
  .verdict{display:flex;gap:9px;align-items:flex-start;border-radius:11px;padding:10px 13px;
           font-size:12.5px;line-height:1.45;margin-top:12px}
  .verdict .vic{flex:0 0 auto;font-size:14px;line-height:1.2}
@@ -2993,6 +2996,10 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    <span class=pitem data-slot="{{ grp.slot }}" data-name="{{ it.name }}" data-img="{{ it.image or '' }}" data-url="{{ it.url or '' }}">
     {% if it.image %}<img src="{{ it.image }}" alt="" loading=lazy>{% else %}<span class=ph0></span>{% endif %}
     <span class=pname title="{{ it.name }}">{{ it.name }}</span>
+    {# Сколько комплектов даёт вещь. Правило капсулы: меньше трёх — не опора, а случайная
+       покупка. Число показывает ЦЕННОСТЬ вещи, а не только её вид. #}
+    {% set n = combos_per_item.get(it.name) %}
+    {% if n %}<span class="pcombos{% if n < 3 %} thin{% endif %}" title="в скольких комплектах капсулы участвует вещь">{{ n }} образ{{ '' if n % 10 == 1 and n % 100 != 11 else 'а' if n % 10 in [2,3,4] and n % 100 not in [12,13,14] else 'ов' }}</span>{% endif %}
    </span>
    {% endfor %}{% endfor %}
   </div>
@@ -3716,7 +3723,8 @@ def cabinet():
         today_label=["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"][datetime.now().weekday()],
         board=board, palette=palette, shopping=card.get("shopping") or [],
         season_tabs=season_tabs, season_diff=season_diff, outfit_cells=_outfit_cells(board),
-        starter_outfit=_starter_outfit(board), sel_season=sel)
+        starter_outfit=_starter_outfit(board),
+        combos_per_item=outfits_per_item(board), sel_season=sel)
 
 
 STYLEBOOK_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
@@ -6422,6 +6430,45 @@ def _with_catalog_photos(items: list[dict], board: list[dict]) -> list[dict]:
         pic = _look_pieces([name], board)
         img = (pic[0].get("image") if pic else None)
         out.append({**it, "image": img})
+    return out
+
+
+def outfits_per_item(board: list[dict]) -> dict[str, int]:
+    """Сколько законченных комплектов даёт каждая вещь капсулы.
+
+    Правило капсулы из курса: вещь, которая работает меньше чем в трёх комплектах, — не опора,
+    а случайная покупка. Показываем это числом прямо на карточке, чтобы клиентка видела ЦЕННОСТЬ
+    вещи, а не только её вид.
+
+    Комплект считаем законченным как верх + низ + обувь либо платье + обувь. Верхний слой и
+    сумка комплект не создают, они его дополняют — поэтому для них берём число комплектов,
+    к которым их вообще можно добавить.
+    """
+    by_slot: dict[str, list] = {}
+    for grp in board or []:
+        for it in grp.get("items") or []:
+            if it.get("name"):
+                by_slot.setdefault(grp.get("slot") or "", []).append(it["name"])
+
+    tops = by_slot.get("Верх", [])
+    bottoms = by_slot.get("Низ", [])
+    dresses = by_slot.get("Платья и комбинезоны", [])
+    shoes = by_slot.get("Обувь", []) or [None]      # без обуви комплект всё равно считаем
+    core = len(tops) * len(bottoms) * len(shoes) + len(dresses) * len(shoes)
+
+    out: dict[str, int] = {}
+    for name in tops:
+        out[name] = len(bottoms) * len(shoes)
+    for name in bottoms:
+        out[name] = len(tops) * len(shoes)
+    for name in dresses:
+        out[name] = len(shoes)
+    for name in by_slot.get("Обувь", []):
+        out[name] = len(tops) * len(bottoms) + len(dresses)
+    # Дополняющие вещи подходят к любому комплекту капсулы.
+    for slot in ("Верхний слой", "Аксессуары"):
+        for name in by_slot.get(slot, []):
+            out[name] = core
     return out
 
 

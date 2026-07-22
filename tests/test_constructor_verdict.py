@@ -44,3 +44,39 @@ def test_dress_counts_as_complete_base():
     """Платье — самостоятельная основа: требовать к нему верх и низ нельзя."""
     assert "Платья и комбинезоны" in m.CABINET_PAGE
     assert "has('Платья и комбинезоны') || (has('Верх') && has('Низ'))" in m.CABINET_PAGE
+
+
+def test_every_item_shows_how_many_outfits_it_gives():
+    """Правило капсулы: вещь, работающая меньше чем в трёх комплектах, — не опора.
+
+    Число на карточке показывает ЦЕННОСТЬ вещи, а не только её вид: клиентка видит, что
+    брюки собирают шесть образов, а платье — один, и понимает, во что вкладываться.
+    """
+    board = [
+        {"slot": "Верх", "items": [{"name": "Блузка"}, {"name": "Топ"}]},
+        {"slot": "Низ", "items": [{"name": "Брюки"}, {"name": "Юбка"}]},
+        {"slot": "Обувь", "items": [{"name": "Лоферы"}]},
+        {"slot": "Верхний слой", "items": [{"name": "Жакет"}]},
+    ]
+
+    counts = m.outfits_per_item(board)
+
+    assert counts["Блузка"] == 2, "верх работает с каждым низом"
+    assert counts["Лоферы"] == 4, "обувь входит в каждый комплект"
+    assert counts["Жакет"] == 4, "слой дополняет любой комплект"
+
+
+def test_dress_counts_only_with_shoes():
+    """Платье — готовый образ, ему нужна только обувь, верх с низом не нужны."""
+    board = [
+        {"slot": "Платья и комбинезоны", "items": [{"name": "Платье миди"}]},
+        {"slot": "Обувь", "items": [{"name": "Лоферы"}, {"name": "Ботильоны"}]},
+    ]
+
+    assert m.outfits_per_item(board)["Платье миди"] == 2
+
+
+def test_counter_is_rendered_and_flags_weak_items():
+    assert "combos_per_item" in m.CABINET_PAGE
+    assert "pcombos" in m.CABINET_PAGE
+    assert "n < 3" in m.CABINET_PAGE, "вещь слабее трёх комплектов должна помечаться"
