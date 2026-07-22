@@ -190,3 +190,31 @@ def test_daily_tier_lists_only_live_cabinet_blocks():
 
     for promise in ("образ дня", "план недели", "конструктор", "брать", "трекер"):
         assert promise in panel, promise
+
+
+def test_case_section_does_not_sell_generated_looks_as_real_life():
+    """Кадры «после» в кейсе — генерации, и подписи обязаны это называть.
+
+    Секция называлась «Реальная клиентка, реальная трансформация» и показывала четыре
+    сгенерированных образа под подписью «ПОСЛЕ». На кадрах виден маркер ИИ — обещание не
+    выдерживает первой же проверки, а на защите конкурса это бьёт по доверию ко всему остальному.
+    """
+    html = Path("web/index.html").read_text(encoding="utf-8")
+    case = html.split('<section id="case"', 1)[1].split("</section>", 1)[0]
+
+    assert "реальная трансформация" not in case.lower()
+    assert "Что собрала система" in case
+    assert "не на модели из стока" in case
+
+
+def test_dark_case_section_does_not_use_light_theme_muted_ink():
+    """На тёмной секции --ink-muted почти сливается с фоном — текст становится невидимым.
+
+    Так и случилось с подписью к кейсу: почти чёрный по почти чёрному. Цвет виден только в
+    браузере, поэтому держим правило текстом.
+    """
+    html = Path("web/index.html").read_text(encoding="utf-8")
+    rule = html.split(".case-meta-col .case-note {", 1)[1].split("}", 1)[0]
+
+    assert "var(--ink-muted)" not in rule, "на тёмном фоне нужна белая шкала, а не светлая тема"
+    assert "255, 255, 255" in rule

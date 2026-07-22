@@ -1697,10 +1697,12 @@ section { scroll-margin-top: 100px; padding: 130px 0; }
 .case-meta-col p { margin-bottom: 14px; }
 .case-meta-col strong { color: #FFFFFF; font-weight: 500; }
 .case-meta-col .case-note {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 13px;
-  line-height: 1.55;
-  color: var(--ink-muted);
+  line-height: 1.6;
+  /* секция тёмная: --ink-muted здесь почти сливается с фоном, берём ту же белую шкалу,
+     что у соседних строк колонки */
+  color: rgba(255, 255, 255, 0.6);
 }
 .case-formula {
   color: rgba(255, 255, 255, 0.92);
