@@ -1,10 +1,15 @@
 """Собрать коллаж «До → После» из двух фото под слайд презентации.
 
     python scripts/make_before_after.py <фото-до> <фото-после> <выход.png> [--vertical]
+                                       [--labels "До|После"]
 
 Зачем: слайд 2 широкий (10×5.62", ~1.78:1), а фото клиенток вертикальные. Одно фото на такой слайд
 режется сильно; два рядом с подписями читаются как трансформация — то, ради чего слайд и нужен.
 Коллаж собирается точно в пропорции слайда, чтобы put_photo_itmo не обрезал его повторно.
+
+`--labels` — свои подписи через «|». Нужны, когда «После» — не фотография, а образ, собранный
+системой: подпись обязана это называть, иначе слайд читается как реальная съёмка. У кадров из
+генерации виден маркер ИИ, и неподписанный рендер выглядит как попытка выдать его за факт.
 
 `--vertical` — кадры друг под другом, под узкий вертикальный плейсхолдер (3.24x5.62" на слайде
 «Решение»). Горизонтальный коллаж в такой рамке обрезался бы почти до одного кадра.
@@ -54,7 +59,13 @@ def main() -> int:
     if len(sys.argv) < 4:
         print(__doc__)
         return 1
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    argv = sys.argv[1:]
+    labels = ("До", "После")
+    if "--labels" in argv:
+        i = argv.index("--labels")
+        labels = tuple((argv[i + 1] + "|").split("|")[:2])
+        del argv[i:i + 2]
+    args = [a for a in argv if not a.startswith("--")]
     vertical = "--vertical" in sys.argv
     before = Path(args[0])
     after = Path(args[1])
@@ -73,8 +84,8 @@ def main() -> int:
 
     if vertical:   # кадры друг под другом, подпись под каждым
         cell_w, cell_h = w, (h - GAP - 2 * LABEL_H) // 2
-        spots = [(Image.open(before), "До", 0),
-                 (Image.open(after), "После", cell_h + LABEL_H + GAP)]
+        spots = [(Image.open(before), labels[0], 0),
+                 (Image.open(after), labels[1], cell_h + LABEL_H + GAP)]
         for img, text, top in spots:
             canvas.paste(fill_into(img, cell_w, cell_h, y_bias=0.12), (0, top))
             box = draw.textbbox((0, 0), text, font=font)
@@ -85,7 +96,7 @@ def main() -> int:
         cell_w, cell_h = (w - GAP) // 2, h - LABEL_H
         canvas.paste(fill_into(Image.open(before), cell_w, cell_h), (0, 0))
         canvas.paste(fill_into(Image.open(after), cell_w, cell_h), (cell_w + GAP, 0))
-        for text, cx in (("До", cell_w // 2), ("После", cell_w + GAP + cell_w // 2)):
+        for text, cx in ((labels[0], cell_w // 2), (labels[1], cell_w + GAP + cell_w // 2)):
             box = draw.textbbox((0, 0), text, font=font)
             draw.text((cx - (box[2] - box[0]) / 2,
                        cell_h + (LABEL_H - (box[3] - box[1])) / 2 - box[1]),
