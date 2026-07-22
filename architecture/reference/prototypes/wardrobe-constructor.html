@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Гардероб-конструктор · Капсула</title>
+<style>
+  :root{
+    --bg:#f4efe6; --card:#fffdf9; --ink:#2b2620; --muted:#8c8172;
+    --line:#e4dccd; --accent:#3f5c50; --accent2:#7a2a38;
+    --chip:#efe8db; --shadow:0 8px 30px rgba(60,50,35,.10);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:Georgia,'Times New Roman',serif;font-weight:600;margin:0}
+  .wrap{max-width:1240px;margin:0 auto;padding:24px 20px 60px}
+  header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:8px}
+  header.top h1{font-size:30px;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:14px;margin-top:4px;max-width:640px}
+  .palette{display:flex;gap:6px;align-items:center;margin-top:6px}
+  .palette b{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+  .sw{width:20px;height:20px;border-radius:50%;border:1px solid rgba(0,0,0,.12)}
+  .meta-note{background:var(--chip);border:1px solid var(--line);border-radius:12px;
+    padding:10px 14px;font-size:13px;color:#5c5344;max-width:330px}
+  .meta-note b{color:var(--ink)}
+
+  .layout{display:grid;grid-template-columns:1fr 360px;gap:24px;margin-top:22px;align-items:start}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}}
+
+  section.block{margin-bottom:30px}
+  .block-h{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+  .block-h h2{font-size:20px}
+  .block-h span{font-size:12.5px;color:var(--muted)}
+
+  /* Готовые образы */
+  .looks-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:640px){.looks-row{grid-template-columns:repeat(2,1fr)}}
+  .look-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+  .look-card .occ{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+  .look-card h3{font-size:16px}
+  .look-thumbs{display:flex;gap:5px;flex-wrap:wrap}
+  .look-thumbs .t{width:30px;height:38px;border-radius:6px;border:1px solid rgba(0,0,0,.10);
+    display:flex;align-items:center;justify-content:center}
+  .look-thumbs .t svg{width:18px;height:18px;opacity:.85}
+  .look-card .note{font-size:12px;color:var(--muted);flex:1}
+  .btn{border:none;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:600;
+    cursor:pointer;transition:.15s;font-family:inherit}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:#33493f}
+  .btn-ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  .btn-ghost:hover{background:#eef2ef}
+  .btn-sm{padding:7px 10px;font-size:12px}
+
+  /* Капсула */
+  .cat-group{margin-bottom:18px}
+  .cat-title{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+    margin:0 0 9px;display:flex;align-items:center;gap:8px}
+  .cat-title .cnt{color:var(--accent);font-weight:600}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:11px}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden;
+    cursor:pointer;transition:.15s;position:relative;text-align:left}
+  .item:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+  .item.sel{outline:2.5px solid var(--accent);outline-offset:-1px}
+  .item .pic{height:96px;display:flex;align-items:center;justify-content:center;position:relative}
+  .item .pic svg{width:44px;height:44px}
+  .item .body{padding:8px 9px 10px}
+  .item .nm{font-size:12.5px;line-height:1.25;font-weight:600}
+  .item .tags{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;align-items:center}
+  .tag{font-size:10px;padding:2px 6px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+  .tag.acc{background:#fbeef0;border-color:#f0d3d8;color:#8f3143}
+  .tag.base{background:#eef1ee;border-color:#dbe3dc;color:#4a6156}
+  .tag.combos{background:#eef4ef;border-color:#d7e6da;color:#3f5c50;font-weight:600}
+  .tag.combos.warn{background:#fdf1e7;border-color:#f2ddc2;color:#a5652a}
+  .item.sel .sel-badge{position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;
+    background:var(--accent);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center}
+
+  /* Панель Твой лук */
+  .panel{position:sticky;top:18px;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:12px}
+  .panel h2{font-size:19px}
+  .slots{display:flex;flex-direction:column;gap:8px}
+  .slot{display:flex;align-items:center;gap:11px;border:1px dashed var(--line);border-radius:11px;
+    padding:8px 10px;min-height:56px;transition:.15s}
+  .slot.filled{border-style:solid;background:#fbf8f2}
+  .slot.disabled{opacity:.4}
+  .slot .icon{width:38px;height:46px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;
+    border:1px solid rgba(0,0,0,.08)}
+  .slot .icon svg{width:22px;height:22px}
+  .slot .txt{flex:1;min-width:0}
+  .slot .role{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+  .slot .val{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slot .val.empty{color:#bcb2a1;font-weight:400;font-style:italic}
+  .slot .x{border:none;background:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 4px}
+  .slot .x:hover{color:var(--accent2)}
+
+  .verdict{border-radius:11px;padding:11px 13px;font-size:13px;display:flex;gap:9px;align-items:flex-start}
+  .verdict .ic{font-size:16px;line-height:1.2}
+  .v-ok{background:#eef4ef;border:1px solid #d7e6da;color:#31543f}
+  .v-warn{background:#fdf3e8;border:1px solid #f1ddc0;color:#8a5a20}
+  .v-empty{background:var(--chip);border:1px solid var(--line);color:var(--muted)}
+
+  .count{font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between}
+  .count b{color:var(--ink)}
+  .panel-actions{display:flex;gap:8px}
+  .panel-actions .btn{flex:1}
+
+  .saved{margin-top:6px}
+  .saved h3{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px}
+  .saved-empty{font-size:12.5px;color:#bcb2a1;font-style:italic}
+  .saved-list{display:flex;flex-direction:column;gap:7px}
+  .saved-item{display:flex;align-items:center;gap:8px;background:#fbf8f2;border:1px solid var(--line);
+    border-radius:10px;padding:7px 10px}
+  .saved-item .si-thumbs{display:flex;gap:3px;flex:1;flex-wrap:wrap}
+  .saved-item .si-thumbs .t{width:20px;height:26px;border-radius:4px;border:1px solid rgba(0,0,0,.1);
+    display:flex;align-items:center;justify-content:center}
+  .saved-item .si-thumbs .t svg{width:12px;height:12px}
+  .saved-item .si-x{border:none;background:none;color:var(--muted);cursor:pointer;font-size:15px}
+  .foot{margin-top:34px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px;max-width:820px}
+  .foot code{background:var(--chip);padding:1px 6px;border-radius:5px;font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Гардероб-конструктор</h1>
+      <div class="sub">Собери образ из вещей капсулы — как в кабинете стиля. Каждый образ строится из одних и тех же вещей по правилам рациональной капсулы, а не как случайный коллаж.</div>
+      <div class="palette" id="paletteRow"><b>палитра</b></div>
+    </div>
+    <div class="meta-note">
+      <b>Схема капсулы:</b> база (тёмные/светлые) + 2–3 цвета-героя. Правило: <b>1 яркий акцент</b> на образ, преобладание верхов над низами, каждая вещь — минимум в 3 образах.
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="col-main">
+      <!-- ГОТОВЫЕ ОБРАЗЫ -->
+      <section class="block">
+        <div class="block-h"><h2>Готовые образы</h2><span>собраны из вещей капсулы · нажми «Собрать», чтобы открыть в конструкторе и доработать</span></div>
+        <div class="looks-row" id="looksRow"></div>
+      </section>
+
+      <!-- КАПСУЛА -->
+      <section class="block">
+        <div class="block-h"><h2>Капсула</h2><span>нажми на вещь, чтобы добавить её в образ →</span></div>
+        <div id="capsule"></div>
+      </section>
+    </div>
+
+    <!-- ТВОЙ ЛУК -->
+    <aside>
+      <div class="panel">
+        <h2>Твой лук</h2>
+        <div class="slots" id="slots"></div>
+        <div class="verdict v-empty" id="verdict"><span class="ic">·</span><span id="verdictText">Начни собирать образ — выбери верх и низ или платье.</span></div>
+        <div class="count"><span>вещей в луке:</span><b id="itemCount">0</b></div>
+        <div class="panel-actions">
+          <button class="btn btn-ghost" id="clearBtn">Очистить</button>
+          <button class="btn btn-primary" id="saveBtn">Сохранить образ</button>
+        </div>
+        <div class="saved">
+          <h3>Мои образы</h3>
+          <div id="savedWrap"><div class="saved-empty">Пока пусто. Собранные образы появятся здесь — это твой «стиль на каждый день».</div></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="foot">
+    Прототип. Вещи — плейсхолдеры (цвет + силуэт), их легко заменить на реальные фото: в коде массив <code>CAPSULE</code> — меняешь набор вещей под нужный стиль, массив <code>LOOKS</code> — готовые образы (ссылки на id вещей). Логика подсказок («один акцент», «образ готов») работает автоматически.
+  </div>
+</div>
+
+<script>
+/* ================== ДАННЫЕ КАПСУЛЫ ==================
+   Меняй этот массив под любой стиль. Роли (cat): layer=верхний слой,
+   top=верх, bottom=низ, dress=платье/комбинезон, shoes=обувь, bag=сумка.
+   tone: 'base' (тёмные/светлые база) или 'accent' (цвет-герой).
+   accentColor — для проверки «один акцент»: у вещей одного цвета-героя ставь одинаковый.  */
+const CAPSULE = [
+  // Верхний слой
+  {id:'L1', cat:'layer',  nm:'Жакет классический, графит',      color:'#3b3f45', tone:'base'},
+  {id:'L2', cat:'layer',  nm:'Жакет укороченный, молочный',     color:'#e9dfc9', tone:'base'},
+  {id:'L3', cat:'layer',  nm:'Жакет, изумруд',                  color:'#1c4b3d', tone:'accent', accentColor:'изумруд'},
+  {id:'L4', cat:'layer',  nm:'Жакет двубортный, алый',          color:'#9d1f27', tone:'accent', accentColor:'алый'},
+  {id:'L5', cat:'layer',  nm:'Жилет костюмный, тёмно-синий',    color:'#22304d', tone:'base', vest:true},
+  // Верх
+  {id:'T1', cat:'top',    nm:'Водолазка, чёрный',               color:'#17181c', tone:'base'},
+  {id:'T2', cat:'top',    nm:'Рубашка в полоску, голубой',      color:'#a9c1d9', tone:'base'},
+  {id:'T3', cat:'top',    nm:'Футболка базовая, белый',         color:'#f4f0e7', tone:'base'},
+  {id:'T4', cat:'top',    nm:'Топ-халтер, чёрный',              color:'#17181c', tone:'base'},
+  // Низ
+  {id:'B1', cat:'bottom', nm:'Брюки широкие, молочный',         color:'#e7dcc4', tone:'base'},
+  {id:'B2', cat:'bottom', nm:'Брюки со стрелкой, тёмно-синий',  color:'#22304d', tone:'base'},
+  {id:'B3', cat:'bottom', nm:'Брюки, алый',                     color:'#9d1f27', tone:'accent', accentColor:'алый'},
+  {id:'B4', cat:'bottom', nm:'Брюки кожаные, чёрный',           color:'#17181c', tone:'base'},
+  {id:'B5', cat:'bottom', nm:'Юбка миди шёлк, бордовый',        color:'#5a1f2c', tone:'accent', accentColor:'бордовый', skirt:true},
+  // Платье / комбинезон
+  {id:'D1', cat:'dress',  nm:'Комбинезон, чёрный',              color:'#17181c', tone:'base'},
+  {id:'D2', cat:'dress',  nm:'Платье миди, бордовый',           color:'#5a1f2c', tone:'accent', accentColor:'бордовый'},
+  // Обувь
+  {id:'S1', cat:'shoes',  nm:'Лодочки, бордовый',               color:'#5a1f2c', tone:'accent', accentColor:'бордовый'},
+  {id:'S2', cat:'shoes',  nm:'Лоферы, чёрный',                  color:'#17181c', tone:'base'},
+  {id:'S3', cat:'shoes',  nm:'Босоножки на каблуке, чёрный',    color:'#17181c', tone:'base'},
+  // Сумка
+  {id:'A1', cat:'bag',    nm:'Тоут структурный, чёрный',        color:'#17181c', tone:'base'},
+  {id:'A2', cat:'bag',    nm:'Сумка-багет, графит',             color:'#3b3f45', tone:'base'},
+];
+
+/* ================== ГОТОВЫЕ ОБРАЗЫ ==================
+   Каждый образ = набор id вещей из капсулы. Именно это делает «капсулу»,
+   а не коллаж: образы ссылаются на одни и те же вещи.  */
+const LOOKS = [
+  {id:'lk1', occ:'Деловая встреча', nm:'Тотал-графит', items:['L1','T4','B4','S3','A1'],
+    note:'Чистая классика, монохром без акцентов — держит облегающие силуэты.'},
+  {id:'lk2', occ:'Офисная рутина', nm:'Молочный + синий', items:['L2','T3','B2','S2','A2'],
+    note:'Smart casual: тёплый молочный жакет успокаивает синюю базу.'},
+  {id:'lk3', occ:'Статусная презентация', nm:'Алый костюм', items:['L4','B3','T1','S3','A1'],
+    note:'Костюм-двойка одного цвета = один герой. Power dressing.'},
+  {id:'lk4', occ:'Вечерние переговоры', nm:'Бордо + жилет', items:['L5','T4','B5','S1','A2'],
+    note:'Бордовый — единственный акцент, синий жилет держит его в базе.'},
+  {id:'lk5', occ:'Командировка', nm:'Сине-голубой', items:['L5','T2','B2','S2','A1'],
+    note:'Универсальная база: и в офис, и в дорогу, всё сочетается.'},
+  {id:'lk6', occ:'Деловой акцент', nm:'Изумруд', items:['L3','T3','B1','S2','A2'],
+    note:'Цвет глаз в деловом: изумруд — герой, остальное нейтрально.'},
+];
+
+/* ================== СИЛУЭТЫ (SVG) ================== */
+const ICONS = {
+  layer:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 3l4 3 4-3 3 4-2 2v11H7V9L5 7z"/><path d="M12 6v6"/></svg>',
+  vest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 3l4 4 4-4 2 3-3 3v12H7V9L5 6z"/></svg>',
+  top:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 4l4 3 4-3 3 3-2 3v10H7V10L5 7z"/></svg>',
+  bottom:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 3h10l-1 18h-3l-1-11-1 11H7z"/></svg>',
+  skirt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 4h8l3 16H5z"/><path d="M8 4h8"/></svg>',
+  dress:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3l3 3 3-3 1 5 3 13H5l3-13z"/></svg>',
+  shoes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7c2 0 3 5 5 7l9 3c1 .3 2 1 2 2v1H4z"/></svg>',
+  bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8h12l1 12H5z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>',
+};
+function iconFor(it){ if(it.vest) return ICONS.vest; if(it.skirt) return ICONS.skirt; return ICONS[it.cat]; }
+function iconById(id){ const it=CAPSULE.find(x=>x.id===id); return it?iconFor(it):''; }
+function colorById(id){ const it=CAPSULE.find(x=>x.id===id); return it?it.color:'#ccc'; }
+/* контрастный цвет силуэта поверх плашки */
+function inkOn(hex){
+  const c=hex.replace('#',''); const r=parseInt(c.substr(0,2),16),g=parseInt(c.substr(2,2),16),b=parseInt(c.substr(4,2),16);
+  const lum=(0.299*r+0.587*g+0.114*b);
+  return lum>150 ? 'rgba(60,50,35,.55)' : 'rgba(255,255,255,.82)';
+}
+
+const CATS = [
+  {key:'layer', label:'Верхний слой', role:'Жакет / жилет', optional:true},
+  {key:'top', label:'Верх', role:'Топ / блуза / водолазка'},
+  {key:'bottom', label:'Низ', role:'Брюки / юбка'},
+  {key:'dress', label:'Платье / комбинезон', role:'Альтернатива верх+низ'},
+  {key:'shoes', label:'Обувь', role:'Обувь'},
+  {key:'bag', label:'Сумка', role:'Сумка / аксессуар'},
+];
+
+/* ================== СОСТОЯНИЕ ================== */
+let look = {layer:null, top:null, bottom:null, dress:null, shoes:null, bag:null};
+let saved = [];
+
+/* Комбинаторика капсулы: в скольких ПОЛНЫХ комплектах участвует вещь
+   (верх+низ+обувь или платье+обувь) с учётом правила «один цвет-герой».
+   Это и есть метрика капсулы — правило «минимум 3 комплекта на вещь». */
+function accentSet(items){ return new Set(items.filter(i=>i.tone==='accent').map(i=>i.accentColor||i.nm)); }
+function buildCoreOutfits(){
+  const tops=CAPSULE.filter(i=>i.cat==='top'), bottoms=CAPSULE.filter(i=>i.cat==='bottom'),
+        dresses=CAPSULE.filter(i=>i.cat==='dress'), shoes=CAPSULE.filter(i=>i.cat==='shoes');
+  const out=[];
+  tops.forEach(t=>bottoms.forEach(b=>shoes.forEach(s=>{ if(accentSet([t,b,s]).size<=1) out.push([t,b,s]); })));
+  dresses.forEach(d=>shoes.forEach(s=>{ if(accentSet([d,s]).size<=1) out.push([d,s]); }));
+  return out;
+}
+const CORE_OUTFITS = buildCoreOutfits();
+function combosFor(id){
+  const it=CAPSULE.find(x=>x.id===id); if(!it) return 0;
+  if(['top','bottom','dress','shoes'].includes(it.cat))
+    return CORE_OUTFITS.filter(o=>o.some(p=>p.id===id)).length;
+  // верхний слой / сумка — как дополнение к готовому комплекту
+  return CORE_OUTFITS.filter(o=>accentSet([...o,it]).size<=1).length;
+}
+
+/* ================== РЕНДЕР ПАЛИТРЫ ================== */
+(function(){
+  const seen=[], row=document.getElementById('paletteRow');
+  CAPSULE.forEach(it=>{ if(!seen.includes(it.color)){seen.push(it.color);
+    const s=document.createElement('span'); s.className='sw'; s.style.background=it.color; s.title=it.nm; row.appendChild(s);} });
+})();
+
+/* ================== РЕНДЕР ГОТОВЫХ ОБРАЗОВ ================== */
+function renderLooks(){
+  const row=document.getElementById('looksRow'); row.innerHTML='';
+  LOOKS.forEach(l=>{
+    const thumbs=l.items.map(id=>`<div class="t" style="background:${colorById(id)};color:${inkOn(colorById(id))}">${iconById(id)}</div>`).join('');
+    const el=document.createElement('div'); el.className='look-card';
+    el.innerHTML=`<div class="occ">${l.occ}</div><h3>${l.nm}</h3>
+      <div class="look-thumbs">${thumbs}</div>
+      <div class="note">${l.note}</div>
+      <button class="btn btn-ghost btn-sm">Собрать этот образ</button>`;
+    el.querySelector('button').onclick=()=>loadLook(l);
+    row.appendChild(el);
+  });
+}
+function loadLook(l){
+  look={layer:null, top:null, bottom:null, dress:null, shoes:null, bag:null};
+  l.items.forEach(id=>{ const it=CAPSULE.find(x=>x.id===id); if(it) look[it.cat]=id; });
+  renderAll();
+  document.querySelector('.panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ================== РЕНДЕР КАПСУЛЫ ================== */
+function renderCapsule(){
+  const wrap=document.getElementById('capsule'); wrap.innerHTML='';
+  CATS.forEach(cat=>{
+    const items=CAPSULE.filter(i=>i.cat===cat.key); if(!items.length) return;
+    const g=document.createElement('div'); g.className='cat-group';
+    g.innerHTML=`<div class="cat-title">${cat.label} <span class="cnt">· ${items.length}</span></div>`;
+    const grid=document.createElement('div'); grid.className='grid';
+    items.forEach(it=>{
+      const n=combosFor(it.id);
+      const combosCls = n>=3 ? 'combos' : 'combos warn';
+      const toneTag = it.tone==='accent'
+        ? '<span class="tag acc">акцент</span>'
+        : '<span class="tag base">база</span>';
+      const card=document.createElement('div'); card.className='item'+(isSel(it)?' sel':'');
+      card.dataset.id=it.id;
+      card.innerHTML=`<div class="pic" style="background:${it.color};color:${inkOn(it.color)}">${iconFor(it)}
+          <span class="sel-badge">✓</span></div>
+        <div class="body"><div class="nm">${it.nm}</div>
+          <div class="tags">${toneTag}<span class="tag ${combosCls}" title="в скольких комплектах капсулы участвует вещь (правило капсулы: минимум 3)">${n} обр.</span></div>
+        </div>`;
+      card.onclick=()=>toggle(it);
+      grid.appendChild(card);
+    });
+    g.appendChild(grid); wrap.appendChild(g);
+  });
+}
+function isSel(it){ return look[it.cat]===it.id; }
+function toggle(it){
+  if(look[it.cat]===it.id){ look[it.cat]=null; }
+  else{
+    look[it.cat]=it.id;
+    if(it.cat==='dress'){ look.top=null; look.bottom=null; }
+    if(it.cat==='top'||it.cat==='bottom'){ look.dress=null; }
+  }
+  renderAll();
+}
+
+/* ================== РЕНДЕР ПАНЕЛИ ================== */
+function renderPanel(){
+  const slots=document.getElementById('slots'); slots.innerHTML='';
+  const dressActive = !!look.dress;
+  CATS.forEach(cat=>{
+    const id=look[cat.key]; const it=id?CAPSULE.find(x=>x.id===id):null;
+    let disabled=false;
+    if((cat.key==='top'||cat.key==='bottom') && dressActive) disabled=true;
+    if(cat.key==='dress' && (look.top||look.bottom)) disabled=true;
+    const s=document.createElement('div');
+    s.className='slot'+(it?' filled':'')+(disabled?' disabled':'');
+    const icon = it ? `<div class="icon" style="background:${it.color};color:${inkOn(it.color)}">${iconFor(it)}</div>`
+                    : `<div class="icon" style="background:#f2ece0;color:#c7bda9">${ICONS[cat.key]}</div>`;
+    s.innerHTML=`${icon}
+      <div class="txt"><div class="role">${cat.label}</div>
+        <div class="val ${it?'':'empty'}">${it?it.nm:(cat.optional?'— по желанию —':'— не выбрано —')}</div></div>
+      ${it?'<button class="x" title="убрать">✕</button>':''}`;
+    if(it){ s.querySelector('.x').onclick=()=>{ look[cat.key]=null; renderAll(); }; }
+    slots.appendChild(s);
+  });
+
+  // подсчёт
+  const chosen=Object.values(look).filter(Boolean);
+  document.getElementById('itemCount').textContent=chosen.length;
+
+  // вердикт
+  renderVerdict(chosen);
+}
+
+function renderVerdict(chosenIds){
+  const v=document.getElementById('verdict'), t=document.getElementById('verdictText');
+  const items=chosenIds.map(id=>CAPSULE.find(x=>x.id===id)).filter(Boolean);
+  const hasBase = look.dress || (look.top && look.bottom);
+  // акценты — по цвету-герою
+  const accentColors=[...new Set(items.filter(i=>i.tone==='accent').map(i=>i.accentColor||i.nm))];
+
+  if(items.length===0){
+    v.className='verdict v-empty'; v.querySelector('.ic').textContent='·';
+    t.textContent='Начни собирать образ — выбери верх и низ или платье.'; return;
+  }
+  if(accentColors.length>1){
+    v.className='verdict v-warn'; v.querySelector('.ic').textContent='⚠';
+    t.innerHTML=`Слишком много ярких акцентов: <b>${accentColors.join(', ')}</b>. По правилу капсулы оставь <b>один цвет-герой</b>, остальное — база.`;
+    return;
+  }
+  if(!hasBase){
+    v.className='verdict v-warn'; v.querySelector('.ic').textContent='◐';
+    t.textContent='Добавь пару верх + низ (или платье), чтобы образ был законченным.';
+    return;
+  }
+  // всё ок
+  v.className='verdict v-ok'; v.querySelector('.ic').textContent='✓';
+  const heroTxt = accentColors.length===1 ? ` Цвет-герой: <b>${accentColors[0]}</b>.` : ' Спокойная база без ярких акцентов.';
+  t.innerHTML=`Образ собран и сочетается по палитре.${heroTxt}`;
+}
+
+/* ================== СОХРАНЁННЫЕ ================== */
+function renderSaved(){
+  const wrap=document.getElementById('savedWrap');
+  if(!saved.length){ wrap.innerHTML='<div class="saved-empty">Пока пусто. Собранные образы появятся здесь — это твой «стиль на каждый день».</div>'; return; }
+  const list=document.createElement('div'); list.className='saved-list';
+  saved.forEach((s,idx)=>{
+    const thumbs=s.items.map(id=>`<div class="t" style="background:${colorById(id)};color:${inkOn(colorById(id))}">${iconById(id)}</div>`).join('');
+    const el=document.createElement('div'); el.className='saved-item';
+    el.innerHTML=`<div class="si-thumbs">${thumbs}</div><button class="si-x" title="удалить">✕</button>`;
+    el.querySelector('.si-thumbs').style.cursor='pointer';
+    el.querySelector('.si-thumbs').onclick=()=>{ look={layer:null,top:null,bottom:null,dress:null,shoes:null,bag:null};
+      s.items.forEach(id=>{const it=CAPSULE.find(x=>x.id===id); if(it) look[it.cat]=id;}); renderAll(); };
+    el.querySelector('.si-x').onclick=()=>{ saved.splice(idx,1); renderSaved(); };
+    list.appendChild(el);
+  });
+  wrap.innerHTML=''; wrap.appendChild(list);
+}
+
+/* ================== КНОПКИ ================== */
+document.getElementById('clearBtn').onclick=()=>{ look={layer:null,top:null,bottom:null,dress:null,shoes:null,bag:null}; renderAll(); };
+document.getElementById('saveBtn').onclick=()=>{
+  const items=Object.values(look).filter(Boolean);
+  if(!items.length) return;
+  saved.unshift({items:[...items]});
+  renderSaved();
+};
+
+/* ================== ИНИТ ================== */
+function renderAll(){ renderCapsule(); renderPanel(); }
+renderLooks(); renderSaved(); renderAll();
+</script>
+</body>
+</html>
