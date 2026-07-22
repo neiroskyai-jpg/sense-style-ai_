@@ -218,3 +218,16 @@ def test_dark_case_section_does_not_use_light_theme_muted_ink():
 
     assert "var(--ink-muted)" not in rule, "на тёмном фоне нужна белая шкала, а не светлая тема"
     assert "255, 255, 255" in rule
+
+
+def test_submission_never_calls_the_full_card_a_one_minute_job():
+    """66 секунд — это диагностика с двумя образами, а не полная Карта.
+
+    Слайды говорили «полная Карта стиля за 66 секунд», хотя замер сборки Карты с шестью образами —
+    260 секунд. Жюри может открыть ссылку и проверить прямо на защите, поэтому держим границу
+    текстом: цифра всегда рядом с тем, что именно замерено.
+    """
+    for path in Path("submission").glob("*.md"):
+        text = path.read_text(encoding="utf-8")
+        for bad in ("полная Карта стиля за 66", "полную Карту за 66", "Карта за 66"):
+            assert bad not in text, f"{path.name}: «{bad}»"
