@@ -258,13 +258,12 @@ def test_wardrobe_states_the_photo_rules_before_upload(client):
     assert "HEIC" in html and "Наиболее совместимый" in html, "айфонный формат надо объяснить"
 
 
-def test_constructor_shows_the_clients_own_capsule_not_only_the_catalog(client):
-    """Конструктор собирается из капсулы клиентки, а каталог только добирает пустые слоты.
+def test_constructor_shows_only_the_clients_own_capsule_no_catalog(client):
+    """Конструктор собирается ТОЛЬКО из капсулы клиентки — брендовый каталог убран совсем.
 
-    Вещь без каталожного фото выбрасывалась из борда. Капсульные вещи описаны языком метода
-    («брюки прямого кроя, холодный чёрный») и по тексту в брендовом фиде почти не находятся —
-    поэтому теряли фото и вылетали все до одной. Конструктор заполнялся чужим каталогом, и
-    вопрос «где моя капсула?» был совершенно справедлив.
+    Раньше каталог подмешивался «добрать до размера» и дать фото к названиям. Со свотчами фото
+    не нужны (цвет из имени вещи), а чужой товар вперемешку путал: «это моя капсула или магазин?».
+    Теперь в конструкторе ровно её вещи и ничего чужого.
     """
     import re
 
@@ -279,9 +278,9 @@ def test_constructor_shows_the_clients_own_capsule_not_only_the_catalog(client):
     html = c.get("/cabinet?season=autumn").get_data(as_text=True)
     names = re.findall(r'class="pitem[^"]*"[^>]*data-name="([^"]+)"', html)
 
-    mine = [n for n in names if n in card["capsule_items"]]
-    assert len(mine) == len(card["capsule_items"]), f"из капсулы дошло {len(mine)}: {mine}"
-    assert "Основа — вещи из твоих образов" in html, "подпись обязана называть источник честно"
+    assert set(names) == set(card["capsule_items"]), f"в конструкторе лишнее/недостающее: {names}"
+    assert 'data-img="http' not in html, "каталожных фото в конструкторе быть не должно"
+    assert "Это вещи из твоих образов" in html, "подпись называет источник честно"
 
 
 def test_capsule_item_without_a_photo_gets_a_designed_tile(client):
