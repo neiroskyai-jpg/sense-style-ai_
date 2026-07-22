@@ -2690,6 +2690,10 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
             color:var(--ink);text-decoration:none;background:var(--soft)}
  .seasons a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
  .seasons a.notbuilt:not(.on){color:var(--muted);border-style:dashed}
+ .notbuiltbox{margin:14px 0 4px;padding:12px 15px;border:1px solid rgba(93,34,48,.16);
+  border-radius:13px;background:rgba(93,34,48,.04);font-size:14px;line-height:1.55;color:#5a4a4e}
+ .notbuiltbox b{display:block;margin-bottom:3px;color:#5D2230}
+ .notbuiltbox a{display:inline-block;margin-top:7px;color:#5D2230;font-weight:600}
  .capdiff{margin:14px 0 4px;padding:13px 15px;border:1px solid rgba(93,34,48,.14);border-radius:13px;
          background:linear-gradient(135deg,#fbf6ec,#fff)}
 .capdiffhead b{display:block;font-size:13.5px;color:var(--ink)}
@@ -2965,6 +2969,16 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% if season_tabs %}
   <div class=seasons>
    {% for s in season_tabs %}<a href="/cabinet?season={{ s.code }}" class="{{ 'on' if s.on else '' }}{{ ' notbuilt' if not s.built else '' }}" title="{{ 'капсула собрана' if s.built else 'подберётся из каталога' }}">{{ s.label }}</a>{% endfor %}
+  </div>
+  {% endif %}
+  {# Несобранный сезон честно называет себя. Вещи ниже подобраны под Формулу, но это не капсула
+     клиентки: она рождается из её образов, а образы для этого сезона ещё не собраны. #}
+  {% if not season_built %}
+  <div class=notbuiltbox>
+   <b>Капсула на этот сезон ещё не собрана.</b>
+   Ниже — вещи под твою Формулу и палитру, подобранные из базы. Твоя капсула вырастает из твоих
+   образов, поэтому сначала собери Карту на этот сезон.
+   <a href="/card?season={{ sel_season }}">Собрать Карту на {{ season_label }} →</a>
   </div>
   {% endif %}
   {# Эволюция капсулы: капсула не просто «другая» в новом сезоне — видно, что ушло, что пришло
@@ -3642,10 +3656,14 @@ def cabinet():
     # только фото к этим названиям и добирает недостающие слоты.
     own = ([{"name": n, "slot": _capsule_slot(n)} for n in (card.get("capsule_items") or [])]
            or card.get("starter_capsule") or [])
-    if own and (card.get("season") or _DEFAULT_SEASON) == sel:
+    season_built = (card.get("season") or _DEFAULT_SEASON) == sel
+    if own and season_built:
         board = _merge_boards(_capsule_board(_with_catalog_photos(own, catalog_board)),
                               catalog_board, items_n)
     else:
+        # Сезон не собран — каталог как раньше, но теперь клиентка об этом знает. Молчаливая
+        # подмена читалась как «вот твоя капсула на лето», хотя каталог всесезонный и набор
+        # почти не отличался от зимнего.
         board = catalog_board or card.get("capsule_board") or \
             _capsule_board(card.get("base_capsule") or [])
     # Показываем ВСЕ 4 сезона (было — только собранные, у клиентки их 2). Несобранные помечаем
@@ -3753,7 +3771,8 @@ def cabinet():
         board=board, palette=palette, shopping=card.get("shopping") or [],
         season_tabs=season_tabs, season_diff=season_diff, outfit_cells=_outfit_cells(board),
         starter_outfit=_starter_outfit(board),
-        combos_per_item=outfits_per_item(board), sel_season=sel)
+        combos_per_item=outfits_per_item(board), sel_season=sel,
+        season_built=season_built)
 
 
 STYLEBOOK_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>

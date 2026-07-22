@@ -181,3 +181,19 @@ def test_garment_check_page_opens(client):
     c, _ = client
 
     assert c.get("/garment").status_code == 200
+
+
+def test_unbuilt_season_says_so_instead_of_pretending(client):
+    """Несобранный сезон не выдаёт каталог за капсулу клиентки.
+
+    Каталог всесезонный, поэтому летний кабинет показывал почти те же вещи, что осенний, — и
+    молча называл их капсулой. Теперь подмена подписана, а собранный сезон подписи не несёт.
+    """
+    c, _ = client
+
+    other = c.get("/cabinet?season=spring").get_data(as_text=True)
+    assert "ещё не собрана" in other
+    assert "/card?season=spring" in other, "должен быть выход — собрать Карту на этот сезон"
+
+    own = c.get("/cabinet?season=autumn").get_data(as_text=True)
+    assert "ещё не собрана" not in own, "на собранном сезоне подпись не нужна"
