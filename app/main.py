@@ -806,18 +806,18 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  /* образы под роли жизни */
  .secttl{font-family:'Cormorant Garamond',Georgia,serif;font-size:25px;margin:0 0 11px;line-height:1.1}
  .looksgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
- .lookcard{display:grid;grid-template-columns:132px minmax(0,1fr);background:#fff;border:1px solid var(--line);
-           border-radius:18px;overflow:hidden;text-decoration:none;color:inherit;min-height:182px}
+ .lookcard{display:grid;grid-template-columns:118px minmax(0,1fr);background:#fff;border:1px solid var(--line);
+           border-radius:18px;overflow:hidden;text-decoration:none;color:inherit;min-height:206px}
  .lookcard:hover{border-color:#d5c9b6;box-shadow:0 8px 22px rgba(40,26,20,.06)}
  .lookpic{background:var(--sand);width:100%;height:100%;object-fit:cover;display:block}
  .lookpic.empty{display:block;background:var(--sand)}
- .lookbody{padding:14px 15px 13px;display:flex;flex-direction:column;min-width:0}
+ .lookbody{padding:15px 16px 14px;display:flex;flex-direction:column;min-width:0;gap:2px}
  .lookttl{display:flex;align-items:flex-start;gap:8px;font-size:14px;font-weight:500;color:var(--ink);min-width:0}
  .lookttl .lt{min-width:0;flex:1 1 auto;font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;line-height:1.02;letter-spacing:-.01em;
               display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
  .lookttl .chev{margin-left:auto;color:var(--muted);font-size:16px;line-height:1.1;padding-top:2px;flex:0 0 auto}
- .lookdesc{font-size:13px;color:var(--muted);line-height:1.45;margin:9px 0 0;
-           display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+ .lookdesc{font-size:13px;color:var(--muted);line-height:1.5;margin:8px 0 0;overflow-wrap:anywhere;
+           display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
  .lookmatch{margin-top:auto;padding-top:12px;text-align:left;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
  .lookmatch b{display:block;margin-top:3px;color:var(--wine);font-weight:500;font-size:18px;letter-spacing:-.01em;text-transform:none}
  .noimg{background:var(--soft);border:1px solid var(--line);border-left:3px solid var(--wine);
@@ -1038,7 +1038,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
                  border-radius:10px;font:inherit;font-size:14.5px;cursor:pointer}
 
  /* ── адаптив ─────────────────────────────────────────────────────────────────────────── */
- @media(min-width:1480px){.looksgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+ @media(min-width:1800px){.looksgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:1280px){.cols{grid-template-columns:1.2fr 1fr}.combolane{grid-template-columns:repeat(2,minmax(0,1fr))}}
  @media(max-width:1080px){
   .shell{grid-template-columns:1fr}
@@ -1573,8 +1573,10 @@ NEED_DIAGNOSIS = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <li><span class=num>2</span><span>Карта стиля — палитра, капсула и образы на тебе. Строится на результатах диагностики.</span></li>
   <li><span class=num>3</span><span>Стиль каждый день — живой гардероб, где формула работает в обычной жизни.</span></li>
  </ul>
- <a class=btn href="/quiz">Пройти диагностику</a>
- <p class=meta>5 минут, без регистрации. Результат сохранится за тобой.</p>
+ {# Экран зовут из двух мест: «нет диагностики» ведёт в квиз, «нет Карты» — в сборку Карты.
+    Раньше кнопка всегда вела в квиз, и клиентка с готовой Формулой шла проходить его заново. #}
+ <a class=btn href="{{ cta_href|default('/quiz') }}">{{ cta_text|default('Пройти диагностику') }}</a>
+ <p class=meta>{{ cta_meta|default('5 минут, без регистрации. Результат сохранится за тобой.') }}</p>
 </div>
 </div></body></html>"""
 
@@ -1826,6 +1828,15 @@ WARDROBE_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .sug b{font-size:13.5px} .sug span{display:block;font-size:12px;color:var(--muted);margin-top:3px}
  .sug .plus{flex:0 0 auto;font-size:12px;color:var(--wine);font-weight:500;white-space:nowrap}
  .empty{color:var(--muted);font-size:14px}
+ .rules{margin:14px 0 0;text-align:left;background:var(--soft,#F7F2E9);border:1px solid var(--line,#e3dccf);
+        border-radius:12px;padding:14px 16px}
+ .rules b{display:block;font-size:13.5px;margin-bottom:8px;color:var(--ink,#1f1d1b)}
+ .rules ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+ .rules li{display:grid;grid-template-columns:16px 1fr;gap:8px;font-size:13px;line-height:1.45;
+           color:var(--muted,#6b645c)}
+ .rules i{font-style:normal;font-size:12px;line-height:1.6}
+ .rules i.ok{color:#3f7a4a} .rules i.no{color:#9b1c1c}
+ .rules .fmt{display:block;margin-top:10px;font-size:11.5px;color:var(--muted,#6b645c)}
  .note{background:#eef6ee;border:1px solid #cfe3cf;border-radius:12px;padding:12px 15px;font-size:13.5px;color:#3a5a3a}
  @media(max-width:560px){.wrap{padding:20px 14px 70px}h1{font-size:27px}}
 </style></head><body><div class=wrap>
@@ -1848,7 +1859,21 @@ WARDROBE_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <b>Добавить вещи</b>
   <input type=file name=photos accept="image/*" multiple required>
   <button type=submit>Разобрать по Формуле</button>
-  <p class=hint>До {{ limit }} фото за раз. Снимай вещь целиком на светлом фоне — так точнее.</p>
+  {# «Не распознано» почти всегда означает не сбой модели, а неподходящий кадр: вещь на человеке,
+     несколько вещей в одном снимке, тёмный фон, смятая вещь на стуле. Правило должно стоять ДО
+     загрузки, иначе клиентка узнаёт о нём из строки «не распознано: 1». #}
+  <div class=rules>
+   <b>Как снимать, чтобы вещь распозналась</b>
+   <ul>
+    <li><i class=ok>✓</i> Одна вещь в кадре — целиком, ничем не перекрыта</li>
+    <li><i class=ok>✓</i> Разложи на светлой ровной поверхности или повесь на плечики</li>
+    <li><i class=ok>✓</i> Дневной свет, вещь расправлена — видно крой и цвет</li>
+    <li><i class=no>✕</i> Не на себе и не на другом человеке: считается образ, а не вещь</li>
+    <li><i class=no>✕</i> Не стопкой и не в шкафу — по одной вещи на кадр</li>
+    <li><i class=no>✕</i> Не мятую и не в тени: цвет и материал определятся неверно</li>
+   </ul>
+   <span class=fmt>JPG, PNG или WebP · до {{ limit }} фото за раз · до 15 МБ каждое. Айфон снимает в HEIC — включи «Наиболее совместимый» в настройках камеры или пришли скриншот.</span>
+  </div>
  </form>
 </div>
 
@@ -3688,7 +3713,15 @@ def cabinet():
     else:
         sel = card.get("season") or _DEFAULT_SEASON
     if not card:
-        return redirect("/card")       # капсулы ещё нет — сначала собрать Карту
+        # Был молчаливый редирект на /card. Клиентка жала «← в кабинет» из гардероба и попадала
+        # на форму сборки Карты без единого слова почему — читалось как «кнопка не работает».
+        # Объясняем причину и ведём вперёд, а не выкидываем.
+        return render_template_string(
+            NEED_DIAGNOSIS, eyebrow="Шаг 2 из 3", title="Сначала — Карта стиля",
+            lead="Живой гардероб работает поверх собранной Карты: он берёт из неё формулу, "
+                 "палитру и капсулу. Собери Карту — и кабинет откроется со всеми образами.",
+            cta_href="/card", cta_text="Собрать Карту стиля",
+            cta_meta="Диагностика уже пройдена — она не потерялась.")
     card = _refresh_card_projection(card, diag)
     items_n = 6 if request.args.get("items") == "6" else 12  # капсула 6 / расширенная 12
     # Капсула у Карты и кабинета должна быть ОДНА. Раньше кабинет всегда собирал свой набор из
@@ -5585,7 +5618,12 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
             try:
                 return render_flatlay(lk.get("items") or [], palette=pal,
                                       season=card.get("season"))
-            except Exception:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001
+                # Молчаливый None означал: у половины образов раскладки нет, а почему — неизвестно.
+                # Реальный случай 22.07.2026: кончился баланс провайдера на середине сборки, и
+                # Карта вышла наполовину пустой без единой записи в логе.
+                print(f"[flatlay] «{lk.get('scenario', '?')}» без раскладки: "
+                      f"{type(e).__name__}: {e}", file=sys.stderr)
                 return None
 
         flat_targets = (list(card.get("looks") or [])
@@ -5595,6 +5633,10 @@ def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | No
         for lk, flat in zip(flat_targets, flats):
             if flat:
                 lk["flatlay"] = flat
+        ok_flats = sum(1 for f in flats if f)
+        if ok_flats < len(flat_targets):
+            print(f"[flatlay] собрано {ok_flats} из {len(flat_targets)} — часть образов уйдёт "
+                  f"клиентке списком вещей вместо картинки", file=sys.stderr)
 
         # Капсула одной раскладкой — из вещей тех же образов. Это то, ради чего собираются
         # образы: клиентка видит свой гардероб целиком, а из него собирает комплекты в

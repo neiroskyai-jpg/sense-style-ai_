@@ -1052,10 +1052,18 @@ def render_flatlay(items: list[str], palette: str = "", season: str | None = Non
         return ""
     listed = "; ".join(items)
     instruction = (
-        "Professional flat-lay layout, strict top-down view, of an elegant women's outfit on a "
-        "light beige-cream background. Soft diffused daylight, gentle natural shadows, minimalist "
-        "fashion mood-board aesthetic. Each item is neatly arranged separately with plenty of "
-        "negative space, nothing overlapping. Trousers and skirts are laid flat fully extended to "
+        "Professional flat-lay layout, strict top-down view, of an elegant women's outfit. "
+        # Фон выходил мятой тканью в складках — кадр читался как «вещи бросили на простыню».
+        # Просим гладкую бумагу и прямо запрещаем складки: одного слова «background» мало.
+        "Background: perfectly smooth seamless matte paper in light beige-cream (#F2EBDF), "
+        "completely flat and even — no fabric, no linen, no wrinkles, no creases, no folds, "
+        "no visible texture or pattern on the background. "
+        "Soft diffused daylight, gentle natural shadows, minimalist fashion mood-board aesthetic. "
+        # Вещи занимали почти весь кадр и лезли за край. Задаём долю кадра и поля явно.
+        "The whole arrangement occupies about 65% of the frame and is centred, with generous even "
+        "margins on all sides; every item is fully inside the frame, nothing cropped at the edges. "
+        "Each item is arranged separately in a balanced composition with plenty of negative space "
+        "between items, nothing overlapping. Trousers and skirts are laid flat fully extended to "
         "full length with legs stretched straight; jackets laid flat and open; shoes placed as a "
         "pair; bags upright. Items: " + listed + ". "
         # Цвет берём ИЗ НАЗВАНИЯ каждой вещи, а не из общей палитры Карты. Раньше в промпт

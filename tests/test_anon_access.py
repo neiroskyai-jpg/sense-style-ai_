@@ -77,12 +77,21 @@ def test_anon_with_diagnosis_reaches_card(client):
 
 
 def test_cabinet_sends_to_card_when_no_card_yet(client):
-    """Карты ещё нет → мягко в /card, без петли на квиз."""
+    """Карты ещё нет → ведём в /card с объяснением, без петли на квиз.
+
+    Был молчаливый редирект. Клиентка жала «← в кабинет» и оказывалась на форме сборки Карты
+    без единого слова почему — это читалось как сломанная кнопка, а не как следующий шаг.
+    """
     _as_anon(client, "anon-def")
     client.store["anon-def"] = {"diagnosis": DIAG}
+
     r = client.get("/cabinet")
-    assert r.status_code == 302
-    assert r.headers["Location"].endswith("/card")
+    html = r.get_data(as_text=True)
+
+    assert r.status_code == 200
+    assert "Сначала — Карта стиля" in html, "причина названа"
+    assert 'href="/card"' in html, "выход есть"
+    assert "Пройти диагностику" not in html, "диагностика пройдена — не гоняем по кругу"
 
 
 def test_anon_id_is_stable_across_requests(client):

@@ -227,3 +227,31 @@ def test_build_screen_offers_a_way_out_in_every_terminal_state():
     for state in ("retry", "stale", "unknown", "error"):
         assert f"d.status==='{state}'" in js, state
     assert js.count("fin(") >= 5, "каждое состояние рисуется карточкой с действиями"
+
+
+def test_cabinet_without_a_card_explains_itself(client):
+    """Кабинет без Карты не выкидывает молча на форму сборки.
+
+    Клиентка жала «← в кабинет» из гардероба и оказывалась на форме Карты без единого слова
+    почему — читалось как «кнопка не работает».
+    """
+    c, db = client
+    pr.save_card(USER, {}, db)          # диагностика есть, Карты нет
+
+    html = c.get("/cabinet").get_data(as_text=True)
+
+    assert "Сначала — Карта стиля" in html
+    assert 'href="/card"' in html
+    assert "Пройти диагностику" not in html, "диагностика уже пройдена, не гоняем по кругу"
+
+
+def test_wardrobe_states_the_photo_rules_before_upload(client):
+    """«Не распознано» — почти всегда неподходящий кадр. Правило должно стоять ДО загрузки."""
+    c, _ = client
+
+    html = c.get("/wardrobe").get_data(as_text=True)
+
+    assert "Как снимать" in html
+    for rule in ("Одна вещь в кадре", "Не на себе", "по одной вещи на кадр"):
+        assert rule in html, rule
+    assert "HEIC" in html and "Наиболее совместимый" in html, "айфонный формат надо объяснить"

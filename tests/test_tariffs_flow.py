@@ -73,9 +73,13 @@ def test_daily_tariff_without_card_routes_to_card_not_quiz(client):
         s["email"] = EMAIL
 
     r = c.get("/cabinet")
+    html = r.get_data(as_text=True)
 
-    assert r.status_code == 302
-    assert r.headers["Location"].endswith("/card")
+    # Ведём в Карту, а не в квиз: Формула уже есть. Раньше это был молчаливый редирект,
+    # теперь — экран с причиной и кнопкой.
+    assert r.status_code == 200
+    assert "Сначала — Карта стиля" in html
+    assert 'href="/card"' in html
 
 
 def test_daily_tariff_with_existing_card_opens_cabinet(client):
