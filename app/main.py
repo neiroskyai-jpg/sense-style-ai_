@@ -896,11 +896,14 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .mcwhy{display:block;font-size:10.5px;color:var(--muted);line-height:1.3;margin-top:2px}
  @media(max-width:560px){.matrixrow{grid-template-columns:1fr}}
  .capshot{width:100%;border-radius:14px;display:block;margin:12px 0 10px;background:#faf6ee}
- .capnames{list-style:none;padding:0;margin:0;display:grid;
-           grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:4px 16px}
- .capnames li{font-size:12px;color:#5b5249;line-height:1.5;padding-left:12px;position:relative;
-              overflow-wrap:anywhere}
+ /* Колонки, а не grid: в сетке строка с длинным названием занимает две линии, соседняя
+    ячейка остаётся короткой — и между пунктами появляются рваные дыры. В columns текст
+    перетекает сам, а break-inside держит пункт целиком в одной колонке. */
+ .capnames{list-style:none;padding:0;margin:10px 0 0;columns:2;column-gap:26px}
+ .capnames li{font-size:13px;color:#4e473f;line-height:1.55;padding-left:14px;position:relative;
+              margin-bottom:7px;break-inside:avoid;-webkit-column-break-inside:avoid}
  .capnames li:before{content:'—';position:absolute;left:0;color:var(--wine)}
+ @media(max-width:560px){.capnames{columns:1}}
  .econ{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 4px}
  .econcell{border:1px solid rgba(93,34,48,.12);border-radius:12px;padding:11px 13px;
            background:linear-gradient(135deg,#fbf6ec,#fff)}
