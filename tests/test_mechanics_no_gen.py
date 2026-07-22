@@ -255,3 +255,44 @@ def test_wardrobe_states_the_photo_rules_before_upload(client):
     for rule in ("Одна вещь в кадре", "Не на себе", "по одной вещи на кадр"):
         assert rule in html, rule
     assert "HEIC" in html and "Наиболее совместимый" in html, "айфонный формат надо объяснить"
+
+
+def test_constructor_shows_the_clients_own_capsule_not_only_the_catalog(client):
+    """Конструктор собирается из капсулы клиентки, а каталог только добирает пустые слоты.
+
+    Вещь без каталожного фото выбрасывалась из борда. Капсульные вещи описаны языком метода
+    («брюки прямого кроя, холодный чёрный») и по тексту в брендовом фиде почти не находятся —
+    поэтому теряли фото и вылетали все до одной. Конструктор заполнялся чужим каталогом, и
+    вопрос «где моя капсула?» был совершенно справедлив.
+    """
+    import re
+
+    c, db = client
+    card = m.build_style_card(DIAG, season="autumn")
+    card["capsule_items"] = ["брюки прямого кроя, холодный чёрный",
+                             "жакет структурный, холодный чёрный",
+                             "рубашка классического кроя, чистый белый",
+                             "балетки, королевский синий"]
+    pr.save_card(USER, card, db)
+
+    html = c.get("/cabinet?season=autumn").get_data(as_text=True)
+    names = re.findall(r'class=pitem[^>]*data-name="([^"]+)"', html)
+
+    mine = [n for n in names if n in card["capsule_items"]]
+    assert len(mine) == len(card["capsule_items"]), f"из капсулы дошло {len(mine)}: {mine}"
+    assert "Основа — вещи из твоих образов" in html, "подпись обязана называть источник честно"
+
+
+def test_capsule_item_without_a_photo_gets_a_designed_tile(client):
+    """Плитка без фото — не пустой квадрат: пустой читается как «не загрузилось»."""
+    import re
+
+    c, db = client
+    card = m.build_style_card(DIAG, season="autumn")
+    card["capsule_items"] = ["палантин кашемировый, тёплый серый"]
+    pr.save_card(USER, card, db)
+
+    html = c.get("/cabinet?season=autumn").get_data(as_text=True)
+
+    assert re.search(r"<span class=ph0><i>[^<]+</i><b>палантин", html), \
+        "у вещи без фото должны быть слот и название на плитке"

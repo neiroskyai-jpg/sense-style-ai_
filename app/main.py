@@ -2792,7 +2792,16 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .pitem:hover{border-color:var(--wine)}
  .pitem.on{border-color:var(--wine);box-shadow:0 0 0 2px rgba(93,34,48,.28)}
  .pitem img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:7px;display:block;background:var(--sand)}
- .pitem .ph0{width:100%;aspect-ratio:3/4;border-radius:7px;background:var(--sand);display:block}
+ /* Вещь капсулы без каталожного фото. Пустой бежевый квадрат читался как «не загрузилось»;
+    типографская плитка выглядит намеренной и остаётся перетаскиваемой. */
+ .pitem .ph0{width:100%;aspect-ratio:3/4;border-radius:7px;background:var(--sand);
+             display:flex;flex-direction:column;justify-content:center;gap:5px;padding:8px;
+             border:1px dashed rgba(93,34,48,.22);text-align:center;overflow:hidden}
+ .pitem .ph0 i{font-style:normal;font-size:8px;letter-spacing:.12em;text-transform:uppercase;
+               color:var(--wine);opacity:.75}
+ .pitem .ph0 b{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:12px;
+               line-height:1.2;color:#4a443c;display:-webkit-box;-webkit-line-clamp:4;
+               -webkit-box-orient:vertical;overflow:hidden}
  .pitem .pname{display:-webkit-box;font-size:10.5px;color:#4a443c;margin-top:6px;line-height:1.25;
                -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%;min-height:2.6em}
  .checks{margin-top:14px;display:flex;flex-direction:column;gap:6px}
@@ -3035,7 +3044,12 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
  <div class=panel id=wardrobe>
   <h2 class=ph>Капсульный конструктор образов<span class=tag>живой гардероб</span></h2>
-  <p class=psub>Собери образ из своей капсулы: нажми или перетащи вещь в ячейку справа. Это вещи из базы брендов — каждую можно добавить в капсулу.</p>
+  {# Подпись утверждала «это вещи из базы брендов» независимо от того, что на самом деле в борде.
+     Для собранного сезона там прежде всего вещи капсулы клиентки, и называть их чужим каталогом —
+     обесценивать её же результат. #}
+  <p class=psub>Собери образ из своей капсулы: нажми или перетащи вещь в ячейку справа.
+   {% if season_built %}Основа — вещи из твоих образов; недостающие слоты добраны из базы брендов.
+   {% else %}Пока это подбор из базы брендов под твою Формулу — своя капсула появится, когда соберёшь Карту на этот сезон.{% endif %}</p>
   {% if season_tabs %}
   <div class=seasons>
    {% for s in season_tabs %}<a href="/cabinet?season={{ s.code }}" class="{{ 'on' if s.on else '' }}{{ ' notbuilt' if not s.built else '' }}" title="{{ 'капсула собрана' if s.built else 'подберётся из каталога' }}">{{ s.label }}</a>{% endfor %}
@@ -3081,7 +3095,8 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <div class=slotgrid>
    {% for grp in board %}{% for it in grp['items'] %}
    <span class=pitem data-slot="{{ grp.slot }}" data-name="{{ it.name }}" data-img="{{ it.image or '' }}" data-url="{{ it.url or '' }}">
-    {% if it.image %}<img src="{{ it.image }}" alt="" loading=lazy>{% else %}<span class=ph0></span>{% endif %}
+    {% if it.image %}<img src="{{ it.image }}" alt="" loading=lazy>
+    {% else %}<span class=ph0><i>{{ grp.slot }}</i><b>{{ it.name }}</b></span>{% endif %}
     <span class=pname title="{{ it.name }}">{{ it.name }}</span>
     {# Сколько комплектов даёт вещь. Правило капсулы: меньше трёх — не опора, а случайная
        покупка. Число показывает ЦЕННОСТЬ вещи, а не только её вид. #}
@@ -6662,10 +6677,13 @@ def _merge_boards(primary: list, extra: list, limit: int) -> list:
                 name = " ".join((it.get("name") or "").lower().split())
                 if not name or name in seen:
                     continue
-                # Конструктор — визуальный инструмент: вещь без картинки в нём бесполезна,
-                # её нельзя перетащить в образ и увидеть результат. Раньше такие вещи давали
-                # ряд пустых бежевых плиток, и половина капсулы выглядела недогруженной.
-                if not it.get("image"):
+                # Каталог здесь — только добор пустых слотов, и вещь без фото в этой роли
+                # бесполезна. А вот вещи ИЗ КАПСУЛЫ клиентки нужны всегда: они и есть предмет
+                # конструктора. Раньше условие было общим — капсульные вещи описаны языком
+                # метода («брюки прямого кроя, холодный чёрный»), по тексту в каталоге почти
+                # не находятся, теряли фото и вылетали. Борд заполнялся одним каталогом, и
+                # клиентка справедливо спрашивала, где её капсула.
+                if not it.get("image") and board is not primary:
                     continue
                 if total >= limit:
                     break
