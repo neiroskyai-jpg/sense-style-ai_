@@ -1237,7 +1237,7 @@ body {
   <div class="prog-wrap">
     <div class="prog-top">
       <span class="prog-block-label" id="prog-block">Блок 1 · Восприятие</span>
-      <span class="prog-count" id="prog-count">1 / 14</span>
+      <span class="prog-count" id="prog-count">1 / 15</span>
     </div>
     <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
   </div>
@@ -1769,20 +1769,50 @@ const questions = [
     ]
   },
 
-  // ── БЛОК 4 (продолжение) — q13: ВЫБОР 3 ХАРАКТЕРИСТИК ────
-  // Главный сигнал направления: 12 слов из 4 семантических полей метода (по 3 на поле).
-  // Прямая реализация имидж-диагностики метода (этап 2 / шаг 1 алгоритма Формулы стиля).
+  // ── БЛОК 4 (продолжение) — q14 и q13: ТОЧКА А и ТОЧКА Б ────
+  // Обе точки меряются ОДНИМ списком — как вопросы 4 и 5 бумажной анкеты школы, где список
+  // опций общий. Иначе разрыв считается между двумя разными линейками и смысла не имеет.
+  // Раньше точку А собирали словами вне лексикона («спокойная», «незаметная»), распределение
+  // построить было нечем, и Identity Gap приходил с клиента эвристикой: на 922 прогонах это
+  // дало 910 одинаковых 31%. Порядок «сейчас → хочу» тоже как в анкете.
+  //
+  // 12 слов = 4 поля × 3 уникальных вектора, баланс 3/3/3/3 обязателен: перекос сместил бы и
+  // Формулу, и Gap. Источник правды о привязке слов к полям — core/lexicon.py (SHORT_SET),
+  // совпадение сторожит tests/test_quiz_lexicon_sync.py.
+  // Замены 2026-06-11: Уверенная→Дорогая (статус), Особенная→Умная (интеллект),
+  // Простая→Независимая (самостоятельность). Все — из лексикона анкеты, поле то же.
+  // Порядок перемешан по полям; «Дорогая» намеренно не рядом с «Властной» и «Эффектной».
+  {
+    id: 14, block: 4,
+    kind: "multi",
+    role: "now",
+    selectExactly: 3,
+    text: "Выбери 3 характеристики, которыми тебя считывают сейчас",
+    hint: "Это твоя точка А — как тебя видят другие сегодня, а не как хотелось бы. Выбери ровно три.",
+    opts: [
+      { t: "Властная",     wantField: "classic" },
+      { t: "Открытая",     wantField: "natural" },
+      { t: "Женственная",  wantField: "romance" },
+      { t: "Незаурядная",  wantField: "drama" },
+      { t: "Элегантная",   wantField: "classic" },
+      { t: "Беззаботная",  wantField: "natural" },
+      { t: "Эффектная",    wantField: "romance" },
+      { t: "Умная",        wantField: "drama" },
+      { t: "Дорогая",      wantField: "classic" },
+      { t: "Независимая",  wantField: "natural" },
+      { t: "Желанная",     wantField: "romance" },
+      { t: "Смелая",       wantField: "drama" },
+    ],
+    gap: 0,
+  },
   {
     id: 13, block: 4,
     kind: "multi",
+    role: "want",
     selectExactly: 3,
     text: "Выбери 3 главные характеристики, которыми хочешь восприниматься",
     hint: "Это твоя точка Б — три слова, описывающие желаемое впечатление. Выбери ровно три.",
     opts: [
-      // 12 слов = 4 поля × 3 уникальных вектора, баланс 3/3/3/3.
-      // Замены 2026-06-11: Уверенная→Дорогая (статус), Особенная→Умная (интеллект),
-      // Простая→Независимая (самостоятельность). Все — из лексикона анкеты, поле то же.
-      // Порядок перемешан по полям; «Дорогая» намеренно не рядом с «Властной» и «Эффектной».
       { t: "Властная",     wantField: "classic" },
       { t: "Открытая",     wantField: "natural" },
       { t: "Женственная",  wantField: "romance" },
@@ -2087,20 +2117,23 @@ function buildResult() {
   const dominant = profileKey === 'mix3' ? sorted[0][0] : profileKey; // для цвета кольца
 
   // ── 4. Слова now/want для пилюль (визуальное доказательство) ─────
-  // Прямые трейты из q13 идут первыми — это её explicit picks.
-  const nowWords = [], wantExplicit = [], wantImplicit = [];
+  // Прямые трейты из multi идут первыми — это её explicit picks. Роль решает, в какую точку
+  // они попадут: q14 — «сейчас», q13 — «хочу». Без роли оба списка ушли бы в «хочу», а точка А
+  // осталась бы на словах вне лексикона — из-за этого Gap и приходил заглушкой.
+  const nowExplicit = [], nowWords = [], wantExplicit = [], wantImplicit = [];
   questions.forEach(q => {
     const a = answers[q.id];
     if (a === undefined) return;
     if (q.kind === 'multi') {
-      a.forEach(idx => wantExplicit.push(q.opts[idx].t.toLowerCase()));
+      const bucket = q.role === 'now' ? nowExplicit : wantExplicit;
+      a.forEach(idx => bucket.push(q.opts[idx].t.toLowerCase()));
     } else {
       const opt = q.opts[a];
       if (opt.now) nowWords.push(...opt.now);
       if (opt.want) wantImplicit.push(...opt.want);
     }
   });
-  const uniqNow = [...new Set(nowWords)].slice(0, 4);
+  const uniqNow = [...new Set([...nowExplicit, ...nowWords])].slice(0, 4);
   const uniqWant = [...new Set([...wantExplicit, ...wantImplicit])].slice(0, 4);
 
   // ── 5. Tagline + описание уровня разрыва (4 уровня) ──────────────
@@ -2458,23 +2491,29 @@ var selectedSeason = (function(){ var m=new Date().getMonth();
   return m<=1||m===11 ? 'winter' : m<=4 ? 'spring' : m<=7 ? 'summer' : 'autumn'; })();
 
 // Собираем now/want-трейты из ответов квиза — ЭТИ ЖЕ данные считает сервер (единый диагноз).
-// Логика зеркалит buildResult (порядок: явные пики q13 → неявные), чтобы want_traits_top3 на
-// сервере брал именно её 3 выбранные характеристики. Без этого diagnose() падает в «99% / нет данных».
+//
+// Обе точки отдаём ТОЛЬКО словами калиброванного лексикона — явными пиками q14 («сейчас») и
+// q13 («хочу»). Описательные слова из остальных вопросов («спокойная», «деловая») в анкету
+// школы не входят: сервер считает разрыв по методу лишь когда опознаны все слова, а одно
+// чужое слово роняет замер в клиентскую заглушку. Именно так и получилось на 910 прогонах.
+//
+// Неявные want-слова оставляем в хвосте: сервер берёт want_traits_top3 первыми тремя, то есть
+// её собственный выбор, а хвост достаётся текстам на экране результата.
 function collectTraits() {
-  const nowWords = [], wantExplicit = [], wantImplicit = [];
+  const nowExplicit = [], wantExplicit = [], wantImplicit = [];
   questions.forEach(q => {
     const a = answers[q.id];
     if (a === undefined) return;
     if (q.kind === 'multi') {
-      a.forEach(idx => wantExplicit.push(q.opts[idx].t.toLowerCase()));
+      const bucket = q.role === 'now' ? nowExplicit : wantExplicit;
+      a.forEach(idx => bucket.push(q.opts[idx].t.toLowerCase()));
     } else {
       const opt = q.opts[a];
-      if (opt.now) nowWords.push(...opt.now);
       if (opt.want) wantImplicit.push(...opt.want);
     }
   });
   return {
-    now: [...new Set(nowWords)],
+    now: [...new Set(nowExplicit)],
     want: [...new Set([...wantExplicit, ...wantImplicit])],
   };
 }
