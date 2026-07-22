@@ -197,3 +197,33 @@ def test_unbuilt_season_says_so_instead_of_pretending(client):
 
     own = c.get("/cabinet?season=autumn").get_data(as_text=True)
     assert "ещё не собрана" not in own, "на собранном сезоне подпись не нужна"
+
+
+def test_build_screen_explains_a_lost_job_instead_of_a_dead_end():
+    """Задание сборки живёт в памяти сервиса — рестарт его стирает.
+
+    Клиентка видела глухое «Сборка не завершилась» без причины и без понятного шага: статус
+    `unknown` обрабатывался вместе с `error`, а сообщения к нему нет вовсе. Теперь у него своя
+    ветка, которая называет причину и говорит, что диагностика не потеряна.
+    """
+    import re
+
+    js = m.CARD_BUILDING
+
+    assert "d.status==='unknown'" in js.replace(" ", "").replace("d.status==='error'||", "") \
+        or "unknown" in js
+    unknown_branch = js.split("unknown", 1)[1][:600]
+    assert "сервис обновился" in unknown_branch
+    assert "Собрать заново" in js
+    # обещание по времени должно совпадать с реальностью: замер 22.07.2026 — 260 с
+    assert "1–2 минуты" not in js, "старая оценка занижена вдвое"
+    assert "2–4 минуты" in js
+
+
+def test_build_screen_offers_a_way_out_in_every_terminal_state():
+    """Из любого финального состояния должен быть выход — иначе экран становится тупиком."""
+    js = m.CARD_BUILDING
+
+    for state in ("retry", "stale", "unknown", "error"):
+        assert f"d.status==='{state}'" in js, state
+    assert js.count("fin(") >= 5, "каждое состояние рисуется карточкой с действиями"

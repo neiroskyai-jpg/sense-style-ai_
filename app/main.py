@@ -1911,28 +1911,59 @@ CARD_BUILDING = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .sp{width:46px;height:46px;border:4px solid #e3dccf;border-top-color:var(--wine);border-radius:50%;margin:24px auto;animation:spin 1s linear infinite}
  @keyframes spin{to{transform:rotate(360deg)}}
  .err{color:#9b1c1c} a{color:var(--wine)}
+ /* Экран ошибки был голым: одна красная строка и ссылка. Даём карточку с причиной и
+    понятным следующим шагом — сбой генерации не должен читаться как сломанный продукт. */
+ .card{background:#fff;border:1px solid #e3dccf;border-radius:16px;padding:24px 26px;text-align:left;margin-top:6px}
+ .card h2{font-family:'Cormorant Garamond',serif;font-weight:normal;font-size:21px;margin:0 0 8px;color:var(--ink)}
+ .card p{margin:0 0 14px;font-size:15px;line-height:1.6}
+ .acts{display:flex;flex-wrap:wrap;gap:10px}
+ .acts a{display:inline-block;padding:11px 18px;border-radius:9px;font-size:14px;text-decoration:none}
+ .acts a.primary{background:var(--wine);color:#fff}
+ .acts a.ghost{border:1px solid var(--wine);color:var(--wine)}
+ .tick{font-size:13px;color:var(--muted);margin-top:14px}
 </style></head><body><div class=box>
 <h1>Собираем твою Карту стиля</h1>
 <div class=sp id=sp></div>
-<p id=msg>Палитра, силуэты, 6 образов на тебе… Это занимает 1–2 минуты, не закрывай страницу.</p>
+<p id=msg>Палитра, силуэты, 6 образов на тебе. Обычно это 2–4 минуты — не закрывай страницу.</p>
+<p class=tick id=tick></p>
 <script>
-var jid="{{ job_id }}";
+var jid="{{ job_id }}", t0=Date.now();
+function fin(title, text, acts){
+  document.getElementById('sp').style.display='none';
+  document.getElementById('tick').textContent='';
+  document.getElementById('msg').innerHTML='<div class=card><h2>'+title+'</h2><p>'+text+
+    '</p><div class=acts>'+acts+'</div></div>';
+}
+var RETRY='<a class=primary href="/card?rebuild=1">Собрать заново</a>',
+    OPEN='<a class=ghost href="/card">Открыть мою Карту</a>';
 function poll(){
   fetch('/card/status/'+jid).then(function(r){return r.json();}).then(function(d){
     if(d.status==='done'){ location.href='/card'; }
     else if(d.status==='retry'){
-      document.getElementById('sp').style.display='none';
-      document.getElementById('msg').innerHTML=(d.error||'Образы пока не собрались')+'<br><br><a href="/card">Открыть сохранённую Карту</a> &nbsp; <a href="/card?rebuild=1">Повторить генерацию</a>';
+      fin('Образы пока не собрались', d.error||'Генерация вернулась без картинок.', OPEN+RETRY);
     }
     else if(d.status==='stale'){
       // генерация не прошла, но готовая Карта есть — предлагаем её, не выдавая за свежую
-      document.getElementById('sp').style.display='none';
-      document.getElementById('msg').innerHTML=(d.error||'Сборка не завершилась')+'<br><br>Твоя предыдущая Карта на месте.<br><br><a href="/card">Открыть последнюю Карту</a> &nbsp; <a href="/card?rebuild=1">Собрать заново</a>';
+      fin('Свежую Карту собрать не вышло',
+          (d.error||'Сборка прервалась.')+' Твоя предыдущая Карта на месте — она не потерялась.',
+          OPEN+RETRY);
     }
-    else if(d.status==='error'||d.status==='unknown'){
-      document.getElementById('sp').style.display='none';
-      document.getElementById('msg').innerHTML='<span class=err>'+(d.error||'Сборка не завершилась')+'</span><br><br><a href="/card?rebuild=1">Попробовать снова</a>';
-    } else { setTimeout(poll, 4000); }
+    else if(d.status==='unknown'){
+      // Задание живёт в памяти сервиса. Если сервис обновился или перезапустился, пока шла
+      // сборка, задание исчезает — и раньше клиентка видела глухое «Сборка не завершилась».
+      fin('Сборка прервалась',
+          'Похоже, сервис обновился, пока собиралась Карта. Данные диагностики сохранены — '+
+          'нужно запустить сборку ещё раз, это не начнётся с нуля.', RETRY+OPEN);
+    }
+    else if(d.status==='error'){
+      fin('Не получилось собрать Карту', d.error||'Сборка не завершилась.', RETRY+OPEN);
+    } else {
+      var sec=Math.round((Date.now()-t0)/1000);
+      document.getElementById('tick').textContent=sec>150
+        ? 'Идёт '+Math.floor(sec/60)+' мин — образы дорисовываются, это нормально.'
+        : 'Идёт '+sec+' с';
+      setTimeout(poll, 4000);
+    }
   }).catch(function(){ setTimeout(poll, 4000); });
 }
 setTimeout(poll, 3000);
