@@ -96,7 +96,8 @@ def test_cabinet_opens_with_working_constructor(client):
 
     assert "Капсульный конструктор образов" in html
     assert "data-cell=" in html, "ячейки образа"
-    assert "class=pitem" in html, "вещи для перетаскивания"
+    assert 'class="pitem' in html, "вещи для перетаскивания"
+    assert "pswatch" in html, "вещь показана цветной плашкой, а не фото"
 
 
 def test_week_plan_is_rendered(client):
@@ -276,7 +277,7 @@ def test_constructor_shows_the_clients_own_capsule_not_only_the_catalog(client):
     pr.save_card(USER, card, db)
 
     html = c.get("/cabinet?season=autumn").get_data(as_text=True)
-    names = re.findall(r'class=pitem[^>]*data-name="([^"]+)"', html)
+    names = re.findall(r'class="pitem[^"]*"[^>]*data-name="([^"]+)"', html)
 
     mine = [n for n in names if n in card["capsule_items"]]
     assert len(mine) == len(card["capsule_items"]), f"из капсулы дошло {len(mine)}: {mine}"
@@ -294,8 +295,10 @@ def test_capsule_item_without_a_photo_gets_a_designed_tile(client):
 
     html = c.get("/cabinet?season=autumn").get_data(as_text=True)
 
-    assert re.search(r"<span class=ph0><i>[^<]+</i><b>палантин", html), \
-        "у вещи без фото должны быть слот и название на плитке"
+    # Вещь показывается цветной плашкой её реального цвета (из названия) и подписью — не фото.
+    assert 'data-name="палантин кашемировый, тёплый серый"' in html
+    assert re.search(r'pswatch style="background:#[0-9A-Fa-f]{6}"', html), \
+        "у вещи должна быть цвет-плашка"
 
 
 def test_assembled_outfit_survives_a_reload(client, monkeypatch):

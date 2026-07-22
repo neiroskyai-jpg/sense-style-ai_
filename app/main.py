@@ -77,6 +77,8 @@ app.jinja_env.filters["item_img"] = item_image_url
 # Русские имена трёх англоязычных подстилей — на экране, не в данных. Новые генерации
 # модель уже пишет по-русски (правило 5 канона), фильтр чинит показ ранее собранных Карт.
 app.jinja_env.filters["ru"] = ru_display
+# Цвет-плашка вещи для конструктора: {hex, accent} по названию вещи Карты.
+app.jinja_env.filters["swatch"] = lambda name: (lambda h: {"hex": h[0], "accent": h[1]})(_item_swatch(name))
 app.config["MAX_CONTENT_LENGTH"] = 15 * 1024 * 1024  # лимит загрузки 15 МБ
 # секрет сессий/magic-link: env SENSE_SECRET_KEY или стабильный файл на постоянном томе
 from core.config import secret_key as _secret_key, data_dir as _data_dir  # noqa: E402
@@ -2820,17 +2822,14 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
         display:flex;flex-direction:column;min-width:0;max-width:100%;height:100%}
  .pitem:hover{border-color:var(--wine)}
  .pitem.on{border-color:var(--wine);box-shadow:0 0 0 2px rgba(93,34,48,.28)}
- .pitem img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:7px;display:block;background:var(--sand)}
- /* Вещь капсулы без каталожного фото. Пустой бежевый квадрат читался как «не загрузилось»;
-    типографская плитка выглядит намеренной и остаётся перетаскиваемой. */
- .pitem .ph0{width:100%;aspect-ratio:3/4;border-radius:7px;background:var(--sand);
-             display:flex;flex-direction:column;justify-content:center;gap:5px;padding:8px;
-             border:1px dashed rgba(93,34,48,.22);text-align:center;overflow:hidden}
- .pitem .ph0 i{font-style:normal;font-size:8px;letter-spacing:.12em;text-transform:uppercase;
-               color:var(--wine);opacity:.75}
- .pitem .ph0 b{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:12px;
-               line-height:1.2;color:#4a443c;display:-webkit-box;-webkit-line-clamp:4;
-               -webkit-box-orient:vertical;overflow:hidden}
+ /* Вещь = цветная плашка её реального цвета, а не фото. Цвет берётся из названия вещи Карты. */
+ .pitem.accent{border-color:#e4cdd4}
+ .pitem .pswatch{position:relative;width:100%;aspect-ratio:3/4;border-radius:7px;display:block;
+                 box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+ .pitem .ptone{position:absolute;left:6px;bottom:6px;font-style:normal;font-size:8.5px;
+               font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;
+               border-radius:20px;background:rgba(255,255,255,.86);color:#4a443c}
+ .pitem.accent .ptone{background:rgba(123,36,56,.92);color:#fff}
  .pitem .pname{display:-webkit-box;font-size:10.5px;color:#4a443c;margin-top:6px;line-height:1.25;
                -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%;min-height:2.6em}
  /* «Мои образы»: сохранённые комплекты под конструктором. */
@@ -2874,7 +2873,8 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .cellslot{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
  .cellbody{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;
            gap:4px 8px;min-height:40px}
- .cellbody .thumb{width:30px;aspect-ratio:3/4;object-fit:cover;border-radius:5px;background:var(--sand);flex:0 0 auto}
+ .cellbody .thumb{width:26px;aspect-ratio:3/4;border-radius:5px;background:var(--sand);flex:0 0 auto;
+                  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
  .cellval{font-size:11.5px;color:var(--ink);line-height:1.35;overflow-wrap:break-word;
           display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-width:0}
  .cell.filled .cellval{font-weight:500}
@@ -3061,9 +3061,9 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <a href="/card"><svg viewBox="0 0 20 20"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M2.5 8h15M8 8v8.5"/></svg>Моя карта стиля</a>
   <a class=on href="#top"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>Стиль каждый день</a>
   <a href="#wardrobe"><svg viewBox="0 0 20 20"><rect x="2.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.4"/></svg>Конструктор</a>
+  <a href="#today"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><circle cx="10" cy="10.5" r="3"/><path d="M6.5 2.5v3M13.5 2.5v3"/></svg>Образ на сегодня</a>
+  <a href="#myoutfits"><svg viewBox="0 0 20 20"><path d="M10 3l1.9 4 4.1.5-3 2.9.8 4-3.8-2-3.8 2 .8-4-3-2.9 4.1-.5z"/></svg>Мои образы</a>
   <a href="#week"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>План недели</a>
-  <a href="#roles"><svg viewBox="0 0 20 20"><rect x="3" y="2.5" width="14" height="15" rx="2"/><circle cx="10" cy="7.5" r="2.2"/><path d="M5.5 16c1-2.6 2.6-4 4.5-4s3.5 1.4 4.5 4"/></svg>Образы и роли</a>
-  <a href="#shopping"><svg viewBox="0 0 20 20"><path d="M4 6.5h12l-1 10.5H5z"/><path d="M7.2 6.5V5a2.8 2.8 0 0 1 5.6 0v1.5"/></svg>Покупки</a>
   {# «Мой гардероб» переехал в меню: единственный вход был в блоке «Навигатор», убранном как
      дублирующий. Функция рабочая — без ссылки страница стала бы недостижимой. #}
   <a href="/wardrobe"><svg viewBox="0 0 20 20"><path d="M4 8h12l-1.2 9H5.2z"/><path d="M8 8V6a2 2 0 0 1 4 0v2"/></svg>Мой гардероб</a>
@@ -3151,9 +3151,14 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% if board %}
   <div class=slotgrid>
    {% for grp in board %}{% for it in grp['items'] %}
-   <span class=pitem data-slot="{{ grp.slot }}" data-name="{{ it.name }}" data-img="{{ it.image or '' }}" data-url="{{ it.url or '' }}">
-    {% if it.image %}<img src="{{ it.image }}" alt="" loading=lazy>
-    {% else %}<span class=ph0><i>{{ grp.slot }}</i><b>{{ it.name }}</b></span>{% endif %}
+   {# Вещь показываем её реальным цветом, а не фото. Цвет в названии вещи Карты («холодный чёрный»,
+      «королевский синий») — плашка этого цвета читается сразу, всегда есть и не подменяет вещь
+      клиентки чужим товаром из каталога. #}
+   {% set sw = it.name|swatch %}
+   <span class="pitem{% if sw.accent %} accent{% endif %}" data-slot="{{ grp.slot }}" data-name="{{ it.name }}" data-img="{{ it.image or '' }}" data-url="{{ it.url or '' }}">
+    <span class=pswatch style="background:{{ sw.hex }}">
+     <b class=ptone>{{ 'акцент' if sw.accent else 'база' }}</b>
+    </span>
     <span class=pname title="{{ it.name }}">{{ it.name }}</span>
     {# Сколько комплектов даёт вещь. Правило капсулы: меньше трёх — не опора, а случайная
        покупка. Число показывает ЦЕННОСТЬ вещи, а не только её вид. #}
@@ -3406,9 +3411,13 @@ var STARTER = {{ starter_outfit|tojson }};
 function saveWeek(){ try { localStorage.setItem('senseWeek', JSON.stringify(week)); } catch(e){} }
 function dayOutfit(){ if(!week[curDay]) week[curDay]={}; return week[curDay]; }
 var outfit;
+// Цвет вещи снимаем с её плашки в конструкторе: в ячейку образа кладём тот же цвет, что на плитке,
+// а не каталожное фото — источник один, и пустых миниатюр не бывает.
 document.querySelectorAll('.pitem').forEach(function(i){
+ var sw=i.querySelector('.pswatch');
  byKey[i.getAttribute('data-slot')+'|'+i.getAttribute('data-name')]={
   slot:i.getAttribute('data-slot'), name:i.getAttribute('data-name'),
+  color:sw?sw.style.background:'', accent:i.classList.contains('accent'),
   img:i.getAttribute('data-img'), url:i.getAttribute('data-url')};
 });
 function markDays(){
@@ -3422,7 +3431,8 @@ function setDay(d){ curDay=d; outfit=dayOutfit(); markDays(); render(); }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function cellHtml(o){
  var h='';
- if(o.img) h+='<img class=thumb src="'+esc(o.img)+'" alt="">';
+ var col = o.color || (byKey[o.slot+'|'+o.name]||{}).color || '#CFC4AE';
+ h+='<span class=thumb style="background:'+esc(col)+'"></span>';
  h+='<span class=cellval>'+esc(o.name)+'</span>';
  if(o.url) h+='<a class=buy href="'+esc(o.url)+'" target="_blank" rel="noopener">купить →</a>';
  return h;
@@ -3441,7 +3451,9 @@ document.addEventListener('click', function(e){
   });
   if(el){
    var slot = el.getAttribute('data-slot');
+   var sw = el.querySelector('.pswatch');
    outfit[slot] = {name: el.getAttribute('data-name'), img: el.getAttribute('data-img'),
+                   color: sw?sw.style.background:'', accent: el.classList.contains('accent'),
                    url: el.getAttribute('data-url')};
   }
  });
@@ -6726,6 +6738,61 @@ def _capsule_slot(*names: str) -> str:
     return _SLOT_OTHER
 
 
+# Цвет-плашка вещи по её названию. Вещи капсулы описаны языком метода — «брюки прямого кроя,
+# холодный чёрный», «блуза с бантом, королевский синий»: цвет прямо в названии. Раньше конструктор
+# пытался подтянуть к каждой вещи фото из брендового каталога; для вещей клиентки фото не
+# находилось, и плитка выходила пустой бежевой. Плашка нужного цвета читается с первого взгляда,
+# всегда есть и не путает с чужим товаром. Ключи — от длинных к коротким: «тёмно-синий» проверяем
+# раньше «синего», иначе короткое слово перехватит.
+_COLOR_SWATCH = [
+    ("кипенно-бел", "#FBFAF6"), ("молочн", "#F4EFE3"), ("слоновая кост", "#F2EAD8"),
+    ("айвори", "#F2EAD8"), ("чистый бел", "#FBFAF6"), ("бел", "#FBFAF6"),
+    ("графит", "#3B3F45"), ("антрацит", "#2C2F34"), ("мокрый асфальт", "#3A3E43"),
+    ("камен", "#6E6A66"), ("серо-син", "#4A5568"), ("стальн", "#7C8794"),
+    ("тёмно-сер", "#4A4844"), ("темно-сер", "#4A4844"), ("светло-сер", "#C7C2B8"),
+    ("сер", "#8B857B"), ("тауп", "#8A7E70"),
+    ("чёрн", "#17181C"), ("черн", "#17181C"), ("уголь", "#1D1E22"),
+    ("тёмно-син", "#1E2A44"), ("темно-син", "#1E2A44"), ("глубокий син", "#1E2A44"),
+    ("индиго", "#28374F"), ("королевск", "#2647A8"), ("сапфир", "#1F3A93"),
+    ("электрик", "#1F6FEB"), ("голуб", "#9FC0D8"), ("небесн", "#AECBDE"), ("син", "#2C4A8F"),
+    ("изумруд", "#1C4B3D"), ("бутылочн", "#20372B"), ("хвойн", "#1F3A2E"),
+    ("оливков", "#6B6A3A"), ("хаки", "#7A754F"), ("мятн", "#AFC9B8"),
+    ("зелён", "#2E5D46"), ("зелен", "#2E5D46"), ("травян", "#4E6B3A"),
+    ("бордов", "#5A1F2C"), ("винн", "#5A1F2C"), ("марсал", "#6E2436"),
+    ("бургунди", "#5B1A28"), ("рубин", "#7A2036"),
+    ("алый", "#C0392B"), ("красн", "#B0303A"), ("терракот", "#B5533A"),
+    ("фукси", "#B33A78"), ("малинов", "#A62A54"), ("розов", "#D9A7BC"), ("пудр", "#E6CBD3"),
+    ("фиолетов", "#6B3FA0"), ("сиренев", "#A48CC0"), ("лаванд", "#C9B8D6"), ("лилов", "#B49AC8"),
+    ("бирюз", "#2FA6A0"), ("тиффани", "#5FBFB6"),
+    ("горчичн", "#C9A227"), ("жёлт", "#D8B33A"), ("желт", "#D8B33A"), ("лимон", "#E4D25A"),
+    ("золот", "#C6A15B"), ("охра", "#C08A3E"), ("оранж", "#D07A2E"), ("рыж", "#B5652E"),
+    ("коричнев", "#6B4A32"), ("шоколад", "#4A3226"), ("кофейн", "#5A4636"), ("кэмел", "#B08A5A"),
+    ("верблюж", "#B08A5A"), ("карамель", "#B98B54"), ("бронз", "#9C6B3A"),
+    ("беж", "#D8C7A8"), ("песочн", "#DCC9A2"), ("кремов", "#EDE3CC"), ("латте", "#D3C0A2"),
+]
+
+# Насыщенные цвета — акцент, нейтрали — база. Правило капсулы: акцент в образе один.
+_BASE_HEX = {"#FBFAF6", "#F4EFE3", "#F2EAD8", "#EDE3CC", "#3B3F45", "#2C2F34", "#3A3E43", "#6E6A66",
+             "#4A5568", "#7C8794", "#4A4844", "#C7C2B8", "#8B857B", "#8A7E70", "#17181C", "#1D1E22",
+             "#1E2A44", "#28374F", "#D8C7A8", "#DCC9A2", "#D3C0A2", "#6B4A32", "#4A3226", "#5A4636",
+             "#B08A5A", "#B98B54"}
+
+
+def _item_swatch(name: str) -> tuple[str, bool]:
+    """(hex цвета, is_accent) для вещи по её названию. Дефолт — тёплый беж базой."""
+    low = (name or "").lower()
+    for key, hex_ in _COLOR_SWATCH:
+        if key in low:
+            return hex_, hex_ not in _BASE_HEX
+    return "#CFC4AE", False
+
+
+def _swatch_ink(hex_: str) -> str:
+    """Контрастный цвет иконки на плашке: тёмная плашка → светлая иконка, и наоборот."""
+    r, g, b = (int(hex_[i:i + 2], 16) for i in (1, 3, 5))
+    return "rgba(60,50,35,.7)" if (0.299 * r + 0.587 * g + 0.114 * b) > 150 else "rgba(255,255,255,.9)"
+
+
 # Порядок ячеек конструктора. Отличается от _CAPSULE_SLOTS сознательно: тот словарь задаёт
 # порядок ХРАНЕНИЯ вещей, а здесь человек СОБИРАЕТ образ и думает иначе — сначала основа
 # (верх и низ либо платье), потом всё, что её завершает. Раньше первой ячейкой шёл верхний
@@ -6754,7 +6821,9 @@ def _starter_outfit(board: list[dict]) -> dict:
     for slot in order:
         it = by_slot.get(slot)
         if it:
-            out[slot] = {"name": it.get("name"), "img": it.get("image"), "url": it.get("url")}
+            hex_, accent = _item_swatch(it.get("name") or "")
+            out[slot] = {"name": it.get("name"), "img": it.get("image"), "url": it.get("url"),
+                         "color": hex_, "accent": accent}
     return out
 
 

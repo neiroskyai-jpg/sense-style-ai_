@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Чувство стиля · Образ дня и план недели</title>
+<style>
+  :root{
+    --bg:#f3ead8; --card:#fffdf8; --ink:#2a2119; --muted:#928676; --line:#e6dcc7;
+    --burg:#6d1f35; --burg-d:#571628; --accent2:#3f5c50; --chip:#efe6d4;
+    --shadow:0 10px 34px rgba(70,50,35,.10); --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  h1,h2,h3{font-family:Georgia,'Times New Roman',serif;font-weight:600;margin:0}
+  .wrap{max-width:1260px;margin:0 auto;padding:22px 20px 60px}
+
+  /* Header */
+  .top{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .avatar{width:46px;height:46px;border-radius:50%;background:var(--burg);color:#fff;display:flex;align-items:center;justify-content:center;
+    font-family:Georgia,serif;font-size:20px;flex:none}
+  .top .title h1{font-size:22px}
+  .top .title .form{color:var(--burg);font-family:Georgia,serif;font-size:14px;font-style:italic}
+  .top .spacer{flex:1}
+  .stat{border:1px solid var(--line);border-radius:12px;padding:7px 14px;min-width:120px;background:#fdfbf5}
+  .stat .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .stat .v{font-size:14px;font-weight:600;margin-top:2px}
+  .stat.idx{position:relative;cursor:help}
+  .stat.idx .tip{position:absolute;top:calc(100% + 8px);right:0;width:230px;background:var(--ink);color:#fff;
+    font-size:11.5px;line-height:1.4;padding:9px 11px;border-radius:9px;opacity:0;pointer-events:none;transition:.15s;z-index:5}
+  .stat.idx:hover .tip{opacity:1}
+  .idxbar{height:5px;background:#eadfca;border-radius:4px;margin-top:5px;overflow:hidden}
+  .idxbar i{display:block;height:100%;background:var(--accent2)}
+
+  .layout{display:grid;grid-template-columns:1fr 400px;gap:22px;margin-top:20px;align-items:start}
+  @media(max-width:940px){.layout{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+
+  .hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .hd h2{font-size:20px}
+  .badge{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;background:#efe9f2;color:#6a4b86;padding:4px 9px;border-radius:20px}
+  .badge.green{background:#e9f1ea;color:#3f5c50}
+  .lead{color:var(--muted);font-size:13px;margin:2px 0 14px}
+
+  /* season + mode tabs */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .tab{border:1px solid var(--line);background:#fdfbf5;border-radius:22px;padding:7px 15px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink);transition:.15s}
+  .tab.on{background:var(--burg);color:#fff;border-color:var(--burg)}
+  .tab:hover:not(.on){border-color:var(--burg)}
+
+  /* capsule grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+  .item{border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;background:var(--card);transition:.15s;position:relative;text-align:left}
+  .item:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+  .item.sel{outline:2.5px solid var(--burg);outline-offset:-1px}
+  .item .pic{height:86px;display:flex;align-items:center;justify-content:center}
+  .item .pic svg{width:40px;height:40px}
+  .item .bd{padding:7px 8px 9px}
+  .item .nm{font-size:11.5px;font-weight:600;line-height:1.25}
+  .item .tg{display:flex;gap:4px;margin-top:5px}
+  .tag{font-size:9.5px;padding:2px 6px;border-radius:16px;border:1px solid var(--line);color:var(--muted)}
+  .tag.acc{background:#f6ebef;border-color:#e9cdd6;color:#8a3350}
+  .tag.base{background:#eef1ee;border-color:#dbe3dc;color:#4a6156}
+  .item .sel-b{position:absolute;top:5px;right:5px;width:19px;height:19px;border-radius:50%;background:var(--burg);color:#fff;font-size:12px;display:none;align-items:center;justify-content:center}
+  .item.sel .sel-b{display:flex}
+
+  .ticks{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+  .ticks div{font-size:12.5px;color:#6a5f4e;display:flex;gap:8px;align-items:flex-start}
+  .ticks .ck{color:var(--accent2);font-weight:700;flex:none}
+
+  /* right: outfit of day */
+  .subhd{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:14px 0 8px}
+  .slots{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .slot{border:1px dashed var(--line);border-radius:11px;padding:8px 10px;min-height:58px;display:flex;gap:9px;align-items:center;transition:.15s}
+  .slot.wide{grid-column:1 / -1}
+  .slot.filled{border-style:solid;background:#fbf7ef}
+  .slot.disabled{opacity:.4}
+  .slot .ic{width:34px;height:42px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,0,0,.08)}
+  .slot .ic svg{width:20px;height:20px}
+  .slot .tx{flex:1;min-width:0}
+  .slot .role{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .slot .val{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slot .val.empty{color:#c3b9a5;font-weight:400;font-style:italic}
+  .slot .x{border:none;background:none;color:var(--muted);cursor:pointer;font-size:15px}
+  .slot .x:hover{color:var(--burg)}
+
+  .days{display:flex;gap:6px;margin:14px 0 4px;flex-wrap:wrap}
+  .day{position:relative;border:1px solid var(--line);background:#fdfbf5;border-radius:10px;width:44px;padding:8px 0;text-align:center;cursor:pointer;font-size:12.5px;font-weight:600;font-family:inherit;color:var(--ink);transition:.15s}
+  .day.on{background:var(--burg);color:#fff;border-color:var(--burg)}
+  .day.today::after{content:'';position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--accent2)}
+  .day.on.today::after{background:#fff}
+  .todaytag{font-size:11px;color:var(--accent2);font-weight:600;margin-left:6px}
+
+  .why{background:var(--chip);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-top:12px;font-size:12.5px}
+  .why .role{color:var(--burg);font-weight:700}
+  .why .r{color:var(--muted)}
+
+  .weather{background:#fbf7ef;border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-top:10px;font-size:12.5px}
+  .weather .wrow{display:flex;gap:8px;margin-top:8px}
+  .weather input{flex:1;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12.5px;font-family:inherit;background:#fff}
+  .weather .out{margin-top:9px;font-size:12.5px;color:#5c5343}
+  .weather .out b{color:var(--ink)}
+
+  .actions{display:flex;gap:8px;align-items:center;margin-top:14px}
+  .btn{border:none;border-radius:10px;padding:10px 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
+  .btn-primary{background:var(--burg);color:#fff}
+  .btn-primary:hover{background:var(--burg-d)}
+  .btn-ghost{background:transparent;color:var(--burg);border:1px solid var(--burg)}
+  .btn-ghost:hover{background:#f6edf0}
+  .cnt{font-size:12.5px;color:var(--muted);margin-left:auto}
+  .cnt b{color:var(--ink)}
+
+  /* week plan */
+  .week{margin-top:22px}
+  .weekgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+  @media(max-width:940px){.weekgrid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:560px){.weekgrid{grid-template-columns:repeat(2,1fr)}}
+  .wd{border:1px solid var(--line);background:var(--card);border-radius:13px;padding:11px;cursor:pointer;transition:.15s}
+  .wd:hover{box-shadow:var(--shadow)}
+  .wd.today{border-color:var(--burg);box-shadow:0 0 0 1px var(--burg) inset}
+  .wd .d{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+  .wd.today .d{color:var(--burg)}
+  .wd .role{font-size:12.5px;font-weight:600;margin:4px 0 8px;font-family:Georgia,serif}
+  .wd .th{display:flex;gap:3px;flex-wrap:wrap}
+  .wd .th .t{width:22px;height:28px;border-radius:5px;border:1px solid rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+  .wd .th .t svg{width:13px;height:13px}
+
+  .fixes{margin-top:30px;border-top:1px solid var(--line);padding-top:16px}
+  .fixes h3{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px}
+  .fixes ul{margin:0;padding-left:18px;font-size:12.5px;color:#6a5f4e;columns:2;column-gap:26px}
+  @media(max-width:700px){.fixes ul{columns:1}}
+  .fixes li{margin-bottom:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="avatar">V</div>
+    <div class="title"><h1>Стиль каждый день</h1><div class="form">Формула: Power Woman</div></div>
+    <div class="spacer"></div>
+    <div class="stat"><div class="k">Сезон</div><div class="v" id="hSeason">Зима 2026–2027</div></div>
+    <div class="stat"><div class="k">Цветотип</div><div class="v">Зима холодная</div></div>
+    <div class="stat idx"><div class="k">Индекс капсулы</div><div class="v" id="hIdx">—</div>
+      <div class="idxbar"><i id="idxFill" style="width:0"></i></div>
+      <div class="tip">Индекс = доля вещей, которые дают ≥3 комплекта. Поднимается, если добавить базу и убрать вещи-сиротки.</div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- LEFT: capsule -->
+    <div class="card">
+      <div class="hd"><h2>Капсульный конструктор</h2><span class="badge green">Мой гардероб</span></div>
+      <div class="lead">Собери образ из своей капсулы: нажми на вещь — она встанет в ячейку справа. Показаны вещи <b>текущего сезона</b> и <b>твоей Формулы</b>.</div>
+      <div class="tabs" id="seasonTabs"></div>
+      <div class="grid" id="grid"></div>
+      <div class="ticks">
+        <div><span class="ck">✓</span> Вещи отфильтрованы под сезон, Формулу и палитру</div>
+        <div><span class="ck">✓</span> Образ можно собрать на каждый день недели</div>
+        <div><span class="ck">✓</span> Каждая вещь даёт минимум 3 комплекта</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: outfit of the day -->
+    <div class="card">
+      <div class="hd"><h2>Твой образ на сегодня</h2></div>
+      <div class="lead" id="dayLead">—</div>
+
+      <div class="subhd">Основа образа</div>
+      <div class="slots">
+        <div class="slot" data-cat="top"><span class="ic" data-ic></span><div class="tx"><div class="role">Верх</div><div class="val empty">—</div></div></div>
+        <div class="slot" data-cat="bottom"><span class="ic" data-ic></span><div class="tx"><div class="role">Низ</div><div class="val empty">—</div></div></div>
+        <div class="slot wide" data-cat="dress"><span class="ic" data-ic></span><div class="tx"><div class="role">Платье / комбинезон</div><div class="val empty">— альтернатива верх+низ —</div></div></div>
+      </div>
+      <div class="subhd">Завершение</div>
+      <div class="slots">
+        <div class="slot" data-cat="layer"><span class="ic" data-ic></span><div class="tx"><div class="role">Верхний слой</div><div class="val empty">—</div></div></div>
+        <div class="slot" data-cat="shoes"><span class="ic" data-ic></span><div class="tx"><div class="role">Обувь</div><div class="val empty">—</div></div></div>
+        <div class="slot wide" data-cat="bag"><span class="ic" data-ic></span><div class="tx"><div class="role">Сумка / аксессуар</div><div class="val empty">—</div></div></div>
+      </div>
+
+      <div class="days" id="days"></div>
+
+      <div class="why" id="why"></div>
+
+      <div class="weather">
+        <b>Погода поверх капсулы</b>
+        <div class="wrow"><input id="cityInput" placeholder="Город (сохранится в профиле)"><button class="btn btn-ghost" id="cityBtn" style="padding:7px 12px">Ок</button></div>
+        <div class="out" id="weatherOut">Укажи город один раз — подскажу, какой верхний слой добавить.</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-ghost" id="clearBtn">Очистить</button>
+        <button class="btn btn-primary" id="weekBtn">План недели ↓</button>
+        <div class="cnt">вещей: <b id="cnt">0</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK -->
+  <div class="week" id="week">
+    <div class="hd"><h2>План недели</h2><span class="badge">под роли и погоду</span></div>
+    <div class="lead">Семь дней уже собраны из твоей капсулы. Сегодня выделено — нажми любой день, чтобы открыть и поправить.</div>
+    <div class="weekgrid" id="weekgrid"></div>
+  </div>
+
+  <div class="fixes">
+    <h3>Что исправлено относительно текущей версии</h3>
+    <ul>
+      <li>«Сегодня» одно на весь экран: берётся из реальной даты, синхронно подсвечено в дне, тексте, роли и плане недели.</li>
+      <li>Роль привязана к дню недели (будни — деловой/офис, выходные — casual), не «выходные во вторник».</li>
+      <li>Капсула отфильтрована под сезон + Формулу: в зиме нет летнего поло, мини и кружева.</li>
+      <li>Образ дня и неделя предзаполнены, а не пустые ячейки.</li>
+      <li>Источник вещей однозначен: «Мой гардероб» (не «база брендов» вперемешку).</li>
+      <li>Инфо-пункты — галочки, а не чекбоксы-обманки.</li>
+      <li>Цветотип поправлен (у зимы нет «натуральной»).</li>
+      <li>Индекс с пояснением, кнопки в одной бордовой палитре, «со случайного», город спрашивается один раз.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+/* ===== СПРАВОЧНИКИ ===== */
+const SEASONS=['Весна 2026','Лето 2026','Осень 2026','Зима 2026–2027'];
+let season='Зима 2026–2027';
+
+const ICONS={
+ layer:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 3l4 3 4-3 3 4-2 2v11H7V9L5 7z"/><path d="M12 6v6"/></svg>',
+ top:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 4l4 3 4-3 3 3-2 3v10H7V10L5 7z"/></svg>',
+ bottom:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 3h10l-1 18h-3l-1-11-1 11H7z"/></svg>',
+ skirt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 4h8l3 16H5z"/></svg>',
+ dress:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3l3 3 3-3 1 5 3 13H5l3-13z"/></svg>',
+ shoes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 7c2 0 3 5 5 7l9 3c1 .3 2 1 2 2v1H4z"/></svg>',
+ bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8h12l1 12H5z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>'};
+
+/* ===== КАПСУЛА (Power Woman, зимняя палитра) ===== */
+const W='Зима 2026–2027', A='Осень 2026', ALL=SEASONS;
+const CAPSULE=[
+ {id:'L1',cat:'layer',nm:'Пальто-халат, серое',color:'#8b8477',tone:'base',s:[A,W]},
+ {id:'L2',cat:'layer',nm:'Жакет структурный, графит',color:'#3b3f45',tone:'base',s:ALL},
+ {id:'L3',cat:'layer',nm:'Жакет двубортный, винный',color:'#5a1f2c',tone:'accent',ac:'винный',s:[A,W]},
+ {id:'T1',cat:'top',nm:'Водолазка, чёрная',color:'#17181c',tone:'base',s:[A,W]},
+ {id:'T2',cat:'top',nm:'Блуза шёлк, белая',color:'#f4f0e7',tone:'base',s:ALL},
+ {id:'T3',cat:'top',nm:'Джемпер тонкий, изумруд',color:'#1c4b3d',tone:'accent',ac:'изумруд',s:[A,W]},
+ {id:'T4',cat:'top',nm:'Топ шёлк, чёрный',color:'#17181c',tone:'base',s:ALL},
+ {id:'B1',cat:'bottom',nm:'Брюки со стрелкой, чёрные',color:'#17181c',tone:'base',s:ALL},
+ {id:'B2',cat:'bottom',nm:'Брюки костюмные, графит',color:'#3b3f45',tone:'base',s:ALL},
+ {id:'B3',cat:'bottom',nm:'Юбка-карандаш, винная',color:'#5a1f2c',tone:'accent',ac:'винный',s:[A,W],skirt:true},
+ {id:'D1',cat:'dress',nm:'Платье-футляр, чёрное',color:'#17181c',tone:'base',s:ALL},
+ {id:'S1',cat:'shoes',nm:'Ботильоны, чёрные',color:'#1c1d21',tone:'base',s:[A,W]},
+ {id:'S2',cat:'shoes',nm:'Лоферы, чёрные',color:'#17181c',tone:'base',s:ALL},
+ {id:'A1',cat:'bag',nm:'Тоут структурный, чёрный',color:'#17181c',tone:'base',s:ALL},
+ /* внесезонные — в зиме НЕ показываются (демонстрация фильтра) */
+ {id:'X1',cat:'top',nm:'Поло хлопковое, голубое',color:'#b7cbd8',tone:'base',s:['Весна 2026','Лето 2026']},
+ {id:'X2',cat:'dress',nm:'Мини жаккард, лаванда',color:'#c9b8d6',tone:'accent',ac:'лаванда',s:['Весна 2026','Лето 2026']},
+];
+const byId=id=>CAPSULE.find(x=>x.id===id);
+const iconFor=it=>it.skirt?ICONS.skirt:ICONS[it.cat];
+function inkOn(hex){const c=hex.replace('#','');const r=parseInt(c.substr(0,2),16),g=parseInt(c.substr(2,2),16),b=parseInt(c.substr(4,2),16);return (0.299*r+0.587*g+0.114*b)>150?'rgba(60,50,35,.6)':'rgba(255,255,255,.85)';}
+
+/* ===== КОМБИНАТОРИКА для индекса ===== */
+function accentSet(items){return new Set(items.filter(i=>i.tone==='accent').map(i=>i.ac||i.nm));}
+function combosFor(id,pool){
+ const it=byId(id);const tops=pool.filter(i=>i.cat==='top'),bots=pool.filter(i=>i.cat==='bottom'),
+  dr=pool.filter(i=>i.cat==='dress'),sh=pool.filter(i=>i.cat==='shoes');
+ const core=[];
+ tops.forEach(t=>bots.forEach(b=>sh.forEach(s=>{if(accentSet([t,b,s]).size<=1)core.push([t,b,s]);})));
+ dr.forEach(d=>sh.forEach(s=>{if(accentSet([d,s]).size<=1)core.push([d,s]);}));
+ if(['top','bottom','dress','shoes'].includes(it.cat))return core.filter(o=>o.some(p=>p.id===id)).length;
+ return core.filter(o=>accentSet([...o,it]).size<=1).length;
+}
+
+/* ===== ДНИ И РОЛИ ===== */
+const DAYS=['Пн','Вт','Ср','Чт','Пт','Сб','Вс']; // index 0..6
+const DAYNAME=['понедельник','вторник','среду','четверг','пятницу','субботу','воскресенье']; // винительный
+const DAYNOM=['понедельник','вторник','среда','четверг','пятница','суббота','воскресенье']; // именительный
+// getDay(): 0=Вс..6=Сб → в наш индекс (0=Пн..6=Вс)
+const jsToIdx=[6,0,1,2,3,4,5];
+const TODAY = jsToIdx[new Date().getDay()];
+let selected = TODAY;
+
+const ROLES={
+ mon:{name:'Деловая встреча',why:'строгий силуэт, тёмная база, один акцент — авторитет'},
+ office:{name:'Офис',why:'спокойная база, smart casual, ничего лишнего'},
+ nego:{name:'Ключевые переговоры',why:'power dressing — цвет-герой работает как акцент'},
+ fri:{name:'Casual Friday',why:'мягче в крое, но по-прежнему собранно'},
+ weekend:{name:'Выходные',why:'свободнее в крое, упор на комфорт'},
+};
+// образ и роль на каждый день (предзаполнено)
+const WEEK=[
+ {role:ROLES.mon,    items:{layer:'L2',top:'T1',bottom:'B1',dress:null,shoes:'S1',bag:'A1'}},
+ {role:ROLES.office, items:{layer:'L2',top:'T2',bottom:'B2',dress:null,shoes:'S2',bag:'A1'}},
+ {role:ROLES.nego,   items:{layer:'L3',top:'T4',bottom:'B1',dress:null,shoes:'S1',bag:'A1'}},
+ {role:ROLES.office, items:{layer:null,top:'T3',bottom:'B2',dress:null,shoes:'S2',bag:'A1'}},
+ {role:ROLES.fri,    items:{layer:'L2',top:'T2',bottom:'B1',dress:null,shoes:'S2',bag:'A1'}},
+ {role:ROLES.weekend,items:{layer:'L1',top:'T1',bottom:'B2',dress:null,shoes:'S2',bag:'A1'}},
+ {role:ROLES.weekend,items:{layer:'L1',top:null,bottom:null,dress:'D1',shoes:'S1',bag:'A1'}},
+];
+
+/* ===== РЕНДЕР: сезоны ===== */
+function renderSeasons(){
+ const t=document.getElementById('seasonTabs');t.innerHTML='';
+ SEASONS.forEach(s=>{const b=document.createElement('button');b.className='tab'+(s===season?' on':'');b.textContent=s;
+  b.onclick=()=>{season=s;document.getElementById('hSeason').textContent=s;renderAll();};t.appendChild(b);});
+}
+function poolNow(){return CAPSULE.filter(i=>i.s.includes(season));}
+
+/* ===== РЕНДЕР: капсула ===== */
+function renderGrid(){
+ const pool=poolNow();const g=document.getElementById('grid');g.innerHTML='';
+ pool.forEach(it=>{
+  const n=combosFor(it.id,pool);
+  const sel=WEEK[selected].items[it.cat]===it.id;
+  const card=document.createElement('div');card.className='item'+(sel?' sel':'');
+  card.innerHTML=`<div class="pic" style="background:${it.color};color:${inkOn(it.color)}">${iconFor(it)}</div>
+   <div class="bd"><div class="nm">${it.nm}</div>
+   <div class="tg"><span class="tag ${it.tone==='accent'?'acc':'base'}">${it.tone==='accent'?'акцент':'база'}</span>
+   <span class="tag base">${n} обр.</span></div></div><span class="sel-b">✓</span>`;
+  card.onclick=()=>{
+   const cur=WEEK[selected].items;
+   if(cur[it.cat]===it.id){cur[it.cat]=null;}
+   else{cur[it.cat]=it.id; if(it.cat==='dress'){cur.top=null;cur.bottom=null;} if(it.cat==='top'||it.cat==='bottom'){cur.dress=null;}}
+   renderAll();
+  };
+  g.appendChild(card);
+ });
+ // индекс
+ const idxItems=pool.filter(i=>!['X1','X2'].includes(i.id));
+ const healthy=idxItems.filter(i=>combosFor(i.id,pool)>=3).length;
+ const pct=Math.round(healthy/idxItems.length*100);
+ document.getElementById('hIdx').textContent=pct+'%';
+ document.getElementById('idxFill').style.width=pct+'%';
+}
+
+/* ===== РЕНДЕР: слоты образа ===== */
+const CATLABEL={layer:'Верхний слой',top:'Верх',bottom:'Низ',dress:'Платье / комбинезон',shoes:'Обувь',bag:'Сумка / аксессуар'};
+function renderSlots(){
+ const cur=WEEK[selected].items;const dressActive=!!cur.dress;
+ document.querySelectorAll('.slot').forEach(sl=>{
+  const cat=sl.dataset.cat;const id=cur[cat];const it=id?byId(id):null;
+  let disabled=false;
+  if((cat==='top'||cat==='bottom')&&dressActive)disabled=true;
+  if(cat==='dress'&&(cur.top||cur.bottom))disabled=true;
+  sl.className='slot'+(sl.classList.contains('wide')?' wide':'')+(it?' filled':'')+(disabled?' disabled':'');
+  const ic=sl.querySelector('[data-ic]');
+  ic.style.background=it?it.color:'#f2ecdf';ic.style.color=it?inkOn(it.color):'#c7bda9';
+  ic.innerHTML=it?iconFor(it):ICONS[cat];
+  const val=sl.querySelector('.val');
+  if(it){val.className='val';val.textContent=it.nm;}
+  else{val.className='val empty';val.textContent = cat==='dress'?'— альтернатива верх+низ —':(cat==='layer'?'— по желанию —':'—');}
+  // remove old X
+  const oldx=sl.querySelector('.x');if(oldx)oldx.remove();
+  if(it){const x=document.createElement('button');x.className='x';x.textContent='✕';x.title='убрать';
+   x.onclick=(e)=>{e.stopPropagation();cur[cat]=null;renderAll();};sl.appendChild(x);}
+ });
+ const chosen=Object.values(cur).filter(Boolean);
+ document.getElementById('cnt').textContent=chosen.length;
+}
+
+/* ===== РЕНДЕР: дни + лид + почему ===== */
+function renderDays(){
+ const d=document.getElementById('days');d.innerHTML='';
+ DAYS.forEach((nm,i)=>{const b=document.createElement('button');
+  b.className='day'+(i===selected?' on':'')+(i===TODAY?' today':'');b.textContent=nm;
+  b.onclick=()=>{selected=i;renderAll();};d.appendChild(b);});
+}
+function renderLead(){
+ const role=WEEK[selected].role;
+ const lead=document.getElementById('dayLead');
+ if(selected===TODAY){
+  lead.innerHTML=`Сегодня <b>${DAYNOM[selected]}</b> — не начинай день со случайного выбора. Роль дня: <b>${role.name}</b>. Собери день из вещей, поддерживающих твою Формулу.`;
+ }else{
+  lead.innerHTML=`Планируешь <b>${DAYNAME[selected]}</b>. Роль дня: <b>${role.name}</b>. <span class="todaytag">● сегодня — ${DAYNOM[TODAY]}</span>`;
+ }
+ const cur=WEEK[selected].items;const hasBase=cur.dress||(cur.top&&cur.bottom);
+ const acc=[...accentSet(Object.values(cur).filter(Boolean).map(byId))];
+ const why=document.getElementById('why');
+ let msg;
+ if(!hasBase){msg=`<span class="r">Добавь пару верх+низ или платье, чтобы образ был законченным.</span>`;}
+ else if(acc.length>1){msg=`<span class="r">Слишком много акцентов (${acc.join(', ')}). Оставь один цвет-герой.</span>`;}
+ else{msg=`<span class="r">${role.why}${acc.length?`; цвет-герой: <b>${acc[0]}</b>`:'; спокойная тёмная база'}.</span>`;}
+ why.innerHTML=`<span class="role">Почему образ такой</span> · ${msg}`;
+}
+
+/* ===== РЕНДЕР: неделя ===== */
+function renderWeek(){
+ const g=document.getElementById('weekgrid');g.innerHTML='';
+ WEEK.forEach((w,i)=>{
+  const ids=Object.values(w.items).filter(Boolean);
+  const th=ids.map(id=>{const it=byId(id);return `<div class="t" style="background:${it.color};color:${inkOn(it.color)}">${iconFor(it)}</div>`;}).join('');
+  const el=document.createElement('div');el.className='wd'+(i===TODAY?' today':'');
+  el.innerHTML=`<div class="d">${DAYS[i]} ${i===TODAY?'<span style="font-size:9px">сегодня</span>':''}</div>
+   <div class="role">${w.role.name}</div><div class="th">${th}</div>`;
+  el.onclick=()=>{selected=i;renderAll();document.querySelector('.layout').scrollIntoView({behavior:'smooth',block:'start'});};
+  g.appendChild(el);
+ });
+}
+
+/* ===== ПОГОДА (один раз, в памяти) ===== */
+let city=null;
+document.getElementById('cityBtn').onclick=()=>{
+ const v=document.getElementById('cityInput').value.trim();
+ if(!v)return;city=v;
+ // мок: зима → холодно, предлагаем верхний слой
+ const cold = season.startsWith('Зима')||season.startsWith('Осень');
+ const temp = season.startsWith('Зима')?'−7°':season.startsWith('Осень')?'+6°':season.startsWith('Весна')?'+11°':'+24°';
+ const layer = cold?'добавь верхний слой — <b>Пальто-халат</b> поверх капсулы':'верхний слой не нужен, бери лёгкий образ';
+ document.getElementById('weatherOut').innerHTML=`${city}, ≈ <b>${temp}</b> — ${layer}. Город сохранён в профиле.`;
+};
+
+/* ===== КНОПКИ ===== */
+document.getElementById('clearBtn').onclick=()=>{WEEK[selected].items={layer:null,top:null,bottom:null,dress:null,shoes:null,bag:null};renderAll();};
+document.getElementById('weekBtn').onclick=()=>document.getElementById('week').scrollIntoView({behavior:'smooth'});
+
+/* ===== ИНИТ ===== */
+function renderAll(){renderGrid();renderSlots();renderDays();renderLead();renderWeek();}
+renderSeasons();renderAll();
+</script>
+</body>
+</html>
