@@ -27,7 +27,8 @@ from flask import (Flask, Response, abort, jsonify, make_response, redirect,
 from PIL import Image, UnidentifiedImageError
 from werkzeug.utils import secure_filename
 
-from core.pipeline import (analyze_photos, diagnose, evaluate_garment,
+from core import lexicon
+from core.pipeline import (_recompute_gap, analyze_photos, diagnose, evaluate_garment,
                            generate_capsule, generate_card_palette,
                            generate_directions, generate_personality_portrait,
                            generate_shopping_list, generate_styling_pair,
@@ -2843,12 +2844,14 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .cell.filled{border-style:solid;border-color:var(--wine);background:#fff}
  .cell.drop{border-color:var(--wine);background:#fdeee2}
  .cellslot{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
- .cellbody{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:40px}
+ .cellbody{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;
+           gap:4px 8px;min-height:40px}
  .cellbody .thumb{width:30px;aspect-ratio:3/4;object-fit:cover;border-radius:5px;background:var(--sand);flex:0 0 auto}
- .cellval{font-size:11.5px;color:var(--ink);line-height:1.3;
-          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-width:0}
+ .cellval{font-size:11.5px;color:var(--ink);line-height:1.35;overflow-wrap:break-word;
+          display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-width:0}
  .cell.filled .cellval{font-weight:500}
- .cellbody .buy{font-size:10.5px;color:var(--wine);text-decoration:none;white-space:nowrap;align-self:start}
+ .cellbody .buy{grid-column:1/-1;justify-self:start;font-size:10.5px;color:var(--wine);
+                text-decoration:none;white-space:nowrap}
  .wbox{border:1px solid var(--line);border-radius:14px;padding:14px 15px;background:var(--soft)}
  .wtemp{display:flex;align-items:baseline;gap:9px;margin-top:6px}
  .wtemp b{font-family:'Cormorant Garamond',serif;font-size:32px;color:var(--wine);line-height:1}
@@ -2901,7 +2904,12 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .wdname{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
  .weekday.on .wdname{color:var(--wine)}
  .wdimg{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:var(--sand);display:block}
- .wdimg.empty{background:var(--sand)}
+ .wdimg.empty{background:var(--sand);aspect-ratio:auto;min-height:96px;display:flex;
+              flex-direction:column;justify-content:center;gap:4px;padding:10px 9px;
+              border:1px dashed rgba(93,34,48,.18)}
+ .wdimg.empty i{font-style:normal;font-size:10px;line-height:1.3;color:#5a5249;
+                display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+ .wdimg.empty.flat{min-height:60px}
  .wdrole{font-size:11.5px;line-height:1.3;margin-top:7px;font-weight:500;
          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
  .wdtags{font-size:10px;color:var(--muted);line-height:1.3;margin-top:4px;
@@ -3252,7 +3260,11 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <div class="weekday{{ ' on' if row['day'] == today_label else '' }}">
    <div class=wdname>{{ row['day'] }}</div>
    {% if row['img'] %}<img class=wdimg src="{{ row['img'] }}" alt="{{ row['title'] }}" loading=lazy>
-   {% else %}<span class="wdimg empty"></span>{% endif %}
+   {# Образ дня без картинки давал глухой бежевый прямоугольник в треть карточки — читалось
+      как несработавшая загрузка. Показываем то, что и так известно: из чего собран день. #}
+   {% elif row['tags'] %}<span class="wdimg empty">
+    {% for t in row['tags'][:5] %}<i>{{ t.split(',')[0] }}</i>{% endfor %}</span>
+   {% else %}<span class="wdimg empty flat"></span>{% endif %}
    <div class=wdrole>{{ row['title'] }}</div>
    {% if row['tags'] %}<div class=wdtags>{{ row['tags']|join(' · ') }}</div>{% endif %}
    {# Готовый образ дня → в конструктор одним кликом. Без этого связь «вот образы» и
@@ -7015,26 +7027,64 @@ def _quiz_only_diag(quiz: dict, gap_hint, direction_hint) -> dict:
     Страховка на случай, когда provider недоступен (кончился ключ, лимит, сеть). Без неё
     клиентка, пропустившая фото, теряет диагностику и на /card упирается в «сначала диагностика» —
     то есть проходит квиз впустую. Лучше отдать честный диагноз по ответам, чем развернуть её.
+
+    Identity Gap считаем ЗДЕСЬ по методу, если ответы пришли словами калиброванного лексикона.
+    Раньше он приходил с клиента JS-эвристикой, `now_field_distribution` не строился вовсе, а
+    `semantic_field_distribution` подделывалось константой {поле: 60, остальные: 13} — только
+    чтобы `_visual_capsule` не остался без стилей. Из-за этого `_recompute_gap` выходил до
+    расчёта: на 922 сохранённых прогонах 910 получили одинаковый 31%, а 813 — доминанту
+    «классика». Шкала не мерила, а отдавала константу.
+
+    По методу считаем только когда ВСЕ слова опознаны. Частичное опознание хуже отказа: из
+    «спокойная, надёжная» распознаётся одна «надёжная», распределение становится «100% классика»
+    — уверенное число, построенное на половине ответа. Не опознали — честно помечаем замер
+    клиентским и не выдаём его за расчёт по методу.
     """
-    code = direction_hint if direction_hint in _DIRECTION_RU else "classic"
-    gap = gap_hint if isinstance(gap_hint, int) and 0 <= gap_hint <= 100 else 50
-    # base_style читает каталог (_FORMULA_CATEGORIES) и ждёт КОД, не русское название: с «Классика»
-    # словарь категорий молча возвращал пустой список, фильтр по формуле отключался — и в капсулу
-    # «Классики» приходили кружевные накидки и юбки с воланами. Русское имя живёт в style_formula.
-    return {
+    now_words = quiz.get("now_traits") or []
+    want_words = quiz.get("want_traits_top3") or []
+    unknown = lexicon.unknown_words(now_words) + lexicon.unknown_words(want_words)
+    by_method = bool(now_words and want_words and not unknown)
+
+    now_dist = lexicon.distribution(now_words) if by_method else None
+    want_dist = lexicon.distribution(want_words) if by_method else None
+
+    code = lexicon.dominant(want_dist) if want_dist else None
+    if code not in _DIRECTION_RU:
+        code = direction_hint if direction_hint in _DIRECTION_RU else "classic"
+
+    diag = {
         "style_formula": _DIRECTION_RU[code],
+        # base_style читает каталог (_FORMULA_CATEGORIES) и ждёт КОД, не русское название: с
+        # «Классика» словарь категорий молча возвращал пустой список, фильтр по формуле
+        # отключался — и в капсулу «Классики» приходили кружевные накидки и юбки с воланами.
         "base_style": code,
         "style_dominant": code,
-        # Доминанта нужна _visual_capsule: без распределения список styles пуст и стилевого
-        # совпадения в скоринге не происходит вовсе.
-        "semantic_field_distribution": {
-            k: (60 if k == code else 40 // 3) for k in _DIRECTION_RU
-        },
-        "gap_percentage": gap,
-        "now_traits": quiz.get("now_traits") or [],
-        "want_traits_top3": quiz.get("want_traits_top3") or [],
+        "now_traits": now_words,
+        "want_traits_top3": want_words,
         "quiz_only": True,  # фото не было: цветотип и фигуру уточняем позже, при сборке Карты
     }
+
+    if by_method:
+        diag["now_field_distribution"] = now_dist
+        diag["semantic_field_distribution"] = want_dist
+        # expression_gap здесь не измеряем: надбавка берётся из вопроса 6 анкеты («чего не
+        # хватает в гардеробе и поведении»), которого в коротком квизе нет.
+        diag["gap_breakdown"] = {"expression_gap": 0}
+        diag = _recompute_gap(diag)
+        diag["gap_source"] = "method"
+    else:
+        # Распределение построить нечем. Доминанту держим на подсказке квиза, а распределение
+        # помечаем синтетическим — иначе аналитика и eval примут заглушку за настоящий замер
+        # (так и вышло с 910 прогонами).
+        diag["semantic_field_distribution"] = {
+            k: (60 if k == code else 40 // 3) for k in _DIRECTION_RU
+        }
+        diag["semantic_field_distribution_synthetic"] = True
+        diag["gap_percentage"] = gap_hint if isinstance(gap_hint, int) and 0 <= gap_hint <= 100 else 50
+        diag["gap_source"] = "client_hint"
+        if unknown:
+            diag["lexicon_unknown_words"] = unknown
+    return diag
 
 
 @app.post("/api/quiz-diagnosis")
