@@ -162,3 +162,31 @@ def test_tier_without_diagnosis_goes_to_quiz(client):
         r = c.get(url)
         assert r.status_code == 302
         assert r.headers["Location"] == "/quiz", url
+
+
+# Функции, которых в продукте нет: блок покупок убран из Карты сознательно (app/main.py),
+# личного журнала не существует (/blog — это публичные статьи, не дневник клиентки), совета
+# недели в кабинете нет, а трекер показывает динамику и не подсказывает следующий шаг.
+NOT_BUILT = ["лист умных покупок", "умные покупки", "совет недели", "следующий лучший шаг"]
+
+
+def test_tariffs_do_not_promise_what_is_not_built():
+    """Лендинг обещает ровно то, что клиентка найдёт внутри.
+
+    Тариф — это обещание, за которое отвечаешь. Обещанного «листа умных покупок» в кабинете нет,
+    и первая же клиентка это заметит; на защите конкурса такое ловится ещё быстрее.
+    """
+    html = Path("web/index.html").read_text(encoding="utf-8").lower()
+
+    found = [w for w in NOT_BUILT if w in html]
+
+    assert not found, f"лендинг обещает несуществующее: {found}"
+
+
+def test_daily_tier_lists_only_live_cabinet_blocks():
+    """Каждый пункт «Стиль каждый день» соответствует блоку, который кабинет реально рисует."""
+    html = Path("web/index.html").read_text(encoding="utf-8")
+    panel = html.split('id="tier-daily-style"', 1)[1].split("</ul>", 1)[0].lower()
+
+    for promise in ("образ дня", "план недели", "конструктор", "брать", "трекер"):
+        assert promise in panel, promise
