@@ -1105,7 +1105,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% set fparts = (c.formula or '').split('×') %}
 {% set flead = fparts[0]|trim %}
 {% set fmore = fparts[1:]|map('trim')|select|list %}
-{% set idx = (100 - c.gap) if c.get('gap') is not none else none %}
+{% set idx = c.gap if c.get('gap') is not none else none %}{# разрыв напрямую (Identity Gap), не 100−gap: одна метрика с квизом #}
 <div class=shell>
 <div class=side>
  <div class=sidelogo>Чувство стиля<span>твоя формула стиля</span></div>
@@ -1186,7 +1186,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  </div>
 
  <div class=panel>
-  <h2 class=ph>Индекс настройки образа</h2>
+  <h2 class=ph>Стилевой разрыв</h2>
   {% if idx is not none %}
   <div class=idxwrap>
    <svg viewBox="0 0 120 120" class=idxring aria-hidden=true>
@@ -1197,12 +1197,10 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     <text x=60 y=70 text-anchor=middle class=idxnum>{{ idx }}%</text>
    </svg>
    <div>
-    {# Формулировка по величине индекса: не хвалим ради похвалы, а называем, где клиентка стоит. #}
-    <p class=idxtext>{% if idx >= 80 %}Ты уже близко. Образ почти совпадает с тем, как ты хочешь считываться.{% elif idx >= 60 %}Хороший результат, гармония близка. Стилевая основа уже собрана — осталось убрать то, что размывает впечатление.{% elif idx >= 40 %}Половина образа уже работает на тебя. Остальное — зона настройки, которую мы закрываем ниже.{% else %}Зона настройки большая, и это твой ресурс: изменения будут заметны сразу.{% endif %}</p>
-    {# Разрыв называем числом, а не только кольцом: Карта обязана показывать тот же Gap,
-       что посчитал квиз, иначе диагностика и результат расходятся. #}
-    <p class=idxtext>Оставшиеся {{ c.gap }}% настраиваются через выбранную<br>капсулу и первые покупки под твою формулу.</p>
-    <a class=idxmore href="#howto">Как повысить индекс →</a>
+    {# Формулировка по величине РАЗРЫВА (меньше — ближе к своей формуле), а не наоборот. #}
+    <p class=idxtext>{% if idx <= 20 %}Ты уже близко. Образ почти совпадает с тем, как ты хочешь считываться.{% elif idx <= 40 %}Разрыв небольшой и закрывается быстро. Стилевая основа собрана — осталось убрать то, что размывает впечатление.{% elif idx <= 60 %}Разрыв заметный, но половина образа уже работает на тебя. Остальное закрываем ниже.{% else %}Разрыв большой — и это твой ресурс: изменения будут заметны сразу.{% endif %}</p>
+    <p class=idxtext>Этот разрыв закрывается через выбранную<br>капсулу и первые покупки под твою формулу.</p>
+    <a class=idxmore href="#howto">Как закрыть разрыв →</a>
    </div>
   </div>
   {% else %}
@@ -1454,7 +1452,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% endif %}
 
 <details class=deep id=howto>
- <summary>Как повысить индекс <span>кто ты, твоя фигура, работа с палитрой</span></summary>
+ <summary>Как закрыть разрыв <span>кто ты, твоя фигура, работа с палитрой</span></summary>
  <div class=deepbody>
   {% if c.substyle_rationale %}<h3>Почему это твой стиль</h3><p>{{ c.substyle_rationale }}</p>{% endif %}
   {% if c.personality and c.personality.portrait %}<p>{{ c.personality.portrait }}</p>
@@ -3093,7 +3091,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   {% if colortype %}<div class=profchip><span class=pi>✦</span><span><span class=pk>Цветотип</span><span class=pv>{{ colortype }}</span></span></div>{% endif %}
   {# Индекс = 100 − разрыв, ровно как в Карте. Здесь годами показывался сырой gap: Карта говорила
      «индекс 69%», кабинет на соседнем экране — «Индекс 31%». Одна метрика, два обратных числа. #}
-  {% if gap_now is not none %}<div class=profchip><span class=pi>◔</span><span><span class=pk>Индекс</span><span class=pv>{{ 100 - gap_now }}%</span></span></div>{% endif %}
+  {% if gap_now is not none %}<div class=profchip><span class=pi>◔</span><span><span class=pk>Разрыв</span><span class=pv>{{ gap_now }}%</span></span></div>{% endif %}
   <a class=profedit href="/me">Профиль <span>✎</span></a>
  </div>
 </div>
