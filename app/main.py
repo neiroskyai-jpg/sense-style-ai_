@@ -970,7 +970,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
  /* нижняя лента */
  .footband{display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#fff,#fbf6ec);
-           border:1px solid var(--line);border-radius:18px;padding:20px 24px;margin-top:18px;flex-wrap:wrap}
+           border:1px solid var(--line);border-radius:18px;padding:20px 24px;margin-top:26px;flex-wrap:wrap}
  .mono{flex:0 0 auto;width:54px;height:54px;border-radius:50%;border:1px solid var(--line);
        background:var(--soft);color:var(--wine);font-family:'Cormorant Garamond',serif;font-size:23px;
        display:flex;align-items:center;justify-content:center;letter-spacing:.02em}
@@ -984,7 +984,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
  /* блок постоянной ссылки на Карту */
  .sharebox{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;
-           background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 20px;margin-top:16px}
+           background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 20px;margin-top:26px}
  .sharek{font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;line-height:1.2}
  .sharep{font-size:12.5px;color:var(--muted);margin:4px 0 0;max-width:430px;line-height:1.45}
  .sharerow{display:flex;gap:8px;align-items:center;flex:1 1 320px;min-width:0}
@@ -1052,7 +1052,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .stale b{color:var(--wine)}
  .stale a{display:inline-block;margin-top:9px;background:var(--wine);color:#fff;text-decoration:none;
           padding:9px 18px;border-radius:8px;font-size:13.5px}
- .fbblock{margin-top:20px;padding:20px 22px;border:1px solid var(--line);border-radius:16px;background:#fff}
+ .fbblock{margin-top:26px;padding:20px 22px;border:1px solid var(--line);border-radius:16px;background:#fff}
  .fbblock h2{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;margin:0 0 4px}
  .fbblock p.h{margin:0 0 14px;color:var(--muted);font-size:13.5px}
  .fbblock textarea{width:100%;padding:11px 13px;border:1px solid #d9d2c7;border-radius:10px;
