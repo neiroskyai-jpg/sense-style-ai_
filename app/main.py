@@ -1600,7 +1600,7 @@ NEED_DIAGNOSIS = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  <h1>{{ title }}</h1>
  <p>{{ lead }}</p>
  <ul class=steps>
-  <li class=done><span class=num>1</span><span>Диагностика — 14 вопросов и фото. Отсюда берётся твоя Формула стиля, цветотип и силуэт.</span></li>
+  <li class=done><span class=num>1</span><span>Диагностика — 15 вопросов и фото. Отсюда берётся твоя Формула стиля, цветотип и силуэт.</span></li>
   <li><span class=num>2</span><span>Карта стиля — палитра, капсула и образы на тебе. Строится на результатах диагностики.</span></li>
   <li><span class=num>3</span><span>Стиль каждый день — живой гардероб, где формула работает в обычной жизни.</span></li>
  </ul>
