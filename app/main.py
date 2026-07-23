@@ -1001,9 +1001,11 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  /* Раскладка — главное в карточке образа: по ней видно, из чего он собран. Поэтому она
     крупнее фото на клиентке, а не наравне с ним. Фото задаёт «как это выглядит», раскладка
     отвечает на «что это за вещи» — и разглядывать нужно именно её. */
- .pairrow{display:grid;grid-template-columns:minmax(0,190px) minmax(0,2.1fr);gap:18px;align-items:start;margin-bottom:12px}
+ .pairrow{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1.25fr);gap:18px;align-items:start;margin-bottom:12px}
  .pairmodel{width:100%;border-radius:12px;display:block}
- .pairflat{width:100%;border-radius:14px;display:block;background:#faf6ee}
+ /* Раскладка была во всю ширину (2.1fr) и разрасталась до ~1000px — теперь ограничена: колонка
+    уже (1.25fr) плюс жёсткий потолок, чтобы не занимала пол-экрана. */
+ .pairflat{width:100%;max-width:440px;border-radius:14px;display:block;background:#faf6ee}
  .pairrow-noimg{grid-template-columns:1fr}
  .pairitems{font-size:12px;color:var(--muted);margin:0 0 8px}
  @media(max-width:620px){.pairrow{grid-template-columns:1fr}}
