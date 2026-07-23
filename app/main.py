@@ -709,7 +709,9 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  /* ── левая колонка ───────────────────────────────────────────────────────────────────── */
  .side{background:var(--sand);border-right:1px solid var(--line);padding:24px 16px 22px;
        display:flex;flex-direction:column;gap:22px;position:sticky;top:0;align-self:start;height:100vh}
- .sidelogo{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;line-height:1.12;padding:0 8px}
+ .sidelogo{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;line-height:1.12;padding:0 8px;
+           display:block;color:inherit;text-decoration:none;cursor:pointer;transition:opacity .15s}
+ .sidelogo:hover{opacity:.7}
  .sidelogo span{display:block;font-family:Onest,sans-serif;font-size:9px;letter-spacing:.17em;
                 text-transform:uppercase;color:var(--muted);margin-top:5px;font-weight:400}
  .sidenav{display:flex;flex-direction:column;gap:2px}
@@ -1110,7 +1112,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% set idx = c.gap if c.get('gap') is not none else none %}{# разрыв напрямую (Identity Gap), не 100−gap: одна метрика с квизом #}
 <div class=shell>
 <div class=side>
- <div class=sidelogo>Чувство стиля<span>твоя формула стиля</span></div>
+ <a href="/" class=sidelogo title="На главную">Чувство стиля<span>твоя формула стиля</span></a>
  <nav class=sidenav>
   <a class=on href="#top"><svg viewBox="0 0 20 20"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M2.5 8h15M8 8v8.5"/></svg>Моя карта стиля</a>
   <a href="/cabinet"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>Стиль каждый день</a>
@@ -2731,7 +2733,9 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  /* ── левая колонка (общий каркас с Картой) ───────────────────────────────────────────── */
  .side{background:var(--sand);border-right:1px solid var(--line);padding:24px 16px 22px;
        display:flex;flex-direction:column;gap:22px;position:sticky;top:0;align-self:start;height:100vh}
- .sidelogo{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;line-height:1.12;padding:0 8px}
+ .sidelogo{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;line-height:1.12;padding:0 8px;
+           display:block;color:inherit;text-decoration:none;cursor:pointer;transition:opacity .15s}
+ .sidelogo:hover{opacity:.7}
  .sidelogo span{display:block;font-family:Onest,sans-serif;font-size:9px;letter-spacing:.17em;
                 text-transform:uppercase;color:var(--muted);margin-top:5px;font-weight:400}
  .sidenav{display:flex;flex-direction:column;gap:4px}
@@ -3062,7 +3066,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {% set fparts = (formula or '').split('×') %}
 <div class=shell>
 <div class=side>
- <div class=sidelogo>Чувство стиля<span>твоя формула стиля</span></div>
+ <a href="/" class=sidelogo title="На главную">Чувство стиля<span>твоя формула стиля</span></a>
  <nav class=sidenav>
   <a href="/card"><svg viewBox="0 0 20 20"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M2.5 8h15M8 8v8.5"/></svg>Моя карта стиля</a>
   <a class=on href="#top"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13" rx="2"/><path d="M2.5 8h15M6.5 2.5v3M13.5 2.5v3"/></svg>Стиль каждый день</a>
