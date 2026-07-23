@@ -3037,7 +3037,11 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
             font:inherit;font-size:14.5px;cursor:pointer}
  .fb .done{margin:0;font-size:15px}
 
- @media(max-width:1360px){.row2{grid-template-columns:1fr}.row2b{grid-template-columns:1fr}.slotgrid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}}
+ /* Колонки конструктора (вещи | сборка образа) держим рядом до 980px: раньше схлопывались уже
+    на 1360, и на типовом ноутбуке вещи оказывались НАД слотами — клик по вещи заполнял слот
+    далеко внизу, вне поля зрения, и казалось, что ничего не произошло. Теперь клик виден сразу. */
+ @media(max-width:1360px){.slotgrid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}}
+ @media(max-width:980px){.row2{grid-template-columns:1fr}.row2b{grid-template-columns:1fr}}
  @media(max-width:1280px){.tiles{grid-template-columns:1fr 1fr}}
  @media(max-width:1080px){
   .shell{grid-template-columns:1fr}
@@ -3176,7 +3180,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    {% endfor %}{% endfor %}
   </div>
   <div class=checks>
-   <div><i>✓</i>Перетаскивай вещи между ячейками</div>
+   <div><i>✓</i>Нажми на вещь — она встанет в образ</div>
    <div><i>✓</i>Собирай образ на каждый день недели</div>
    <div><i>✓</i>Вещи подобраны под твою Формулу и палитру</div>
   </div>
