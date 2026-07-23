@@ -2765,7 +2765,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
  /* шапка профиля */
  .profbar{display:flex;align-items:center;gap:15px;background:#fff;border:1px solid var(--line);
-          border-radius:18px;padding:14px 18px;margin-bottom:16px;flex-wrap:wrap}
+          border-radius:18px;padding:14px 18px;margin-bottom:26px;flex-wrap:wrap}
  .profav{width:54px;height:54px;border-radius:50%;background:var(--wine);color:#fff;display:flex;
          align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;
          font-size:24px;flex:0 0 auto}
@@ -2785,7 +2785,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .profedit:hover{border-color:var(--wine);color:var(--wine)}
 
  /* ── ряд 1: конструктор капсулы + образ на сегодня ───────────────────────────────────── */
- .row2{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:16px;align-items:start}
+ .row2{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:16px;align-items:stretch}
  .seasons{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 0}
  .seasons a{padding:6px 13px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;
             color:var(--ink);text-decoration:none;background:var(--soft)}
@@ -2975,7 +2975,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 
  /* ── лента «кабинет продолжает Карту» ────────────────────────────────────────────────── */
  .footband{display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#fff,#f6f3fb);
-           border:1px solid #e2dcef;border-radius:18px;padding:20px 24px;margin-top:18px;flex-wrap:wrap}
+           border:1px solid #e2dcef;border-radius:18px;padding:20px 24px;margin-top:26px;flex-wrap:wrap}
  .footband .mono{flex:0 0 auto;width:44px;height:44px;border-radius:12px;background:#F1EEF8;
                  color:var(--violet);display:flex;align-items:center;justify-content:center;font-size:19px}
  .foottext b{display:block;font-size:14px;font-weight:500}
@@ -3022,7 +3022,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
           padding:8px 14px;border-radius:9px;font-size:12.5px}
  .empty{color:var(--muted);font-size:13px;background:#fff;border:1px solid var(--line);
         border-radius:12px;padding:16px}
- .fb{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-top:16px}
+ .fb{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-top:26px}
  .fb h2{font-family:'Cormorant Garamond',serif;font-size:23px;margin:0 0 4px}
  .fb p.h{color:var(--muted);font-size:13.5px;margin:0 0 14px}
  .stars{display:flex;gap:6px;margin-bottom:12px;flex-direction:row-reverse;justify-content:flex-end}
@@ -3144,10 +3144,16 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
    </div>
   </div>
   {% endif %}
+  {# Второй ярлык показывает РЕАЛЬНЫЙ размер капсулы, а не жёсткое «12»: на демо-капсуле из 8
+     вещей «Расширенная 12» читалась как недосбор. Капсула вырастает из вещей образов (потолок
+     12), у клиентки с большим гардеробом чисел будет больше. cap_total — сколько есть на самом
+     деле. Второй режим прячем, когда опорных 6 и добирать нечем — выбор из одного варианта не нужен. #}
+  {% if cap_total > 6 %}
   <div class=itemtoggle>
    <a href="/cabinet?items=6{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 6 else '' }}">6 опорных вещей</a>
-   <a href="/cabinet?items=12{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 12 else '' }}">Расширенная 12</a>
+   <a href="/cabinet?items=12{% if sel_season %}&season={{ sel_season }}{% endif %}" class="{{ 'on' if items_n == 12 else '' }}">Все {{ cap_total }}</a>
   </div>
+  {% endif %}
   {% if board %}
   <div class=slotgrid>
    {% for grp in board %}{% for it in grp['items'] %}
@@ -3285,7 +3291,7 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
 {# ── План недели: семь дней с ролью и образом. Механика считается серверно (_daily_week_view),
    при перевёрстке её показ был потерян — плитка «План недели» вела в никуда. #}
 {% if weekview and weekview['week'] %}
-<div class=panel style="margin-top:16px" id=week>
+<div class=panel style="margin-top:26px" id=week>
  <h2 class=ph>План недели<span class=tag>под роли и погоду</span></h2>
  <p class=psub>Семь дней из твоей капсулы. Сегодня выделено — с него и начинай.</p>
  <div class=weekgrid>
@@ -3972,6 +3978,7 @@ def cabinet():
         look_today=look_today, mine=mine,
         season_label=(card.get("season_label") or (_CARD_SEASONS[sel]["label"] if sel in _CARD_SEASONS else None)),
         n_items=n_items, combos_label=combos_label, items_n=items_n,
+        cap_total=len(own),  # реальный размер капсулы для честного ярлыка «Все N»
         # какой день выделить в плане недели — считаем на сервере, чтобы не зависеть от
         # часового пояса браузера
         today_label=["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"][datetime.now().weekday()],
