@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 
@@ -112,15 +113,19 @@ def _report(result: dict) -> None:
     print(f'  season_accuracy  {m["season_accuracy"]}   угадан сезон (ошибка только в подтипе)')
     print(f'  top2_accuracy    {m["top2_accuracy"]}   с учётом второго кандидата модели')
     if m["confident_but_wrong"]:
-        print(f'  ⚠ уверенно ошиблась на {m["confident_but_wrong"]} фото — самый дорогой случай')
+        print(f'  [!] уверенно ошиблась на {m["confident_but_wrong"]} фото — самый дорогой случай')
     if m["confusion"]:
         print("\n  Куда путает:")
         for pair, count in sorted(m["confusion"].items(), key=lambda kv: -kv[1]):
-            print(f"    {pair} × {count}")
+            print(f"    {pair.replace(chr(0x2192), '->')} x{count}")
     print("\n  Выборка мала (9 фото, 3 класса из 12) — это proof of method, не статистика.")
 
 
 def main() -> int:
+    try:  # консоль Windows по умолчанию cp1251 — не печатает часть символов
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:  # noqa: BLE001
+        pass
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--mode", default=None, help="dev | final — тир модели из core.config")
     ap.add_argument("--dry-run", action="store_true", help="без API: только проверить датасет")
@@ -142,10 +147,13 @@ def main() -> int:
         return 0
 
     result = evaluate(cases, mode=args.mode)
-    _report(result)
+    # JSON пишем ДО печати: вывод в консоль Windows (cp1251) может упасть на не-ASCII, а платный
+    # результат прогона терять нельзя.
     if args.json_out:
         Path(args.json_out).write_text(json.dumps(result, ensure_ascii=False, indent=2,
                                                   default=str), encoding="utf-8")
+    _report(result)
+    if args.json_out:
         print(f"\nСырой результат: {args.json_out}")
     return 0
 

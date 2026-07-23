@@ -106,3 +106,4 @@ architecture/reference/raw-inbox/
 stylebooks/
 # временный файл с текстом министерского документа, попал случайно
 pol.tmp
+evaluation/vision_eval_result.json
