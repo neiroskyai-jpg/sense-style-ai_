@@ -953,7 +953,9 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
             display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 
  /* что уводит от формулы */
- .stopgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+ /* auto-fill вместо жёстких 5 колонок: в узкой панели «Что уводит» пятый свотч вылезал
+    за правый край. Теперь ячейки переносятся на новую строку, а не выпадают из блока. */
+ .stopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:8px;margin-top:12px}
  .stopcell{position:relative;text-align:center}
  .stopbox{aspect-ratio:1/1;border:1px solid var(--line);border-radius:10px;background:var(--sand);
           display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -965,7 +967,7 @@ STYLE_CARD = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .stopx{position:absolute;top:5px;right:5px;width:17px;height:17px;border-radius:50%;background:#B23A38;
         color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;
         border:1.5px solid #fff;line-height:1}
- .stopcap{font-size:10px;color:var(--muted);margin-top:6px;line-height:1.25;
+ .stopcap{font-size:10px;color:var(--muted);margin-top:6px;line-height:1.25;overflow-wrap:anywhere;
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
  /* нижняя лента */
