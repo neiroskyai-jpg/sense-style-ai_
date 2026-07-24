@@ -994,11 +994,17 @@ def _season_canon(season: str | None) -> str:
 # Режиссура кадра. Без неё модель ставит человека в пустоту и получается карточка товара, а не
 # образ, который хочется примерить на себя.
 _EDITORIAL_DIRECTION = (
-    " Compose it like a fashion editorial: confident relaxed posture, natural mid-stride or "
-    "grounded stance, hands used naturally, gaze calm and direct or slightly off-camera. "
+    " Compose it like a high-fashion magazine editorial — Vogue, Marie Claire quality: confident "
+    "relaxed posture, natural mid-stride or grounded stance, hands used naturally, gaze calm and "
+    "direct or slightly off-camera. "
     "Real location with depth and atmosphere that suits the scenario — city street, gallery, "
     "hotel lobby, staircase, cafe terrace — never a plain studio backdrop or empty white void. "
-    "Soft directional daylight, gentle shadows, shallow depth of field."
+    "Soft directional daylight, gentle shadows, shallow depth of field. "
+    # Против «старомодной» генерации: каждая вещь — актуальный, дорого выглядящий фасон, а не
+    # устаревший или бабушкин крой. Эстетика — elevated / quiet luxury, которая красит фигуру.
+    "Every garment must be a current, elevated, expensive-looking cut for the 2026-2027 season — "
+    "quiet-luxury, old-money aesthetic that flatters her figure. Absolutely no dated, frumpy, "
+    "cheap-looking or outdated pieces."
 )
 
 

@@ -1717,6 +1717,13 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  button:hover{opacity:.92}
  .consent{font-size:13px;color:var(--muted);display:flex;gap:8px;margin-top:14px;line-height:1.4} .consent input{width:auto;margin-top:3px}
  .hint{color:var(--muted);font-size:13px;text-align:center;margin-top:14px} .hint a{color:var(--wine)}
+ .photorules{text-align:left;margin:12px 0 0;background:var(--soft,#F7F2E9);border:1px solid var(--line);
+             border-radius:12px;padding:13px 15px}
+ .photorules b{display:block;font-size:13px;color:var(--ink,#1f1d1b);margin-bottom:7px}
+ .photorules ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+ .photorules li{position:relative;padding-left:18px;font-size:12.5px;color:#5a5249;line-height:1.4}
+ .photorules li::before{content:'✓';position:absolute;left:0;color:var(--wine);font-size:11px}
+ .photorules span{display:block;margin-top:9px;font-size:12px;color:var(--muted);font-style:italic}
  .err{color:#9b1c1c;background:#fdeaea;padding:12px;border-radius:8px}
  .notice{color:#5a4a2a;background:#f6efdf;border:1px solid #e3d3a8;padding:14px 16px;border-radius:10px;margin-bottom:8px;font-size:14.5px;line-height:1.5} .notice b{color:var(--wine)}
 </style></head><body><div class=wrap>
@@ -1737,7 +1744,16 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   <div class=filet>Перетащи фото сюда или <b>выбери файл</b></div>
   <div class=files>JPG или PNG, в полный рост</div>
  </div>
- <p class=hint style="text-align:left;margin:10px 0 0">Лицо должно быть хорошо видно — крупно, при дневном свете, без тёмных очков и сильной тени. От этого зависит сходство в образах.</p>
+ <div class=photorules>
+  <b>Как выбрать фото — от него зависит результат:</b>
+  <ul>
+   <li>В полный рост, стоя прямо — видно фигуру целиком, от макушки до обуви</li>
+   <li>Лицо крупно и чётко, при дневном свете — без тёмных очков, сильной тени и фильтров</li>
+   <li>Однотонный простой фон, одежда по фигуре — чтобы считались пропорции</li>
+   <li>Одна ты в кадре, без других людей</li>
+  </ul>
+  <span>Чем лучше фото — тем точнее сходство и посадка в образах.</span>
+ </div>
 </div>
 
 <div class=sect>
@@ -5751,10 +5767,18 @@ def _friendly_gen_error(e: Exception) -> str:
 
 
 def _card_look_prompt(lk: dict, diag: dict) -> str:
-    """Промпт для рендера образа карты на клиентке: промпт из капсулы или досборка."""
+    """Промпт для рендера образа карты на клиентке: промпт из капсулы или досборка.
+
+    Формулу стиля клиентки (направление + подстиль) добавляем В КАЖДЫЙ образ — иначе картинка
+    не читается в её стиле и выходит «мимо». Подстиль (Power Woman × Designer-акцент и т.п.)
+    задаёт характер образа, а не только набор вещей."""
+    sf = (diag.get("style_formula") or "").strip()
+    sub = " × ".join(x for x in (diag.get("primary_substyle"), diag.get("secondary_substyle")) if x)
+    style_line = "; ".join(x for x in (sf, sub) if x)
+    style_prefix = f"Styling must read in her personal style formula — {style_line}. " if style_line else ""
     base = (lk.get("image_generation_prompt") or "").strip()
     if base:
-        return base
+        return style_prefix + base
     parts = []
     if lk.get("scenario"):
         parts.append(f"Образ для сценария «{lk['scenario']}»")
@@ -5765,7 +5789,7 @@ def _card_look_prompt(lk: dict, diag: dict) -> str:
         parts.append(f"палитра: {pal}")
     if diag.get("figure_type"):
         parts.append(f"силуэт под фигуру {diag['figure_type']}")
-    return ". ".join(parts) or (diag.get("style_formula") or "современный стильный образ")
+    return style_prefix + (". ".join(parts) or "современный стильный образ")
 
 
 def _card_job_worker(job_id: str, photo_path: Path, email: str, season: str | None = None,
