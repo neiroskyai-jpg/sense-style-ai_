@@ -2854,7 +2854,10 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  /* Вещь = цветная плашка её реального цвета, а не фото. Цвет берётся из названия вещи Карты. */
  .pitem.accent{border-color:#e4cdd4}
  .pitem .pswatch{position:relative;width:100%;aspect-ratio:3/4;border-radius:7px;display:block;
-                 box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+                 box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);overflow:hidden}
+ /* Фото типа вещи поверх цветной плашки: видно и что за вещь, и её оттенок по краю. */
+ .pitem .pphoto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;
+                mix-blend-mode:multiply;opacity:.94}
  .pitem .ptone{position:absolute;left:6px;bottom:6px;font-style:normal;font-size:8.5px;
                font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;
                border-radius:20px;background:rgba(255,255,255,.86);color:#4a443c}
@@ -3199,8 +3202,13 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
     {# Вещь показываем её реальным цветом, а не фото: цвет в названии («холодный чёрный») читается
        сразу и не подменяет вещь клиентки чужим товаром из каталога. Фото — задача после защиты. #}
     {% set sw = it.name|swatch %}
+    {# Фото типа вещи из своей библиотеки (web/photos/items) — не каталог, прав не требует.
+       Цвет вещи остаётся фоном плашки: фото иллюстрирует ТИП, цвет — её реальный оттенок.
+       Нет картинки на тип — остаётся чистая цветная плашка, как было. #}
+    {% set pimg = it.name|item_img %}
     <span class="pitem{% if sw.accent %} accent{% endif %}" data-slot="{{ grp.slot }}" data-name="{{ it.name }}" data-img="{{ it.image or '' }}" data-url="{{ it.url or '' }}">
      <span class=pswatch style="background:{{ sw.hex }}">
+      {% if pimg %}<img class=pphoto src="{{ pimg }}" alt="{{ it.name }}" loading=lazy>{% endif %}
       <b class=ptone>{{ 'акцент' if sw.accent else 'база' }}</b>
      </span>
      <span class=pname title="{{ it.name }}">{{ it.name }}</span>

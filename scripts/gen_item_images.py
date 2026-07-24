@@ -64,6 +64,22 @@ ITEMS: dict[str, str] = {
     "сумка": "a structured leather tote bag in deep wine",
     "ремень": "a slim leather belt in tan with an understated buckle",
     "шарф": "a soft wool scarf in muted camel, loosely folded",
+    # Расширение библиотеки: на реальных названиях капсул покрытие было 62% — не хватало
+    # верхней одежды, обуви без каблука, костюма и аксессуаров.
+    "жилет": "an elongated tailored waistcoat in warm taupe wool",
+    "пуховик": "a quilted puffer jacket in soft cream, matte finish",
+    "куртка": "a soft leather biker jacket in warm cognac brown",
+    "шорты": "tailored bermuda shorts in stone grey wool",
+    "костюм": "a two-piece trouser suit in warm taupe wool, jacket and trousers presented together",
+    "мюли": "a pair of leather mules in milky cream on a stable block heel",
+    "кроссовки": "a pair of minimal leather sneakers in off-white",
+    "рюкзак": "a structured leather backpack in deep chocolate",
+    "серьги": "a pair of sculptural gold hoop earrings",
+    "колье": "a fine gold chain necklace with a subtle pendant",
+    "часы": "a slim gold wristwatch with a cream dial and a leather strap",
+    "очки": "a pair of sunglasses with warm tortoiseshell frames",
+    "шляпа": "a wide-brim wool felt hat in warm camel",
+    "перчатки": "a pair of soft leather gloves in cognac brown",
 }
 
 
