@@ -5913,7 +5913,11 @@ def style_card():
         record_event("card_stale_rebuild_prompt", email)
     if card:
         card = _refresh_card_projection(card, diag)
-    if card and not request.args.get("rebuild") and not request.args.get("text"):
+    # Пришла из квиза (from_job) с НОВОЙ диагностикой (stale) → ведём сразу в форму «фото + анкета»,
+    # а не показываем прежнюю Карту с кнопкой «Собрать заново». Клиентка только что прошла квиз и
+    # ждёт сборку новой Карты, а не старый результат. Прямой заход на /card (без квиза) прежний.
+    from_quiz_new = stale and request.args.get("from_job")
+    if card and not from_quiz_new and not request.args.get("rebuild") and not request.args.get("text"):
         return render_template_string(STYLE_CARD, c=card, name=_display_name(email),
                                       figure_short=_figure_short(diag.get("figure_type")),
                                       dna_fields=_dna_fields(diag),

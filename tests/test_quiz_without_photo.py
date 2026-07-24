@@ -124,8 +124,9 @@ def test_direction_becomes_readable_formula(client, monkeypatch):
     assert "Классика" in html
 
 
-def test_index_is_the_same_number_in_card_and_cabinet(client, monkeypatch):
-    """Индекс = 100 − разрыв везде. Карта показывала 69%, кабинет — 31%: одна метрика, два числа."""
+def test_gap_is_the_same_number_in_quiz_card_and_cabinet(client, monkeypatch):
+    """Одна метрика везде — РАЗРЫВ (Identity Gap), а не индекс 100−gap. Раньше кабинет показывал
+    69% (инверсию), квиз — 31%: одна метрика, два числа. Теперь везде разрыв, как в квизе."""
     uid = "anon-idx"
     monkeypatch.setattr(m, "_current_user", lambda: uid)
     client.store[uid] = {"diagnosis": m._quiz_only_diag({}, 31, "classic"),
@@ -133,8 +134,8 @@ def test_index_is_the_same_number_in_card_and_cabinet(client, monkeypatch):
 
     cabinet = client.get("/cabinet").get_data(as_text=True)
 
-    assert ">69%<" in cabinet, "кабинет обязан показывать индекс, а не сырой разрыв"
-    assert ">31%<" not in cabinet
+    assert ">31%<" in cabinet, "кабинет показывает разрыв — как квиз и Карта"
+    assert ">69%<" not in cabinet, "инверсии 100−gap больше нет"
 
 
 def test_model_is_not_called_on_this_path(client, monkeypatch):
