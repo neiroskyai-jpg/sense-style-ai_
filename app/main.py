@@ -2819,7 +2819,14 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
  .itemtoggle a.on{background:var(--wine);color:#fff;border-color:var(--wine)}
  /* minmax(0,…), а не 1fr: у подписи вещи nowrap, и в обычном 1fr она задавала колонке
     min-content — колонки разъезжались по ширине, а плитки прыгали по высоте. */
- .slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin-top:14px}
+ .slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin-top:10px}
+ /* группа вещей по категории (Верх/Низ/...) с заголовком и числом — как в макете капсулы */
+ .capgroup{margin-top:16px}
+ .capgroup:first-of-type{margin-top:14px}
+ .capgrouphead{display:flex;align-items:baseline;gap:8px;font-size:11px;letter-spacing:.14em;
+               text-transform:uppercase;color:var(--muted);font-weight:500}
+ .capgroupn{font-size:11px;color:var(--wine);background:var(--soft);border-radius:999px;
+            padding:1px 8px;letter-spacing:.02em}
  /* min-width:0 обязателен: у подписи вещи nowrap, и без него автоминимум grid-элемента равен
     ширине всей строки («Верхний слой · вариант 1») — плитки вылезали за экран телефона и
     страница ехала вбок. */
@@ -3165,24 +3172,29 @@ CABINET_PAGE = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   </div>
   {% endif %}
   {% if board %}
-  <div class=slotgrid>
-   {% for grp in board %}{% for it in grp['items'] %}
-   {# Вещь показываем её реальным цветом, а не фото. Цвет в названии вещи Карты («холодный чёрный»,
-      «королевский синий») — плашка этого цвета читается сразу, всегда есть и не подменяет вещь
-      клиентки чужим товаром из каталога. #}
-   {% set sw = it.name|swatch %}
-   <span class="pitem{% if sw.accent %} accent{% endif %}" data-slot="{{ grp.slot }}" data-name="{{ it.name }}" data-img="{{ it.image or '' }}" data-url="{{ it.url or '' }}">
-    <span class=pswatch style="background:{{ sw.hex }}">
-     <b class=ptone>{{ 'акцент' if sw.accent else 'база' }}</b>
+  {# Вещи сгруппированы по категориям (Верх/Низ/Обувь/Аксессуары) с заголовком и числом —
+     как в макете капсульного гардероба. Данные уже сгруппированы (board), раньше рендерились
+     плоско одной сеткой. Клик по вещи работает как прежде. #}
+  {% for grp in board %}{% if grp['items'] %}
+  <div class=capgroup>
+   <div class=capgrouphead>{{ grp.slot }}<span class=capgroupn>{{ grp['items']|length }}</span></div>
+   <div class=slotgrid>
+    {% for it in grp['items'] %}
+    {# Вещь показываем её реальным цветом, а не фото: цвет в названии («холодный чёрный») читается
+       сразу и не подменяет вещь клиентки чужим товаром из каталога. Фото — задача после защиты. #}
+    {% set sw = it.name|swatch %}
+    <span class="pitem{% if sw.accent %} accent{% endif %}" data-slot="{{ grp.slot }}" data-name="{{ it.name }}" data-img="{{ it.image or '' }}" data-url="{{ it.url or '' }}">
+     <span class=pswatch style="background:{{ sw.hex }}">
+      <b class=ptone>{{ 'акцент' if sw.accent else 'база' }}</b>
+     </span>
+     <span class=pname title="{{ it.name }}">{{ it.name }}</span>
+     {% set n = combos_per_item.get(it.name) %}
+     {% if n %}<span class="pcombos{% if n < 3 %} thin{% endif %}" title="в скольких комплектах капсулы участвует вещь">{{ n }} образ{{ '' if n % 10 == 1 and n % 100 != 11 else 'а' if n % 10 in [2,3,4] and n % 100 not in [12,13,14] else 'ов' }}</span>{% endif %}
     </span>
-    <span class=pname title="{{ it.name }}">{{ it.name }}</span>
-    {# Сколько комплектов даёт вещь. Правило капсулы: меньше трёх — не опора, а случайная
-       покупка. Число показывает ЦЕННОСТЬ вещи, а не только её вид. #}
-    {% set n = combos_per_item.get(it.name) %}
-    {% if n %}<span class="pcombos{% if n < 3 %} thin{% endif %}" title="в скольких комплектах капсулы участвует вещь">{{ n }} образ{{ '' if n % 10 == 1 and n % 100 != 11 else 'а' if n % 10 in [2,3,4] and n % 100 not in [12,13,14] else 'ов' }}</span>{% endif %}
-   </span>
-   {% endfor %}{% endfor %}
+    {% endfor %}
+   </div>
   </div>
+  {% endif %}{% endfor %}
   <div class=checks>
    <div><i>✓</i>Нажми на вещь — она встанет в образ</div>
    <div><i>✓</i>Собирай образ на каждый день недели</div>
