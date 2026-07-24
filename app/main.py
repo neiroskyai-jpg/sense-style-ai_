@@ -1790,8 +1790,8 @@ CARD_BUILD_FORM = """<!doctype html><html lang=ru><head><meta charset=utf-8>
   </div>
  </div>
 
- <div class="secth substep" style="margin-bottom:4px"><i>ШАГ 3</i>Пара вопросов о тебе</div>
- <p class=subcopy>По шкале: 1 — совсем не про меня, 5 — точно про меня. Это поможет собрать образы под твою натуру, а не только под внешность.</p>
+ <div class="secth substep" style="margin-bottom:4px"><i>ШАГ 3</i>Психотип — глубина Формулы</div>
+ <p class=subcopy>По шкале: 1 — совсем не про меня, 5 — точно про меня. Это второй уровень персонализации: квиз дал направление, а психотип по Big&nbsp;Five углубляет его до одного из <b>25 подстилей</b> — и уже на нём собираются палитра, капсула и образы. Чем полнее ответишь, тем точнее выйдут образы по твоей Формуле.</p>
  <div class=traitlist>
  {% for i, q in big5_questions %}
   <div class=traitcard>
